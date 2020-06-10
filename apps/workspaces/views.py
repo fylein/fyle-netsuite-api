@@ -14,7 +14,7 @@ from fyle_netsuite_api.utils import assert_valid
 
 from .models import Workspace, FyleCredential, NetSuiteCredentials
 from .serializers import WorkspaceSerializer, FyleCredentialSerializer, NetSuiteCredentialSerializer
-from .utils import NSConnector
+from apps.netsuite.utils import NetSuiteConnection
 
 User = get_user_model()
 auth_utils = AuthUtils()
@@ -141,8 +141,9 @@ class ConnectNetSuiteView(viewsets.ViewSet):
 
             netsuite_credentials = NetSuiteCredentials.objects.filter(workspace=workspace).first()
 
-            ns = NSConnector(ns_account_id, ns_consumer_key, ns_consumer_secret, ns_token_key, ns_token_secret)
-            accounts = ns.get_accounts()
+            connection = NetSuiteConnection(ns_account_id, ns_consumer_key, ns_consumer_secret, ns_token_key,
+                                            ns_token_secret)
+            accounts = connection.accounts.get_all()
 
             if not netsuite_credentials or not accounts:
                 if workspace.ns_account_id:
@@ -180,7 +181,7 @@ class ConnectNetSuiteView(viewsets.ViewSet):
                 {
                     'message': 'Invalid Login Attempt'
                 },
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_401_UNAUTHORIZED
             )
 
     def delete(self, request, **kwargs):

@@ -61,4 +61,12 @@ class Migration(migrations.Migration):
                 'unique_together': {('fyle_group_id', 'workspace')},
             },
         ),
+        migrations.AlterModelTable(
+            name='expense',
+            table='expenses',
+        ),
+        migrations.AlterModelTable(
+            name='expensegroup',
+            table='expense_groups',
+        ),
     ]

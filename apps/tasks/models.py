@@ -25,3 +25,6 @@ class TaskLog(models.Model):
     detail = JSONField(help_text='Task response', null=True, default=get_default)
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime')
+
+    class Meta:
+        db_table = 'task_log'

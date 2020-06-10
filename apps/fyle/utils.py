@@ -26,33 +26,25 @@ class FyleConnector:
             base_url=base_url,
             client_id=client_id,
             client_secret=client_secret,
-            refresh_token=refresh_token
+            refresh_token=refresh_token,
+            jobs_url=settings.FYLE_JOBS_URL
         )
 
-    def get_employee_profile(self):
+    def _post_request(self, url, body):
         """
-        Get expenses from fyle
+        Create a HTTP post request.
         """
-        employee_profile = self.connection.Employees.get_my_profile()
 
-        return employee_profile['data']
-
-    def get_cluster_domain(self):
-        """
-        Get cluster domain name from fyle
-        """
         access_token = self.connection.access_token
         api_headers = {
             'content-type': 'application/json',
             'Authorization': 'Bearer {0}'.format(access_token)
         }
-        body = {}
-        api_url = '{0}/oauth/cluster/'.format(settings.FYLE_BASE_URL)
 
         response = requests.post(
-            api_url,
+            url,
             headers=api_headers,
-            json=body
+            data=body
         )
 
         if response.status_code == 200:
@@ -70,14 +62,77 @@ class FyleConnector:
         elif response.status_code == 500:
             raise InternalServerError('Internal server error', response.text)
 
-    def get_expenses(self, state: List[str], updated_at: List[str], fund_source: List[str]):
+    def _get_request(self, url, params):
+        """
+        Create a HTTP get request.
+        """
+
+        access_token = self.connection.access_token
+        api_headers = {
+            'content-type': 'application/json',
+            'Authorization': 'Bearer {0}'.format(access_token)
+        }
+        api_params = {}
+
+        for k in params:
+            # ignore all unused params
+            if not params[k] is None:
+                p = params[k]
+
+                # convert boolean to lowercase string
+                if isinstance(p, bool):
+                    p = str(p).lower()
+
+                api_params[k] = p
+
+        response = requests.get(
+            url,
+            headers=api_headers,
+            params=api_params
+        )
+
+        if response.status_code == 200:
+            return json.loads(response.text)
+
+        elif response.status_code == 401:
+            raise UnauthorizedClientError('Wrong client secret or/and refresh token', response.text)
+
+        elif response.status_code == 404:
+            raise NotFoundClientError('Client ID doesn\'t exist', response.text)
+
+        elif response.status_code == 400:
+            raise WrongParamsError('Some of the parameters were wrong', response.text)
+
+        elif response.status_code == 500:
+            raise InternalServerError('Internal server error', response.text)
+
+    def get_employee_profile(self):
         """
         Get expenses from fyle
         """
-        expenses = self.connection.Expenses.get_all(state=state, updated_at=updated_at, fund_source=fund_source)
-        expenses = list(
-            filter(lambda expense: not (not expense['reimbursable'] and expense['fund_source'] == 'PERSONAL'),
-                   expenses))
+        employee_profile = self.connection.Employees.get_my_profile()
+
+        return employee_profile['data']
+
+    def get_cluster_domain(self):
+        """
+        Get cluster domain name from fyle
+        """
+
+        body = {}
+        api_url = '{0}/oauth/cluster/'.format(settings.FYLE_BASE_URL)
+
+        return self._post_request(api_url, body)
+
+    def get_expenses(self, state: List[str], export_non_reimbursable: bool, updated_at: List[str]):
+        """
+        Get expenses from fyle
+        """
+        expenses = self.connection.Expenses.get_all(state=state, updated_at=updated_at)
+
+        if not export_non_reimbursable:
+            expenses = list(filter(lambda expense: expense['reimbursable'], expenses))
+
         return expenses
 
     def sync_employees(self):

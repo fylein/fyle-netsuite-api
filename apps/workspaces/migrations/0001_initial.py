@@ -51,4 +51,16 @@ class Migration(migrations.Migration):
                 ('workspace', models.OneToOneField(help_text='Reference to Workspace model', on_delete=django.db.models.deletion.PROTECT, to='workspaces.Workspace')),
             ],
         ),
+        migrations.AlterModelTable(
+            name='fylecredential',
+            table='fyle_credentials',
+        ),
+        migrations.AlterModelTable(
+            name='netsuitecredentials',
+            table='netsuite_credentials',
+        ),
+        migrations.AlterModelTable(
+            name='workspace',
+            table='workspaces',
+        ),
     ]

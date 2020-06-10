@@ -8,7 +8,6 @@ from django.db import transaction
 
 from apps.workspaces.models import FyleCredential, Workspace
 from apps.tasks.models import TaskLog
-from fyle_jobs import FyleJobsSDK
 
 from .models import Expense, ExpenseGroup
 from .utils import FyleConnector
@@ -29,7 +28,8 @@ def schedule_expense_group_creation(workspace_id: int, user: str):
     fyle_connector = FyleConnector(fyle_credentials.refresh_token)
     fyle_sdk_connection = fyle_connector.connection
 
-    jobs = FyleJobsSDK(settings.FYLE_JOBS_URL, fyle_sdk_connection)
+    jobs = fyle_sdk_connection.Jobs
+    user_profile = fyle_sdk_connection.Employees.get_my_profile()['data']
 
     task_log = TaskLog.objects.create(
         workspace_id=workspace_id,
@@ -49,7 +49,8 @@ def schedule_expense_group_creation(workspace_id: int, user: str):
         },
         job_description='Fetch expenses: Workspace id - {0}, user - {1}'.format(
             workspace_id, user
-        )
+        ),
+        org_user_id=user_profile['id']
     )
     task_log.task_id = created_job['id']
     task_log.save()

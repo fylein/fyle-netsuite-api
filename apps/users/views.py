@@ -6,6 +6,8 @@ from fyle_rest_auth.models import AuthToken
 
 from apps.fyle.utils import FyleConnector
 
+from apps.workspaces.models import FyleCredential
+
 
 class UserProfileView(generics.RetrieveAPIView):
 
@@ -25,3 +27,32 @@ class UserProfileView(generics.RetrieveAPIView):
             data=employee_profile,
             status=status.HTTP_200_OK
         )
+
+
+class ClusterDomainView(generics.RetrieveAPIView):
+    """
+    ClusterDomain view
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        """
+        Get cluster domain from Fyle
+        """
+        try:
+            fyle_credentials = AuthToken.objects.get(user__user_id=request.user)
+            fyle_connector = FyleConnector(fyle_credentials.refresh_token)
+            cluster_domain = fyle_connector.get_cluster_domain()['cluster_domain']
+
+            return Response(
+                data=cluster_domain,
+                status=status.HTTP_200_OK
+            )
+        except FyleCredential.DoesNotExist:
+            return Response(
+                data={
+                    'message': 'Invalid / Expired Token'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )

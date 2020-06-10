@@ -30,4 +30,8 @@ class Migration(migrations.Migration):
                 ('workspace', models.ForeignKey(help_text='Reference to Workspace model', on_delete=django.db.models.deletion.PROTECT, to='workspaces.Workspace')),
             ],
         ),
+        migrations.AlterModelTable(
+            name='tasklog',
+            table='task_log',
+        ),
     ]

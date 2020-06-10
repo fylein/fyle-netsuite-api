@@ -19,8 +19,6 @@ class ExpenseGroupView(generics.ListCreateAPIView):
     List Fyle Expenses
     """
     serializer_class = ExpenseGroupSerializer
-    authentication_classes = []
-    permission_classes = []
 
     def get_queryset(self):
         state = self.request.query_params.get('state', 'ALL')
@@ -266,58 +264,6 @@ class ProjectView(generics.ListCreateAPIView):
 
             return Response(
                 data=self.serializer_class(project_attributes, many=True).data,
-                status=status.HTTP_200_OK
-            )
-        except FyleCredential.DoesNotExist:
-            return Response(
-                data={
-                    'message': 'Fyle credentials not found in workspace'
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-
-class ClusterDomainView(generics.RetrieveAPIView):
-    """
-    ClusterDomain view
-    """
-
-    def get(self, request, *args, **kwargs):
-        """
-        Get cluster domain from Fyle
-        """
-        try:
-            fyle_credentials = FyleCredential.objects.get(
-                workspace_id=kwargs.get('workspace_id'))
-            fyle_connector = FyleConnector(fyle_credentials.refresh_token, kwargs['workspace_id'])
-            cluster_domain = fyle_connector.get_cluster_domain()['cluster_domain']
-
-            return Response(
-                data=cluster_domain,
-                status=status.HTTP_200_OK
-            )
-        except FyleCredential.DoesNotExist:
-            return Response(
-                data={
-                    'message': 'Fyle credentials not found in workspace'
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-
-class UserProfileView(generics.RetrieveAPIView):
-
-    def get(self, request, *args, **kwargs):
-        try:
-            fyle_credentials = FyleCredential.objects.get(
-                workspace_id=kwargs.get('workspace_id'))
-
-            fyle_connector = FyleConnector(fyle_credentials.refresh_token, kwargs['workspace_id'])
-
-            employee_profile = fyle_connector.get_employee_profile()
-
-            return Response(
-                data=employee_profile,
                 status=status.HTTP_200_OK
             )
         except FyleCredential.DoesNotExist:

@@ -42,6 +42,9 @@ class Expense(models.Model):
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
     fund_source = models.CharField(max_length=255, help_text='Expense fund source')
 
+    class Meta:
+        db_table = 'expenses'
+
     @staticmethod
     def create_expense_objects(expenses: List[Dict]):
         """
@@ -98,6 +101,7 @@ class ExpenseGroup(models.Model):
 
     class Meta:
         unique_together = ('fyle_group_id', 'workspace')
+        db_table = 'expense_groups'
 
     @staticmethod
     def create_expense_groups_by_report_id(expense_objects: List[Expense], workspace_id):
