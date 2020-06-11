@@ -119,7 +119,6 @@ class NetSuiteConnector:
                 'destination_id': subsidiary['internalId']
             })
 
-        print(subsidiary_attributes)
         subsidiary_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
             subsidiary_attributes, self.workspace_id)
         return subsidiary_attributes
