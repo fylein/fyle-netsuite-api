@@ -1,7 +1,9 @@
 import itertools
+from typing import List, Dict
 
 from netsuitesdk import NetSuiteConnection
 
+from apps.netsuite.models import Bill, BillLineitem
 from apps.workspaces.models import NetSuiteCredentials
 
 from fyle_accounting_mappings.models import DestinationAttribute
@@ -36,7 +38,7 @@ class NetSuiteConnector:
                 'attribute_type': 'ACCOUNT',
                 'display_name': 'Account',
                 'value': account['acctName'],
-                'destination_id': account['acctName']
+                'destination_id': account['internalId']
             })
 
         account_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
@@ -122,3 +124,146 @@ class NetSuiteConnector:
         subsidiary_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
             subsidiary_attributes, self.workspace_id)
         return subsidiary_attributes
+
+    @staticmethod
+    def __construct_bill_lineitems(bill_lineitems: List[BillLineitem]) -> List[Dict]:
+        """
+        Create bill line items
+        :return: constructed line items
+        """
+        lines = []
+
+        for line in bill_lineitems:
+            line = {
+                'orderDoc': None,
+                'orderLine': None,
+                'line': None,
+                'category': None,
+                'account': {
+                    'name': None,
+                    'internalId': line.account_id,
+                    'externalId': None,
+                    'type': 'account'
+                },
+                'amount': line.amount,
+                'taxAmount': None,
+                'tax1Amt': None,
+                'memo': line.memo,
+                'grossAmt': None,
+                'taxDetailsReference': None,
+                'department': {
+                    'name': None,
+                    'internalId': line.department_id,
+                    'externalId': None,
+                    'type': 'department'
+                },
+                'location': {
+                    "name": None,
+                    "internalId": line.location_id,
+                    'externalId': None,
+                    'type': 'location'
+                },
+
+                'customer': None,
+                'isBillable': None,
+                'projectTask': None,
+                'taxCode': None,
+                'taxRate1': None,
+                'taxRate2': None,
+                'amortizationSched': None,
+                'amortizStartDate': None,
+                'amortizationEndDate': None,
+                'amortizationResidual': None,
+                'customFieldList': None
+            }
+            lines.append(line)
+
+        return lines
+
+    def __construct_bill(self, bill: Bill, bill_lineitems: List[BillLineitem]) -> Dict:
+        """
+        Create a bill
+        :return: constructed bill
+        """
+
+        bill_payload = {
+            'nullFieldList': None,
+            'createdDate': None,
+            'lastModifiedDate': None,
+            'nexus': None,
+            'subsidiaryTaxRegNum': None,
+            'taxRegOverride': None,
+            'taxDetailsOverride': None,
+            'customForm': None,
+            'billAddressList': None,
+            'account': None,
+            'entity': {
+                'name': None,
+                'internalId': bill.vendor_id,
+                'externalId': None,
+                'type': 'vendor'
+            },
+            'subsidiary': {
+                'name': None,
+                'internalId': bill.subsidiary_id,
+                'externalId': None,
+                'type': 'subsidiary'
+            },
+            'location': {
+                "name": None,
+                "internalId": bill.location_id,
+                'externalId': None,
+                'type': 'location'
+            },
+            'approvalStatus': None,
+            'nextApprover': None,
+            'vatRegNum': None,
+            'postingPeriod': None,
+            'tranDate': None,
+            'currencyName': None,
+            'billingAddress': None,
+            'exchangeRate': None,
+            'entityTaxRegNum': None,
+            'taxPointDate': None,
+            'terms': None,
+            'dueDate': None,
+            'discountDate': None,
+            'tranId': None,
+            'userTotal': None,
+            'discountAmount': None,
+            'taxTotal': None,
+            'paymentHold': None,
+            'memo': bill.memo,
+            'tax2Total': None,
+            'creditLimit': None,
+            'availableVendorCredit': None,
+            'currency': {
+                'name': bill.currency,
+                'internalId': None,
+                'externalId': None,
+                'type': 'currency'
+            },
+            'status': None,
+            'landedCostMethod': None,
+            'landedCostPerLine': None,
+            'transactionNumber': None,
+            'expenseList': self.__construct_bill_lineitems(bill_lineitems),
+            'accountingBookDetailList': None,
+            'itemList': None,
+            'landedCostsList': None,
+            'purchaseOrderList': None,
+            'taxDetailsList': None,
+            'customFieldList': None,
+            'internalId': None,
+            'externalId': bill.external_id
+        }
+
+        return bill_payload
+
+    def post_bill(self, bill: Bill, bill_lineitems: List[BillLineitem]):
+        """
+        Post vendor bills to NetSuite
+        """
+        bills_payload = self.__construct_bill(bill, bill_lineitems)
+        created_bill = self.connection.vendor_bills.post(bills_payload)
+        return created_bill

@@ -14,9 +14,7 @@ class SubsidiaryMappingView(generics.ListCreateAPIView):
     Subsidiary mappings view
     """
     serializer_class = SubsidiaryMappingSerializer
-
-    def get_queryset(self):
-        return SubsidiaryMapping.objects.filter(workspace_id=self.kwargs['workspace_id']).order_by('-updated_at').all()
+    queryset = SubsidiaryMapping.objects.all()
 
     def post(self, request, *args, **kwargs):
         """
@@ -33,3 +31,21 @@ class SubsidiaryMappingView(generics.ListCreateAPIView):
             data=self.serializer_class(subsidiary_mapping_object).data,
             status=status.HTTP_200_OK
         )
+
+    def get(self, request, *args, **kwargs):
+        """
+        Get subsidiary mappings
+        """
+        try:
+            subsidiary_mapping = self.queryset.get(workspace_id=kwargs['workspace_id'])
+            return Response(
+                data=self.serializer_class(subsidiary_mapping).data,
+                status=status.HTTP_200_OK
+            )
+        except SubsidiaryMapping.DoesNotExist:
+            return Response(
+                {
+                    'message': 'Subsidiary mappings do not exist for the workspace'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )

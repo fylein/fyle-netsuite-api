@@ -25,11 +25,13 @@ class ExpenseGroupView(generics.ListCreateAPIView):
         if state == 'ALL':
             return ExpenseGroup.objects.filter(workspace_id=self.kwargs['workspace_id']).order_by('-updated_at')
         elif state == 'COMPLETE':
-            return ExpenseGroup.objects.filter(
-                workspace_id=self.kwargs['workspace_id']).order_by('-updated_at')
+            return ExpenseGroup.objects.filter(workspace_id=self.kwargs['workspace_id'],
+                                               bill__id__isnull=False).order_by('-updated_at')
         elif state == 'READY':
             return ExpenseGroup.objects.filter(
-                workspace_id=self.kwargs['workspace_id']).order_by('-updated_at')
+                workspace_id=self.kwargs['workspace_id'],
+                bill__id__isnull=True,
+            ).order_by('-updated_at')
 
     def post(self, request, *args, **kwargs):
         """

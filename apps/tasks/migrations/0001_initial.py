@@ -26,6 +26,8 @@ class Migration(migrations.Migration):
                 ('detail', django.contrib.postgres.fields.jsonb.JSONField(default=apps.tasks.models.get_default, help_text='Task response', null=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True, help_text='Created at datetime')),
                 ('updated_at', models.DateTimeField(auto_now=True, help_text='Updated at datetime')),
+                ('bill', models.ForeignKey(help_text='Reference to Bill', null=True,
+                                           on_delete=django.db.models.deletion.PROTECT, to='netsuite.Bill')),
                 ('expense_group', models.ForeignKey(help_text='Reference to Expense group', null=True, on_delete=django.db.models.deletion.PROTECT, to='fyle.ExpenseGroup')),
                 ('workspace', models.ForeignKey(help_text='Reference to Workspace model', on_delete=django.db.models.deletion.PROTECT, to='workspaces.Workspace')),
             ],

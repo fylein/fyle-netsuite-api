@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.postgres.fields import JSONField
 
+from apps.netsuite.models import Bill
 from apps.workspaces.models import Workspace
 from apps.fyle.models import ExpenseGroup
 
@@ -21,6 +22,7 @@ class TaskLog(models.Model):
     task_id = models.CharField(max_length=255, null=True, help_text='Django Q task reference')
     expense_group = models.ForeignKey(ExpenseGroup, on_delete=models.PROTECT,
                                       null=True, help_text='Reference to Expense group')
+    bill = models.ForeignKey(Bill, on_delete=models.PROTECT, help_text='Reference to Bill', null=True)
     status = models.CharField(max_length=255, help_text='Task Status')
     detail = JSONField(help_text='Task response', null=True, default=get_default)
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')

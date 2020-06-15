@@ -2,9 +2,16 @@ from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import status
 
+from apps.netsuite.tasks import schedule_bills_creation, create_bill
+from fyle_netsuite_api.utils import assert_valid
+
 from fyle_accounting_mappings.models import DestinationAttribute
 from fyle_accounting_mappings.serializers import DestinationAttributeSerializer
+from apps.netsuite.serializers import BillSerializer
 
+from apps.fyle.models import ExpenseGroup
+from apps.netsuite.models import Bill
+from apps.tasks.models import TaskLog
 from apps.workspaces.models import NetSuiteCredentials
 
 from .utils import NetSuiteConnector
@@ -152,12 +159,12 @@ class LocationView(generics.ListCreateAPIView):
 
 class SubsidiaryView(generics.ListCreateAPIView):
     """
-    Subs view
+    Subsidiary view
     """
     serializer_class = DestinationAttributeSerializer
     pagination_class = None
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         return DestinationAttribute.objects.filter(
             attribute_type='SUBSIDIARY', workspace_id=self.kwargs['workspace_id']).order_by('value')
 
@@ -183,3 +190,49 @@ class SubsidiaryView(generics.ListCreateAPIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+
+class BillView(generics.ListCreateAPIView):
+    """
+    Create Bill
+    """
+    serializer_class = BillSerializer
+
+    def get_queryset(self):
+        return Bill.objects.filter(expense_group__workspace_id=self.kwargs['workspace_id']).order_by('-updated_at')
+
+    def post(self, request, *args, **kwargs):
+        """
+        Create bill from expense group
+        """
+        expense_group_id = request.data.get('expense_group_id')
+        task_log_id = request.data.get('task_log_id')
+
+        assert_valid(expense_group_id is not None, 'expense group id not found')
+        assert_valid(task_log_id is not None, 'Task Log id not found')
+
+        expense_group = ExpenseGroup.objects.get(pk=expense_group_id)
+        task_log = TaskLog.objects.get(pk=task_log_id)
+
+        create_bill(expense_group, task_log)
+
+        return Response(
+            data={},
+            status=status.HTTP_200_OK
+        )
+
+
+class BillScheduleView(generics.CreateAPIView):
+    """
+    Schedule bills creation
+    """
+
+    def post(self, request, *args, **kwargs):
+        expense_group_ids = request.data.get('expense_group_ids', [])
+
+        schedule_bills_creation(
+            kwargs['workspace_id'], expense_group_ids, request.user)
+
+        return Response(
+            status=status.HTTP_200_OK
+        )
