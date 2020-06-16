@@ -12,9 +12,10 @@ from fyle_rest_auth.models import AuthToken
 
 from fyle_netsuite_api.utils import assert_valid
 
+from apps.netsuite.utils import NetSuiteConnection
+
 from .models import Workspace, FyleCredential, NetSuiteCredentials
 from .serializers import WorkspaceSerializer, FyleCredentialSerializer, NetSuiteCredentialSerializer
-from apps.netsuite.utils import NetSuiteConnection
 
 User = get_user_model()
 auth_utils = AuthUtils()

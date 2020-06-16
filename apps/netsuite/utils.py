@@ -2,11 +2,10 @@ import itertools
 from typing import List, Dict
 
 from netsuitesdk import NetSuiteConnection
+from fyle_accounting_mappings.models import DestinationAttribute
 
 from apps.netsuite.models import Bill, BillLineitem
 from apps.workspaces.models import NetSuiteCredentials
-
-from fyle_accounting_mappings.models import DestinationAttribute
 
 
 class NetSuiteConnector:

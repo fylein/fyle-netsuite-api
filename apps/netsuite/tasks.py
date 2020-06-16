@@ -8,9 +8,9 @@ from django.db.models import Q
 
 from fyle_accounting_mappings.models import Mapping
 
-from apps.fyle.utils import FyleConnector
 from fyle_netsuite_api.exceptions import BulkError
 
+from apps.fyle.utils import FyleConnector
 from apps.fyle.models import ExpenseGroup
 from apps.mappings.models import SubsidiaryMapping
 from apps.tasks.models import TaskLog

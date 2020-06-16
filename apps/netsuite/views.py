@@ -2,18 +2,18 @@ from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import status
 
-from apps.netsuite.tasks import schedule_bills_creation, create_bill
-from fyle_netsuite_api.utils import assert_valid
-
 from fyle_accounting_mappings.models import DestinationAttribute
 from fyle_accounting_mappings.serializers import DestinationAttributeSerializer
-from apps.netsuite.serializers import BillSerializer
+
+from fyle_netsuite_api.utils import assert_valid
 
 from apps.fyle.models import ExpenseGroup
-from apps.netsuite.models import Bill
 from apps.tasks.models import TaskLog
 from apps.workspaces.models import NetSuiteCredentials
 
+from .serializers import BillSerializer
+from .tasks import schedule_bills_creation, create_bill
+from .models import Bill
 from .utils import NetSuiteConnector
 
 

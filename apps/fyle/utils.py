@@ -1,4 +1,5 @@
 from typing import List
+import json
 
 from django.conf import settings
 
@@ -7,8 +8,6 @@ from fylesdk import FyleSDK, UnauthorizedClientError, NotFoundClientError, Inter
 from fyle_accounting_mappings.models import ExpenseAttribute
 
 import requests
-
-import json
 
 
 class FyleConnector:

@@ -186,4 +186,3 @@ class BillLineitem(models.Model):
             bill_lineitem_objects.append(bill_lineitem_object)
 
         return bill_lineitem_objects
-
