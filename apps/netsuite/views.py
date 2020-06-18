@@ -157,6 +157,41 @@ class LocationView(generics.ListCreateAPIView):
             )
 
 
+class ClassificationView(generics.ListCreateAPIView):
+    """
+    Classification view
+    """
+
+    serializer_class = DestinationAttributeSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return DestinationAttribute.objects.filter(
+            attribute_type='CLASS', workspace_id=self.kwargs['workspace_id']).order_by('value')
+
+    def post(self, request, *args, **kwargs):
+        """
+        Get Classifications from NetSuite
+        """
+        try:
+            ns_credentials = NetSuiteCredentials.objects.get(workspace_id=kwargs['workspace_id'])
+
+            ns_connector = NetSuiteConnector(ns_credentials, workspace_id=kwargs['workspace_id'])
+
+            classification = ns_connector.sync_classifications()
+            return Response(
+                data=self.serializer_class(classification, many=True).data,
+                status=status.HTTP_200_OK
+            )
+        except NetSuiteCredentials.DoesNotExist:
+            return Response(
+                data={
+                    'message': 'NetSuite credentials not found in workspace'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
 class SubsidiaryView(generics.ListCreateAPIView):
     """
     Subsidiary view
@@ -197,8 +232,6 @@ class BillView(generics.ListCreateAPIView):
     Create Bill
     """
     serializer_class = BillSerializer
-    authentication_classes = []
-    permission_classes = []
 
     def get_queryset(self):
         return Bill.objects.filter(expense_group__workspace_id=self.kwargs['workspace_id']).order_by('-updated_at')

@@ -2,7 +2,7 @@ from typing import Dict
 
 from fyle_netsuite_api.utils import assert_valid
 
-from .models import SubsidiaryMapping
+from .models import SubsidiaryMapping, LocationMapping
 
 
 class MappingUtils:
@@ -30,3 +30,25 @@ class MappingUtils:
         )
 
         return subsidiary_mapping_object
+
+    def create_or_update_location_mapping(self, location_mapping: Dict):
+        """
+        Create or update Location mappings
+        :param location_mapping: project mapping payload
+        :return: location mappings objects
+        """
+
+        assert_valid('location_name' in location_mapping and location_mapping['location_name'],
+                     'location name field is blank')
+        assert_valid('internal_id' in location_mapping and location_mapping['internal_id'],
+                     'internal id field is blank')
+
+        location_mapping_object, _ = LocationMapping.objects.update_or_create(
+            workspace_id=self.__workspace_id,
+            defaults={
+                'location_name': location_mapping['location_name'],
+                'internal_id': location_mapping['internal_id']
+            }
+        )
+
+        return location_mapping_object

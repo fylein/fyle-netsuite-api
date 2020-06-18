@@ -8,37 +8,7 @@ from django.db import models
 from fyle_accounting_mappings.models import Mapping, MappingSetting
 
 from apps.fyle.models import ExpenseGroup, Expense
-from apps.mappings.models import SubsidiaryMapping
-
-
-def get_location_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
-    location_settings: MappingSetting = MappingSetting.objects.filter(
-        workspace_id=expense_group.workspace_id,
-        destination_field='LOCATION'
-    ).first()
-
-    location_id = None
-
-    if location_settings:
-        source_value = None
-
-        if lineitem:
-            if location_settings.source_field == 'PROJECT':
-                source_value = lineitem.project
-            elif location_settings.source_field == 'COST_CENTER':
-                source_value = lineitem.cost_center
-        else:
-            source_value = expense_group.description[location_settings.source_field.lower()]
-
-        mapping: Mapping = Mapping.objects.filter(
-            source_type=location_settings.source_field,
-            destination_type='LOCATION',
-            source__value=source_value,
-            workspace_id=expense_group.workspace_id
-        ).first()
-        if mapping:
-            location_id = mapping.destination.destination_id
-    return location_id
+from apps.mappings.models import SubsidiaryMapping, LocationMapping
 
 
 def get_department_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
@@ -72,6 +42,37 @@ def get_department_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
     return department_id
 
 
+def get_class_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
+    class_setting: MappingSetting = MappingSetting.objects.filter(
+        workspace_id=expense_group.workspace_id,
+        destination_field='CLASS'
+    ).first()
+
+    class_id = None
+
+    if class_setting:
+        source_value = None
+
+        if lineitem:
+            if class_setting.source_field == 'PROJECT':
+                source_value = lineitem.project
+            elif class_setting.source_field == 'COST_CENTER':
+                source_value = lineitem.cost_center
+        else:
+            source_value = expense_group.description[class_setting.source_field.lower()]
+
+        mapping: Mapping = Mapping.objects.filter(
+            source_type=class_setting.source_field,
+            destination_type='CLASS',
+            source__value=source_value,
+            workspace_id=expense_group.workspace_id
+        ).first()
+
+        if mapping:
+            class_id = mapping.destination.destination_id
+    return class_id
+
+
 class Bill(models.Model):
     """
     NetSuite Vendor Bill
@@ -103,7 +104,7 @@ class Bill(models.Model):
 
         subsidiary_mappings = SubsidiaryMapping.objects.get(workspace_id=expense_group.workspace_id)
 
-        location_id = get_location_id_or_none(expense_group, lineitem=expense)
+        location_mappings = LocationMapping.objects.get(workspace_id=expense_group.workspace_id)
 
         bill_object, _ = Bill.objects.update_or_create(
             expense_group=expense_group,
@@ -115,7 +116,7 @@ class Bill(models.Model):
                     source__value=description.get('employee_email'),
                     workspace_id=expense_group.workspace_id
                 ).destination.destination_id,
-                'location_id': location_id,
+                'location_id': location_mappings.internal_id,
                 'memo': 'Report {0} / {1} exported on {2}'.format(
                     expense.claim_number, expense.report_id, datetime.now().strftime("%Y-%m-%d")
                 ),
@@ -135,7 +136,8 @@ class BillLineitem(models.Model):
     expense = models.OneToOneField(Expense, on_delete=models.PROTECT, help_text='Reference to Expense')
     account_id = models.CharField(max_length=255, help_text='NetSuite account id')
     location_id = models.CharField(max_length=255, help_text='NetSuite location id')
-    department_id = models.CharField(max_length=255, help_text='NetSuite department id')
+    department_id = models.CharField(max_length=255, help_text='NetSuite department id', null=True)
+    class_id = models.CharField(max_length=255, help_text='NetSuite Class id', null=True)
     amount = models.FloatField(help_text='Bill amount')
     memo = models.CharField(max_length=255, help_text='NetSuite bill lineitem memo', null=True)
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
@@ -167,7 +169,9 @@ class BillLineitem(models.Model):
                 workspace_id=expense_group.workspace_id
             ).first()
 
-            location_id = get_location_id_or_none(expense_group, lineitem)
+            location_mappings = LocationMapping.objects.get(workspace_id=expense_group.workspace_id)
+
+            class_id = get_class_id_or_none(expense_group, lineitem)
 
             department_id = get_department_id_or_none(expense_group, lineitem)
 
@@ -176,7 +180,8 @@ class BillLineitem(models.Model):
                 expense_id=lineitem.id,
                 defaults={
                     'account_id': account.destination.destination_id if account else None,
-                    'location_id': location_id,
+                    'location_id': location_mappings.internal_id,
+                    'class_id': class_id,
                     'department_id': department_id,
                     'amount': lineitem.amount,
                     'memo': lineitem.purpose

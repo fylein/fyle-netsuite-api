@@ -64,6 +64,26 @@ class NetSuiteConnector:
             location_attributes, self.workspace_id)
         return account_attributes
 
+    def sync_classifications(self):
+        """
+        Get classification
+        """
+        classifications = self.connection.classifications.get_all()
+
+        classification_attributes = []
+
+        for classification in classifications:
+            classification_attributes.append({
+                'attribute_type': 'CLASS',
+                'display_name': 'Class',
+                'value': classification['name'],
+                'destination_id': classification['internalId']
+            })
+
+        account_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
+            classification_attributes, self.workspace_id)
+        return account_attributes
+
     def sync_departments(self):
         """
         Get departments
@@ -155,6 +175,12 @@ class NetSuiteConnector:
                     'internalId': line.department_id,
                     'externalId': None,
                     'type': 'department'
+                },
+                'class': {
+                    'name': None,
+                    'internalId': line.class_id,
+                    'externalId': None,
+                    'type': 'classification'
                 },
                 'location': {
                     "name": None,
