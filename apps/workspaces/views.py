@@ -182,7 +182,7 @@ class ConnectNetSuiteView(viewsets.ViewSet):
                 {
                     'message': 'Invalid Login Attempt'
                 },
-                status=status.HTTP_401_UNAUTHORIZED
+                status=status.HTTP_400_BAD_REQUEST
             )
 
     def delete(self, request, **kwargs):

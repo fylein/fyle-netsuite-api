@@ -4,6 +4,7 @@ from typing import List, Dict
 from netsuitesdk import NetSuiteConnection
 from fyle_accounting_mappings.models import DestinationAttribute
 
+from apps.mappings.models import SubsidiaryMapping
 from apps.netsuite.models import Bill, BillLineitem
 from apps.workspaces.models import NetSuiteCredentials
 
@@ -24,18 +25,33 @@ class NetSuiteConnector:
 
         self.workspace_id = workspace_id
 
-    def sync_accounts(self):
+        queryset = SubsidiaryMapping.objects.all()
+        self.subsidiary_mapping = queryset.get(workspace_id=self.workspace_id)
+
+    def sync_accounts(self, account_type):
         """
-        Get departments
+        Sync accounts
         """
-        accounts = list(itertools.islice(self.connection.accounts.get_all_generator(), 100))
+        accounts = self.connection.accounts.get_all()
+
+        accounts = list(filter(lambda current_account: current_account['acctType'] == account_type, accounts))
 
         account_attributes = []
 
+        if account_type == '_expense':
+            attribute_type = 'ACCOUNT'
+            display_name = 'Account'
+        elif account_type == '_accountsPayable':
+            attribute_type = 'ACCOUNTS_PAYABLE'
+            display_name = 'Accounts Payable'
+        else:
+            attribute_type = None
+            display_name = None
+
         for account in accounts:
             account_attributes.append({
-                'attribute_type': 'ACCOUNT',
-                'display_name': 'Account',
+                'attribute_type': attribute_type,
+                'display_name': display_name,
                 'value': account['acctName'],
                 'destination_id': account['internalId']
             })
@@ -46,19 +62,23 @@ class NetSuiteConnector:
 
     def sync_locations(self):
         """
-        Get locations
+        Sync locations
         """
         locations = self.connection.locations.get_all()
 
         location_attributes = []
 
         for location in locations:
-            location_attributes.append({
-                'attribute_type': 'LOCATION',
-                'display_name': 'Location',
-                'value': location['name'],
-                'destination_id': location['internalId']
-            })
+            subsidiaries = location['subsidiaryList']['recordRef']
+            counter = 0
+            if subsidiaries[counter]['internalId'] == self.subsidiary_mapping.internal_id:
+                counter += 1
+                location_attributes.append({
+                    'attribute_type': 'LOCATION',
+                    'display_name': 'Location',
+                    'value': location['name'],
+                    'destination_id': location['internalId']
+                })
 
         account_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
             location_attributes, self.workspace_id)
@@ -66,19 +86,23 @@ class NetSuiteConnector:
 
     def sync_classifications(self):
         """
-        Get classification
+        Sync classification
         """
         classifications = self.connection.classifications.get_all()
 
         classification_attributes = []
 
         for classification in classifications:
-            classification_attributes.append({
-                'attribute_type': 'CLASS',
-                'display_name': 'Class',
-                'value': classification['name'],
-                'destination_id': classification['internalId']
-            })
+            subsidiaries = classification['subsidiaryList']['recordRef']
+            counter = 0
+            if subsidiaries[counter]['internalId'] == self.subsidiary_mapping.internal_id:
+                counter += 1
+                classification_attributes.append({
+                    'attribute_type': 'CLASS',
+                    'display_name': 'Class',
+                    'value': classification['name'],
+                    'destination_id': classification['internalId']
+                })
 
         account_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
             classification_attributes, self.workspace_id)
@@ -86,19 +110,23 @@ class NetSuiteConnector:
 
     def sync_departments(self):
         """
-        Get departments
+        Sync departments
         """
         departments = self.connection.departments.get_all()
 
         department_attributes = []
 
         for department in departments:
-            department_attributes.append({
-                'attribute_type': 'DEPARTMENT',
-                'display_name': 'Department',
-                'value': department['name'],
-                'destination_id': department['internalId']
-            })
+            subsidiaries = department['subsidiaryList']['recordRef']
+            counter = 0
+            if subsidiaries[counter]['internalId'] == self.subsidiary_mapping.internal_id:
+                counter += 1
+                department_attributes.append({
+                    'attribute_type': 'DEPARTMENT',
+                    'display_name': 'Department',
+                    'value': department['name'],
+                    'destination_id': department['internalId']
+                })
 
         account_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
             department_attributes, self.workspace_id)
@@ -106,19 +134,19 @@ class NetSuiteConnector:
 
     def sync_vendors(self):
         """
-        Get vendors
+        Sync vendors
         """
         vendors = list(itertools.islice(self.connection.vendors.get_all_generator(), 10))
-
         vendor_attributes = []
 
         for vendor in vendors:
-            vendor_attributes.append({
-                'attribute_type': 'VENDOR',
-                'display_name': 'Vendor',
-                'value': vendor['entityId'],
-                'destination_id': vendor['internalId']
-            })
+            if vendor['subsidiary']['internalId'] == self.subsidiary_mapping.internal_id:
+                vendor_attributes.append({
+                    'attribute_type': 'VENDOR',
+                    'display_name': 'Vendor',
+                    'value': vendor['entityId'],
+                    'destination_id': vendor['internalId']
+                })
 
         account_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
             vendor_attributes, self.workspace_id)
@@ -126,7 +154,7 @@ class NetSuiteConnector:
 
     def sync_subsidiaries(self):
         """
-        Get subsidiaries
+        Sync subsidiaries
         """
         subsidiaries = self.connection.subsidiaries.get_all()
 
@@ -221,7 +249,12 @@ class NetSuiteConnector:
             'taxDetailsOverride': None,
             'customForm': None,
             'billAddressList': None,
-            'account': None,
+            'account': {
+                'name': None,
+                'internalId': bill.accounts_payable_id,
+                'externalId': None,
+                'type': 'account'
+            },
             'entity': {
                 'name': None,
                 'internalId': bill.vendor_id,

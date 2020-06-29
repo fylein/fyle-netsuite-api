@@ -15,9 +15,9 @@ Including another URLconf
 """
 from django.urls import path
 
-from .views import SubsidiaryMappingView, LocationMappingView
+from .views import GeneralMappingView, SubsidiaryMappingView
 
 urlpatterns = [
     path('subsidiaries/', SubsidiaryMappingView.as_view()),
-    path('locations/', LocationMappingView.as_view()),
+    path('general/', GeneralMappingView.as_view()),
 ]

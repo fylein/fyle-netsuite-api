@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import SubsidiaryMapping, LocationMapping
+from .models import GeneralMapping, SubsidiaryMapping
 
 
 class SubsidiaryMappingSerializer(serializers.ModelSerializer):
@@ -12,10 +12,10 @@ class SubsidiaryMappingSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class LocationMappingSerializer(serializers.ModelSerializer):
+class GeneralMappingSerializer(serializers.ModelSerializer):
     """
-    Location mappings group serializer
+    General mappings group serializer
     """
     class Meta:
-        model = LocationMapping
+        model = GeneralMapping
         fields = '__all__'

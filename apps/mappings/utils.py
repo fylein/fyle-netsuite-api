@@ -2,7 +2,7 @@ from typing import Dict
 
 from fyle_netsuite_api.utils import assert_valid
 
-from .models import SubsidiaryMapping, LocationMapping
+from .models import GeneralMapping, SubsidiaryMapping
 
 
 class MappingUtils:
@@ -31,24 +31,30 @@ class MappingUtils:
 
         return subsidiary_mapping_object
 
-    def create_or_update_location_mapping(self, location_mapping: Dict):
+    def create_or_update_general_mapping(self, general_mapping: Dict):
         """
-        Create or update Location mappings
-        :param location_mapping: project mapping payload
-        :return: location mappings objects
+        Create or update General mappings
+        :param general_mapping: project mapping payload
+        :return: general mappings objects
         """
 
-        assert_valid('location_name' in location_mapping and location_mapping['location_name'],
+        assert_valid('location_name' in general_mapping and general_mapping['location_name'],
                      'location name field is blank')
-        assert_valid('internal_id' in location_mapping and location_mapping['internal_id'],
-                     'internal id field is blank')
+        assert_valid('location_id' in general_mapping and general_mapping['location_id'],
+                     'location id field is blank')
+        assert_valid('accounts_payable_name' in general_mapping and general_mapping['accounts_payable_name'],
+                     'accounts payable name field is blank')
+        assert_valid('accounts_payable_id' in general_mapping and general_mapping['accounts_payable_id'],
+                     'accounts payable id field is blank')
 
-        location_mapping_object, _ = LocationMapping.objects.update_or_create(
+        general_mapping_object, _ = GeneralMapping.objects.update_or_create(
             workspace_id=self.__workspace_id,
             defaults={
-                'location_name': location_mapping['location_name'],
-                'internal_id': location_mapping['internal_id']
+                'location_name': general_mapping['location_name'],
+                'location_id': general_mapping['location_id'],
+                'accounts_payable_name': general_mapping['accounts_payable_name'],
+                'accounts_payable_id': general_mapping['accounts_payable_id']
             }
         )
 
-        return location_mapping_object
+        return general_mapping_object

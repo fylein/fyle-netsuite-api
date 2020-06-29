@@ -12,7 +12,7 @@ from fyle_netsuite_api.exceptions import BulkError
 
 from apps.fyle.utils import FyleConnector
 from apps.fyle.models import ExpenseGroup
-from apps.mappings.models import SubsidiaryMapping, LocationMapping
+from apps.mappings.models import GeneralMapping, SubsidiaryMapping
 from apps.tasks.models import TaskLog
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential
 
@@ -81,25 +81,25 @@ def __validate_expense_group(expense_group: ExpenseGroup):
     row = 0
 
     try:
+        GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
+    except GeneralMapping.DoesNotExist:
+        bulk_errors.append({
+            'row': None,
+            'expense_group_id': expense_group.id,
+            'value': 'general mappings',
+            'type': 'General Mappings',
+            'message': 'General mappings not found'
+        })
+
+    try:
         SubsidiaryMapping.objects.get(workspace_id=expense_group.workspace_id)
     except SubsidiaryMapping.DoesNotExist:
         bulk_errors.append({
             'row': None,
             'expense_group_id': expense_group.id,
-            'value': 'netsuite subsidiary',
-            'type': 'Subsidiary Mapping',
+            'value': 'subsidiary mappings',
+            'type': 'Subsidiary Mappings',
             'message': 'Subsidiary mapping not found'
-        })
-
-    try:
-        LocationMapping.objects.get(workspace_id=expense_group.workspace_id)
-    except LocationMapping.DoesNotExist:
-        bulk_errors.append({
-            'row': None,
-            'expense_group_id': expense_group.id,
-            'value': 'netsuite location',
-            'type': 'Location Mapping',
-            'message': 'Location mapping not found'
         })
 
     try:

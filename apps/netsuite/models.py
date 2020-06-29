@@ -8,7 +8,7 @@ from django.db import models
 from fyle_accounting_mappings.models import Mapping, MappingSetting
 
 from apps.fyle.models import ExpenseGroup, Expense
-from apps.mappings.models import SubsidiaryMapping, LocationMapping
+from apps.mappings.models import GeneralMapping, SubsidiaryMapping
 
 
 def get_department_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
@@ -79,6 +79,7 @@ class Bill(models.Model):
     """
     id = models.AutoField(primary_key=True)
     expense_group = models.OneToOneField(ExpenseGroup, on_delete=models.PROTECT, help_text='Expense group reference')
+    accounts_payable_id = models.CharField(max_length=255, help_text='NetSuite Accounts Payable Account id')
     vendor_id = models.CharField(max_length=255, help_text='NetSuite vendor id')
     subsidiary_id = models.CharField(max_length=255, help_text='NetSuite subsidiary id')
     location_id = models.CharField(max_length=255, help_text='NetSuite Location id')
@@ -102,21 +103,21 @@ class Bill(models.Model):
 
         expense = expense_group.expenses.first()
 
+        general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
         subsidiary_mappings = SubsidiaryMapping.objects.get(workspace_id=expense_group.workspace_id)
-
-        location_mappings = LocationMapping.objects.get(workspace_id=expense_group.workspace_id)
 
         bill_object, _ = Bill.objects.update_or_create(
             expense_group=expense_group,
             defaults={
                 'subsidiary_id': subsidiary_mappings.internal_id,
+                'accounts_payable_id': general_mappings.accounts_payable_id,
                 'vendor_id': Mapping.objects.get(
                     source_type='EMPLOYEE',
                     destination_type='VENDOR',
                     source__value=description.get('employee_email'),
                     workspace_id=expense_group.workspace_id
                 ).destination.destination_id,
-                'location_id': location_mappings.internal_id,
+                'location_id': general_mappings.location_id,
                 'memo': 'Report {0} / {1} exported on {2}'.format(
                     expense.claim_number, expense.report_id, datetime.now().strftime("%Y-%m-%d")
                 ),
@@ -169,7 +170,7 @@ class BillLineitem(models.Model):
                 workspace_id=expense_group.workspace_id
             ).first()
 
-            location_mappings = LocationMapping.objects.get(workspace_id=expense_group.workspace_id)
+            general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
             class_id = get_class_id_or_none(expense_group, lineitem)
 
@@ -180,7 +181,7 @@ class BillLineitem(models.Model):
                 expense_id=lineitem.id,
                 defaults={
                     'account_id': account.destination.destination_id if account else None,
-                    'location_id': location_mappings.internal_id,
+                    'location_id': general_mappings.location_id,
                     'class_id': class_id,
                     'department_id': department_id,
                     'amount': lineitem.amount,

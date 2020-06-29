@@ -107,7 +107,42 @@ class AccountView(generics.ListCreateAPIView):
 
             ns_connector = NetSuiteConnector(ns_credentials, workspace_id=kwargs['workspace_id'])
 
-            accounts = ns_connector.sync_accounts()
+            accounts = ns_connector.sync_accounts(account_type='_expense')
+
+            return Response(
+                data=self.serializer_class(accounts, many=True).data,
+                status=status.HTTP_200_OK
+            )
+        except NetSuiteCredentials.DoesNotExist:
+            return Response(
+                data={
+                    'message': 'NetSuite credentials not found in workspace'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class AccountsPayableView(generics.ListCreateAPIView):
+    """
+    AccountsPayable view
+    """
+    serializer_class = DestinationAttributeSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return DestinationAttribute.objects.filter(
+            attribute_type='ACCOUNTS_PAYABLE', workspace_id=self.kwargs['workspace_id']).order_by('value')
+
+    def post(self, request, *args, **kwargs):
+        """
+        Get accounts from NetSuite
+        """
+        try:
+            netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=kwargs['workspace_id'])
+
+            ns_connector = NetSuiteConnector(netsuite_credentials, workspace_id=kwargs['workspace_id'])
+
+            accounts = ns_connector.sync_accounts(account_type='_accountsPayable')
 
             return Response(
                 data=self.serializer_class(accounts, many=True).data,
