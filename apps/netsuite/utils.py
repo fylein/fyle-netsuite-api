@@ -25,8 +25,7 @@ class NetSuiteConnector:
 
         self.workspace_id = workspace_id
 
-        queryset = SubsidiaryMapping.objects.all()
-        self.subsidiary_mapping = queryset.get(workspace_id=self.workspace_id)
+        self.queryset = SubsidiaryMapping.objects.all()
 
     def sync_accounts(self, account_type):
         """
@@ -64,6 +63,8 @@ class NetSuiteConnector:
         """
         Sync locations
         """
+        subsidiary_mapping = self.queryset.get(workspace_id=self.workspace_id)
+
         locations = self.connection.locations.get_all()
 
         location_attributes = []
@@ -71,7 +72,7 @@ class NetSuiteConnector:
         for location in locations:
             subsidiaries = location['subsidiaryList']['recordRef']
             counter = 0
-            if subsidiaries[counter]['internalId'] == self.subsidiary_mapping.internal_id:
+            if subsidiaries[counter]['internalId'] == subsidiary_mapping.internal_id:
                 counter += 1
                 location_attributes.append({
                     'attribute_type': 'LOCATION',
@@ -88,6 +89,8 @@ class NetSuiteConnector:
         """
         Sync classification
         """
+        subsidiary_mapping = self.queryset.get(workspace_id=self.workspace_id)
+
         classifications = self.connection.classifications.get_all()
 
         classification_attributes = []
@@ -95,7 +98,7 @@ class NetSuiteConnector:
         for classification in classifications:
             subsidiaries = classification['subsidiaryList']['recordRef']
             counter = 0
-            if subsidiaries[counter]['internalId'] == self.subsidiary_mapping.internal_id:
+            if subsidiaries[counter]['internalId'] == subsidiary_mapping.internal_id:
                 counter += 1
                 classification_attributes.append({
                     'attribute_type': 'CLASS',
@@ -112,6 +115,8 @@ class NetSuiteConnector:
         """
         Sync departments
         """
+        subsidiary_mapping = self.queryset.get(workspace_id=self.workspace_id)
+
         departments = self.connection.departments.get_all()
 
         department_attributes = []
@@ -119,7 +124,7 @@ class NetSuiteConnector:
         for department in departments:
             subsidiaries = department['subsidiaryList']['recordRef']
             counter = 0
-            if subsidiaries[counter]['internalId'] == self.subsidiary_mapping.internal_id:
+            if subsidiaries[counter]['internalId'] == subsidiary_mapping.internal_id:
                 counter += 1
                 department_attributes.append({
                     'attribute_type': 'DEPARTMENT',
@@ -136,11 +141,14 @@ class NetSuiteConnector:
         """
         Sync vendors
         """
+        subsidiary_mapping = self.queryset.get(workspace_id=self.workspace_id)
+
         vendors = list(itertools.islice(self.connection.vendors.get_all_generator(), 10))
+
         vendor_attributes = []
 
         for vendor in vendors:
-            if vendor['subsidiary']['internalId'] == self.subsidiary_mapping.internal_id:
+            if vendor['subsidiary']['internalId'] == subsidiary_mapping.internal_id:
                 vendor_attributes.append({
                     'attribute_type': 'VENDOR',
                     'display_name': 'Vendor',

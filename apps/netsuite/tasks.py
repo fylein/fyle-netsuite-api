@@ -1,3 +1,4 @@
+import json
 import logging
 import traceback
 from typing import List
@@ -5,6 +6,8 @@ from typing import List
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
+
+from netsuitesdk.internal.exceptions import NetSuiteRequestError
 
 from fyle_accounting_mappings.models import Mapping
 
@@ -55,6 +58,23 @@ def create_bill(expense_group, task_log):
         }
         task_log.status = 'FAILED'
         task_log.detail = detail
+
+        task_log.save(update_fields=['detail', 'status'])
+
+    except NetSuiteRequestError as exception:
+        all_details = []
+        logger.exception(exception)
+        detail = json.dumps(exception.__dict__)
+        detail = json.loads(detail)
+        task_log.status = 'FAILED'
+
+        all_details.append({
+            'expense_group_id': expense_group.id,
+            'value': 'NetSuite System Error',
+            'type': detail['code'],
+            'message': detail['message']
+        })
+        task_log.detail = all_details
 
         task_log.save(update_fields=['detail', 'status'])
 
