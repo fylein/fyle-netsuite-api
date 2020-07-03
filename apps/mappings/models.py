@@ -27,8 +27,8 @@ class GeneralMapping(models.Model):
     General Mapping
     """
     id = models.AutoField(primary_key=True)
-    location_name = models.CharField(max_length=255, help_text='NetSuite Location name')
-    location_id = models.CharField(max_length=255, help_text='NetSuite Location id')
+    location_name = models.CharField(max_length=255, help_text='NetSuite Location name', null=True)
+    location_id = models.CharField(max_length=255, help_text='NetSuite Location id', null=True)
     accounts_payable_name = models.CharField(max_length=255, help_text='NetSuite Accounts Payable Account name')
     accounts_payable_id = models.CharField(max_length=255, help_text='NetSuite Accounts Payable Account id')
     workspace = models.ForeignKey(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')

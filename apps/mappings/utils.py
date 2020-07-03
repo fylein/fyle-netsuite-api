@@ -38,10 +38,6 @@ class MappingUtils:
         :return: general mappings objects
         """
 
-        assert_valid('location_name' in general_mapping and general_mapping['location_name'],
-                     'location name field is blank')
-        assert_valid('location_id' in general_mapping and general_mapping['location_id'],
-                     'location id field is blank')
         assert_valid('accounts_payable_name' in general_mapping and general_mapping['accounts_payable_name'],
                      'accounts payable name field is blank')
         assert_valid('accounts_payable_id' in general_mapping and general_mapping['accounts_payable_id'],
