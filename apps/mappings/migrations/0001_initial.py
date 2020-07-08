@@ -17,8 +17,8 @@ class Migration(migrations.Migration):
             name='GeneralMapping',
             fields=[
                 ('id', models.AutoField(primary_key=True, serialize=False)),
-                ('location_name', models.CharField(help_text='NetSuite Location name', max_length=255)),
-                ('location_id', models.CharField(help_text='NetSuite Location id', max_length=255)),
+                ('location_name', models.CharField(help_text='NetSuite Location name', max_length=255, null=True)),
+                ('location_id', models.CharField(help_text='NetSuite Location id', max_length=255, null=True)),
                 ('accounts_payable_name', models.CharField(help_text='NetSuite Accounts Payable Account name', max_length=255)),
                 ('accounts_payable_id', models.CharField(help_text='NetSuite Accounts Payable Account id', max_length=255)),
                 ('created_at', models.DateTimeField(auto_now_add=True, help_text='Created at datetime')),

@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
                 ('vendor_id', models.CharField(help_text='NetSuite vendor id', max_length=255)),
                 ('accounts_payable_id', models.CharField(help_text='NetSuite Accounts Payable Account id', max_length=255)),
                 ('subsidiary_id', models.CharField(help_text='NetSuite subsidiary id', max_length=255)),
-                ('location_id', models.CharField(help_text='NetSuite Location id', max_length=255)),
+                ('location_id', models.CharField(help_text='NetSuite Location id', max_length=255, null=True)),
                 ('currency', models.CharField(help_text='Bill Currency', max_length=255)),
                 ('memo', models.TextField(help_text='Bill Description')),
                 ('external_id', models.CharField(help_text='Fyle reimbursement id', max_length=255, unique=True)),
@@ -37,7 +37,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(primary_key=True, serialize=False)),
                 ('account_id', models.CharField(help_text='NetSuite account id', max_length=255)),
-                ('location_id', models.CharField(help_text='NetSuite location id', max_length=255)),
+                ('location_id', models.CharField(help_text='NetSuite location id', max_length=255, null=True)),
                 ('department_id', models.CharField(help_text='NetSuite department id', max_length=255, null=True)),
                 ('class_id', models.CharField(help_text='NetSuite Class id', max_length=255, null=True)),
                 ('amount', models.FloatField(help_text='Bill amount')),
