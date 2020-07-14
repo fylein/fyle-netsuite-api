@@ -174,13 +174,7 @@ class ConnectNetSuiteView(viewsets.ViewSet):
                 netsuite_credentials.save()
 
             return Response(
-                data={
-                    'id': netsuite_credentials.id,
-                    'workspace_id': netsuite_credentials.workspace_id,
-                    'ns_account_id': netsuite_credentials.ns_account_id,
-                    'created_at': netsuite_credentials.created_at,
-                    'updated_at': netsuite_credentials.updated_at
-                },
+                data=NetSuiteCredentialSerializer(netsuite_credentials).data,
                 status=status.HTTP_200_OK
             )
         except Exception:
@@ -213,13 +207,7 @@ class ConnectNetSuiteView(viewsets.ViewSet):
 
             if netsuite_credentials:
                 return Response(
-                    data={
-                        'id': netsuite_credentials.id,
-                        'workspace_id': netsuite_credentials.workspace_id,
-                        'ns_account_id': netsuite_credentials.ns_account_id,
-                        'created_at': netsuite_credentials.created_at,
-                        'updated_at': netsuite_credentials.updated_at
-                    },
+                    data=NetSuiteCredentialSerializer(netsuite_credentials).data,
                     status=status.HTTP_200_OK
                 )
         except NetSuiteCredentials.DoesNotExist:
