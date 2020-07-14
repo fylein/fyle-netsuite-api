@@ -203,11 +203,11 @@ class ConnectNetSuiteView(viewsets.ViewSet):
         """
         try:
             workspace = Workspace.objects.get(pk=kwargs['workspace_id'])
-            fyle_credentials = NetSuiteCredentials.objects.get(workspace=workspace)
+            netsuite_credentials = NetSuiteCredentials.objects.get(workspace=workspace)
 
-            if fyle_credentials:
+            if netsuite_credentials:
                 return Response(
-                    data=NetSuiteCredentialSerializer(fyle_credentials).data,
+                    data=NetSuiteCredentialSerializer(netsuite_credentials).data,
                     status=status.HTTP_200_OK
                 )
         except NetSuiteCredentials.DoesNotExist:

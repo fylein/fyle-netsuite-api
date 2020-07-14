@@ -33,4 +33,4 @@ class NetSuiteCredentialSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = NetSuiteCredentials
-        fields = '__all__'
+        fields = ['id', 'workspace_id', 'ns_account_id', 'created_at', 'updated_at']
