@@ -14,8 +14,13 @@ from fyle_netsuite_api.utils import assert_valid
 
 from apps.netsuite.utils import NetSuiteConnection
 
-from .models import Workspace, FyleCredential, NetSuiteCredentials
-from .serializers import WorkspaceSerializer, FyleCredentialSerializer, NetSuiteCredentialSerializer
+from .models import Workspace, FyleCredential, NetSuiteCredentials, WorkspaceGeneralSettings, \
+    WorkspaceSchedule
+from .utils import create_or_update_general_settings
+from .tasks import schedule_sync, run_sync_schedule
+from .serializers import WorkspaceSerializer, FyleCredentialSerializer, NetSuiteCredentialSerializer, \
+    WorkSpaceGeneralSettingsSerializer, WorkspaceScheduleSerializer
+
 
 User = get_user_model()
 auth_utils = AuthUtils()
@@ -312,6 +317,109 @@ class ConnectFyleView(viewsets.ViewSet):
             return Response(
                 data={
                     'message': 'Fyle Credentials not found in this workspace'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class ScheduledSyncView(viewsets.ViewSet):
+    """
+    Scheduled Sync
+    """
+    def post(self, request, **kwargs):
+        """
+        Scheduled sync
+        """
+        run_sync_schedule(kwargs['workspace_id'], request.user)
+        return Response(
+            status=status.HTTP_200_OK
+        )
+
+
+class SettingsView(viewsets.ViewSet):
+    """
+    Settings View
+    """
+    def post(self, request, **kwargs):
+        """
+        Post Settings
+        """
+        schedule_enabled = request.data.get('schedule_enabled')
+        assert_valid(schedule_enabled is not None, 'Schedule enabled cannot be null')
+
+        hours = request.data.get('hours')
+        assert_valid(hours is not None, 'Hours cannot be left empty')
+
+        next_run = request.data.get('next_run')
+        assert_valid(next_run is not None, 'next_run value cannot be empty')
+
+        settings = schedule_sync(
+            workspace_id=kwargs['workspace_id'],
+            schedule_enabled=schedule_enabled,
+            hours=hours,
+            next_run=next_run,
+            user=request.user
+        )
+
+        return Response(
+            data=WorkspaceScheduleSerializer(settings).data,
+            status=status.HTTP_200_OK
+        )
+
+    def get(self, *args, **kwargs):
+        try:
+            ns_credentials = WorkspaceSchedule.objects.get(workspace_id=kwargs['workspace_id'])
+
+            return Response(
+                data=WorkspaceScheduleSerializer(ns_credentials).data,
+                status=status.HTTP_200_OK
+            )
+        except WorkspaceSchedule.DoesNotExist:
+            return Response(
+                data={
+                    'message': 'Workspace setting does not exist in workspace'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class GeneralSettingsView(viewsets.ViewSet):
+    """
+    General Settings
+    """
+    serializer_class = WorkSpaceGeneralSettingsSerializer
+    queryset = WorkspaceGeneralSettings.objects.all()
+
+    def post(self, request, *args, **kwargs):
+        """
+        Post workspace general settings
+        """
+        general_settings_payload = request.data
+
+        assert_valid(general_settings_payload is not None, 'Request body is empty')
+
+        workspace_id = kwargs['workspace_id']
+
+        general_settings = create_or_update_general_settings(general_settings_payload, workspace_id)
+        return Response(
+            data=self.serializer_class(general_settings).data,
+            status=status.HTTP_200_OK
+        )
+
+    def get(self, request, *args, **kwargs):
+        """
+        Get workspace general settings
+        """
+        try:
+            general_settings = self.queryset.get(workspace_id=kwargs['workspace_id'])
+            return Response(
+                data=self.serializer_class(general_settings).data,
+                status=status.HTTP_200_OK
+            )
+        except WorkspaceGeneralSettings.DoesNotExist:
+            return Response(
+                {
+                    'message': 'General Settings does not exist in workspace'
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )

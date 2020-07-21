@@ -6,7 +6,7 @@ from fyle_accounting_mappings.models import ExpenseAttribute
 from fyle_accounting_mappings.serializers import ExpenseAttributeSerializer
 
 from apps.tasks.models import TaskLog
-from apps.workspaces.models import FyleCredential
+from apps.workspaces.models import FyleCredential, WorkspaceGeneralSettings
 
 from .tasks import create_expense_groups, schedule_expense_group_creation
 from .utils import FyleConnector
@@ -37,15 +37,20 @@ class ExpenseGroupView(generics.ListCreateAPIView):
         """
         Create expense groups
         """
-        export_non_reimbursable = request.data.get(
-            'export_non_reimbursable', False)
         state = request.data.get('state', ['PAYMENT_PROCESSING'])
         task_log = TaskLog.objects.get(pk=request.data.get('task_log_id'))
+
+        queryset = WorkspaceGeneralSettings.objects.all()
+        general_settings = queryset.get(workspace_id=kwargs['workspace_id'])
+
+        fund_source = ['PERSONAL']
+        if general_settings.corporate_credit_card_expenses_object is not None:
+            fund_source.append('CCC')
 
         create_expense_groups(
             kwargs['workspace_id'],
             state=state,
-            export_non_reimbursable=export_non_reimbursable,
+            fund_source=fund_source,
             task_log=task_log
         )
 
