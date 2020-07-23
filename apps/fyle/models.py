@@ -6,9 +6,8 @@ from typing import List, Dict
 
 from django.db import models
 from django.contrib.postgres.fields import JSONField
-from fyle_accounting_mappings.models import MappingSetting
 
-from apps.workspaces.models import Workspace, WorkspaceGeneralSettings
+from apps.workspaces.models import Workspace
 
 
 class Expense(models.Model):
@@ -110,101 +109,38 @@ class ExpenseGroup(models.Model):
         """
         Group expense by report_id and fund_source
         """
-        department_setting: MappingSetting = MappingSetting.objects.filter(
-            workspace_id=workspace_id,
-            destination_field='DEPARTMENT'
-        ).first()
-
-        general_settings = WorkspaceGeneralSettings.objects.get(workspace_id=workspace_id)
-
-        reimbursable_expenses = list(filter(lambda expense: expense.fund_source == 'PERSONAL', expense_objects))
-
-        ccc_expenses = list(filter(lambda expense: expense.fund_source == 'CCC', expense_objects))
-
-        if department_setting and general_settings.reimbursable_expenses_object != 'JOURNAL_ENTRY':
-            reimbursable_expense_groups = groupby(
-                reimbursable_expenses, lambda expense: (
-                    expense.report_id, expense.employee_email,
-                    expense.claim_number, expense.fund_source,
-                    expense.project if department_setting.source_field == 'PROJECT' else expense.cost_center
-                )
-            )
-        else:
-            reimbursable_expense_groups = groupby(
-                reimbursable_expenses, lambda expense: (
-                    expense.report_id, expense.employee_email,
-                    expense.claim_number, expense.fund_source
-                )
-            )
-
-        group_types = [reimbursable_expense_groups]
-
-        if general_settings.corporate_credit_card_expenses_object and ccc_expenses:
-            if department_setting and general_settings.corporate_credit_card_expenses_object != 'JOURNAL_ENTRY':
-                ccc_expense_groups = groupby(
-                    ccc_expenses, lambda expense: (
-                        expense.report_id, expense.employee_email,
-                        expense.claim_number, expense.fund_source,
-                        expense.project if department_setting.source_field == 'PROJECT' else expense.cost_center
-                    )
-                )
-            else:
-                ccc_expense_groups = groupby(
-                    ccc_expenses, lambda expense: (
-                        expense.report_id, expense.employee_email,
-                        expense.claim_number, expense.fund_source
-                    )
-                )
-            group_types.append(ccc_expense_groups)
+        expense_groups = groupby(
+            expense_objects, lambda expense: (expense.report_id, expense.employee_email, expense.claim_number,
+                                              expense.fund_source)
+        )
 
         expense_group_objects = []
 
-        for expense_groups in group_types:
-            for expense_group, _ in expense_groups:
-                report_id = expense_group[0]
-                employee_email = expense_group[1]
-                claim_number = expense_group[2]
-                fund_source = expense_group[3]
-                department = None
-                if len(expense_group) > 4:
-                    department = expense_group[4]
+        for expense_group, _ in expense_groups:
+            report_id = expense_group[0]
+            employee_email = expense_group[1]
+            claim_number = expense_group[2]
+            fund_source = expense_group[3]
 
-                kwargs = {}
+            expense_ids = Expense.objects.filter(report_id=report_id, fund_source=fund_source).values_list(
+                'id', flat=True
+            )
 
-                if department:
-                    kwargs = {
-                        '{0}'.format(department_setting.source_field.lower()): department,
+            expense_group_object, _ = ExpenseGroup.objects.update_or_create(
+                fyle_group_id=report_id + '-' + fund_source.lower(),
+                workspace_id=workspace_id,
+                fund_source=fund_source,
+                defaults={
+                    'description': {
+                        'employee_email': employee_email,
+                        'claim_number': claim_number,
+                        'fund_source': fund_source
                     }
-
-                expense_ids = Expense.objects.filter(
-                    report_id=report_id,
-                    fund_source=fund_source,
-                    **kwargs
-                ).values_list(
-                    'id', flat=True
-                )
-
-                description = {
-                    'employee_email': employee_email,
-                    'claim_number': claim_number,
-                    'fund_source': fund_source,
                 }
+            )
 
-                if department_setting:
-                    description[department_setting.source_field.lower()] = department
+            expense_group_object.expenses.add(*expense_ids)
 
-                expense_group_object, _ = ExpenseGroup.objects.update_or_create(
-                    fyle_group_id='{0}-{1}'.format(claim_number, fund_source) if not department
-                    else '{0}-{1}-{2}'.format(claim_number, fund_source, department),
-                    workspace_id=workspace_id,
-                    fund_source=fund_source,
-                    defaults={
-                        'description': description
-                    }
-                )
-
-                expense_group_object.expenses.add(*expense_ids)
-
-                expense_group_objects.append(expense_group_object)
+            expense_group_objects.append(expense_group_object)
 
         return expense_group_objects

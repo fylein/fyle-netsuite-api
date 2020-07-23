@@ -22,15 +22,24 @@ class ExpenseGroupView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         state = self.request.query_params.get('state', 'ALL')
+
         if state == 'ALL':
             return ExpenseGroup.objects.filter(workspace_id=self.kwargs['workspace_id']).order_by('-updated_at')
+
+        if state == 'FAILED':
+            return ExpenseGroup.objects.filter(tasklog__status='FAILED',
+                                               workspace_id=self.kwargs['workspace_id']).order_by('-updated_at')
+
         elif state == 'COMPLETE':
-            return ExpenseGroup.objects.filter(workspace_id=self.kwargs['workspace_id'],
-                                               bill__id__isnull=False).order_by('-updated_at')
+            return ExpenseGroup.objects.filter(tasklog__status='COMPLETE',
+                                               workspace_id=self.kwargs['workspace_id']).order_by('-updated_at')
+
         elif state == 'READY':
             return ExpenseGroup.objects.filter(
                 workspace_id=self.kwargs['workspace_id'],
                 bill__id__isnull=True,
+                expensereport__id__isnull=True,
+                journalentry__id__isnull=True
             ).order_by('-updated_at')
 
     def post(self, request, *args, **kwargs):
