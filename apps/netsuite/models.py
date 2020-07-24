@@ -119,8 +119,8 @@ class Bill(models.Model):
                     workspace_id=expense_group.workspace_id
                 ).destination.destination_id,
                 'location_id': general_mappings.location_id,
-                'memo': 'Report {0} / {1} exported on {2}'.format(
-                    expense.claim_number, expense.report_id, datetime.now().strftime("%Y-%m-%d")
+                'memo': 'Report {0} / {1} exported on {2} for {3} '.format(
+                    expense.claim_number, expense.report_id, datetime.now().strftime("%Y-%m-%d"), expense.purpose
                 ),
                 'currency': expense.currency,
                 'external_id': expense_group.fyle_group_id
@@ -260,8 +260,8 @@ class ExpenseReport(models.Model):
                 'class_id': None,
                 'location_id': general_mappings.location_id,
                 'subsidiary_id': subsidiary_mappings.internal_id,
-                'memo': 'Report {0} / {1} exported on {2}'.format(
-                    expense.claim_number, expense.report_id, datetime.now().strftime("%Y-%m-%d")
+                'memo': 'Report {0} / {1} exported on {2} for {3} '.format(
+                    expense.claim_number, expense.report_id, datetime.now().strftime("%Y-%m-%d"), expense.purpose
                 ),
                 'external_id': expense_group.fyle_group_id
             }
@@ -371,8 +371,8 @@ class JournalEntry(models.Model):
             defaults={
                 'currency': expense.currency,
                 'subsidiary_id': subsidiary_mappings.internal_id,
-                'memo': 'Report {0} / {1} exported on {2}'.format(
-                    expense.claim_number, expense.report_id, datetime.now().strftime("%Y-%m-%d")
+                'memo': 'Report {0} / {1} exported on {2} for {3} '.format(
+                    expense.claim_number, expense.report_id, datetime.now().strftime("%Y-%m-%d"), expense.purpose
                 ),
                 'external_id': expense_group.fyle_group_id
             }
