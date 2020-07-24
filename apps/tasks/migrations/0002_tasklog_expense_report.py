@@ -17,9 +17,4 @@ class Migration(migrations.Migration):
             name='expense_report',
             field=models.ForeignKey(help_text='Reference to Expense Report', null=True, on_delete=django.db.models.deletion.PROTECT, to='netsuite.ExpenseReport'),
         ),
-        migrations.AddField(
-            model_name='tasklog',
-            name='journal_entry',
-            field=models.ForeignKey(help_text='Reference to journal_entry', null=True, on_delete=django.db.models.deletion.PROTECT, to='netsuite.JournalEntry'),
-        ),
     ]

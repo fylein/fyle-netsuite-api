@@ -1,11 +1,11 @@
-import itertools
 from typing import List, Dict
 
 from netsuitesdk import NetSuiteConnection
 from fyle_accounting_mappings.models import DestinationAttribute
 
 from apps.mappings.models import SubsidiaryMapping
-from apps.netsuite.models import Bill, BillLineitem
+from apps.netsuite.models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, \
+    JournalEntryLineItem
 from apps.workspaces.models import NetSuiteCredentials
 
 
@@ -43,6 +43,9 @@ class NetSuiteConnector:
         elif account_type == '_accountsPayable':
             attribute_type = 'ACCOUNTS_PAYABLE'
             display_name = 'Accounts Payable'
+        elif account_type == '_creditCard':
+            attribute_type = 'CREDIT_CARD_ACCOUNT'
+            display_name = 'Credit Card Account'
         else:
             attribute_type = None
             display_name = None
@@ -54,6 +57,24 @@ class NetSuiteConnector:
                 'value': account['acctName'],
                 'destination_id': account['internalId']
             })
+
+        account_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
+            account_attributes, self.workspace_id)
+        return account_attributes
+
+    def sync_expense_report_accounts(self):
+        accounts = self.connection.accounts.get_all()
+
+        account_attributes = []
+
+        for account in accounts:
+            if account['acctType'] != '_expense':
+                account_attributes.append({
+                    'attribute_type': 'BANK_ACCOUNT',
+                    'display_name': 'Bank Account',
+                    'value': account['acctName'],
+                    'destination_id': account['internalId']
+                })
 
         account_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
             account_attributes, self.workspace_id)
@@ -143,7 +164,7 @@ class NetSuiteConnector:
         """
         subsidiary_mapping = self.queryset.get(workspace_id=self.workspace_id)
 
-        vendors = list(itertools.islice(self.connection.vendors.get_all_generator(), 10))
+        vendors = self.connection.vendors.get_all()
 
         vendor_attributes = []
 
@@ -158,6 +179,26 @@ class NetSuiteConnector:
 
         account_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
             vendor_attributes, self.workspace_id)
+        return account_attributes
+
+    def sync_employees(self):
+        """
+        Sync employees
+        """
+        employees = self.connection.employees.get_all()
+
+        employee_attributes = []
+
+        for employee in employees:
+            employee_attributes.append({
+                'attribute_type': 'EMPLOYEE',
+                'display_name': 'Employee',
+                'value': employee['entityId'],
+                'destination_id': employee['internalId']
+            })
+
+        account_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
+            employee_attributes, self.workspace_id)
         return account_attributes
 
     def sync_subsidiaries(self):
@@ -333,3 +374,322 @@ class NetSuiteConnector:
         bills_payload = self.__construct_bill(bill, bill_lineitems)
         created_bill = self.connection.vendor_bills.post(bills_payload)
         return created_bill
+
+    @staticmethod
+    def __construct_expense_report_lineitems(expense_report_lineitems: List[ExpenseReportLineItem]) -> List[Dict]:
+        """
+        Create expense report line items
+        :return: constructed line items
+        """
+        lines = []
+
+        for line in expense_report_lineitems:
+            line = {
+                    "amount": line.amount,
+                    "category": {
+                        'name': None,
+                        'internalId': line.category,
+                        'externalId': None,
+                        'type': 'account'
+                    },
+                    "corporateCreditCard": None,
+                    "currency": {
+                        "name": line.currency,
+                        "internalId": None,
+                        "externalId": None,
+                        "type": "currency"
+                    },
+                    "customer": {
+                        "name": None,
+                        "internalId": line.customer_id,
+                        "externalId": None,
+                        "type": "customer"
+                    },
+                    "location": {
+                        "name": None,
+                        "internalId": line.location_id,
+                        "externalId": None,
+                        "type": "location"
+                    },
+                    "department": {
+                        "name": None,
+                        "internalId": line.department_id,
+                        "externalId": None,
+                        "type": "department"
+                    },
+                    "class": {
+                        "name": None,
+                        "internalId": line.class_id,
+                        "externalId": None,
+                        "type": "classification"
+                    },
+                    "customFieldList": None,
+                    "exchangeRate": None,
+                    "expenseDate": None,
+                    "expMediaItem": None,
+                    "foreignAmount": None,
+                    "grossAmt": None,
+                    "isBillable": None,
+                    "isNonReimbursable": None,
+                    "line": None,
+                    "memo": line.memo,
+                    "quantity": None,
+                    "rate": None,
+                    "receipt": None,
+                    "refNumber": None,
+                    "tax1Amt": None,
+                    "taxCode": None,
+                    "taxRate1": None,
+                    "taxRate2": None
+            }
+
+            lines.append(line)
+
+        return lines
+
+    def __construct_expense_report(self, expense_report: ExpenseReport,
+                                   expense_report_lineitems: List[ExpenseReportLineItem]) -> Dict:
+        """
+        Create a expense report
+        :return: constructed expense report
+        """
+
+        expense_report_payload = {
+            'nullFieldList': None,
+            'createdDate': None,
+            'lastModifiedDate': None,
+            'status': None,
+            'customForm': None,
+            'account': {
+                "name": None,
+                "internalId": expense_report.account_id,
+                "externalId": None,
+                "type": "account"
+            },
+            "entity": {
+                "name": None,
+                "internalId": expense_report.entity_id,
+                "externalId": None,
+                "type": "vendor"
+            },
+            "expenseReportCurrency": {
+                "name": expense_report.currency,
+                "internalId": None,
+                "externalId": None,
+                "type": "currency"
+            },
+            "subsidiary": {
+                "name": None,
+                "internalId": expense_report.subsidiary_id,
+                "externalId": None,
+                "type": "subsidiary"
+            },
+            'expenseReportExchangeRate': None,
+            'taxPointDate': None,
+            'tranId': None,
+            'acctCorpCardExp': None,
+            'postingPeriod': None,
+            'tranDate': None,
+            'dueDate': None,
+            'approvalStatus': None,
+            'total': None,
+            'nextApprover': None,
+            'advance': None,
+            'tax1Amt': None,
+            'amount': None,
+            'memo': expense_report.memo,
+            'complete': None,
+            'supervisorApproval': None,
+            'accountingApproval': None,
+            'useMultiCurrency': None,
+            'tax2Amt': None,
+            'department': {
+                "name": None,
+                "internalId": None,
+                "externalId": None,
+                "type": "department"
+            },
+            'class': {
+                "name": None,
+                "internalId": None,
+                "externalId": None,
+                "type": "classification"
+            },
+            "location": {
+                "name": None,
+                "internalId": None,
+                "externalId": None,
+                "type": "location"
+            },
+            "expenseList": self.__construct_expense_report_lineitems(expense_report_lineitems),
+            'accountingBookDetailList': None,
+            'customFieldList': None,
+            'internalId': None,
+            'externalId': expense_report.external_id
+        }
+
+        return expense_report_payload
+
+    def post_expense_report(self, expense_report: ExpenseReport, expense_report_lineitems: List[ExpenseReportLineItem]):
+        """
+        Post expense reports to NetSuite
+        """
+        expense_report_payload = self.__construct_expense_report(expense_report, expense_report_lineitems)
+        created_expense_report = self.connection.expense_reports.post(expense_report_payload)
+        return created_expense_report
+
+    @staticmethod
+    def __construct_journal_entry_lineitems(journal_entry_lineitems: List[JournalEntryLineItem],
+                                            credit=None, debit=None) -> List[Dict]:
+        """
+        Create journal entry line items
+        :return: constructed line items
+        """
+        lines = []
+
+        for line in journal_entry_lineitems:
+            account_ref = None
+            if credit is None:
+                account_ref = line.debit_account_id
+            if debit is None:
+                account_ref = line.account_id
+            line = {
+                "account": {
+                    "name": None,
+                    "internalId": account_ref,
+                    "externalId": None,
+                    "type": "account"
+                },
+                "department": {
+                    "name": None,
+                    "internalId": line.department_id,
+                    "externalId": None,
+                    "type": "department"
+                },
+                "location": {
+                    "name": None,
+                    "internalId": line.location_id,
+                    "externalId": None,
+                    "type": "location"
+                },
+                "class": {
+                    "name": None,
+                    "internalId": line.class_id,
+                    "externalId": None,
+                    "type": "classification"
+                },
+                "entity": {
+                    "name": None,
+                    "internalId": line.entity_id,
+                    "externalId": None,
+                    "type": None
+                },
+                "credit": line.amount if credit is not None else None,
+                "creditTax": None,
+                "customFieldList": None,
+                "debit": line.amount if debit is not None else None,
+                "debitTax": None,
+                "eliminate": None,
+                "endDate": None,
+                "grossAmt": None,
+                "line": None,
+                "lineTaxCode": None,
+                "lineTaxRate": None,
+                "memo": line.memo,
+                "residual": None,
+                "revenueRecognitionRule": None,
+                "schedule": None,
+                "scheduleNum": None,
+                "startDate": None,
+                "tax1Acct": None,
+                "tax1Amt": None,
+                "taxAccount": None,
+                "taxBasis": None,
+                "taxCode": None,
+                "taxRate1": None,
+                "totalAmount": None,
+            }
+
+            lines.append(line)
+
+        return lines
+
+    def __construct_journal_entry(self, journal_entry: JournalEntry,
+                                  journal_entry_lineitems: List[JournalEntryLineItem]) -> Dict:
+        """
+        Create a journal entry report
+        :return: constructed journal entry
+        """
+
+        credit_line = self.__construct_journal_entry_lineitems(journal_entry_lineitems, credit='Credit')
+        debit_line = self.__construct_journal_entry_lineitems(journal_entry_lineitems, debit='Debit')
+        lines = []
+        lines.extend(credit_line)
+        lines.extend(debit_line)
+
+        journal_entry_payload = {
+            "accountingBook": None,
+            "accountingBookDetailList": None,
+            "approved": None,
+            "createdDate": None,
+            "createdFrom": None,
+            "currency": {
+                "name": journal_entry.currency,
+                "internalId": None,
+                "externalId": None,
+                "type": "currency"
+            },
+            "customFieldList": None,
+            "customForm": None,
+            "class": {
+                "name": None,
+                "internalId": None,
+                "externalId": None,
+                "type": "classification"
+            },
+            "department": {
+                "name": None,
+                "internalId": None,
+                "externalId": None,
+                "type": "classification"
+            },
+            "location": {
+                "name": None,
+                "internalId": None,
+                "externalId": None,
+                "type": "classification"
+            },
+            "exchangeRate": None,
+            "isBookSpecific": None,
+            "lastModifiedDate": None,
+            "lineList": lines,
+            "memo": journal_entry.memo,
+            "nexus": None,
+            "parentExpenseAlloc": None,
+            "postingPeriod": None,
+            "reversalDate": None,
+            "reversalDefer": None,
+            "reversalEntry": None,
+            "subsidiary": {
+                "name": None,
+                "internalId": journal_entry.subsidiary_id,
+                "externalId": None,
+                "type": "subsidiary"
+            },
+            "subsidiaryTaxRegNum": None,
+            "taxPointDate": None,
+            "toSubsidiary": None,
+            "tranDate": None,
+            "tranId": None,
+            "externalId": journal_entry.external_id
+        }
+
+        return journal_entry_payload
+
+    def post_journal_entry(self, journal_entry: JournalEntry, journal_entry_lineitems: List[JournalEntryLineItem]):
+        """
+        Post journal entries to NetSuite
+        """
+        journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems)
+        created_journal_entry = self.connection.journal_entries.post(journal_entry_payload)
+        return created_journal_entry
