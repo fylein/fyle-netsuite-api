@@ -123,6 +123,16 @@ class FyleConnector:
 
         return self._post_request(api_url, body)
 
+    def get_fyle_orgs(self, cluster_domain):
+        """
+        Get fyle orgs of a user
+        """
+
+        params = {}
+        api_url = '{0}/api/orgs/'.format(cluster_domain)
+
+        return self._get_request(api_url, params)
+
     def get_expenses(self, state: List[str], updated_at: List[str], fund_source: List[str]):
         """
         Get expenses from fyle

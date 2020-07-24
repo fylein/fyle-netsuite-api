@@ -4,7 +4,7 @@ from .views import WorkspaceView, ReadyView, ConnectFyleView, ConnectNetSuiteVie
     ScheduledSyncView
 
 urlpatterns = [
-    path('', WorkspaceView.as_view({'get': 'get_all', 'post': 'post'})),
+    path('', WorkspaceView.as_view({'get': 'get', 'post': 'post'})),
     path('<int:workspace_id>/', WorkspaceView.as_view({'get': 'get_by_id'})),
     path('<int:workspace_id>/schedule/', ScheduleView.as_view({'post': 'post', 'get': 'get'})),
     path('<int:workspace_id>/settings/general/', GeneralSettingsView.as_view({'post': 'post', 'get': 'get'})),
