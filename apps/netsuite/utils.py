@@ -27,42 +27,10 @@ class NetSuiteConnector:
 
         self.queryset = SubsidiaryMapping.objects.all()
 
-    def sync_accounts(self, account_type):
+    def sync_accounts(self):
         """
         Sync accounts
         """
-        accounts = self.connection.accounts.get_all()
-
-        accounts = list(filter(lambda current_account: current_account['acctType'] == account_type, accounts))
-
-        account_attributes = []
-
-        if account_type == '_expense':
-            attribute_type = 'ACCOUNT'
-            display_name = 'Account'
-        elif account_type == '_accountsPayable':
-            attribute_type = 'ACCOUNTS_PAYABLE'
-            display_name = 'Accounts Payable'
-        elif account_type == '_creditCard':
-            attribute_type = 'CREDIT_CARD_ACCOUNT'
-            display_name = 'Credit Card Account'
-        else:
-            attribute_type = None
-            display_name = None
-
-        for account in accounts:
-            account_attributes.append({
-                'attribute_type': attribute_type,
-                'display_name': display_name,
-                'value': account['acctName'],
-                'destination_id': account['internalId']
-            })
-
-        account_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
-            account_attributes, self.workspace_id)
-        return account_attributes
-
-    def sync_expense_report_accounts(self):
         accounts = self.connection.accounts.get_all()
 
         account_attributes = []
@@ -72,6 +40,30 @@ class NetSuiteConnector:
                 account_attributes.append({
                     'attribute_type': 'BANK_ACCOUNT',
                     'display_name': 'Bank Account',
+                    'value': account['acctName'],
+                    'destination_id': account['internalId']
+                })
+
+            if account['acctType'] == '_accountsPayable':
+                account_attributes.append({
+                    'attribute_type': 'ACCOUNTS_PAYABLE',
+                    'display_name': 'Accounts Payable',
+                    'value': account['acctName'],
+                    'destination_id': account['internalId']
+                })
+
+            if account['acctType'] == '_creditCard':
+                account_attributes.append({
+                    'attribute_type': 'CREDIT_CARD_ACCOUNT',
+                    'display_name': 'Credit Card Account',
+                    'value': account['acctName'],
+                    'destination_id': account['internalId']
+                })
+
+            if account['acctType'] == '_expense':
+                account_attributes.append({
+                    'attribute_type': 'ACCOUNT',
+                    'display_name': 'Account',
                     'value': account['acctName'],
                     'destination_id': account['internalId']
                 })
@@ -185,17 +177,20 @@ class NetSuiteConnector:
         """
         Sync employees
         """
+        subsidiary_mapping = self.queryset.get(workspace_id=self.workspace_id)
+
         employees = self.connection.employees.get_all()
 
         employee_attributes = []
 
         for employee in employees:
-            employee_attributes.append({
-                'attribute_type': 'EMPLOYEE',
-                'display_name': 'Employee',
-                'value': employee['entityId'],
-                'destination_id': employee['internalId']
-            })
+            if employee['subsidiary']['internalId'] == subsidiary_mapping.internal_id:
+                employee_attributes.append({
+                    'attribute_type': 'EMPLOYEE',
+                    'display_name': 'Employee',
+                    'value': employee['entityId'],
+                    'destination_id': employee['internalId']
+                })
 
         account_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
             employee_attributes, self.workspace_id)

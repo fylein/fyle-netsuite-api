@@ -4,7 +4,6 @@ NetSuite models
 from datetime import datetime
 
 from django.db import models
-from django.db.models import Q
 
 from fyle_accounting_mappings.models import Mapping, MappingSetting
 
@@ -119,8 +118,8 @@ class Bill(models.Model):
                     workspace_id=expense_group.workspace_id
                 ).destination.destination_id,
                 'location_id': general_mappings.location_id,
-                'memo': 'Report {0} / {1} exported on {2} for {3} '.format(
-                    expense.claim_number, expense.report_id, datetime.now().strftime("%Y-%m-%d"), expense.purpose
+                'memo': 'Report {0} / {1} exported on {2}'.format(
+                    expense.claim_number, expense.report_id, datetime.now().strftime("%Y-%m-%d")
                 ),
                 'currency': expense.currency,
                 'external_id': expense_group.fyle_group_id
@@ -233,7 +232,7 @@ class ExpenseReport(models.Model):
         debit_account_id = None
 
         entity = Mapping.objects.get(
-            Q(destination_type='EMPLOYEE'),
+            destination_type='EMPLOYEE',
             source_type='EMPLOYEE',
             source__value=description.get('employee_email'),
             workspace_id=expense_group.workspace_id
@@ -260,8 +259,8 @@ class ExpenseReport(models.Model):
                 'class_id': None,
                 'location_id': general_mappings.location_id,
                 'subsidiary_id': subsidiary_mappings.internal_id,
-                'memo': 'Report {0} / {1} exported on {2} for {3} '.format(
-                    expense.claim_number, expense.report_id, datetime.now().strftime("%Y-%m-%d"), expense.purpose
+                'memo': 'Report {0} / {1} exported on {2}'.format(
+                    expense.claim_number, expense.report_id, datetime.now().strftime("%Y-%m-%d")
                 ),
                 'external_id': expense_group.fyle_group_id
             }
@@ -371,8 +370,8 @@ class JournalEntry(models.Model):
             defaults={
                 'currency': expense.currency,
                 'subsidiary_id': subsidiary_mappings.internal_id,
-                'memo': 'Report {0} / {1} exported on {2} for {3} '.format(
-                    expense.claim_number, expense.report_id, datetime.now().strftime("%Y-%m-%d"), expense.purpose
+                'memo': 'Report {0} / {1} exported on {2}'.format(
+                    expense.claim_number, expense.report_id, datetime.now().strftime("%Y-%m-%d")
                 ),
                 'external_id': expense_group.fyle_group_id
             }
@@ -416,7 +415,7 @@ class JournalEntryLineItem(models.Model):
         debit_account_id = None
 
         entity = Mapping.objects.get(
-            Q(destination_type='EMPLOYEE') | Q(destination_type='VENDOR'),
+            destination_type='EMPLOYEE' or 'VENDOR',
             source_type='EMPLOYEE',
             source__value=description.get('employee_email'),
             workspace_id=expense_group.workspace_id

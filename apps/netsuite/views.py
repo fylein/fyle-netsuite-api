@@ -1,4 +1,4 @@
-from rest_framework import generics
+from rest_framework import generics, viewsets
 from rest_framework.response import Response
 from rest_framework.views import status
 
@@ -88,18 +88,34 @@ class VendorView(generics.ListCreateAPIView):
             )
 
 
-class AccountView(generics.ListCreateAPIView):
+class AccountView(viewsets.ViewSet):
     """
     Account view
     """
     serializer_class = DestinationAttributeSerializer
     pagination_class = None
 
-    def get_queryset(self):
-        return DestinationAttribute.objects.filter(
-            attribute_type='ACCOUNT', workspace_id=self.kwargs['workspace_id']).order_by('value')
+    def get_accounts(self, request, *args, **kwargs):
+        accounts = DestinationAttribute.objects.filter(
+            attribute_type='ACCOUNT', workspace_id=self.kwargs['workspace_id']).order_by('value').values()
+        return Response(accounts, status=status.HTTP_200_OK)
 
-    def post(self, request, *args, **kwargs):
+    def accounts_payable_accounts(self, request, *args, **kwargs):
+        accounts = DestinationAttribute.objects.filter(
+            attribute_type='ACCOUNTS_PAYABLE', workspace_id=self.kwargs['workspace_id']).order_by('value').values()
+        return Response(accounts, status=status.HTTP_200_OK)
+
+    def bank_accounts(self, request, *args, **kwargs):
+        accounts = DestinationAttribute.objects.filter(
+            attribute_type='BANK_ACCOUNT', workspace_id=self.kwargs['workspace_id']).order_by('value').values()
+        return Response(accounts, status=status.HTTP_200_OK)
+
+    def credit_card_accounts(self, request, *args, **kwargs):
+        accounts = DestinationAttribute.objects.filter(
+            attribute_type='CREDIT_CARD_ACCOUNT', workspace_id=self.kwargs['workspace_id']).order_by('value').values()
+        return Response(accounts, status=status.HTTP_200_OK)
+
+    def post_accounts(self, request, *args, **kwargs):
         """
         Get accounts from NetSuite
         """
@@ -108,112 +124,7 @@ class AccountView(generics.ListCreateAPIView):
 
             ns_connector = NetSuiteConnector(ns_credentials, workspace_id=kwargs['workspace_id'])
 
-            accounts = ns_connector.sync_accounts(account_type='_expense')
-
-            return Response(
-                data=self.serializer_class(accounts, many=True).data,
-                status=status.HTTP_200_OK
-            )
-        except NetSuiteCredentials.DoesNotExist:
-            return Response(
-                data={
-                    'message': 'NetSuite credentials not found in workspace'
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-
-class AccountsPayableView(generics.ListCreateAPIView):
-    """
-    AccountsPayable view
-    """
-    serializer_class = DestinationAttributeSerializer
-    pagination_class = None
-
-    def get_queryset(self):
-        return DestinationAttribute.objects.filter(
-            attribute_type='ACCOUNTS_PAYABLE', workspace_id=self.kwargs['workspace_id']).order_by('value')
-
-    def post(self, request, *args, **kwargs):
-        """
-        Get accounts from NetSuite
-        """
-        try:
-            netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=kwargs['workspace_id'])
-
-            ns_connector = NetSuiteConnector(netsuite_credentials, workspace_id=kwargs['workspace_id'])
-
-            accounts = ns_connector.sync_accounts(account_type='_accountsPayable')
-
-            return Response(
-                data=self.serializer_class(accounts, many=True).data,
-                status=status.HTTP_200_OK
-            )
-        except NetSuiteCredentials.DoesNotExist:
-            return Response(
-                data={
-                    'message': 'NetSuite credentials not found in workspace'
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-
-class CreditCardAccountView(generics.ListCreateAPIView):
-    """
-    CreditCardAccount view
-    """
-    serializer_class = DestinationAttributeSerializer
-    pagination_class = None
-
-    def get_queryset(self):
-        return DestinationAttribute.objects.filter(
-            attribute_type='CREDIT_CARD_ACCOUNT', workspace_id=self.kwargs['workspace_id']).order_by('value')
-
-    def post(self, request, *args, **kwargs):
-        """
-        Get credit card accounts from NetSuite
-        """
-        try:
-            netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=kwargs['workspace_id'])
-
-            ns_connector = NetSuiteConnector(netsuite_credentials, workspace_id=kwargs['workspace_id'])
-
-            accounts = ns_connector.sync_accounts(account_type='_creditCard')
-
-            return Response(
-                data=self.serializer_class(accounts, many=True).data,
-                status=status.HTTP_200_OK
-            )
-        except NetSuiteCredentials.DoesNotExist:
-            return Response(
-                data={
-                    'message': 'NetSuite credentials not found in workspace'
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-
-class BankAccountView(generics.ListCreateAPIView):
-    """
-    BankAccount view
-    """
-    serializer_class = DestinationAttributeSerializer
-    pagination_class = None
-
-    def get_queryset(self):
-        return DestinationAttribute.objects.filter(
-            attribute_type='BANK_ACCOUNT', workspace_id=self.kwargs['workspace_id']).order_by('value')
-
-    def post(self, request, *args, **kwargs):
-        """
-        Get bank accounts from NetSuite
-        """
-        try:
-            netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=kwargs['workspace_id'])
-
-            ns_connector = NetSuiteConnector(netsuite_credentials, workspace_id=kwargs['workspace_id'])
-
-            accounts = ns_connector.sync_expense_report_accounts()
+            accounts = ns_connector.sync_accounts()
 
             return Response(
                 data=self.serializer_class(accounts, many=True).data,

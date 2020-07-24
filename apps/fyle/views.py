@@ -49,8 +49,7 @@ class ExpenseGroupView(generics.ListCreateAPIView):
         state = request.data.get('state', ['PAYMENT_PROCESSING'])
         task_log = TaskLog.objects.get(pk=request.data.get('task_log_id'))
 
-        queryset = WorkspaceGeneralSettings.objects.all()
-        general_settings = queryset.get(workspace_id=kwargs['workspace_id'])
+        general_settings = WorkspaceGeneralSettings.objects.get(workspace_id=kwargs['workspace_id'])
 
         fund_source = ['PERSONAL']
         if general_settings.corporate_credit_card_expenses_object is not None:

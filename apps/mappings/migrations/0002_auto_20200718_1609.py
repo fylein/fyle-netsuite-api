@@ -14,26 +14,36 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='generalmapping',
             name='default_ccc_account_id',
-            field=models.CharField(default='1234', help_text='CCC Expenses Account id', max_length=255),
+            field=models.CharField(default='1234', help_text='CCC Expenses Account id', max_length=255, null=True),
             preserve_default=False,
         ),
         migrations.AddField(
             model_name='generalmapping',
             name='default_ccc_account_name',
-            field=models.CharField(default='DEFAULT', help_text='CCC Expenses Account name', max_length=255),
+            field=models.CharField(default='DEFAULT', help_text='CCC Expenses Account name', max_length=255, null=True),
             preserve_default=False,
         ),
         migrations.AddField(
             model_name='generalmapping',
             name='reimbursable_account_id',
-            field=models.CharField(default='1234', help_text='Reimbursable Expenses Account id', max_length=255),
+            field=models.CharField(default='1234', help_text='Reimbursable Expenses Account id', max_length=255, null=True),
             preserve_default=False,
         ),
         migrations.AddField(
             model_name='generalmapping',
             name='reimbursable_account_name',
-            field=models.CharField(default='DEFAULT', help_text='Reimbursable Expenses Account name', max_length=255),
+            field=models.CharField(default='DEFAULT', help_text='Reimbursable Expenses Account name', max_length=255, null=True),
             preserve_default=False,
+        ),
+        migrations.AlterField(
+            model_name='generalmapping',
+            name='accounts_payable_id',
+            field=models.CharField(help_text='NetSuite Accounts Payable Account id', max_length=255, null=True),
+        ),
+        migrations.AlterField(
+            model_name='generalmapping',
+            name='accounts_payable_name',
+            field=models.CharField(help_text='NetSuite Accounts Payable Account name', max_length=255, null=True),
         ),
         migrations.AlterUniqueTogether(
             name='generalmapping',

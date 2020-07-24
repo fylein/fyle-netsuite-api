@@ -149,7 +149,7 @@ class ConnectNetSuiteView(viewsets.ViewSet):
 
             connection = NetSuiteConnection(ns_account_id, ns_consumer_key, ns_consumer_secret, ns_token_key,
                                             ns_token_secret)
-            accounts = connection.accounts.get_all()
+            accounts = connection.locations.get_all()
 
             if not netsuite_credentials or not accounts:
                 if workspace.ns_account_id:
