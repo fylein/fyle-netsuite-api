@@ -14,7 +14,6 @@ class SubsidiaryMappingView(generics.ListCreateAPIView):
     Subsidiary mappings view
     """
     serializer_class = SubsidiaryMappingSerializer
-    queryset = SubsidiaryMapping.objects.all()
 
     def post(self, request, *args, **kwargs):
         """
@@ -37,7 +36,8 @@ class SubsidiaryMappingView(generics.ListCreateAPIView):
         Get subsidiary mappings
         """
         try:
-            subsidiary_mapping = self.queryset.get(workspace_id=kwargs['workspace_id'])
+            subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=kwargs['workspace_id'])
+
             return Response(
                 data=self.serializer_class(subsidiary_mapping).data,
                 status=status.HTTP_200_OK
@@ -56,7 +56,6 @@ class GeneralMappingView(generics.ListCreateAPIView):
     General mappings view
     """
     serializer_class = GeneralMappingSerializer
-    queryset = GeneralMapping.objects.all()
 
     def post(self, request, *args, **kwargs):
         """
@@ -79,7 +78,8 @@ class GeneralMappingView(generics.ListCreateAPIView):
         Get general mappings
         """
         try:
-            general_mapping = self.queryset.get(workspace_id=kwargs['workspace_id'])
+            general_mapping = GeneralMapping.objects.get(workspace_id=kwargs['workspace_id'])
+
             return Response(
                 data=self.serializer_class(general_mapping).data,
                 status=status.HTTP_200_OK

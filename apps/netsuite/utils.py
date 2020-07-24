@@ -25,8 +25,6 @@ class NetSuiteConnector:
 
         self.workspace_id = workspace_id
 
-        self.queryset = SubsidiaryMapping.objects.all()
-
     def sync_accounts(self):
         """
         Sync accounts
@@ -76,7 +74,7 @@ class NetSuiteConnector:
         """
         Sync locations
         """
-        subsidiary_mapping = self.queryset.get(workspace_id=self.workspace_id)
+        subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
 
         locations = self.connection.locations.get_all()
 
@@ -102,7 +100,7 @@ class NetSuiteConnector:
         """
         Sync classification
         """
-        subsidiary_mapping = self.queryset.get(workspace_id=self.workspace_id)
+        subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
 
         classifications = self.connection.classifications.get_all()
 
@@ -128,7 +126,7 @@ class NetSuiteConnector:
         """
         Sync departments
         """
-        subsidiary_mapping = self.queryset.get(workspace_id=self.workspace_id)
+        subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
 
         departments = self.connection.departments.get_all()
 
@@ -154,7 +152,7 @@ class NetSuiteConnector:
         """
         Sync vendors
         """
-        subsidiary_mapping = self.queryset.get(workspace_id=self.workspace_id)
+        subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
 
         vendors = self.connection.vendors.get_all()
 
@@ -177,7 +175,7 @@ class NetSuiteConnector:
         """
         Sync employees
         """
-        subsidiary_mapping = self.queryset.get(workspace_id=self.workspace_id)
+        subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
 
         employees = self.connection.employees.get_all()
 
