@@ -336,9 +336,9 @@ class ScheduledSyncView(viewsets.ViewSet):
         )
 
 
-class SettingsView(viewsets.ViewSet):
+class ScheduleView(viewsets.ViewSet):
     """
-    Settings View
+    Schedule View
     """
     def post(self, request, **kwargs):
         """
