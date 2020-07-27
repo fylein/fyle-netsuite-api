@@ -1,6 +1,11 @@
+import json
+import logging
+
 from rest_framework import generics, viewsets
 from rest_framework.response import Response
 from rest_framework.views import status
+
+from netsuitesdk.internal.exceptions import NetSuiteRequestError
 
 from fyle_accounting_mappings.models import DestinationAttribute
 from fyle_accounting_mappings.serializers import DestinationAttributeSerializer
@@ -16,6 +21,8 @@ from .tasks import schedule_bills_creation, create_bill, schedule_expense_report
     create_journal_entry, schedule_journal_entry_creation
 from .models import Bill, ExpenseReport, JournalEntry
 from .utils import NetSuiteConnector
+
+logger = logging.getLogger(__name__)
 
 
 class DepartmentView(generics.ListCreateAPIView):
@@ -51,6 +58,17 @@ class DepartmentView(generics.ListCreateAPIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
+        except NetSuiteRequestError as exception:
+            logger.exception(exception)
+            detail = json.dumps(exception.__dict__)
+            detail = json.loads(detail)
+
+            return Response(
+                data={
+                    'message': detail['code'] + detail['message']
+                },
+                status=status.HTTP_401_UNAUTHORIZED
+            )
 
 
 class VendorView(generics.ListCreateAPIView):
@@ -85,6 +103,17 @@ class VendorView(generics.ListCreateAPIView):
                     'message': 'NetSuite credentials not found in workspace'
                 },
                 status=status.HTTP_400_BAD_REQUEST
+            )
+        except NetSuiteRequestError as exception:
+            logger.exception(exception)
+            detail = json.dumps(exception.__dict__)
+            detail = json.loads(detail)
+
+            return Response(
+                data={
+                    'message': detail['code'] + detail['message']
+                },
+                status=status.HTTP_401_UNAUTHORIZED
             )
 
 
@@ -137,6 +166,17 @@ class AccountView(viewsets.ViewSet):
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
+        except NetSuiteRequestError as exception:
+            logger.exception(exception)
+            detail = json.dumps(exception.__dict__)
+            detail = json.loads(detail)
+
+            return Response(
+                data={
+                    'message': detail['code'] + detail['message']
+                },
+                status=status.HTTP_401_UNAUTHORIZED
+            )
 
 
 class EmployeeView(generics.ListCreateAPIView):
@@ -171,6 +211,17 @@ class EmployeeView(generics.ListCreateAPIView):
                     'message': 'NetSuite credentials not found in workspace'
                 },
                 status=status.HTTP_400_BAD_REQUEST
+            )
+        except NetSuiteRequestError as exception:
+            logger.exception(exception)
+            detail = json.dumps(exception.__dict__)
+            detail = json.loads(detail)
+
+            return Response(
+                data={
+                    'message': detail['code'] + detail['message']
+                },
+                status=status.HTTP_401_UNAUTHORIZED
             )
 
 
@@ -207,6 +258,17 @@ class LocationView(generics.ListCreateAPIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
+        except NetSuiteRequestError as exception:
+            logger.exception(exception)
+            detail = json.dumps(exception.__dict__)
+            detail = json.loads(detail)
+
+            return Response(
+                data={
+                    'message': detail['code'] + detail['message']
+                },
+                status=status.HTTP_401_UNAUTHORIZED
+            )
 
 
 class ClassificationView(generics.ListCreateAPIView):
@@ -242,6 +304,17 @@ class ClassificationView(generics.ListCreateAPIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
+        except NetSuiteRequestError as exception:
+            logger.exception(exception)
+            detail = json.dumps(exception.__dict__)
+            detail = json.loads(detail)
+
+            return Response(
+                data={
+                    'message': detail['code'] + detail['message']
+                },
+                status=status.HTTP_401_UNAUTHORIZED
+            )
 
 
 class SubsidiaryView(generics.ListCreateAPIView):
@@ -276,6 +349,17 @@ class SubsidiaryView(generics.ListCreateAPIView):
                     'message': 'NetSuite credentials not found in workspace'
                 },
                 status=status.HTTP_400_BAD_REQUEST
+            )
+        except NetSuiteRequestError as exception:
+            logger.exception(exception)
+            detail = json.dumps(exception.__dict__)
+            detail = json.loads(detail)
+
+            return Response(
+                data={
+                    'message': detail['code'] + detail['message']
+                },
+                status=status.HTTP_401_UNAUTHORIZED
             )
 
 
