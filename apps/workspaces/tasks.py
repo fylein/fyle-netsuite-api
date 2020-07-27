@@ -5,7 +5,8 @@ from django.conf import settings
 from apps.fyle.models import ExpenseGroup
 from apps.fyle.tasks import create_expense_groups
 from apps.fyle.utils import FyleConnector
-from apps.netsuite.tasks import schedule_bills_creation, schedule_journal_entry_creation, schedule_expense_reports_creation
+from apps.netsuite.tasks import schedule_bills_creation, schedule_journal_entry_creation, \
+    schedule_expense_reports_creation
 from apps.tasks.models import TaskLog
 from apps.workspaces.models import WorkspaceSchedule, FyleCredential, WorkspaceGeneralSettings
 
@@ -135,8 +136,6 @@ def run_sync_schedule(workspace_id, user: str):
                 schedule_journal_entry_creation(
                     workspace_id=workspace_id, expense_group_ids=expense_group_ids, user=user
                 )
-            else:
-                pass
 
         if general_settings.corporate_credit_card_expenses_object:
             expense_group_ids = ExpenseGroup.objects.filter(fund_source='CCC').values_list('id', flat=True)
@@ -155,5 +154,3 @@ def run_sync_schedule(workspace_id, user: str):
                 schedule_expense_reports_creation(
                     workspace_id=workspace_id, expense_group_ids=expense_group_ids, user=user
                 )
-            else:
-                pass

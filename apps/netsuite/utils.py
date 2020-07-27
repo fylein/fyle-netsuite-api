@@ -378,62 +378,62 @@ class NetSuiteConnector:
 
         for line in expense_report_lineitems:
             line = {
-                    "amount": line.amount,
-                    "category": {
-                        'name': None,
-                        'internalId': line.category,
-                        'externalId': None,
-                        'type': 'account'
-                    },
-                    "corporateCreditCard": None,
-                    "currency": {
-                        "name": line.currency,
-                        "internalId": None,
-                        "externalId": None,
-                        "type": "currency"
-                    },
-                    "customer": {
-                        "name": None,
-                        "internalId": line.customer_id,
-                        "externalId": None,
-                        "type": "customer"
-                    },
-                    "location": {
-                        "name": None,
-                        "internalId": line.location_id,
-                        "externalId": None,
-                        "type": "location"
-                    },
-                    "department": {
-                        "name": None,
-                        "internalId": line.department_id,
-                        "externalId": None,
-                        "type": "department"
-                    },
-                    "class": {
-                        "name": None,
-                        "internalId": line.class_id,
-                        "externalId": None,
-                        "type": "classification"
-                    },
-                    "customFieldList": None,
-                    "exchangeRate": None,
-                    "expenseDate": None,
-                    "expMediaItem": None,
-                    "foreignAmount": None,
-                    "grossAmt": None,
-                    "isBillable": None,
-                    "isNonReimbursable": None,
-                    "line": None,
-                    "memo": line.memo,
-                    "quantity": None,
-                    "rate": None,
-                    "receipt": None,
-                    "refNumber": None,
-                    "tax1Amt": None,
-                    "taxCode": None,
-                    "taxRate1": None,
-                    "taxRate2": None
+                "amount": line.amount,
+                "category": {
+                    'name': None,
+                    'internalId': line.category,
+                    'externalId': None,
+                    'type': 'account'
+                },
+                "corporateCreditCard": None,
+                "currency": {
+                    "name": line.currency,
+                    "internalId": None,
+                    "externalId": None,
+                    "type": "currency"
+                },
+                "customer": {
+                    "name": None,
+                    "internalId": line.customer_id,
+                    "externalId": None,
+                    "type": "customer"
+                },
+                "location": {
+                    "name": None,
+                    "internalId": line.location_id,
+                    "externalId": None,
+                    "type": "location"
+                },
+                "department": {
+                    "name": None,
+                    "internalId": line.department_id,
+                    "externalId": None,
+                    "type": "department"
+                },
+                "class": {
+                    "name": None,
+                    "internalId": line.class_id,
+                    "externalId": None,
+                    "type": "classification"
+                },
+                "customFieldList": None,
+                "exchangeRate": None,
+                "expenseDate": None,
+                "expMediaItem": None,
+                "foreignAmount": None,
+                "grossAmt": None,
+                "isBillable": None,
+                "isNonReimbursable": None,
+                "line": None,
+                "memo": line.memo,
+                "quantity": None,
+                "rate": None,
+                "receipt": None,
+                "refNumber": None,
+                "tax1Amt": None,
+                "taxCode": None,
+                "taxRate1": None,
+                "taxRate2": None
             }
 
             lines.append(line)

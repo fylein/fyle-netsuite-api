@@ -73,8 +73,10 @@ class MappingUtils:
             params['accounts_payable_id'] = general_mapping.get('accounts_payable_id')
 
         if mapping_setting.destination_field == 'EMPLOYEE':
-            assert_valid('reimbursable_account_name' in general_mapping and general_mapping['reimbursable_account_name'],
-                         'reimbursable account name field is blank')
+            assert_valid(
+                'reimbursable_account_name' in general_mapping and general_mapping['reimbursable_account_name'],
+                'reimbursable account name field is blank'
+            )
             assert_valid('reimbursable_account_id' in general_mapping and general_mapping['reimbursable_account_id'],
                          'reimbursable account id field is blank')
 
