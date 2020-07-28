@@ -1,7 +1,7 @@
 import json
 import logging
 
-from rest_framework import generics, viewsets
+from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import status
 
@@ -65,7 +65,7 @@ class DepartmentView(generics.ListCreateAPIView):
 
             return Response(
                 data={
-                    'message': detail['code'] + detail['message']
+                    'message': '{0} - {1}'.format(detail['code'], detail['message'])
                 },
                 status=status.HTTP_401_UNAUTHORIZED
             )
@@ -111,40 +111,24 @@ class VendorView(generics.ListCreateAPIView):
 
             return Response(
                 data={
-                    'message': detail['code'] + detail['message']
+                    'message': '{0} - {1}'.format(detail['code'], detail['message'])
                 },
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
 
-class AccountView(viewsets.ViewSet):
+class AccountView(generics.ListCreateAPIView):
     """
     Account view
     """
     serializer_class = DestinationAttributeSerializer
     pagination_class = None
 
-    def get_accounts(self, request, *args, **kwargs):
-        accounts = DestinationAttribute.objects.filter(
-            attribute_type='ACCOUNT', workspace_id=self.kwargs['workspace_id']).order_by('value').values()
-        return Response(accounts, status=status.HTTP_200_OK)
+    def get_queryset(self):
+        return DestinationAttribute.objects.filter(
+            attribute_type='ACCOUNT', workspace_id=self.kwargs['workspace_id']).order_by('value')
 
-    def accounts_payable_accounts(self, request, *args, **kwargs):
-        accounts = DestinationAttribute.objects.filter(
-            attribute_type='ACCOUNTS_PAYABLE', workspace_id=self.kwargs['workspace_id']).order_by('value').values()
-        return Response(accounts, status=status.HTTP_200_OK)
-
-    def bank_accounts(self, request, *args, **kwargs):
-        accounts = DestinationAttribute.objects.filter(
-            attribute_type='BANK_ACCOUNT', workspace_id=self.kwargs['workspace_id']).order_by('value').values()
-        return Response(accounts, status=status.HTTP_200_OK)
-
-    def credit_card_accounts(self, request, *args, **kwargs):
-        accounts = DestinationAttribute.objects.filter(
-            attribute_type='CREDIT_CARD_ACCOUNT', workspace_id=self.kwargs['workspace_id']).order_by('value').values()
-        return Response(accounts, status=status.HTTP_200_OK)
-
-    def post_accounts(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         """
         Get accounts from NetSuite
         """
@@ -173,10 +157,70 @@ class AccountView(viewsets.ViewSet):
 
             return Response(
                 data={
-                    'message': detail['code'] + detail['message']
+                    'message': '{0} - {1}'.format(detail['code'], detail['message'])
                 },
                 status=status.HTTP_401_UNAUTHORIZED
             )
+
+
+class AccountsPayableView(generics.ListCreateAPIView):
+    """
+    AccountsPayable view
+    """
+    serializer_class = DestinationAttributeSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return DestinationAttribute.objects.filter(
+            attribute_type='ACCOUNTS_PAYABLE', workspace_id=self.kwargs['workspace_id']).order_by('value')
+
+    def post(self, request, *args, **kwargs):
+        return Response(
+            data={
+                'message': 'Method Not Allowed'
+            },
+            status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )
+
+
+class CreditCardAccountView(generics.ListCreateAPIView):
+    """
+    CreditCardAccount view
+    """
+    serializer_class = DestinationAttributeSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return DestinationAttribute.objects.filter(
+            attribute_type='CREDIT_CARD_ACCOUNT', workspace_id=self.kwargs['workspace_id']).order_by('value')
+
+    def post(self, request, *args, **kwargs):
+        return Response(
+            data={
+                'message': 'Method Not Allowed'
+            },
+            status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )
+
+
+class BankAccountView(generics.ListCreateAPIView):
+    """
+    BankAccount view
+    """
+    serializer_class = DestinationAttributeSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return DestinationAttribute.objects.filter(
+            attribute_type='BANK_ACCOUNT', workspace_id=self.kwargs['workspace_id']).order_by('value')
+
+    def post(self, request, *args, **kwargs):
+        return Response(
+            data={
+                'message': 'Method Not Allowed'
+            },
+            status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )
 
 
 class EmployeeView(generics.ListCreateAPIView):
@@ -219,7 +263,7 @@ class EmployeeView(generics.ListCreateAPIView):
 
             return Response(
                 data={
-                    'message': detail['code'] + detail['message']
+                    'message': '{0} - {1}'.format(detail['code'], detail['message'])
                 },
                 status=status.HTTP_401_UNAUTHORIZED
             )
@@ -265,7 +309,7 @@ class LocationView(generics.ListCreateAPIView):
 
             return Response(
                 data={
-                    'message': detail['code'] + detail['message']
+                    'message': '{0} - {1}'.format(detail['code'], detail['message'])
                 },
                 status=status.HTTP_401_UNAUTHORIZED
             )
@@ -311,7 +355,7 @@ class ClassificationView(generics.ListCreateAPIView):
 
             return Response(
                 data={
-                    'message': detail['code'] + detail['message']
+                    'message': '{0} - {1}'.format(detail['code'], detail['message'])
                 },
                 status=status.HTTP_401_UNAUTHORIZED
             )
@@ -357,7 +401,7 @@ class SubsidiaryView(generics.ListCreateAPIView):
 
             return Response(
                 data={
-                    'message': detail['code'] + detail['message']
+                    'message': '{0} - {1}'.format(detail['code'], detail['message'])
                 },
                 status=status.HTTP_401_UNAUTHORIZED
             )
