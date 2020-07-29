@@ -3,7 +3,7 @@ Workspace Serializers
 """
 from rest_framework import serializers
 
-from .models import Workspace, FyleCredential, NetSuiteCredentials
+from .models import Workspace, FyleCredential, NetSuiteCredentials, WorkspaceSchedule, WorkspaceGeneralSettings
 
 
 class WorkspaceSerializer(serializers.ModelSerializer):
@@ -34,3 +34,21 @@ class NetSuiteCredentialSerializer(serializers.ModelSerializer):
     class Meta:
         model = NetSuiteCredentials
         fields = ['id', 'workspace_id', 'ns_account_id', 'created_at', 'updated_at']
+
+
+class WorkspaceScheduleSerializer(serializers.ModelSerializer):
+    """
+    Workspace Schedule Serializer
+    """
+    class Meta:
+        model = WorkspaceSchedule
+        fields = '__all__'
+
+
+class WorkSpaceGeneralSettingsSerializer(serializers.ModelSerializer):
+    """
+    General settings serializer
+    """
+    class Meta:
+        model = WorkspaceGeneralSettings
+        fields = '__all__'

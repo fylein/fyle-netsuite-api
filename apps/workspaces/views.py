@@ -14,8 +14,13 @@ from fyle_netsuite_api.utils import assert_valid
 
 from apps.netsuite.utils import NetSuiteConnection
 
-from .models import Workspace, FyleCredential, NetSuiteCredentials
-from .serializers import WorkspaceSerializer, FyleCredentialSerializer, NetSuiteCredentialSerializer
+from .models import Workspace, FyleCredential, NetSuiteCredentials, WorkspaceGeneralSettings, \
+    WorkspaceSchedule
+from .utils import create_or_update_general_settings
+from .tasks import schedule_sync, run_sync_schedule
+from .serializers import WorkspaceSerializer, FyleCredentialSerializer, NetSuiteCredentialSerializer, \
+    WorkSpaceGeneralSettingsSerializer, WorkspaceScheduleSerializer
+
 
 User = get_user_model()
 auth_utils = AuthUtils()
@@ -55,29 +60,19 @@ class WorkspaceView(viewsets.ViewSet):
         Create a Workspace
         """
 
-        all_workspaces_count = Workspace.objects.filter(user__user_id=request.user).count()
-
         auth_tokens = AuthToken.objects.get(user__user_id=request.user)
         fyle_user = auth_utils.get_fyle_user(auth_tokens.refresh_token)
         org_name = fyle_user['org_name']
         org_id = fyle_user['org_id']
 
         workspace = Workspace.objects.filter(fyle_org_id=org_id).first()
-        workspace_exists = False
 
         if workspace:
             workspace.user.add(User.objects.get(user_id=request.user))
-            workspace_exists = True
         else:
-            workspace = Workspace.objects.create(name='Workspace {0}'.format(all_workspaces_count + 1))
+            workspace = Workspace.objects.create(name=org_name, fyle_org_id=org_id)
 
             workspace.user.add(User.objects.get(user_id=request.user))
-
-        if all_workspaces_count == 0 and not workspace_exists:
-            workspace.name = org_name
-            workspace.fyle_org_id = org_id
-
-            workspace.save(update_fields=['name', 'fyle_org_id'])
 
             FyleCredential.objects.update_or_create(
                 refresh_token=auth_tokens.refresh_token,
@@ -89,15 +84,16 @@ class WorkspaceView(viewsets.ViewSet):
             status=status.HTTP_200_OK
         )
 
-    def get_all(self, request):
+    def get(self, request):
         """
-        Get all workspaces
+        Get workspace
         """
         user = User.objects.get(user_id=request.user)
-        workspaces = Workspace.objects.filter(user__in=[user]).all()
+        org_id = request.query_params.get('org_id')
+        workspace = Workspace.objects.filter(user__in=[user], fyle_org_id=org_id).all()
 
         return Response(
-            data=WorkspaceSerializer(workspaces, many=True).data,
+            data=WorkspaceSerializer(workspace, many=True).data,
             status=status.HTTP_200_OK
         )
 
@@ -144,7 +140,7 @@ class ConnectNetSuiteView(viewsets.ViewSet):
 
             connection = NetSuiteConnection(ns_account_id, ns_consumer_key, ns_consumer_secret, ns_token_key,
                                             ns_token_secret)
-            accounts = connection.accounts.get_all()
+            accounts = connection.accounts.get_all_generator(1)
 
             if not netsuite_credentials or not accounts:
                 if workspace.ns_account_id:
@@ -312,6 +308,109 @@ class ConnectFyleView(viewsets.ViewSet):
             return Response(
                 data={
                     'message': 'Fyle Credentials not found in this workspace'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class ScheduledSyncView(viewsets.ViewSet):
+    """
+    Scheduled Sync
+    """
+    def post(self, request, **kwargs):
+        """
+        Scheduled sync
+        """
+        run_sync_schedule(kwargs['workspace_id'], request.user)
+        return Response(
+            status=status.HTTP_200_OK
+        )
+
+
+class ScheduleView(viewsets.ViewSet):
+    """
+    Schedule View
+    """
+    def post(self, request, **kwargs):
+        """
+        Post Settings
+        """
+        schedule_enabled = request.data.get('schedule_enabled')
+        assert_valid(schedule_enabled is not None, 'Schedule enabled cannot be null')
+
+        hours = request.data.get('hours')
+        assert_valid(hours is not None, 'Hours cannot be left empty')
+
+        next_run = request.data.get('next_run')
+        assert_valid(next_run is not None, 'next_run value cannot be empty')
+
+        settings = schedule_sync(
+            workspace_id=kwargs['workspace_id'],
+            schedule_enabled=schedule_enabled,
+            hours=hours,
+            next_run=next_run,
+            user=request.user
+        )
+
+        return Response(
+            data=WorkspaceScheduleSerializer(settings).data,
+            status=status.HTTP_200_OK
+        )
+
+    def get(self, *args, **kwargs):
+        try:
+            ns_credentials = WorkspaceSchedule.objects.get(workspace_id=kwargs['workspace_id'])
+
+            return Response(
+                data=WorkspaceScheduleSerializer(ns_credentials).data,
+                status=status.HTTP_200_OK
+            )
+        except WorkspaceSchedule.DoesNotExist:
+            return Response(
+                data={
+                    'message': 'Schedule settings does not exist in workspace'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class GeneralSettingsView(viewsets.ViewSet):
+    """
+    General Settings
+    """
+    serializer_class = WorkSpaceGeneralSettingsSerializer
+    queryset = WorkspaceGeneralSettings.objects.all()
+
+    def post(self, request, *args, **kwargs):
+        """
+        Post workspace general settings
+        """
+        general_settings_payload = request.data
+
+        assert_valid(general_settings_payload is not None, 'Request body is empty')
+
+        workspace_id = kwargs['workspace_id']
+
+        general_settings = create_or_update_general_settings(general_settings_payload, workspace_id)
+        return Response(
+            data=self.serializer_class(general_settings).data,
+            status=status.HTTP_200_OK
+        )
+
+    def get(self, request, *args, **kwargs):
+        """
+        Get workspace general settings
+        """
+        try:
+            general_settings = self.queryset.get(workspace_id=kwargs['workspace_id'])
+            return Response(
+                data=self.serializer_class(general_settings).data,
+                status=status.HTTP_200_OK
+            )
+        except WorkspaceGeneralSettings.DoesNotExist:
+            return Response(
+                {
+                    'message': 'General Settings does not exist in workspace'
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )

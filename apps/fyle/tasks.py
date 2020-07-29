@@ -56,17 +56,17 @@ def schedule_expense_group_creation(workspace_id: int, user: str):
     task_log.save()
 
 
-def create_expense_groups(workspace_id: int, state: List[str], export_non_reimbursable: bool, task_log: TaskLog):
+def create_expense_groups(workspace_id: int, state: List[str], fund_source: List[str], task_log: TaskLog):
     """
     Create expense groups
     :param task_log: Task log object
     :param workspace_id: workspace id
     :param state: expense state
-    :param export_non_reimbursable: true / false
+    :param fund_source: expense fund source
     :return: task log
     """
 
-    async_create_expense_groups(workspace_id, state, export_non_reimbursable, task_log)
+    async_create_expense_groups(workspace_id, state, fund_source, task_log)
 
     task_log.detail = {
         'message': 'Creating expense groups'
@@ -76,7 +76,7 @@ def create_expense_groups(workspace_id: int, state: List[str], export_non_reimbu
     return task_log
 
 
-def async_create_expense_groups(workspace_id: int, state: List[str], export_non_reimbursable: bool, task_log: TaskLog):
+def async_create_expense_groups(workspace_id: int, state: List[str], fund_source: List[str], task_log: TaskLog):
     try:
         with transaction.atomic():
 
@@ -94,15 +94,17 @@ def async_create_expense_groups(workspace_id: int, state: List[str], export_non_
 
             fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
 
-            fyle_connector = FyleConnector(fyle_credentials.refresh_token)
+            fyle_connector = FyleConnector(fyle_credentials.refresh_token, workspace_id)
 
             expenses = fyle_connector.get_expenses(
-                state=state, export_non_reimbursable=export_non_reimbursable, updated_at=updated_at
+                state=state,
+                updated_at=updated_at,
+                fund_source=fund_source
             )
 
             expense_objects = Expense.create_expense_objects(expenses)
 
-            expense_group_objects = ExpenseGroup.create_expense_groups_by_report_id(
+            expense_group_objects = ExpenseGroup.create_expense_groups_by_report_id_fund_source(
                 expense_objects, workspace_id
             )
 
