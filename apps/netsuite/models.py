@@ -4,6 +4,7 @@ NetSuite models
 from datetime import datetime
 
 from django.db import models
+from django.db.models import Q
 
 from fyle_accounting_mappings.models import Mapping, MappingSetting
 
@@ -415,7 +416,7 @@ class JournalEntryLineItem(models.Model):
         debit_account_id = None
 
         entity = Mapping.objects.get(
-            destination_type='EMPLOYEE' or 'VENDOR',
+            Q(destination_type='EMPLOYEE') | Q(destination_type='VENDOR'),
             source_type='EMPLOYEE',
             source__value=description.get('employee_email'),
             workspace_id=expense_group.workspace_id

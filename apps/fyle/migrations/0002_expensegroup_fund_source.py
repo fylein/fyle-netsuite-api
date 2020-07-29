@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='expensegroup',
             name='fund_source',
-            field=models.CharField(default='DEFAULT', help_text='Expense fund source', max_length=255),
+            field=models.CharField(default='PERSONAL', help_text='Expense fund source', max_length=255),
             preserve_default=False,
         ),
     ]
