@@ -140,7 +140,7 @@ class ConnectNetSuiteView(viewsets.ViewSet):
 
             connection = NetSuiteConnection(ns_account_id, ns_consumer_key, ns_consumer_secret, ns_token_key,
                                             ns_token_secret)
-            accounts = connection.locations.get_all()
+            accounts = connection.accounts.get_all_generator(1)
 
             if not netsuite_credentials or not accounts:
                 if workspace.ns_account_id:
@@ -368,7 +368,7 @@ class ScheduleView(viewsets.ViewSet):
         except WorkspaceSchedule.DoesNotExist:
             return Response(
                 data={
-                    'message': 'Workspace setting does not exist in workspace'
+                    'message': 'Schedule settings does not exist in workspace'
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )

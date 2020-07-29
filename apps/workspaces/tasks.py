@@ -12,58 +12,43 @@ from apps.workspaces.models import WorkspaceSchedule, FyleCredential, WorkspaceG
 
 
 def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int, next_run: str, user: str):
-    ws_settings, _ = WorkspaceSchedule.objects.get_or_create(
+    ws_schedule, _ = WorkspaceSchedule.objects.get_or_create(
         workspace_id=workspace_id
     )
     start_datetime = datetime.strptime(next_run, '%Y-%m-%dT%H:%M:%S.%fZ')
 
-    if not schedule_enabled:
-        ws_settings.enabled = schedule_enabled
-        ws_settings.interval_hours = hours
-        ws_settings.start_datetime = start_datetime
+    if schedule_enabled:
+        ws_schedule.enabled = schedule_enabled
+        ws_schedule.start_datetime = start_datetime
+        ws_schedule.interval_hours = hours
 
         created_job = create_schedule_job(
             workspace_id=workspace_id,
-            schedule=ws_settings,
+            schedule=ws_schedule,
             user=user,
             start_datetime=start_datetime,
             hours=hours
         )
+        ws_schedule.fyle_job_id = created_job['id']
 
-        ws_settings.fyle_job_id = created_job['id']
-        ws_settings.save()
+        ws_schedule.save(update_fields=['enabled', 'start_datetime', 'interval_hours', 'fyle_job_id'])
 
-        ws_settings.save(update_fields=['enabled', 'start_datetime', 'interval_hours', 'fyle_job_id'])
-    else:
-        ws_settings.enabled = schedule_enabled
-        ws_settings.start_datetime = start_datetime
-        ws_settings.interval_hours = hours
-
+    elif not schedule_enabled:
         fyle_credentials = FyleCredential.objects.get(
             workspace_id=workspace_id)
         fyle_connector = FyleConnector(fyle_credentials.refresh_token, workspace_id)
         fyle_sdk_connection = fyle_connector.connection
 
         jobs = fyle_sdk_connection.Jobs
-        if ws_settings.fyle_job_id:
-            jobs.delete(ws_settings.fyle_job_id)
+        if ws_schedule.fyle_job_id:
+            jobs.delete(ws_schedule.fyle_job_id)
 
-        if schedule_enabled:
-            created_job = create_schedule_job(
-                workspace_id=workspace_id,
-                schedule=ws_settings,
-                user=user,
-                start_datetime=start_datetime,
-                hours=hours
-            )
-            ws_settings.fyle_job_id = created_job['id']
-        else:
-            ws_settings.fyle_job_id = None
-            ws_settings.workspace_id = workspace_id
+        ws_schedule.fyle_job_id = None
+        ws_schedule.enabled = False
 
-        ws_settings.save()
+        ws_schedule.save(update_fields=['enabled', 'fyle_job_id'])
 
-    return ws_settings
+    return ws_schedule
 
 
 def create_schedule_job(workspace_id: int, schedule: WorkspaceSchedule, user: str,
