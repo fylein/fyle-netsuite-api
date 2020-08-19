@@ -125,6 +125,13 @@ LOGGING = {
     },
 }
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'cache_table',
+    }
+}
+
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 if os.environ.get('DATABASE_URL', ''):
@@ -194,3 +201,4 @@ FYLE_BASE_URL = os.environ.get('FYLE_BASE_URL')
 FYLE_JOBS_URL = os.environ.get('FYLE_JOBS_URL')
 
 CORS_ORIGIN_ALLOW_ALL = True
+CACHE_EXPIRY = 900
