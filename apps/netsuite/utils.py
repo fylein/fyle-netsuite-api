@@ -70,6 +70,52 @@ class NetSuiteConnector:
             account_attributes, self.workspace_id)
         return account_attributes
 
+    def sync_expense_categories(self):
+        """
+        Sync Expense Categories
+        """
+        categories = self.connection.expense_categories.get_all()
+
+        category_attributes = []
+
+        for category in categories:
+            category_attributes.append(
+                {
+                    'attribute_type': 'ACCOUNT',
+                    'display_name': 'Expense Category',
+                    'value': 'Expense Category - {}'.format(category['name']),
+                    'destination_id': category['internalId']
+                }
+            )
+
+        category_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
+            category_attributes, self.workspace_id)
+
+        return category_attributes
+
+    def sync_currencies(self):
+        """
+        Sync Currencies
+        """
+        currencies = self.connection.currencies.get_all()
+
+        currency_attributes = []
+
+        for currency in currencies:
+            currency_attributes.append(
+                {
+                    'attribute_type': 'CURRENCY',
+                    'display_name': 'Currency',
+                    'value': currency['symbol'],
+                    'destination_id': currency['internalId']
+                }
+            )
+
+        currency_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
+            currency_attributes, self.workspace_id)
+
+        return currency_attributes
+
     def sync_locations(self):
         """
         Sync locations
@@ -377,6 +423,7 @@ class NetSuiteConnector:
         lines = []
 
         for line in expense_report_lineitems:
+
             line = {
                 "amount": line.amount,
                 "category": {
@@ -387,8 +434,8 @@ class NetSuiteConnector:
                 },
                 "corporateCreditCard": None,
                 "currency": {
-                    "name": line.currency,
-                    "internalId": None,
+                    "name": None,
+                    "internalId": line.currency,
                     "externalId": None,
                     "type": "currency"
                 },

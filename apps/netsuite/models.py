@@ -6,7 +6,7 @@ from datetime import datetime
 from django.db import models
 from django.db.models import Q
 
-from fyle_accounting_mappings.models import Mapping, MappingSetting
+from fyle_accounting_mappings.models import Mapping, MappingSetting, DestinationAttribute
 
 from apps.fyle.models import ExpenseGroup, Expense
 from apps.mappings.models import GeneralMapping, SubsidiaryMapping
@@ -315,6 +315,8 @@ class ExpenseReportLineItem(models.Model):
 
             general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
+            currency = DestinationAttribute.objects.filter(value=lineitem.currency).first()
+
             class_id = get_class_id_or_none(expense_group, lineitem)
 
             department_id = get_department_id_or_none(expense_group, lineitem)
@@ -329,7 +331,7 @@ class ExpenseReportLineItem(models.Model):
                     'customer_id': None,
                     'location_id': general_mappings.location_id if general_mappings.location_id else None,
                     'department_id': department_id,
-                    'currency': lineitem.currency,
+                    'currency': currency.destination_id if currency else '1',
                     'memo': lineitem.purpose
                 }
             )
