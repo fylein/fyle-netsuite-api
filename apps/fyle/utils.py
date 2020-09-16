@@ -228,18 +228,13 @@ class FyleConnector:
 
         return project_attributes
 
-    def get_attachments(self, expense_ids: List[str]):
+    def get_attachment(self, expense_id: str):
         """
         Get attachments against expense_ids
         """
-        attachments = []
-        if expense_ids:
-            for expense_id in expense_ids:
-                attachment = self.connection.Expenses.get_attachments(expense_id)
-                if attachment['data']:
-                    attachment = attachment['data'][0]
-                    attachment['expense_id'] = expense_id
-                    attachments.append(attachment)
-            return attachments
+        attachment = self.connection.Expenses.get_attachments(expense_id)
 
-        return []
+        if attachment['data']:
+            attachment = attachment['data'][0]
+            attachment['expense_id'] = expense_id
+            return attachment

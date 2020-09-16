@@ -1,5 +1,6 @@
 from typing import List, Dict
 
+from apps.fyle.models import Expense
 from netsuitesdk import NetSuiteConnection
 from fyle_accounting_mappings.models import DestinationAttribute
 
@@ -69,6 +70,52 @@ class NetSuiteConnector:
         account_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
             account_attributes, self.workspace_id)
         return account_attributes
+
+    def sync_expense_categories(self):
+        """
+        Sync Expense Categories
+        """
+        categories = self.connection.expense_categories.get_all()
+
+        category_attributes = []
+
+        for category in categories:
+            category_attributes.append(
+                {
+                    'attribute_type': 'ACCOUNT',
+                    'display_name': 'Expense Category',
+                    'value': 'Expense Category - {}'.format(category['name']),
+                    'destination_id': category['internalId']
+                }
+            )
+
+        category_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
+            category_attributes, self.workspace_id)
+
+        return category_attributes
+
+    def sync_currencies(self):
+        """
+        Sync Currencies
+        """
+        currencies = self.connection.currencies.get_all()
+
+        currency_attributes = []
+
+        for currency in currencies:
+            currency_attributes.append(
+                {
+                    'attribute_type': 'CURRENCY',
+                    'display_name': 'Currency',
+                    'value': currency['symbol'],
+                    'destination_id': currency['internalId']
+                }
+            )
+
+        currency_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
+            currency_attributes, self.workspace_id)
+
+        return currency_attributes
 
     def sync_locations(self):
         """
@@ -369,7 +416,8 @@ class NetSuiteConnector:
         return created_bill
 
     @staticmethod
-    def __construct_expense_report_lineitems(expense_report_lineitems: List[ExpenseReportLineItem]) -> List[Dict]:
+    def __construct_expense_report_lineitems(
+            expense_report_lineitems: List[ExpenseReportLineItem], attachment_links: Dict) -> List[Dict]:
         """
         Create expense report line items
         :return: constructed line items
@@ -377,6 +425,8 @@ class NetSuiteConnector:
         lines = []
 
         for line in expense_report_lineitems:
+            expense = Expense.objects.get(pk=line.expense_id)
+
             line = {
                 "amount": line.amount,
                 "category": {
@@ -387,8 +437,8 @@ class NetSuiteConnector:
                 },
                 "corporateCreditCard": None,
                 "currency": {
-                    "name": line.currency,
-                    "internalId": None,
+                    "name": None,
+                    "internalId": line.currency,
                     "externalId": None,
                     "type": "currency"
                 },
@@ -416,7 +466,20 @@ class NetSuiteConnector:
                     "externalId": None,
                     "type": "classification"
                 },
-                "customFieldList": None,
+                'customFieldList': [
+                    {
+                        'scriptId': 'custcolfyle_receipt_link',
+                        'type': 'String',
+                        'value':
+                            attachment_links[expense.expense_id] if expense.expense_id in attachment_links else None
+                    },
+                    {
+                        'internalId': 'custcolfyle_expense_url',
+                        'type': 'String',
+                        'value': 'https://staging.fyle.tech/app/main/#/enterprise/view_expense/{}'.format(
+                            expense.expense_id)
+                    }
+                ],
                 "exchangeRate": None,
                 "expenseDate": None,
                 "expMediaItem": None,
@@ -441,7 +504,8 @@ class NetSuiteConnector:
         return lines
 
     def __construct_expense_report(self, expense_report: ExpenseReport,
-                                   expense_report_lineitems: List[ExpenseReportLineItem]) -> Dict:
+                                   expense_report_lineitems: List[ExpenseReportLineItem],
+                                   attachment_links: Dict) -> Dict:
         """
         Create a expense report
         :return: constructed expense report
@@ -514,7 +578,7 @@ class NetSuiteConnector:
                 "externalId": None,
                 "type": "location"
             },
-            "expenseList": self.__construct_expense_report_lineitems(expense_report_lineitems),
+            "expenseList": self.__construct_expense_report_lineitems(expense_report_lineitems, attachment_links),
             'accountingBookDetailList': None,
             'customFieldList': None,
             'internalId': None,
@@ -523,11 +587,14 @@ class NetSuiteConnector:
 
         return expense_report_payload
 
-    def post_expense_report(self, expense_report: ExpenseReport, expense_report_lineitems: List[ExpenseReportLineItem]):
+    def post_expense_report(
+            self, expense_report: ExpenseReport,
+            expense_report_lineitems: List[ExpenseReportLineItem], attachment_links: Dict):
         """
         Post expense reports to NetSuite
         """
-        expense_report_payload = self.__construct_expense_report(expense_report, expense_report_lineitems)
+        expense_report_payload = self.__construct_expense_report(expense_report,
+                                                                 expense_report_lineitems, attachment_links)
         created_expense_report = self.connection.expense_reports.post(expense_report_payload)
         return created_expense_report
 

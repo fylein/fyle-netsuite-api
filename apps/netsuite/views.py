@@ -315,6 +315,98 @@ class LocationView(generics.ListCreateAPIView):
             )
 
 
+class ExpenseCategoryView(generics.ListCreateAPIView):
+    """
+    Location view
+    """
+
+    serializer_class = DestinationAttributeSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return DestinationAttribute.objects.filter(
+            attribute_type='EXPENSE_CATEGORY', workspace_id=self.kwargs['workspace_id']).order_by('value')
+
+    def post(self, request, *args, **kwargs):
+        """
+        Get Expense Category from NetSuite
+        """
+        try:
+            ns_credentials = NetSuiteCredentials.objects.get(workspace_id=kwargs['workspace_id'])
+
+            ns_connector = NetSuiteConnector(ns_credentials, workspace_id=kwargs['workspace_id'])
+
+            expense_categories = ns_connector.sync_expense_categories()
+            return Response(
+                data=self.serializer_class(expense_categories, many=True).data,
+                status=status.HTTP_200_OK
+            )
+        except NetSuiteCredentials.DoesNotExist:
+            return Response(
+                data={
+                    'message': 'NetSuite credentials not found in workspace'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except NetSuiteRequestError as exception:
+            logger.exception(exception)
+            detail = json.dumps(exception.__dict__)
+            detail = json.loads(detail)
+
+            return Response(
+                data={
+                    'message': '{0} - {1}'.format(detail['code'], detail['message'])
+                },
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+
+class CurrencyView(generics.ListCreateAPIView):
+    """
+    Location view
+    """
+
+    serializer_class = DestinationAttributeSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return DestinationAttribute.objects.filter(
+            attribute_type='CURRENCY', workspace_id=self.kwargs['workspace_id']).order_by('value')
+
+    def post(self, request, *args, **kwargs):
+        """
+        Get Expense Category from NetSuite
+        """
+        try:
+            ns_credentials = NetSuiteCredentials.objects.get(workspace_id=kwargs['workspace_id'])
+
+            ns_connector = NetSuiteConnector(ns_credentials, workspace_id=kwargs['workspace_id'])
+
+            currencies = ns_connector.sync_currencies()
+            return Response(
+                data=self.serializer_class(currencies, many=True).data,
+                status=status.HTTP_200_OK
+            )
+        except NetSuiteCredentials.DoesNotExist:
+            return Response(
+                data={
+                    'message': 'NetSuite credentials not found in workspace'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except NetSuiteRequestError as exception:
+            logger.exception(exception)
+            detail = json.dumps(exception.__dict__)
+            detail = json.loads(detail)
+
+            return Response(
+                data={
+                    'message': '{0} - {1}'.format(detail['code'], detail['message'])
+                },
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+
 class ClassificationView(generics.ListCreateAPIView):
     """
     Classification view
@@ -412,6 +504,8 @@ class BillView(generics.ListCreateAPIView):
     Create Bill
     """
     serializer_class = BillSerializer
+    authentication_classes = []
+    permission_classes = []
 
     def get_queryset(self):
         return Bill.objects.filter(expense_group__workspace_id=self.kwargs['workspace_id']).order_by('-updated_at')
@@ -458,6 +552,8 @@ class ExpenseReportView(generics.ListCreateAPIView):
     Create Expense Report
     """
     serializer_class = ExpenseReportSerializer
+    authentication_classes = []
+    permission_classes = []
 
     def get_queryset(self):
         return ExpenseReport.objects.filter(
@@ -506,6 +602,8 @@ class JournalEntryView(generics.ListCreateAPIView):
     Create JournalEntry
     """
     serializer_class = JournalEntrySerializer
+    authentication_classes = []
+    permission_classes = []
 
     def get_queryset(self):
         return JournalEntry.objects.filter(
