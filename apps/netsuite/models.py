@@ -107,11 +107,22 @@ class Bill(models.Model):
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
         subsidiary_mappings = SubsidiaryMapping.objects.get(workspace_id=expense_group.workspace_id)
 
+        accounts_payable_id = []
+        if expense_group.fund_source == 'PERSONAL':
+            accounts_payable_id = general_mappings.accounts_payable_id
+        elif expense_group.fund_source == 'CCC':
+            accounts_payable_id = Mapping.objects.get(
+                source_type='EMPLOYEE',
+                destination_type='CREDIT_CARD_ACCOUNT',
+                source__value=description.get('employee_email'),
+                workspace_id=expense_group.workspace_id
+            ).destination.destination_id
+
         bill_object, _ = Bill.objects.update_or_create(
             expense_group=expense_group,
             defaults={
                 'subsidiary_id': subsidiary_mappings.internal_id,
-                'accounts_payable_id': general_mappings.accounts_payable_id,
+                'accounts_payable_id': accounts_payable_id,
                 'vendor_id': Mapping.objects.get(
                     source_type='EMPLOYEE',
                     destination_type='VENDOR',

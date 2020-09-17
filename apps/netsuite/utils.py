@@ -54,13 +54,12 @@ class NetSuiteConnector:
                     'destination_id': account['internalId']
                 })
 
-            if account['acctType'] == '_creditCard':
-                account_attributes.append({
-                    'attribute_type': 'CREDIT_CARD_ACCOUNT',
-                    'display_name': 'Credit Card Account',
-                    'value': account['acctName'],
-                    'destination_id': account['internalId']
-                })
+            account_attributes.append({
+                'attribute_type': 'CREDIT_CARD_ACCOUNT',
+                'display_name': 'Credit Card Account',
+                'value': account['acctName'],
+                'destination_id': account['internalId']
+            })
 
             if account['acctType'] == '_expense':
                 account_attributes.append({
