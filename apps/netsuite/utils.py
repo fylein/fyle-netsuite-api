@@ -1,12 +1,15 @@
 from typing import List, Dict
 
+from apps.fyle.models import Expense
+from apps.fyle.utils import FyleConnector
+
 from netsuitesdk import NetSuiteConnection
 from fyle_accounting_mappings.models import DestinationAttribute
 
 from apps.mappings.models import SubsidiaryMapping
 from apps.netsuite.models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, \
     JournalEntryLineItem
-from apps.workspaces.models import NetSuiteCredentials
+from apps.workspaces.models import NetSuiteCredentials, FyleCredential
 
 
 class NetSuiteConnector:
@@ -261,7 +264,8 @@ class NetSuiteConnector:
         return subsidiary_attributes
 
     @staticmethod
-    def __construct_bill_lineitems(bill_lineitems: List[BillLineitem]) -> List[Dict]:
+    def __construct_bill_lineitems(bill_lineitems: List[BillLineitem],
+                                   attachment_links: Dict, cluster_domain: str) -> List[Dict]:
         """
         Create bill line items
         :return: constructed line items
@@ -269,6 +273,8 @@ class NetSuiteConnector:
         lines = []
 
         for line in bill_lineitems:
+            expense = Expense.objects.get(pk=line.expense_id)
+
             line = {
                 'orderDoc': None,
                 'orderLine': None,
@@ -306,6 +312,22 @@ class NetSuiteConnector:
                 },
 
                 'customer': None,
+                'customFieldList': [
+                    {
+                        'scriptId': 'custcolfyle_receipt_link',
+                        'type': 'String',
+                        'value':
+                            attachment_links[expense.expense_id] if expense.expense_id in attachment_links else None
+                    },
+                    {
+                        'scriptId': 'custcolfyle_expense_url',
+                        'type': 'String',
+                        'value': '{}/app/main/#/enterprise/view_expense/{}'.format(
+                            cluster_domain,
+                            expense.expense_id
+                        )
+                    }
+                ],
                 'isBillable': None,
                 'projectTask': None,
                 'taxCode': None,
@@ -315,17 +337,21 @@ class NetSuiteConnector:
                 'amortizStartDate': None,
                 'amortizationEndDate': None,
                 'amortizationResidual': None,
-                'customFieldList': None
             }
             lines.append(line)
 
         return lines
 
-    def __construct_bill(self, bill: Bill, bill_lineitems: List[BillLineitem]) -> Dict:
+    def __construct_bill(self, bill: Bill, bill_lineitems: List[BillLineitem], attachment_links: Dict) -> Dict:
         """
         Create a bill
         :return: constructed bill
         """
+
+        fyle_credentials = FyleCredential.objects.get(workspace_id=bill.expense_group.workspace_id)
+        fyle_connector = FyleConnector(fyle_credentials.refresh_token, bill.expense_group.workspace_id)
+
+        cluster_domain = fyle_connector.get_cluster_domain()
 
         bill_payload = {
             'nullFieldList': None,
@@ -393,7 +419,9 @@ class NetSuiteConnector:
             'landedCostMethod': None,
             'landedCostPerLine': None,
             'transactionNumber': None,
-            'expenseList': self.__construct_bill_lineitems(bill_lineitems),
+            'expenseList': self.__construct_bill_lineitems(
+                bill_lineitems, attachment_links, cluster_domain['cluster_domain']
+            ),
             'accountingBookDetailList': None,
             'itemList': None,
             'landedCostsList': None,
@@ -406,16 +434,18 @@ class NetSuiteConnector:
 
         return bill_payload
 
-    def post_bill(self, bill: Bill, bill_lineitems: List[BillLineitem]):
+    def post_bill(self, bill: Bill, bill_lineitems: List[BillLineitem], attachment_links: Dict):
         """
         Post vendor bills to NetSuite
         """
-        bills_payload = self.__construct_bill(bill, bill_lineitems)
+        bills_payload = self.__construct_bill(bill, bill_lineitems, attachment_links)
         created_bill = self.connection.vendor_bills.post(bills_payload)
         return created_bill
 
     @staticmethod
-    def __construct_expense_report_lineitems(expense_report_lineitems: List[ExpenseReportLineItem]) -> List[Dict]:
+    def __construct_expense_report_lineitems(
+            expense_report_lineitems: List[ExpenseReportLineItem], attachment_links: Dict, cluster_domain: str
+    ) -> List[Dict]:
         """
         Create expense report line items
         :return: constructed line items
@@ -423,6 +453,7 @@ class NetSuiteConnector:
         lines = []
 
         for line in expense_report_lineitems:
+            expense = Expense.objects.get(pk=line.expense_id)
 
             line = {
                 "amount": line.amount,
@@ -463,7 +494,22 @@ class NetSuiteConnector:
                     "externalId": None,
                     "type": "classification"
                 },
-                "customFieldList": None,
+                'customFieldList': [
+                    {
+                        'scriptId': 'custcolfyle_receipt_link',
+                        'type': 'String',
+                        'value':
+                            attachment_links[expense.expense_id] if expense.expense_id in attachment_links else None
+                    },
+                    {
+                        'scriptId': 'custcolfyle_expense_url',
+                        'type': 'String',
+                        'value': '{}/app/main/#/enterprise/view_expense/{}'.format(
+                            cluster_domain,
+                            expense.expense_id
+                        )
+                    }
+                ],
                 "exchangeRate": None,
                 "expenseDate": None,
                 "expMediaItem": None,
@@ -488,11 +534,17 @@ class NetSuiteConnector:
         return lines
 
     def __construct_expense_report(self, expense_report: ExpenseReport,
-                                   expense_report_lineitems: List[ExpenseReportLineItem]) -> Dict:
+                                   expense_report_lineitems: List[ExpenseReportLineItem],
+                                   attachment_links: Dict) -> Dict:
         """
         Create a expense report
         :return: constructed expense report
         """
+
+        fyle_credentials = FyleCredential.objects.get(workspace_id=expense_report.expense_group.workspace_id)
+        fyle_connector = FyleConnector(fyle_credentials.refresh_token, expense_report.expense_group.workspace_id)
+
+        cluster_domain = fyle_connector.get_cluster_domain()
 
         expense_report_payload = {
             'nullFieldList': None,
@@ -561,7 +613,9 @@ class NetSuiteConnector:
                 "externalId": None,
                 "type": "location"
             },
-            "expenseList": self.__construct_expense_report_lineitems(expense_report_lineitems),
+            "expenseList": self.__construct_expense_report_lineitems(
+                expense_report_lineitems, attachment_links, cluster_domain['cluster_domain']
+            ),
             'accountingBookDetailList': None,
             'customFieldList': None,
             'internalId': None,
@@ -570,17 +624,21 @@ class NetSuiteConnector:
 
         return expense_report_payload
 
-    def post_expense_report(self, expense_report: ExpenseReport, expense_report_lineitems: List[ExpenseReportLineItem]):
+    def post_expense_report(
+            self, expense_report: ExpenseReport,
+            expense_report_lineitems: List[ExpenseReportLineItem], attachment_links: Dict):
         """
         Post expense reports to NetSuite
         """
-        expense_report_payload = self.__construct_expense_report(expense_report, expense_report_lineitems)
+        expense_report_payload = self.__construct_expense_report(expense_report,
+                                                                 expense_report_lineitems, attachment_links)
         created_expense_report = self.connection.expense_reports.post(expense_report_payload)
         return created_expense_report
 
     @staticmethod
     def __construct_journal_entry_lineitems(journal_entry_lineitems: List[JournalEntryLineItem],
-                                            credit=None, debit=None) -> List[Dict]:
+                                            credit=None, debit=None, attachment_links: Dict = None,
+                                            cluster_domain: str = None) -> List[Dict]:
         """
         Create journal entry line items
         :return: constructed line items
@@ -588,6 +646,7 @@ class NetSuiteConnector:
         lines = []
 
         for line in journal_entry_lineitems:
+            expense = Expense.objects.get(pk=line.expense_id)
             account_ref = None
             if credit is None:
                 account_ref = line.debit_account_id
@@ -626,7 +685,21 @@ class NetSuiteConnector:
                 },
                 "credit": line.amount if credit is not None else None,
                 "creditTax": None,
-                "customFieldList": None,
+                'customFieldList': [
+                    {
+                        'scriptId': 'custcolfyle_receipt_link',
+                        'type': 'String',
+                        'value':
+                            attachment_links[expense.expense_id] if expense.expense_id in attachment_links else None
+                    },
+                    {
+                        'scriptId': 'custcolfyle_expense_url',
+                        'type': 'String',
+                        'value': '{}/app/main/#/enterprise/view_expense/{}'.format(
+                            cluster_domain,
+                            expense.expense_id)
+                    }
+                ] if attachment_links else None,
                 "debit": line.amount if debit is not None else None,
                 "debitTax": None,
                 "eliminate": None,
@@ -655,14 +728,22 @@ class NetSuiteConnector:
         return lines
 
     def __construct_journal_entry(self, journal_entry: JournalEntry,
-                                  journal_entry_lineitems: List[JournalEntryLineItem]) -> Dict:
+                                  journal_entry_lineitems: List[JournalEntryLineItem],
+                                  attachment_links: Dict) -> Dict:
         """
         Create a journal entry report
         :return: constructed journal entry
         """
+        fyle_credentials = FyleCredential.objects.get(workspace_id=journal_entry.expense_group.workspace_id)
+        fyle_connector = FyleConnector(fyle_credentials.refresh_token, journal_entry.expense_group.workspace_id)
+
+        cluster_domain = fyle_connector.get_cluster_domain()
 
         credit_line = self.__construct_journal_entry_lineitems(journal_entry_lineitems, credit='Credit')
-        debit_line = self.__construct_journal_entry_lineitems(journal_entry_lineitems, debit='Debit')
+        debit_line = self.__construct_journal_entry_lineitems(
+            journal_entry_lineitems,
+            debit='Debit', attachment_links=attachment_links, cluster_domain=cluster_domain['cluster_domain']
+        )
         lines = []
         lines.extend(credit_line)
         lines.extend(debit_line)
@@ -726,10 +807,11 @@ class NetSuiteConnector:
 
         return journal_entry_payload
 
-    def post_journal_entry(self, journal_entry: JournalEntry, journal_entry_lineitems: List[JournalEntryLineItem]):
+    def post_journal_entry(self, journal_entry: JournalEntry,
+                           journal_entry_lineitems: List[JournalEntryLineItem], attachment_links: Dict):
         """
         Post journal entries to NetSuite
         """
-        journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems)
+        journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems, attachment_links)
         created_journal_entry = self.connection.journal_entries.post(journal_entry_payload)
         return created_journal_entry

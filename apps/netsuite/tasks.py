@@ -6,6 +6,7 @@ from typing import List
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
+import base64
 
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
 
@@ -25,6 +26,47 @@ from .utils import NetSuiteConnector
 logger = logging.getLogger(__name__)
 
 
+def load_attachments(netsuite_connection: NetSuiteConnector, expense_id: str, expense_group: ExpenseGroup):
+    """
+    Get attachments from Fyle
+    :param netsuite_connection: NetSuite Connection
+    :param expense_id: Fyle expense id
+    :param expense_group: Integration Expense group
+    """
+    workspace_id = expense_group.workspace_id
+    try:
+        fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+        fyle_connector = FyleConnector(fyle_credentials.refresh_token, workspace_id)
+        attachment = fyle_connector.get_attachment(expense_id)
+
+        folder = netsuite_connection.connection.folders.post({
+            "externalId": '{}-{}-{}'.format(workspace_id, expense_group.id, expense_group.description['claim_number']),
+            "name": '{}-{}-{}'.format(workspace_id, expense_group.id, expense_group.description['claim_number'])
+        })
+
+        netsuite_connection.connection.files.post({
+            "externalId": expense_id,
+            "name": attachment['filename'],
+            'content': base64.b64decode(attachment['content']),
+            "folder": {
+                        "name": None,
+                        "internalId": folder['internalId'],
+                        "externalId": folder['externalId'],
+                        "type": "folder"
+                    }
+            }
+        )
+
+        file = netsuite_connection.connection.files.get(externalId=expense_id)
+        return file['url']
+    except Exception:
+        error = traceback.format_exc()
+        logger.error(
+            'Attachment failed for expense group id %s / workspace id %s \n Error: %s',
+            expense_id, workspace_id, error
+        )
+
+
 def create_bill(expense_group, task_log):
     try:
         with transaction.atomic():
@@ -38,7 +80,15 @@ def create_bill(expense_group, task_log):
 
             netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
-            created_bill = netsuite_connection.post_bill(bill_object, bill_lineitems_objects)
+            attachment_links = {}
+
+            for expense_id in expense_group.expenses.values_list('expense_id', flat=True):
+                attachment_link = load_attachments(netsuite_connection, expense_id, expense_group)
+
+                if attachment_link:
+                    attachment_links[expense_id] = attachment_link
+
+            created_bill = netsuite_connection.post_bill(bill_object, bill_lineitems_objects, attachment_links)
 
             task_log.detail = created_bill
             task_log.bill = bill_object
@@ -109,8 +159,16 @@ def create_expense_report(expense_group, task_log):
 
             netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
+            attachment_links = {}
+
+            for expense_id in expense_group.expenses.values_list('expense_id', flat=True):
+                attachment_link = load_attachments(netsuite_connection, expense_id, expense_group)
+
+                if attachment_link:
+                    attachment_links[expense_id] = attachment_link
+
             created_expense_report = netsuite_connection.post_expense_report(
-                expense_report_object, expense_report_lineitems_objects
+                expense_report_object, expense_report_lineitems_objects, attachment_links
             )
 
             task_log.detail = created_expense_report
@@ -182,8 +240,16 @@ def create_journal_entry(expense_group, task_log):
 
             netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
+            attachment_links = {}
+
+            for expense_id in expense_group.expenses.values_list('expense_id', flat=True):
+                attachment_link = load_attachments(netsuite_connection, expense_id, expense_group)
+
+                if attachment_link:
+                    attachment_links[expense_id] = attachment_link
+
             created_journal_entry = netsuite_connection.post_journal_entry(
-                journal_entry_object, journal_entry_lineitems_objects
+                journal_entry_object, journal_entry_lineitems_objects, attachment_links
             )
 
             task_log.detail = created_journal_entry

@@ -18,6 +18,8 @@ class ExpenseGroupView(generics.ListCreateAPIView):
     """
     List Fyle Expenses
     """
+    authentication_classes = []
+    permission_classes = []
     serializer_class = ExpenseGroupSerializer
 
     def get_queryset(self):
