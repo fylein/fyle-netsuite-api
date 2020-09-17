@@ -2,11 +2,11 @@ import json
 import logging
 import traceback
 from typing import List
+import base64
 
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
-import base64
 
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
 

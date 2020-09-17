@@ -1,10 +1,11 @@
 from typing import List, Dict
 
+from netsuitesdk import NetSuiteConnection
+
+from fyle_accounting_mappings.models import DestinationAttribute
+
 from apps.fyle.models import Expense
 from apps.fyle.utils import FyleConnector
-
-from netsuitesdk import NetSuiteConnection
-from fyle_accounting_mappings.models import DestinationAttribute
 
 from apps.mappings.models import SubsidiaryMapping
 from apps.netsuite.models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, \
