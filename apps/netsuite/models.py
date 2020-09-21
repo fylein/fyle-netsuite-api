@@ -111,7 +111,7 @@ class Bill(models.Model):
 
         if general_settings.corporate_credit_card_expenses_object == 'BILL':
             vendor_id = general_mappings.default_ccc_vendor_id
-        else:
+        elif general_settings.reimbursable_expenses_object == 'BILL':
             vendor_id = Mapping.objects.get(
                     source_type='EMPLOYEE',
                     destination_type='VENDOR',
