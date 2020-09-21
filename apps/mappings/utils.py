@@ -55,7 +55,9 @@ class MappingUtils:
             'reimbursable_account_name': None,
             'reimbursable_account_id': None,
             'default_ccc_account_name': None,
-            'default_ccc_account_id': None
+            'default_ccc_account_id': None,
+            'default_ccc_vendor_name': None,
+            'default_ccc_vendor_id': None
         }
 
         mapping_setting = MappingSetting.objects.filter(
@@ -63,7 +65,8 @@ class MappingUtils:
             source_field='EMPLOYEE', workspace_id=self.__workspace_id
         ).first()
 
-        if mapping_setting.destination_field == 'VENDOR':
+        if mapping_setting.destination_field == 'VENDOR' or\
+                general_settings.corporate_credit_card_expenses_object == 'BILL':
             assert_valid('accounts_payable_name' in general_mapping and general_mapping['accounts_payable_name'],
                          'account payable account name field is blank')
             assert_valid('accounts_payable_id' in general_mapping and general_mapping['accounts_payable_id'],
@@ -83,7 +86,8 @@ class MappingUtils:
             params['reimbursable_account_name'] = general_mapping.get('reimbursable_account_name')
             params['reimbursable_account_id'] = general_mapping.get('reimbursable_account_id')
 
-        if general_settings.corporate_credit_card_expenses_object:
+        if general_settings.corporate_credit_card_expenses_object and\
+                general_settings.corporate_credit_card_expenses_object != 'BILL':
             assert_valid('default_ccc_account_name' in general_mapping and general_mapping['default_ccc_account_name'],
                          'default ccc account name field is blank')
             assert_valid('default_ccc_account_id' in general_mapping and general_mapping['default_ccc_account_id'],
@@ -91,6 +95,15 @@ class MappingUtils:
 
             params['default_ccc_account_name'] = general_mapping.get('default_ccc_account_name')
             params['default_ccc_account_id'] = general_mapping.get('default_ccc_account_id')
+
+        if general_settings.corporate_credit_card_expenses_object == 'BILL':
+            assert_valid('default_ccc_vendor_name' in general_mapping and general_mapping['default_ccc_vendor_name'],
+                         'default ccc vendor name field is blank')
+            assert_valid('default_ccc_vendor_id' in general_mapping and general_mapping['default_ccc_vendor_id'],
+                         'default ccc vendor id field is blank')
+
+            params['default_ccc_vendor_name'] = general_mapping.get('default_ccc_vendor_name')
+            params['default_ccc_vendor_id'] = general_mapping.get('default_ccc_vendor_id')
 
         general_mapping_object, _ = GeneralMapping.objects.update_or_create(
             workspace_id=self.__workspace_id,

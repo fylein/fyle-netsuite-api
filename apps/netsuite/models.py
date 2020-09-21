@@ -10,6 +10,7 @@ from fyle_accounting_mappings.models import Mapping, MappingSetting, Destination
 
 from apps.fyle.models import ExpenseGroup, Expense
 from apps.mappings.models import GeneralMapping, SubsidiaryMapping
+from apps.workspaces.models import WorkspaceGeneralSettings
 
 
 def get_department_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
@@ -104,20 +105,26 @@ class Bill(models.Model):
 
         expense = expense_group.expenses.first()
 
+        general_settings = WorkspaceGeneralSettings.objects.get(workspace_id=expense_group.workspace_id)
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
         subsidiary_mappings = SubsidiaryMapping.objects.get(workspace_id=expense_group.workspace_id)
+
+        if general_settings.corporate_credit_card_expenses_object == 'BILL':
+            vendor_id = general_mappings.default_ccc_vendor_id
+        else:
+            vendor_id = Mapping.objects.get(
+                    source_type='EMPLOYEE',
+                    destination_type='VENDOR',
+                    source__value=description.get('employee_email'),
+                    workspace_id=expense_group.workspace_id
+                ).destination.destination_id,
 
         bill_object, _ = Bill.objects.update_or_create(
             expense_group=expense_group,
             defaults={
                 'subsidiary_id': subsidiary_mappings.internal_id,
                 'accounts_payable_id': general_mappings.accounts_payable_id,
-                'vendor_id': Mapping.objects.get(
-                    source_type='EMPLOYEE',
-                    destination_type='VENDOR',
-                    source__value=description.get('employee_email'),
-                    workspace_id=expense_group.workspace_id
-                ).destination.destination_id,
+                'vendor_id': vendor_id,
                 'location_id': general_mappings.location_id,
                 'memo': 'Report {0} / {1} exported on {2}'.format(
                     expense.claim_number, expense.report_id, datetime.now().strftime("%Y-%m-%d")
