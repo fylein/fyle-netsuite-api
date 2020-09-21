@@ -313,7 +313,7 @@ class NetSuiteConnector:
                 },
 
                 'customer': None,
-                'customFieldList': filter(None, [
+                'customFieldList': list(filter(None, [
                     {
                         'scriptId': 'custcolfyle_receipt_link',
                         'type': 'String',
@@ -328,7 +328,7 @@ class NetSuiteConnector:
                             expense.expense_id
                         )
                     }
-                ]),
+                ])),
                 'isBillable': None,
                 'projectTask': None,
                 'taxCode': None,
@@ -495,7 +495,7 @@ class NetSuiteConnector:
                     "externalId": None,
                     "type": "classification"
                 },
-                'customFieldList': filter(None, [
+                'customFieldList': list(filter(None, [
                     {
                         'scriptId': 'custcolfyle_receipt_link',
                         'type': 'String',
@@ -510,7 +510,7 @@ class NetSuiteConnector:
                             expense.expense_id
                         )
                     }
-                ]),
+                ])),
                 "exchangeRate": None,
                 "expenseDate": None,
                 "expMediaItem": None,
@@ -686,7 +686,7 @@ class NetSuiteConnector:
                 },
                 "credit": line.amount if credit is not None else None,
                 "creditTax": None,
-                'customFieldList': filter(None, [
+                'customFieldList': list(filter(None, [
                     {
                         'scriptId': 'custcolfyle_receipt_link',
                         'type': 'String',
@@ -700,7 +700,7 @@ class NetSuiteConnector:
                             cluster_domain,
                             expense.expense_id)
                     }
-                ]) if attachment_links else None,
+                ])) if attachment_links else None,
                 "debit": line.amount if debit is not None else None,
                 "debitTax": None,
                 "eliminate": None,
