@@ -43,22 +43,22 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense_id: str, ex
             "externalId": '{}-{}-{}'.format(workspace_id, expense_group.id, expense_group.description['claim_number']),
             "name": '{}-{}-{}'.format(workspace_id, expense_group.id, expense_group.description['claim_number'])
         })
+        if attachment:
+            netsuite_connection.connection.files.post({
+                "externalId": expense_id,
+                "name": attachment['filename'],
+                'content': base64.b64decode(attachment['content']),
+                "folder": {
+                            "name": None,
+                            "internalId": folder['internalId'],
+                            "externalId": folder['externalId'],
+                            "type": "folder"
+                        }
+                }
+            )
 
-        netsuite_connection.connection.files.post({
-            "externalId": expense_id,
-            "name": attachment['filename'],
-            'content': base64.b64decode(attachment['content']),
-            "folder": {
-                        "name": None,
-                        "internalId": folder['internalId'],
-                        "externalId": folder['externalId'],
-                        "type": "folder"
-                    }
-            }
-        )
-
-        file = netsuite_connection.connection.files.get(externalId=expense_id)
-        return file['url']
+            file = netsuite_connection.connection.files.get(externalId=expense_id)
+            return file['url']
     except Exception:
         error = traceback.format_exc()
         logger.error(
