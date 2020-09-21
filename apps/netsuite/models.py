@@ -105,19 +105,19 @@ class Bill(models.Model):
 
         expense = expense_group.expenses.first()
 
-        general_settings = WorkspaceGeneralSettings.objects.get(workspace_id=expense_group.workspace_id)
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
         subsidiary_mappings = SubsidiaryMapping.objects.get(workspace_id=expense_group.workspace_id)
 
-        if general_settings.corporate_credit_card_expenses_object == 'BILL':
-            vendor_id = general_mappings.default_ccc_vendor_id
-        elif general_settings.reimbursable_expenses_object == 'BILL':
+        vendor_id = None
+        if expense_group.fund_source == 'PERSONAL':
             vendor_id = Mapping.objects.get(
-                    source_type='EMPLOYEE',
-                    destination_type='VENDOR',
-                    source__value=description.get('employee_email'),
-                    workspace_id=expense_group.workspace_id
-                ).destination.destination_id,
+                source_type='EMPLOYEE',
+                destination_type='VENDOR',
+                source__value=description.get('employee_email'),
+                workspace_id=expense_group.workspace_id
+            ).destination.destination_id,
+        elif expense_group.fund_source == 'CCC':
+            vendor_id = general_mappings.default_ccc_vendor_id
 
         bill_object, _ = Bill.objects.update_or_create(
             expense_group=expense_group,
