@@ -115,7 +115,7 @@ class Bill(models.Model):
                 destination_type='VENDOR',
                 source__value=description.get('employee_email'),
                 workspace_id=expense_group.workspace_id
-            ).destination.destination_id,
+            ).destination.destination_id
         elif expense_group.fund_source == 'CCC':
             vendor_id = general_mappings.default_ccc_vendor_id
 
