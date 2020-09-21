@@ -318,8 +318,8 @@ class NetSuiteConnector:
                         'scriptId': 'custcolfyle_receipt_link',
                         'type': 'String',
                         'value':
-                            attachment_links[expense.expense_id] if expense.expense_id in attachment_links else None
-                    },
+                            attachment_links[expense.expense_id]
+                    } if expense.expense_id in attachment_links else None,
                     {
                         'scriptId': 'custcolfyle_expense_url',
                         'type': 'String',
@@ -500,8 +500,8 @@ class NetSuiteConnector:
                         'scriptId': 'custcolfyle_receipt_link',
                         'type': 'String',
                         'value':
-                            attachment_links[expense.expense_id] if expense.expense_id in attachment_links else None
-                    },
+                            attachment_links[expense.expense_id]
+                    } if expense.expense_id in attachment_links else None,
                     {
                         'scriptId': 'custcolfyle_expense_url',
                         'type': 'String',
@@ -691,8 +691,8 @@ class NetSuiteConnector:
                         'scriptId': 'custcolfyle_receipt_link',
                         'type': 'String',
                         'value':
-                            attachment_links[expense.expense_id] if expense.expense_id in attachment_links else None
-                    },
+                            attachment_links[expense.expense_id]
+                    } if expense.expense_id in attachment_links else None,
                     {
                         'scriptId': 'custcolfyle_expense_url',
                         'type': 'String',
