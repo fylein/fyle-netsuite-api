@@ -10,7 +10,6 @@ from fyle_accounting_mappings.models import Mapping, MappingSetting, Destination
 
 from apps.fyle.models import ExpenseGroup, Expense
 from apps.mappings.models import GeneralMapping, SubsidiaryMapping
-from apps.workspaces.models import WorkspaceGeneralSettings
 
 
 def get_department_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):

@@ -16,7 +16,7 @@ COPY . /fyle-netsuite-api/
 WORKDIR /fyle-netsuite-api
 
 # Do linting checks
-RUN pylint --load-plugins pylint_django --rcfile=.pylintrc **/**
+RUN pylint --load-plugins pylint_django --rcfile=.pylintrc **/**.py
 
 # Expose development port
 EXPOSE 8000
