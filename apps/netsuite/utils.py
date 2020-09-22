@@ -46,6 +46,13 @@ class NetSuiteConnector:
                     'destination_id': account['internalId']
                 })
 
+                account_attributes.append({
+                    'attribute_type': 'CREDIT_CARD_ACCOUNT',
+                    'display_name': 'Credit Card Account',
+                    'value': account['acctName'],
+                    'destination_id': account['internalId']
+                })
+
             if account['acctType'] == '_accountsPayable':
                 account_attributes.append({
                     'attribute_type': 'ACCOUNTS_PAYABLE',
@@ -54,18 +61,17 @@ class NetSuiteConnector:
                     'destination_id': account['internalId']
                 })
 
-            if account['acctType'] == '_creditCard':
-                account_attributes.append({
-                    'attribute_type': 'CREDIT_CARD_ACCOUNT',
-                    'display_name': 'Credit Card Account',
-                    'value': account['acctName'],
-                    'destination_id': account['internalId']
-                })
-
             if account['acctType'] == '_expense':
                 account_attributes.append({
                     'attribute_type': 'ACCOUNT',
                     'display_name': 'Account',
+                    'value': account['acctName'],
+                    'destination_id': account['internalId']
+                })
+
+                account_attributes.append({
+                    'attribute_type': 'CCC_ACCOUNT',
+                    'display_name': 'Credit Card Account',
                     'value': account['acctName'],
                     'destination_id': account['internalId']
                 })
@@ -87,6 +93,15 @@ class NetSuiteConnector:
                 {
                     'attribute_type': 'ACCOUNT',
                     'display_name': 'Expense Category',
+                    'value': 'Expense Category - {}'.format(category['name']),
+                    'destination_id': category['internalId']
+                }
+            )
+
+            category_attributes.append(
+                {
+                    'attribute_type': 'CCC_ACCOUNT',
+                    'display_name': 'Credit Card Expense Category',
                     'value': 'Expense Category - {}'.format(category['name']),
                     'destination_id': category['internalId']
                 }
@@ -430,7 +445,7 @@ class NetSuiteConnector:
             'taxDetailsList': None,
             'customFieldList': None,
             'internalId': None,
-            'externalId': bill.external_id
+            'externalId': 'bill {} - {}'.format(bill.expense_group_id, bill.external_id)
         }
 
         return bill_payload
@@ -620,7 +635,7 @@ class NetSuiteConnector:
             'accountingBookDetailList': None,
             'customFieldList': None,
             'internalId': None,
-            'externalId': expense_report.external_id
+            'externalId': 'report {} - {}'.format(expense_report.expense_group_id, expense_report.external_id)
         }
 
         return expense_report_payload
@@ -682,7 +697,7 @@ class NetSuiteConnector:
                     "name": None,
                     "internalId": line.entity_id,
                     "externalId": None,
-                    "type": None
+                    "type": 'vendor'
                 },
                 "credit": line.amount if credit is not None else None,
                 "creditTax": None,
@@ -773,13 +788,13 @@ class NetSuiteConnector:
                 "name": None,
                 "internalId": None,
                 "externalId": None,
-                "type": "classification"
+                "type": "department"
             },
             "location": {
                 "name": None,
                 "internalId": None,
                 "externalId": None,
-                "type": "classification"
+                "type": "location"
             },
             "exchangeRate": None,
             "isBookSpecific": None,
@@ -803,7 +818,7 @@ class NetSuiteConnector:
             "toSubsidiary": None,
             "tranDate": None,
             "tranId": None,
-            "externalId": journal_entry.external_id
+            "externalId": 'entry {} - {}'.format(journal_entry.expense_group_id, journal_entry.external_id)
         }
 
         return journal_entry_payload
