@@ -171,12 +171,21 @@ class BillLineitem(models.Model):
             category = lineitem.category if lineitem.category == lineitem.sub_category else '{0} / {1}'.format(
                 lineitem.category, lineitem.sub_category)
 
-            account: Mapping = Mapping.objects.filter(
-                source_type='CATEGORY',
-                destination_type='ACCOUNT',
-                source__value=category,
-                workspace_id=expense_group.workspace_id
-            ).first()
+            if expense_group.fund_source == 'CCC':
+                account = Mapping.objects.filter(
+                    source_type='CATEGORY',
+                    source__value=category,
+                    destination_type='CCC_ACCOUNT',
+                    workspace_id=expense_group.workspace_id
+                ).first()
+
+            else:
+                account = Mapping.objects.filter(
+                    source_type='CATEGORY',
+                    source__value=category,
+                    destination_type='ACCOUNT',
+                    workspace_id=expense_group.workspace_id
+                ).first()
 
             general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
@@ -313,12 +322,21 @@ class ExpenseReportLineItem(models.Model):
             category = lineitem.category if lineitem.category == lineitem.sub_category else '{0} / {1}'.format(
                 lineitem.category, lineitem.sub_category)
 
-            account: Mapping = Mapping.objects.filter(
-                source_type='CATEGORY',
-                destination_type='ACCOUNT',
-                source__value=category,
-                workspace_id=expense_group.workspace_id
-            ).first()
+            if expense_group.fund_source == 'CCC':
+                account = Mapping.objects.filter(
+                    source_type='CATEGORY',
+                    source__value=category,
+                    destination_type='CCC_ACCOUNT',
+                    workspace_id=expense_group.workspace_id
+                ).first()
+
+            else:
+                account = Mapping.objects.filter(
+                    source_type='CATEGORY',
+                    source__value=category,
+                    destination_type='ACCOUNT',
+                    workspace_id=expense_group.workspace_id
+                ).first()
 
             general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
@@ -452,12 +470,21 @@ class JournalEntryLineItem(models.Model):
             category = lineitem.category if lineitem.category == lineitem.sub_category else '{0} / {1}'.format(
                 lineitem.category, lineitem.sub_category)
 
-            account: Mapping = Mapping.objects.filter(
-                source_type='CATEGORY',
-                destination_type='ACCOUNT',
-                source__value=category,
-                workspace_id=expense_group.workspace_id
-            ).first()
+            if expense_group.fund_source == 'CCC':
+                account = Mapping.objects.filter(
+                    source_type='CATEGORY',
+                    source__value=category,
+                    destination_type='CCC_ACCOUNT',
+                    workspace_id=expense_group.workspace_id
+                ).first()
+
+            else:
+                account = Mapping.objects.filter(
+                    source_type='CATEGORY',
+                    source__value=category,
+                    destination_type='ACCOUNT',
+                    workspace_id=expense_group.workspace_id
+                ).first()
 
             general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
