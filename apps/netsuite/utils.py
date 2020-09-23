@@ -715,7 +715,7 @@ class NetSuiteConnector:
                             cluster_domain,
                             expense.expense_id)
                     }
-                ])),
+                ])) if debit else None,
                 "debit": line.amount if debit is not None else None,
                 "debitTax": None,
                 "eliminate": None,
