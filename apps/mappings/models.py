@@ -37,6 +37,8 @@ class GeneralMapping(models.Model):
     reimbursable_account_id = models.CharField(max_length=255, help_text='Reimbursable Expenses Account id', null=True)
     default_ccc_account_name = models.CharField(max_length=255, help_text='CCC Expenses Account name', null=True)
     default_ccc_account_id = models.CharField(max_length=255, help_text='CCC Expenses Account id', null=True)
+    default_ccc_vendor_id = models.CharField(max_length=255, help_text='Default CCC Vendor ID', null=True)
+    default_ccc_vendor_name = models.CharField(max_length=255, help_text='Default CCC Vendor Name', null=True)
     workspace = models.ForeignKey(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime')

@@ -18,7 +18,7 @@ from apps.fyle.utils import FyleConnector
 from apps.fyle.models import ExpenseGroup
 from apps.mappings.models import GeneralMapping, SubsidiaryMapping
 from apps.tasks.models import TaskLog
-from apps.workspaces.models import NetSuiteCredentials, FyleCredential
+from apps.workspaces.models import NetSuiteCredentials, FyleCredential, WorkspaceGeneralSettings
 
 from .models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, JournalEntryLineItem
 from .utils import NetSuiteConnector
@@ -43,22 +43,22 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense_id: str, ex
             "externalId": '{}-{}-{}'.format(workspace_id, expense_group.id, expense_group.description['claim_number']),
             "name": '{}-{}-{}'.format(workspace_id, expense_group.id, expense_group.description['claim_number'])
         })
+        if attachment:
+            netsuite_connection.connection.files.post({
+                "externalId": expense_id,
+                "name": attachment['filename'],
+                'content': base64.b64decode(attachment['content']),
+                "folder": {
+                            "name": None,
+                            "internalId": folder['internalId'],
+                            "externalId": folder['externalId'],
+                            "type": "folder"
+                        }
+                }
+            )
 
-        netsuite_connection.connection.files.post({
-            "externalId": expense_id,
-            "name": attachment['filename'],
-            'content': base64.b64decode(attachment['content']),
-            "folder": {
-                        "name": None,
-                        "internalId": folder['internalId'],
-                        "externalId": folder['externalId'],
-                        "type": "folder"
-                    }
-            }
-        )
-
-        file = netsuite_connection.connection.files.get(externalId=expense_id)
-        return file['url']
+            file = netsuite_connection.connection.files.get(externalId=expense_id)
+            return file['url']
     except Exception:
         error = traceback.format_exc()
         logger.error(
@@ -312,8 +312,9 @@ def __validate_expense_group(expense_group: ExpenseGroup):
     bulk_errors = []
     row = 0
 
+    general_mapping = None
     try:
-        GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
+        general_mapping = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
     except GeneralMapping.DoesNotExist:
         bulk_errors.append({
             'row': None,
@@ -334,21 +335,37 @@ def __validate_expense_group(expense_group: ExpenseGroup):
             'message': 'Subsidiary mapping not found'
         })
 
-    try:
-        Mapping.objects.get(
-            Q(destination_type='VENDOR') | Q(destination_type='EMPLOYEE'),
-            source_type='EMPLOYEE',
-            source__value=expense_group.description.get('employee_email'),
-            workspace_id=expense_group.workspace_id
-        )
-    except Mapping.DoesNotExist:
-        bulk_errors.append({
-            'row': None,
-            'expense_group_id': expense_group.id,
-            'value': expense_group.description.get('employee_email'),
-            'type': 'Employee Mapping',
-            'message': 'Employee mapping not found'
-        })
+    general_settings: WorkspaceGeneralSettings = WorkspaceGeneralSettings.objects.get(
+        workspace_id=expense_group.workspace_id)
+
+    if general_settings.corporate_credit_card_expenses_object and \
+            general_settings.corporate_credit_card_expenses_object == 'BILL' and \
+            expense_group.fund_source == 'CCC':
+        if general_mapping:
+            if not (general_mapping.default_ccc_vendor_id or general_mapping.default_ccc_vendor_name):
+                bulk_errors.append({
+                    'row': None,
+                    'expense_group_id': expense_group.id,
+                    'value': expense_group.description.get('employee_email'),
+                    'type': 'General Mapping',
+                    'message': 'Default Credit Card Vendor not found'
+                })
+    else:
+        try:
+            Mapping.objects.get(
+                Q(destination_type='VENDOR') | Q(destination_type='EMPLOYEE'),
+                source_type='EMPLOYEE',
+                source__value=expense_group.description.get('employee_email'),
+                workspace_id=expense_group.workspace_id
+            )
+        except Mapping.DoesNotExist:
+            bulk_errors.append({
+                'row': None,
+                'expense_group_id': expense_group.id,
+                'value': expense_group.description.get('employee_email'),
+                'type': 'Employee Mapping',
+                'message': 'Employee mapping not found'
+            })
 
     expenses = expense_group.expenses.all()
 
@@ -356,18 +373,31 @@ def __validate_expense_group(expense_group: ExpenseGroup):
         category = lineitem.category if lineitem.category == lineitem.sub_category else '{0} / {1}'.format(
             lineitem.category, lineitem.sub_category)
 
-        account = Mapping.objects.filter(
-            source_type='CATEGORY',
-            source__value=category,
-            workspace_id=expense_group.workspace_id
-        ).first()
+        error_message = 'Category Mapping Not Found'
+        if expense_group.fund_source == 'CCC':
+            account = Mapping.objects.filter(
+                source_type='CATEGORY',
+                source__value=category,
+                destination_type='CCC_ACCOUNT',
+                workspace_id=expense_group.workspace_id
+            ).first()
+
+            error_message = 'Credit Card Expense Category Mapping Not Found'
+        else:
+            account = Mapping.objects.filter(
+                source_type='CATEGORY',
+                source__value=category,
+                destination_type='ACCOUNT',
+                workspace_id=expense_group.workspace_id
+            ).first()
+
         if not account:
             bulk_errors.append({
                 'row': row,
                 'expense_group_id': expense_group.id,
                 'value': category,
                 'type': 'Category Mapping',
-                'message': 'Category Mapping not found'
+                'message': error_message
             })
 
         row = row + 1
