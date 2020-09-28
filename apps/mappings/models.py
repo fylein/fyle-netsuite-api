@@ -27,8 +27,6 @@ class GeneralMapping(models.Model):
     General Mapping
     """
     id = models.AutoField(primary_key=True)
-    location_name = models.CharField(max_length=255, help_text='NetSuite Location name', null=True)
-    location_id = models.CharField(max_length=255, help_text='NetSuite Location id', null=True)
     accounts_payable_name = models.CharField(max_length=255, help_text='NetSuite Accounts Payable Account name',
                                              null=True)
     accounts_payable_id = models.CharField(max_length=255, help_text='NetSuite Accounts Payable Account id', null=True)
@@ -44,5 +42,4 @@ class GeneralMapping(models.Model):
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime')
 
     class Meta:
-        unique_together = ('location_name', 'workspace')
         db_table = 'general_mappings'
