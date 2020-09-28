@@ -371,7 +371,7 @@ class NetSuiteConnector:
 
         bill_payload = {
             'nullFieldList': None,
-            'createdDate': None,
+            'createdDate': bill.transaction_date,
             'lastModifiedDate': None,
             'nexus': None,
             'subsidiaryTaxRegNum': None,
@@ -564,7 +564,7 @@ class NetSuiteConnector:
 
         expense_report_payload = {
             'nullFieldList': None,
-            'createdDate': None,
+            'createdDate': expense_report.transaction_date,
             'lastModifiedDate': None,
             'status': None,
             'customForm': None,
@@ -768,7 +768,7 @@ class NetSuiteConnector:
             "accountingBook": None,
             "accountingBookDetailList": None,
             "approved": None,
-            "createdDate": None,
+            "createdDate": journal_entry.transaction_date,
             "createdFrom": None,
             "currency": {
                 "name": journal_entry.currency,

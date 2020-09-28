@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from fyle_accounting_mappings.models import DestinationAttribute
 from .models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, JournalEntryLineItem
 
 
@@ -55,3 +56,12 @@ class JournalEntryLineItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = JournalEntryLineItem
         fields = '__all__'
+
+
+class NetSuiteFieldSerializer(serializers.ModelSerializer):
+    """
+    Expense Fields Serializer
+    """
+    class Meta:
+        model = DestinationAttribute
+        fields = ['attribute_type', 'display_name']

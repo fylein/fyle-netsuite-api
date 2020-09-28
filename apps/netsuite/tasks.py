@@ -7,6 +7,7 @@ import base64
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
+from fylesdk import FyleSDKError
 
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
 
@@ -439,17 +440,24 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str], use
                 'type': 'CREATING_BILL'
             }
         )
-        created_job = jobs.trigger_now(
-            callback_url='{0}{1}'.format(settings.API_URL, '/workspaces/{0}/netsuite/bills/'.format(workspace_id)),
-            callback_method='POST', object_id=task_log.id, payload={
-                'expense_group_id': expense_group.id,
-                'task_log_id': task_log.id
-            }, job_description='Create Bill: Workspace id - {0}, user - {1}, expense group id - {2}'.format(
-                workspace_id, user, expense_group.id
-            ),
-            org_user_id=user_profile['id']
-        )
-        task_log.task_id = created_job['id']
+        try:
+            created_job = jobs.trigger_now(
+                callback_url='{0}{1}'.format(settings.API_URL, '/workspaces/{0}/netsuite/bills/'.format(workspace_id)),
+                callback_method='POST', object_id=task_log.id, payload={
+                    'expense_group_id': expense_group.id,
+                    'task_log_id': task_log.id
+                }, job_description='Create Bill: Workspace id - {0}, user - {1}, expense group id - {2}'.format(
+                    workspace_id, user, expense_group.id
+                ),
+                org_user_id=user_profile['id']
+            )
+            task_log.task_id = created_job['id']
+
+        except FyleSDKError as e:
+            task_log.status = 'FATAL'
+            logger.error(e.response)
+            task_log.detail = e.response
+
         task_log.save()
 
 
@@ -482,19 +490,26 @@ def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List
                 'type': 'CREATING_EXPENSE_REPORT'
             }
         )
-        created_job = jobs.trigger_now(
-            callback_url='{0}{1}'.format(
-                settings.API_URL, '/workspaces/{0}/netsuite/expense_reports/'.format(workspace_id)
-            ),
-            callback_method='POST', object_id=task_log.id, payload={
-                'expense_group_id': expense_group.id,
-                'task_log_id': task_log.id
-            }, job_description='Create Expense Report: Workspace id - {0}, user - {1}, expense group id - {2}'.format(
-                workspace_id, user, expense_group.id
-            ),
-            org_user_id=user_profile['id']
-        )
-        task_log.task_id = created_job['id']
+        try:
+            created_job = jobs.trigger_now(
+                callback_url='{0}{1}'.format(
+                    settings.API_URL, '/workspaces/{0}/netsuite/expense_reports/'.format(workspace_id)
+                ),
+                callback_method='POST', object_id=task_log.id, payload={
+                    'expense_group_id': expense_group.id,
+                    'task_log_id': task_log.id
+                }, job_description='Create Expense Report: Workspace id - {0}, user - {1}, expense group id - {2}'.format(
+                    workspace_id, user, expense_group.id
+                ),
+                org_user_id=user_profile['id']
+            )
+            task_log.task_id = created_job['id']
+
+        except FyleSDKError as e:
+            task_log.status = 'FATAL'
+            logger.error(e.response)
+            task_log.detail = e.response
+
         task_log.save()
 
 
@@ -527,18 +542,25 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
                     'type': 'CREATING_JOURNAL_ENTRY'
                 }
             )
-            created_job = jobs.trigger_now(
-                callback_url='{0}{1}'.format(settings.API_URL, '/workspaces/{0}/netsuite/journal_entries/'.format(
-                    workspace_id
-                )),
-                callback_method='POST', object_id=task_log.id, payload={
-                    'expense_group_id': expense_group.id,
-                    'task_log_id': task_log.id
-                },
-                job_description='Create Journal Entry: Workspace id - {0}, user - {1}, expense group id - {2}'.format(
-                    workspace_id, user, expense_group.id
-                ),
-                org_user_id=user_profile['id']
-            )
-            task_log.task_id = created_job['id']
+            try:
+                created_job = jobs.trigger_now(
+                    callback_url='{0}{1}'.format(settings.API_URL, '/workspaces/{0}/netsuite/journal_entries/'.format(
+                        workspace_id
+                    )),
+                    callback_method='POST', object_id=task_log.id, payload={
+                        'expense_group_id': expense_group.id,
+                        'task_log_id': task_log.id
+                    },
+                    job_description='Create Journal Entry: Workspace id - {0}, user - {1}, expense group id - {2}'.format(
+                        workspace_id, user, expense_group.id
+                    ),
+                    org_user_id=user_profile['id']
+                )
+                task_log.task_id = created_job['id']
+
+            except FyleSDKError as e:
+                task_log.status = 'FATAL'
+                logger.error(e.response)
+                task_log.detail = e.response
+
             task_log.save()

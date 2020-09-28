@@ -3,7 +3,7 @@ from django.urls import path
 from .views import VendorView, AccountView, DepartmentView, SubsidiaryView, BillView, BillScheduleView, \
     ClassificationView, LocationView, EmployeeView, ExpenseReportView, ExpenseReportScheduleView, JournalEntryView,\
     JournalEntryScheduleView, BankAccountView, CreditCardAccountView, AccountsPayableView, ExpenseCategoryView, \
-    CurrencyView
+    CurrencyView, NetSuiteFieldsView
 
 urlpatterns = [
     path('vendors/', VendorView.as_view()),
@@ -23,5 +23,6 @@ urlpatterns = [
     path('expense_reports/', ExpenseReportView.as_view()),
     path('expense_reports/trigger/', ExpenseReportScheduleView.as_view()),
     path('journal_entries/', JournalEntryView.as_view()),
-    path('journal_entries/trigger/', JournalEntryScheduleView.as_view())
+    path('journal_entries/trigger/', JournalEntryScheduleView.as_view()),
+    path('netsuite_fields/', NetSuiteFieldsView.as_view()),
 ]

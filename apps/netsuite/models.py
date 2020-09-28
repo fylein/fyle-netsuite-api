@@ -8,7 +8,7 @@ from django.db.models import Q
 
 from fyle_accounting_mappings.models import Mapping, MappingSetting, DestinationAttribute
 
-from apps.fyle.models import ExpenseGroup, Expense
+from apps.fyle.models import ExpenseGroup, Expense, ExpenseAttribute
 from apps.mappings.models import GeneralMapping, SubsidiaryMapping
 
 
@@ -21,13 +21,14 @@ def get_department_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
     department_id = None
 
     if department_setting:
-        source_value = None
-
         if lineitem:
             if department_setting.source_field == 'PROJECT':
                 source_value = lineitem.project
             elif department_setting.source_field == 'COST_CENTER':
                 source_value = lineitem.cost_center
+            else:
+                attribute = ExpenseAttribute.objects.filter(attribute_type=department_setting.source_field).first()
+                source_value = lineitem.custom_properties.get(attribute.display_name, None)
         else:
             source_value = expense_group.description[department_setting.source_field.lower()]
 
@@ -52,13 +53,14 @@ def get_class_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
     class_id = None
 
     if class_setting:
-        source_value = None
-
         if lineitem:
             if class_setting.source_field == 'PROJECT':
                 source_value = lineitem.project
             elif class_setting.source_field == 'COST_CENTER':
                 source_value = lineitem.cost_center
+            else:
+                attribute = ExpenseAttribute.objects.filter(attribute_type=class_setting.source_field).first()
+                source_value = lineitem.custom_properties.get(attribute.display_name, None)
         else:
             source_value = expense_group.description[class_setting.source_field.lower()]
 
@@ -74,6 +76,49 @@ def get_class_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
     return class_id
 
 
+def get_location_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
+    location_setting: MappingSetting = MappingSetting.objects.filter(
+        workspace_id=expense_group.workspace_id,
+        destination_field='LOCATION'
+    ).first()
+
+    location_id = None
+
+    if location_setting:
+        if lineitem:
+            if location_setting.source_field == 'PROJECT':
+                source_value = lineitem.project
+            elif location_setting.source_field == 'COST_CENTER':
+                source_value = lineitem.cost_center
+            else:
+                attribute = ExpenseAttribute.objects.filter(attribute_type=location_setting.source_field).first()
+                source_value = lineitem.custom_properties.get(attribute.display_name, None)
+        else:
+            source_value = expense_group.description[location_setting.source_field.lower()]
+
+        mapping: Mapping = Mapping.objects.filter(
+            source_type=location_setting.source_field,
+            destination_type='LOCATION',
+            source__value=source_value,
+            workspace_id=expense_group.workspace_id
+        ).first()
+
+        if mapping:
+            location_id = mapping.destination.destination_id
+    return location_id
+
+
+def get_transaction_date(expense_group: ExpenseGroup) -> str:
+    if 'spent_at' in expense_group.description and expense_group.description['spent_at']:
+        return expense_group.description['spent_at']
+    elif 'approved_at' in expense_group.description and expense_group.description['approved_at']:
+        return expense_group.description['approved_at']
+    elif 'verified_at' in expense_group.description and expense_group.description['verified_at']:
+        return expense_group.description['verified_at']
+
+    return datetime.now().strftime("%Y-%m-%d")
+
+
 class Bill(models.Model):
     """
     NetSuite Vendor Bill
@@ -87,6 +132,7 @@ class Bill(models.Model):
     currency = models.CharField(max_length=255, help_text='Bill Currency')
     memo = models.TextField(help_text='Bill Description')
     external_id = models.CharField(max_length=255, unique=True, help_text='Fyle reimbursement id')
+    transaction_date = models.DateField(help_text='Bill transaction date')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
@@ -124,11 +170,12 @@ class Bill(models.Model):
                 'subsidiary_id': subsidiary_mappings.internal_id,
                 'accounts_payable_id': general_mappings.accounts_payable_id,
                 'vendor_id': vendor_id,
-                'location_id': general_mappings.location_id,
+                'location_id': None,
                 'memo': 'Report {0} / {1} exported on {2}'.format(
                     expense.claim_number, expense.report_id, datetime.now().strftime("%Y-%m-%d")
                 ),
                 'currency': expense.currency,
+                'transaction_date': get_transaction_date(expense_group),
                 'external_id': expense_group.fyle_group_id
             }
         )
@@ -186,18 +233,18 @@ class BillLineitem(models.Model):
                     workspace_id=expense_group.workspace_id
                 ).first()
 
-            general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
-
             class_id = get_class_id_or_none(expense_group, lineitem)
 
             department_id = get_department_id_or_none(expense_group, lineitem)
+
+            location_id = get_location_id_or_none(expense_group, lineitem)
 
             bill_lineitem_object, _ = BillLineitem.objects.update_or_create(
                 bill=bill,
                 expense_id=lineitem.id,
                 defaults={
                     'account_id': account.destination.destination_id if account else None,
-                    'location_id': general_mappings.location_id,
+                    'location_id': location_id,
                     'class_id': class_id,
                     'department_id': department_id,
                     'amount': lineitem.amount,
@@ -225,6 +272,7 @@ class ExpenseReport(models.Model):
     subsidiary_id = models.CharField(max_length=255, help_text='NetSuite subsidiary id')
     memo = models.CharField(max_length=255, help_text='Expense Report Description')
     external_id = models.CharField(max_length=255, unique=True, help_text='Fyle reimbursement id')
+    transaction_date = models.DateField(help_text='Expense Report transaction date')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
@@ -273,11 +321,12 @@ class ExpenseReport(models.Model):
                 'currency': expense.currency,
                 'department_id': None,
                 'class_id': None,
-                'location_id': general_mappings.location_id,
+                'location_id': None,
                 'subsidiary_id': subsidiary_mappings.internal_id,
                 'memo': 'Report {0} / {1} exported on {2}'.format(
                     expense.claim_number, expense.report_id, datetime.now().strftime("%Y-%m-%d")
                 ),
+                'transaction_date': get_transaction_date(expense_group),
                 'external_id': expense_group.fyle_group_id
             }
         )
@@ -337,13 +386,13 @@ class ExpenseReportLineItem(models.Model):
                     workspace_id=expense_group.workspace_id
                 ).first()
 
-            general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
-
             currency = DestinationAttribute.objects.filter(value=lineitem.currency).first()
 
             class_id = get_class_id_or_none(expense_group, lineitem)
 
             department_id = get_department_id_or_none(expense_group, lineitem)
+
+            location_id = get_location_id_or_none(expense_group, lineitem)
 
             expense_report_lineitem_object, _ = ExpenseReportLineItem.objects.update_or_create(
                 expense_report=expense_report,
@@ -353,7 +402,7 @@ class ExpenseReportLineItem(models.Model):
                     'category': account.destination.destination_id,
                     'class_id': class_id if class_id else None,
                     'customer_id': None,
-                    'location_id': general_mappings.location_id if general_mappings.location_id else None,
+                    'location_id': location_id,
                     'department_id': department_id,
                     'currency': currency.destination_id if currency else '1',
                     'memo': lineitem.purpose
@@ -375,6 +424,7 @@ class JournalEntry(models.Model):
     subsidiary_id = models.CharField(max_length=255, help_text='NetSuite Subsidiary ID')
     memo = models.CharField(max_length=255, help_text='Journal Entry Memo')
     external_id = models.CharField(max_length=255, help_text='Journal Entry External ID')
+    transaction_date = models.DateField(help_text='Journal Entry transaction date')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
@@ -400,6 +450,7 @@ class JournalEntry(models.Model):
                 'memo': 'Report {0} / {1} exported on {2}'.format(
                     expense.claim_number, expense.report_id, datetime.now().strftime("%Y-%m-%d")
                 ),
+                'transaction_date': get_transaction_date(expense_group),
                 'external_id': expense_group.fyle_group_id
             }
         )
@@ -485,11 +536,11 @@ class JournalEntryLineItem(models.Model):
                     workspace_id=expense_group.workspace_id
                 ).first()
 
-            general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
-
             class_id = get_class_id_or_none(expense_group, lineitem)
 
             department_id = get_department_id_or_none(expense_group, lineitem)
+
+            location_id = get_location_id_or_none(expense_group, lineitem)
 
             journal_entry_lineitem_object, _ = JournalEntryLineItem.objects.update_or_create(
                 journal_entry=journal_entry,
@@ -498,7 +549,7 @@ class JournalEntryLineItem(models.Model):
                     'debit_account_id': debit_account_id,
                     'account_id': account.destination.destination_id,
                     'department_id': department_id,
-                    'location_id': general_mappings.location_id if general_mappings.location_id else None,
+                    'location_id': location_id,
                     'class_id': class_id if class_id else None,
                     'entity_id': entity.destination.destination_id,
                     'amount': lineitem.amount,
