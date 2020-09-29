@@ -371,7 +371,7 @@ class NetSuiteConnector:
 
         bill_payload = {
             'nullFieldList': None,
-            'createdDate': bill.transaction_date,
+            'createdDate': None,
             'lastModifiedDate': None,
             'nexus': None,
             'subsidiaryTaxRegNum': None,
@@ -407,7 +407,7 @@ class NetSuiteConnector:
             'nextApprover': None,
             'vatRegNum': None,
             'postingPeriod': None,
-            'tranDate': None,
+            'tranDate': bill.transaction_date,
             'currencyName': None,
             'billingAddress': None,
             'exchangeRate': None,
@@ -564,7 +564,7 @@ class NetSuiteConnector:
 
         expense_report_payload = {
             'nullFieldList': None,
-            'createdDate': expense_report.transaction_date,
+            'createdDate': None,
             'lastModifiedDate': None,
             'status': None,
             'customForm': None,
@@ -597,7 +597,7 @@ class NetSuiteConnector:
             'tranId': None,
             'acctCorpCardExp': None,
             'postingPeriod': None,
-            'tranDate': None,
+            'tranDate': expense_report.transaction_date,
             'dueDate': None,
             'approvalStatus': None,
             'total': None,
@@ -768,7 +768,7 @@ class NetSuiteConnector:
             "accountingBook": None,
             "accountingBookDetailList": None,
             "approved": None,
-            "createdDate": journal_entry.transaction_date,
+            "createdDate": None,
             "createdFrom": None,
             "currency": {
                 "name": journal_entry.currency,
@@ -816,7 +816,7 @@ class NetSuiteConnector:
             "subsidiaryTaxRegNum": None,
             "taxPointDate": None,
             "toSubsidiary": None,
-            "tranDate": None,
+            "tranDate": journal_entry.transaction_date,
             "tranId": None,
             "externalId": 'entry {} - {}'.format(journal_entry.expense_group_id, journal_entry.external_id)
         }

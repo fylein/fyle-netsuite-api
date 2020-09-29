@@ -130,8 +130,8 @@ def get_default_expense_group_fields():
     return ['employee_email', 'report_id', 'claim_number', 'fund_source']
 
 
-def get_default_expense_states():
-    return ['PAYMENT_PROCESSING']
+def get_default_expense_state():
+    return 'PAYMENT_PROCESSING'
 
 
 class ExpenseGroupSettings(models.Model):
@@ -148,11 +148,9 @@ class ExpenseGroupSettings(models.Model):
         base_field=models.CharField(max_length=100), default=get_default_expense_group_fields,
         help_text='list of fields ccc expenses grouped by'
     )
-
-    expense_states = ArrayField(
-        base_field=models.CharField(max_length=100), default=get_default_expense_states,
-        help_text='list of states to fetch expenses'
-    )
+    expense_state = models.CharField(
+        max_length=100, default=get_default_expense_state,
+        help_text='state at which the expenses are fetched ( PAYMENT_PENDING / PAYMENT_PROCESSING / PAID)')
     export_date_type = models.CharField(max_length=100, default='current_date', help_text='Export Date')
     workspace = models.OneToOneField(
         Workspace, on_delete=models.PROTECT, help_text='To which workspace this expense group setting belongs to'
@@ -219,7 +217,7 @@ class ExpenseGroupSettings(models.Model):
             defaults={
                 'reimbursable_expense_group_fields': reimbursable_grouped_by,
                 'corporate_credit_card_expense_group_fields': corporate_credit_card_expenses_grouped_by,
-                'expense_states': expense_group_settings['expense_states'],
+                'expense_state': expense_group_settings['expense_state'],
                 'export_date_type': expense_group_settings['export_date_type']
             }
         )
@@ -298,7 +296,7 @@ class ExpenseGroup(models.Model):
 
             for key in expense_group:
                 if key in ALLOWED_FORM_INPUT['export_date_type']:
-                    expense_group[key] = expense_group[key].strftime('%Y-%m-%d')
+                    expense_group[key] = expense_group[key].strftime('%Y-%m-%dT%H:%M:%S.000Z')
 
             for key in expense_group:
                 group_id = '{0}-{1}'.format(group_id, expense_group[key])

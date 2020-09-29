@@ -99,7 +99,7 @@ def async_create_expense_groups(workspace_id: int, fund_source: List[str], task_
             expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=workspace_id)
 
             expenses = fyle_connector.get_expenses(
-                state=expense_group_settings.expense_states,
+                state=expense_group_settings.expense_state,
                 updated_at=updated_at,
                 fund_source=fund_source
             )

@@ -132,7 +132,7 @@ class Bill(models.Model):
     currency = models.CharField(max_length=255, help_text='Bill Currency')
     memo = models.TextField(help_text='Bill Description')
     external_id = models.CharField(max_length=255, unique=True, help_text='Fyle reimbursement id')
-    transaction_date = models.DateField(help_text='Bill transaction date')
+    transaction_date = models.DateTimeField(help_text='Bill transaction date')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
@@ -170,7 +170,7 @@ class Bill(models.Model):
                 'subsidiary_id': subsidiary_mappings.internal_id,
                 'accounts_payable_id': general_mappings.accounts_payable_id,
                 'vendor_id': vendor_id,
-                'location_id': None,
+                'location_id': general_mappings.location_id,
                 'memo': 'Report {0} / {1} exported on {2}'.format(
                     expense.claim_number, expense.report_id, datetime.now().strftime("%Y-%m-%d")
                 ),
@@ -239,12 +239,14 @@ class BillLineitem(models.Model):
 
             location_id = get_location_id_or_none(expense_group, lineitem)
 
+            general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
+
             bill_lineitem_object, _ = BillLineitem.objects.update_or_create(
                 bill=bill,
                 expense_id=lineitem.id,
                 defaults={
                     'account_id': account.destination.destination_id if account else None,
-                    'location_id': location_id,
+                    'location_id': general_mappings.location_id if general_mappings.location_id else location_id,
                     'class_id': class_id,
                     'department_id': department_id,
                     'amount': lineitem.amount,
@@ -272,7 +274,7 @@ class ExpenseReport(models.Model):
     subsidiary_id = models.CharField(max_length=255, help_text='NetSuite subsidiary id')
     memo = models.CharField(max_length=255, help_text='Expense Report Description')
     external_id = models.CharField(max_length=255, unique=True, help_text='Fyle reimbursement id')
-    transaction_date = models.DateField(help_text='Expense Report transaction date')
+    transaction_date = models.DateTimeField(help_text='Expense Report transaction date')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
@@ -321,7 +323,7 @@ class ExpenseReport(models.Model):
                 'currency': expense.currency,
                 'department_id': None,
                 'class_id': None,
-                'location_id': None,
+                'location_id': general_mappings.location_id,
                 'subsidiary_id': subsidiary_mappings.internal_id,
                 'memo': 'Report {0} / {1} exported on {2}'.format(
                     expense.claim_number, expense.report_id, datetime.now().strftime("%Y-%m-%d")
@@ -394,6 +396,8 @@ class ExpenseReportLineItem(models.Model):
 
             location_id = get_location_id_or_none(expense_group, lineitem)
 
+            general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
+
             expense_report_lineitem_object, _ = ExpenseReportLineItem.objects.update_or_create(
                 expense_report=expense_report,
                 expense_id=lineitem.id,
@@ -402,7 +406,7 @@ class ExpenseReportLineItem(models.Model):
                     'category': account.destination.destination_id,
                     'class_id': class_id if class_id else None,
                     'customer_id': None,
-                    'location_id': location_id,
+                    'location_id': general_mappings.location_id if general_mappings.location_id else location_id,
                     'department_id': department_id,
                     'currency': currency.destination_id if currency else '1',
                     'memo': lineitem.purpose
@@ -424,7 +428,7 @@ class JournalEntry(models.Model):
     subsidiary_id = models.CharField(max_length=255, help_text='NetSuite Subsidiary ID')
     memo = models.CharField(max_length=255, help_text='Journal Entry Memo')
     external_id = models.CharField(max_length=255, help_text='Journal Entry External ID')
-    transaction_date = models.DateField(help_text='Journal Entry transaction date')
+    transaction_date = models.DateTimeField(help_text='Journal Entry transaction date')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
@@ -542,6 +546,8 @@ class JournalEntryLineItem(models.Model):
 
             location_id = get_location_id_or_none(expense_group, lineitem)
 
+            general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
+
             journal_entry_lineitem_object, _ = JournalEntryLineItem.objects.update_or_create(
                 journal_entry=journal_entry,
                 expense_id=lineitem.id,
@@ -549,7 +555,7 @@ class JournalEntryLineItem(models.Model):
                     'debit_account_id': debit_account_id,
                     'account_id': account.destination.destination_id,
                     'department_id': department_id,
-                    'location_id': location_id,
+                    'location_id': general_mappings.location_id if general_mappings.location_id else location_id,
                     'class_id': class_id if class_id else None,
                     'entity_id': entity.destination.destination_id,
                     'amount': lineitem.amount,
