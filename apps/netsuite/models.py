@@ -119,6 +119,13 @@ def get_transaction_date(expense_group: ExpenseGroup) -> str:
     return datetime.now().strftime('%Y-%m-%dT%H:%M:%S.000Z')
 
 
+def get_expense_purpose(lineitem, category) -> str:
+    expense_purpose = ', purpose - {0}'.format(lineitem.purpose) if lineitem.purpose else ''
+    spent_at = ' spent on {0} '.format(lineitem.spent_at) if lineitem.spent_at else ''
+    return 'Expense by {0} against category {1}{2}with claim number - {3}{4}'.format(
+        lineitem.employee_email, category, spent_at, lineitem.claim_number, expense_purpose)
+
+
 class Bill(models.Model):
     """
     NetSuite Vendor Bill
@@ -241,8 +248,6 @@ class BillLineitem(models.Model):
 
             general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
-            expense_purpose = 'purpose - {0}'.format(lineitem.purpose) if lineitem.purpose else ''
-
             bill_lineitem_object, _ = BillLineitem.objects.update_or_create(
                 bill=bill,
                 expense_id=lineitem.id,
@@ -252,12 +257,7 @@ class BillLineitem(models.Model):
                     'class_id': class_id,
                     'department_id': department_id,
                     'amount': lineitem.amount,
-                    'memo': 'Expense by {0}'
-                            ' against category {1}'
-                            ' spent on {2}'
-                            ' with claim number - {3},'
-                            ' {4}'.format(lineitem.employee_email, category, lineitem.spent_at,
-                                          lineitem.claim_number, expense_purpose)
+                    'memo': get_expense_purpose(lineitem, category)
                 }
             )
 
@@ -405,8 +405,6 @@ class ExpenseReportLineItem(models.Model):
 
             general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
-            expense_purpose = 'purpose - {0}'.format(lineitem.purpose) if lineitem.purpose else ''
-
             expense_report_lineitem_object, _ = ExpenseReportLineItem.objects.update_or_create(
                 expense_report=expense_report,
                 expense_id=lineitem.id,
@@ -418,12 +416,7 @@ class ExpenseReportLineItem(models.Model):
                     'location_id': general_mappings.location_id if general_mappings.location_id else location_id,
                     'department_id': department_id,
                     'currency': currency.destination_id if currency else '1',
-                    'memo': 'Expense by {0}'
-                            ' against category {1}'
-                            ' spent on {2},'
-                            ' with claim number - {3},'
-                            ' {4}'.format(lineitem.employee_email, category, lineitem.spent_at,
-                                          lineitem.claim_number, expense_purpose)
+                    'memo': get_expense_purpose(lineitem, category)
                 }
             )
 
@@ -564,8 +557,6 @@ class JournalEntryLineItem(models.Model):
 
             general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
-            expense_purpose = 'purpose - {0}'.format(lineitem.purpose) if lineitem.purpose else ''
-
             journal_entry_lineitem_object, _ = JournalEntryLineItem.objects.update_or_create(
                 journal_entry=journal_entry,
                 expense_id=lineitem.id,
@@ -577,12 +568,7 @@ class JournalEntryLineItem(models.Model):
                     'class_id': class_id if class_id else None,
                     'entity_id': entity.destination.destination_id,
                     'amount': lineitem.amount,
-                    'memo': 'Expense by {0}'
-                            ' against category {1}'
-                            ' spent on {2},'
-                            ' with claim number - {3},'
-                            ' {4}'.format(lineitem.employee_email, category, lineitem.spent_at,
-                                          lineitem.claim_number, expense_purpose)
+                    'memo': get_expense_purpose(lineitem, category)
                 }
             )
 
