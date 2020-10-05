@@ -116,7 +116,7 @@ def get_transaction_date(expense_group: ExpenseGroup) -> str:
     elif 'verified_at' in expense_group.description and expense_group.description['verified_at']:
         return expense_group.description['verified_at']
 
-    return datetime.now().strftime("%Y-%m-%d")
+    return datetime.now().strftime('%Y-%m-%dT%H:%M:%S.000Z')
 
 
 class Bill(models.Model):
@@ -171,9 +171,9 @@ class Bill(models.Model):
                 'accounts_payable_id': general_mappings.accounts_payable_id,
                 'vendor_id': vendor_id,
                 'location_id': general_mappings.location_id,
-                'memo': 'Report {0} / {1} exported on {2}'.format(
-                    expense.claim_number, expense.report_id, datetime.now().strftime("%Y-%m-%d")
-                ),
+                'memo': 'Reimbursable expenses by {0}'.format(description.get('employee_email')) if
+                expense_group.fund_source == 'PERSONAL' else
+                'Credit card expenses by {0}'.format(description.get('employee_email')),
                 'currency': expense.currency,
                 'transaction_date': get_transaction_date(expense_group),
                 'external_id': expense_group.fyle_group_id
@@ -241,6 +241,8 @@ class BillLineitem(models.Model):
 
             general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
+            expense_purpose = 'purpose - {0}'.format(lineitem.purpose) if lineitem.purpose else ''
+
             bill_lineitem_object, _ = BillLineitem.objects.update_or_create(
                 bill=bill,
                 expense_id=lineitem.id,
@@ -250,7 +252,12 @@ class BillLineitem(models.Model):
                     'class_id': class_id,
                     'department_id': department_id,
                     'amount': lineitem.amount,
-                    'memo': lineitem.purpose
+                    'memo': 'Expense by {0}'
+                            ' against category {1}'
+                            ' spent on {2}'
+                            ' with claim number - {3},'
+                            ' {4}'.format(lineitem.employee_email, category, lineitem.spent_at,
+                                          lineitem.claim_number, expense_purpose)
                 }
             )
 
@@ -325,9 +332,9 @@ class ExpenseReport(models.Model):
                 'class_id': None,
                 'location_id': general_mappings.location_id,
                 'subsidiary_id': subsidiary_mappings.internal_id,
-                'memo': 'Report {0} / {1} exported on {2}'.format(
-                    expense.claim_number, expense.report_id, datetime.now().strftime("%Y-%m-%d")
-                ),
+                'memo': "Reimbursable expenses by {0}".format(description.get('employee_email')) if
+                expense_group.fund_source == 'PERSONAL' else
+                "Credit card expenses by {0}".format(description.get('employee_email')),
                 'transaction_date': get_transaction_date(expense_group),
                 'external_id': expense_group.fyle_group_id
             }
@@ -398,6 +405,8 @@ class ExpenseReportLineItem(models.Model):
 
             general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
+            expense_purpose = 'purpose - {0}'.format(lineitem.purpose) if lineitem.purpose else ''
+
             expense_report_lineitem_object, _ = ExpenseReportLineItem.objects.update_or_create(
                 expense_report=expense_report,
                 expense_id=lineitem.id,
@@ -409,7 +418,12 @@ class ExpenseReportLineItem(models.Model):
                     'location_id': general_mappings.location_id if general_mappings.location_id else location_id,
                     'department_id': department_id,
                     'currency': currency.destination_id if currency else '1',
-                    'memo': lineitem.purpose
+                    'memo': 'Expense by {0}'
+                            ' against category {1}'
+                            ' spent on {2},'
+                            ' with claim number - {3},'
+                            ' {4}'.format(lineitem.employee_email, category, lineitem.spent_at,
+                                          lineitem.claim_number, expense_purpose)
                 }
             )
 
@@ -444,6 +458,8 @@ class JournalEntry(models.Model):
         """
         expense = expense_group.expenses.first()
 
+        description = expense_group.description
+
         subsidiary_mappings = SubsidiaryMapping.objects.get(workspace_id=expense_group.workspace_id)
 
         journal_entry_object, _ = JournalEntry.objects.update_or_create(
@@ -451,9 +467,9 @@ class JournalEntry(models.Model):
             defaults={
                 'currency': expense.currency,
                 'subsidiary_id': subsidiary_mappings.internal_id,
-                'memo': 'Report {0} / {1} exported on {2}'.format(
-                    expense.claim_number, expense.report_id, datetime.now().strftime("%Y-%m-%d")
-                ),
+                'memo': "Reimbursable expenses by {0}".format(description.get('employee_email')) if
+                expense_group.fund_source == 'PERSONAL' else
+                "Credit card expenses by {0}".format(description.get('employee_email')),
                 'transaction_date': get_transaction_date(expense_group),
                 'external_id': expense_group.fyle_group_id
             }
@@ -548,6 +564,8 @@ class JournalEntryLineItem(models.Model):
 
             general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
+            expense_purpose = 'purpose - {0}'.format(lineitem.purpose) if lineitem.purpose else ''
+
             journal_entry_lineitem_object, _ = JournalEntryLineItem.objects.update_or_create(
                 journal_entry=journal_entry,
                 expense_id=lineitem.id,
@@ -559,7 +577,12 @@ class JournalEntryLineItem(models.Model):
                     'class_id': class_id if class_id else None,
                     'entity_id': entity.destination.destination_id,
                     'amount': lineitem.amount,
-                    'memo': lineitem.purpose
+                    'memo': 'Expense by {0}'
+                            ' against category {1}'
+                            ' spent on {2},'
+                            ' with claim number - {3},'
+                            ' {4}'.format(lineitem.employee_email, category, lineitem.spent_at,
+                                          lineitem.claim_number, expense_purpose)
                 }
             )
 
