@@ -116,7 +116,7 @@ def get_transaction_date(expense_group: ExpenseGroup) -> str:
     elif 'verified_at' in expense_group.description and expense_group.description['verified_at']:
         return expense_group.description['verified_at']
 
-    return datetime.now().strftime('%Y-%m-%dT%H:%M:%S.000Z')
+    return datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
 
 
 def get_expense_purpose(lineitem, category) -> str:

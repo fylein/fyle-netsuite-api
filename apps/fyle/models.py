@@ -296,7 +296,7 @@ class ExpenseGroup(models.Model):
 
             for key in expense_group:
                 if key in ALLOWED_FORM_INPUT['export_date_type']:
-                    expense_group[key] = expense_group[key].strftime('%Y-%m-%dT%H:%M:%S.000Z')
+                    expense_group[key] = expense_group[key].strftime('%Y-%m-%dT%H:%M:%S')
 
             for key in expense_group:
                 group_id = '{0}-{1}'.format(group_id, expense_group[key])
