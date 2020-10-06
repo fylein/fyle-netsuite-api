@@ -426,8 +426,8 @@ class NetSuiteConnector:
             'creditLimit': None,
             'availableVendorCredit': None,
             'currency': {
-                'name': bill.currency,
-                'internalId': None,
+                'name': None,
+                'internalId': bill.currency,
                 'externalId': None,
                 'type': 'currency'
             },
@@ -771,8 +771,8 @@ class NetSuiteConnector:
             "createdDate": None,
             "createdFrom": None,
             "currency": {
-                "name": journal_entry.currency,
-                "internalId": None,
+                "name": None,
+                "internalId": journal_entry.currency,
                 "externalId": None,
                 "type": "currency"
             },
