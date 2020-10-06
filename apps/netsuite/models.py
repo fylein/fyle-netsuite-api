@@ -160,6 +160,8 @@ class Bill(models.Model):
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
         subsidiary_mappings = SubsidiaryMapping.objects.get(workspace_id=expense_group.workspace_id)
 
+        currency = DestinationAttribute.objects.filter(value=expense.currency).first()
+
         vendor_id = None
         if expense_group.fund_source == 'PERSONAL':
             vendor_id = Mapping.objects.get(
@@ -181,7 +183,7 @@ class Bill(models.Model):
                 'memo': 'Reimbursable expenses by {0}'.format(description.get('employee_email')) if
                 expense_group.fund_source == 'PERSONAL' else
                 'Credit card expenses by {0}'.format(description.get('employee_email')),
-                'currency': expense.currency,
+                'currency': currency.destination_id if currency else '1',
                 'transaction_date': get_transaction_date(expense_group),
                 'external_id': expense_group.fyle_group_id
             }
@@ -455,12 +457,14 @@ class JournalEntry(models.Model):
 
         description = expense_group.description
 
+        currency = DestinationAttribute.objects.filter(value=expense.currency).first()
+
         subsidiary_mappings = SubsidiaryMapping.objects.get(workspace_id=expense_group.workspace_id)
 
         journal_entry_object, _ = JournalEntry.objects.update_or_create(
             expense_group=expense_group,
             defaults={
-                'currency': expense.currency,
+                'currency': currency.destination_id if currency else '1',
                 'subsidiary_id': subsidiary_mappings.internal_id,
                 'memo': "Reimbursable expenses by {0}".format(description.get('employee_email')) if
                 expense_group.fund_source == 'PERSONAL' else
