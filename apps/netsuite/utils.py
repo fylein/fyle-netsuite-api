@@ -527,7 +527,7 @@ class NetSuiteConnector:
                     }
                 ])),
                 "exchangeRate": None,
-                "expenseDate": None,
+                "expenseDate": line.transaction_date,
                 "expMediaItem": None,
                 "foreignAmount": None,
                 "grossAmt": None,

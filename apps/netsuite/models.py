@@ -357,6 +357,7 @@ class ExpenseReportLineItem(models.Model):
     department_id = models.CharField(max_length=255, help_text='NetSuite department id', null=True)
     currency = models.CharField(max_length=255, help_text='NetSuite Currency id')
     memo = models.CharField(max_length=255, help_text='NetSuite bill lineitem memo', null=True)
+    transaction_date = models.DateTimeField(help_text='Expense Report transaction date')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
@@ -416,6 +417,7 @@ class ExpenseReportLineItem(models.Model):
                     'location_id': general_mappings.location_id if general_mappings.location_id else location_id,
                     'department_id': department_id,
                     'currency': currency.destination_id if currency else '1',
+                    'transaction_date': get_transaction_date(expense_group),
                     'memo': get_expense_purpose(lineitem, category)
                 }
             )
