@@ -285,6 +285,10 @@ class ExpenseGroup(models.Model):
             expense_group.pop('total')
             expense_group.pop('expense_ids')
 
+            for key in expense_group:
+                if key in ALLOWED_FORM_INPUT['export_date_type']:
+                    expense_group[key] = expense_group[key].strftime('%Y-%m-%dT%H:%M:%S')
+
             expense_group_object = ExpenseGroup.objects.create(
                 workspace_id=workspace_id,
                 fund_source=expense_group['fund_source'],
