@@ -41,8 +41,10 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense_id: str, ex
         attachment = fyle_connector.get_attachment(expense_id)
 
         folder = netsuite_connection.connection.folders.post({
-            "externalId": '{}-{}-{}'.format(workspace_id, expense_group.id, expense_group.description['claim_number']),
-            "name": '{}-{}-{}'.format(workspace_id, expense_group.id, expense_group.description['claim_number'])
+            "externalId": '{}-{}-{}'.format(
+                workspace_id, expense_group.id, expense_group.description['employee_email']
+            ),
+            "name": '{}-{}-{}'.format(workspace_id, expense_group.id, expense_group.description['employee_email'])
         })
         if attachment:
             netsuite_connection.connection.files.post({

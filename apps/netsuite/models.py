@@ -185,7 +185,7 @@ class Bill(models.Model):
                 'Credit card expenses by {0}'.format(description.get('employee_email')),
                 'currency': currency.destination_id if currency else '1',
                 'transaction_date': get_transaction_date(expense_group),
-                'external_id': expense_group.fyle_group_id
+                'external_id': 'bill {} - {}'.format(expense_group.id, description.get('employee_email'))
             }
         )
         return bill_object
@@ -338,7 +338,7 @@ class ExpenseReport(models.Model):
                 expense_group.fund_source == 'PERSONAL' else
                 "Credit card expenses by {0}".format(description.get('employee_email')),
                 'transaction_date': get_transaction_date(expense_group),
-                'external_id': expense_group.fyle_group_id
+                'external_id': 'report {} - {}'.format(expense_group.id, description.get('employee_email'))
             }
         )
         return expense_report_object
@@ -470,7 +470,7 @@ class JournalEntry(models.Model):
                 expense_group.fund_source == 'PERSONAL' else
                 "Credit card expenses by {0}".format(description.get('employee_email')),
                 'transaction_date': get_transaction_date(expense_group),
-                'external_id': expense_group.fyle_group_id
+                'external_id': 'journal {} - {}'.format(expense_group.id, description.get('employee_email'))
             }
         )
         return journal_entry_object

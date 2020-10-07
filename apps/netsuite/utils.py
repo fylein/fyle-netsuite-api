@@ -445,7 +445,7 @@ class NetSuiteConnector:
             'taxDetailsList': None,
             'customFieldList': None,
             'internalId': None,
-            'externalId': 'bill {} - {}'.format(bill.expense_group_id, bill.external_id)
+            'externalId': bill.external_id
         }
 
         return bill_payload
@@ -635,7 +635,7 @@ class NetSuiteConnector:
             'accountingBookDetailList': None,
             'customFieldList': None,
             'internalId': None,
-            'externalId': 'report {} - {}'.format(expense_report.expense_group_id, expense_report.external_id)
+            'externalId': expense_report.external_id
         }
 
         return expense_report_payload
@@ -818,7 +818,7 @@ class NetSuiteConnector:
             "toSubsidiary": None,
             "tranDate": journal_entry.transaction_date,
             "tranId": None,
-            "externalId": 'entry {} - {}'.format(journal_entry.expense_group_id, journal_entry.external_id)
+            "externalId": journal_entry.external_id
         }
 
         return journal_entry_payload

@@ -247,7 +247,6 @@ class ExpenseGroup(models.Model):
     Expense Group
     """
     id = models.AutoField(primary_key=True)
-    fyle_group_id = models.CharField(max_length=255, unique=True, help_text='fyle expense group id report id, etc')
     workspace = models.ForeignKey(Workspace, on_delete=models.PROTECT,
                                   help_text='To which workspace this expense group belongs to')
     fund_source = models.CharField(max_length=255, help_text='Expense fund source')
@@ -257,7 +256,6 @@ class ExpenseGroup(models.Model):
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
     class Meta:
-        unique_together = ('fyle_group_id', 'workspace')
         db_table = 'expense_groups'
 
     @staticmethod
@@ -287,27 +285,10 @@ class ExpenseGroup(models.Model):
             expense_group.pop('total')
             expense_group.pop('expense_ids')
 
-            group_id: str = ''
-
-            for key in expense_group.keys():
-                if key not in ALLOWED_FORM_INPUT['export_date_type']:
-                    if expense_group[key]:
-                        group_id = group_id + expense_group[key]
-
-            for key in expense_group:
-                if key in ALLOWED_FORM_INPUT['export_date_type']:
-                    expense_group[key] = expense_group[key].strftime('%Y-%m-%dT%H:%M:%S')
-
-            for key in expense_group:
-                group_id = '{0}-{1}'.format(group_id, expense_group[key])
-
-            expense_group_object, _ = ExpenseGroup.objects.update_or_create(
-                fyle_group_id=group_id,
+            expense_group_object = ExpenseGroup.objects.create(
                 workspace_id=workspace_id,
                 fund_source=expense_group['fund_source'],
-                defaults={
-                    'description': expense_group
-                }
+                description=expense_group
             )
 
             expense_group_object.expenses.add(*expense_ids)
