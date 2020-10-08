@@ -121,7 +121,7 @@ def get_transaction_date(expense_group: ExpenseGroup) -> str:
 
 def get_expense_purpose(lineitem, category) -> str:
     expense_purpose = ', purpose - {0}'.format(lineitem.purpose) if lineitem.purpose else ''
-    spent_at = ' spent on {0} '.format(lineitem.spent_at) if lineitem.spent_at else ''
+    spent_at = ' spent on {0} '.format(lineitem.spent_at.date()) if lineitem.spent_at else ''
     return 'Expense by {0} against category {1}{2}with claim number - {3}{4}'.format(
         lineitem.employee_email, category, spent_at, lineitem.claim_number, expense_purpose)
 
