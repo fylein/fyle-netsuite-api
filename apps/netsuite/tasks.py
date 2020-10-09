@@ -65,8 +65,8 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense_id: str, ex
     except Exception:
         error = traceback.format_exc()
         logger.error(
-            'Attachment failed for expense group id %s / workspace id %s \n Error: %s',
-            expense_id, workspace_id, error
+            'Attachment failed for expense group id %s / workspace id %s Error: %s',
+            expense_id, workspace_id, {'error': error}
         )
 
 
@@ -146,7 +146,7 @@ def create_bill(expense_group, task_log):
         }
         task_log.status = 'FATAL'
         task_log.save(update_fields=['detail', 'status'])
-        logger.exception('Something unexpected happened workspace_id: %s\n%s', task_log.workspace_id, error)
+        logger.exception('Something unexpected happened workspace_id: %s %s', task_log.workspace_id, task_log.detail)
 
 
 def create_expense_report(expense_group, task_log):
@@ -227,7 +227,7 @@ def create_expense_report(expense_group, task_log):
         }
         task_log.status = 'FATAL'
         task_log.save(update_fields=['detail', 'status'])
-        logger.exception('Something unexpected happened workspace_id: %s\n%s', task_log.workspace_id, error)
+        logger.exception('Something unexpected happened workspace_id: %s %s', task_log.workspace_id, task_log.detail)
 
 
 def create_journal_entry(expense_group, task_log):
@@ -308,7 +308,7 @@ def create_journal_entry(expense_group, task_log):
         }
         task_log.status = 'FATAL'
         task_log.save(update_fields=['detail', 'status'])
-        logger.exception('Something unexpected happened workspace_id: %s\n%s', task_log.workspace_id, error)
+        logger.exception('Something unexpected happened workspace_id: %s %s', task_log.workspace_id, task_log.detail)
 
 
 def __validate_expense_group(expense_group: ExpenseGroup):
