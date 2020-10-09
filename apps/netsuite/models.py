@@ -160,8 +160,9 @@ class Bill(models.Model):
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
         subsidiary_mappings = SubsidiaryMapping.objects.get(workspace_id=expense_group.workspace_id)
 
-        currency = DestinationAttribute.objects.filter(value=expense.currency).first()
-
+        currency = DestinationAttribute.objects.filter(value=expense.currency,
+                                                       workspace_id=expense_group.workspace_id,
+                                                       attribute_type='CURRENCY').first()
         vendor_id = None
         if expense_group.fund_source == 'PERSONAL':
             vendor_id = Mapping.objects.get(
@@ -398,7 +399,9 @@ class ExpenseReportLineItem(models.Model):
                     workspace_id=expense_group.workspace_id
                 ).first()
 
-            currency = DestinationAttribute.objects.filter(value=lineitem.currency).first()
+            currency = DestinationAttribute.objects.filter(value=lineitem.currency,
+                                                           workspace_id=expense_group.workspace_id,
+                                                           attribute_type='CURRENCY').first()
 
             class_id = get_class_id_or_none(expense_group, lineitem)
 
@@ -457,7 +460,9 @@ class JournalEntry(models.Model):
 
         description = expense_group.description
 
-        currency = DestinationAttribute.objects.filter(value=expense.currency).first()
+        currency = DestinationAttribute.objects.filter(value=expense.currency,
+                                                       workspace_id=expense_group.workspace_id,
+                                                       attribute_type='CURRENCY').first()
 
         subsidiary_mappings = SubsidiaryMapping.objects.get(workspace_id=expense_group.workspace_id)
 
