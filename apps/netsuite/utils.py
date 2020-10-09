@@ -407,7 +407,7 @@ class NetSuiteConnector:
             'nextApprover': None,
             'vatRegNum': None,
             'postingPeriod': None,
-            'tranDate': None,
+            'tranDate': bill.transaction_date,
             'currencyName': None,
             'billingAddress': None,
             'exchangeRate': None,
@@ -445,7 +445,7 @@ class NetSuiteConnector:
             'taxDetailsList': None,
             'customFieldList': None,
             'internalId': None,
-            'externalId': 'bill {} - {}'.format(bill.expense_group_id, bill.external_id)
+            'externalId': bill.external_id
         }
 
         return bill_payload
@@ -527,7 +527,7 @@ class NetSuiteConnector:
                     }
                 ])),
                 "exchangeRate": None,
-                "expenseDate": None,
+                "expenseDate": line.transaction_date,
                 "expMediaItem": None,
                 "foreignAmount": None,
                 "grossAmt": None,
@@ -597,7 +597,7 @@ class NetSuiteConnector:
             'tranId': None,
             'acctCorpCardExp': None,
             'postingPeriod': None,
-            'tranDate': None,
+            'tranDate': expense_report.transaction_date,
             'dueDate': None,
             'approvalStatus': None,
             'total': None,
@@ -635,7 +635,7 @@ class NetSuiteConnector:
             'accountingBookDetailList': None,
             'customFieldList': None,
             'internalId': None,
-            'externalId': 'report {} - {}'.format(expense_report.expense_group_id, expense_report.external_id)
+            'externalId': expense_report.external_id
         }
 
         return expense_report_payload
@@ -816,9 +816,9 @@ class NetSuiteConnector:
             "subsidiaryTaxRegNum": None,
             "taxPointDate": None,
             "toSubsidiary": None,
-            "tranDate": None,
+            "tranDate": journal_entry.transaction_date,
             "tranId": None,
-            "externalId": 'entry {} - {}'.format(journal_entry.expense_group_id, journal_entry.external_id)
+            "externalId": journal_entry.external_id
         }
 
         return journal_entry_payload

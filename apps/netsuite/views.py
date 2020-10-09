@@ -1,6 +1,7 @@
 import json
 import logging
 
+from django.db.models import Q
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import status
@@ -16,7 +17,7 @@ from apps.fyle.models import ExpenseGroup
 from apps.tasks.models import TaskLog
 from apps.workspaces.models import NetSuiteCredentials
 
-from .serializers import BillSerializer, ExpenseReportSerializer, JournalEntrySerializer
+from .serializers import BillSerializer, ExpenseReportSerializer, JournalEntrySerializer, NetSuiteFieldSerializer
 from .tasks import schedule_bills_creation, create_bill, schedule_expense_reports_creation, create_expense_report, \
     create_journal_entry, schedule_journal_entry_creation
 from .models import Bill, ExpenseReport, JournalEntry
@@ -639,3 +640,20 @@ class JournalEntryScheduleView(generics.CreateAPIView):
         return Response(
             status=status.HTTP_200_OK
         )
+
+
+class NetSuiteFieldsView(generics.ListAPIView):
+    pagination_class = None
+    serializer_class = NetSuiteFieldSerializer
+
+    def get_queryset(self):
+        attributes = DestinationAttribute.objects.filter(
+            ~Q(attribute_type='EMPLOYEE') & ~Q(attribute_type='ACCOUNT') &
+            ~Q(attribute_type='VENDOR') & ~Q(attribute_type='ACCOUNTS_PAYABLE') &
+            ~Q(attribute_type='CREDIT_CARD_ACCOUNT') & ~Q(attribute_type='BANK_ACCOUNT') &
+            ~Q(attribute_type='SUBSIDIARY') & ~Q(attribute_type='CURRENCY') &
+            ~Q(attribute_type='CCC_ACCOUNT'),
+            workspace_id=self.kwargs['workspace_id']
+        ).values('attribute_type', 'display_name').distinct()
+
+        return attributes

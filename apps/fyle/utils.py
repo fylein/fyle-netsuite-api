@@ -138,6 +138,7 @@ class FyleConnector:
         Get expenses from fyle
         """
         expenses = self.connection.Expenses.get_all(state=state, updated_at=updated_at, fund_source=fund_source)
+        expenses = list(filter(lambda expense: expense['amount'] > 0, expenses))
         expenses = list(
             filter(lambda expense: not (not expense['reimbursable'] and expense['fund_source'] == 'PERSONAL'),
                    expenses))
@@ -227,6 +228,32 @@ class FyleConnector:
         project_attributes = ExpenseAttribute.bulk_upsert_expense_attributes(project_attributes, self.workspace_id)
 
         return project_attributes
+
+    def sync_expense_custom_fields(self, active_only: bool):
+        """
+        Get Expense Custom Fields from Fyle (Type = Select)
+        """
+        expense_custom_fields = self.connection.ExpensesCustomFields.get(active=active_only)['data']
+
+        expense_custom_fields = filter(lambda field: field['type'] == 'SELECT', expense_custom_fields)
+
+        expense_custom_field_attributes = []
+
+        for custom_field in expense_custom_fields:
+            count = 1
+            for option in custom_field['options']:
+                expense_custom_field_attributes.append({
+                    'attribute_type': custom_field['name'].upper().replace(' ', '_'),
+                    'display_name': custom_field['name'],
+                    'value': option,
+                    'source_id': 'expense_custom_field.{}.{}'.format(custom_field['name'].lower(), count)
+                })
+                count = count + 1
+
+        expense_custom_field_attributes = ExpenseAttribute.bulk_upsert_expense_attributes(
+            expense_custom_field_attributes, self.workspace_id)
+
+        return expense_custom_field_attributes
 
     def get_attachment(self, expense_id: str):
         """

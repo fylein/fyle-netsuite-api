@@ -98,7 +98,7 @@ def run_sync_schedule(workspace_id, user: str):
         fund_source.append('CCC')
     if general_settings.reimbursable_expenses_object:
         task_log: TaskLog = create_expense_groups(
-            workspace_id=workspace_id, state=['PAYMENT_PROCESSING'], fund_source=fund_source, task_log=task_log
+            workspace_id=workspace_id, fund_source=fund_source, task_log=task_log
         )
 
     if task_log.status == 'COMPLETE':

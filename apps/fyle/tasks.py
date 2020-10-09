@@ -9,7 +9,7 @@ from django.db import transaction
 from apps.workspaces.models import FyleCredential, Workspace
 from apps.tasks.models import TaskLog
 
-from .models import Expense, ExpenseGroup
+from .models import Expense, ExpenseGroup, ExpenseGroupSettings
 from .utils import FyleConnector
 from .serializers import ExpenseGroupSerializer
 
@@ -56,7 +56,7 @@ def schedule_expense_group_creation(workspace_id: int, user: str):
     task_log.save()
 
 
-def create_expense_groups(workspace_id: int, state: List[str], fund_source: List[str], task_log: TaskLog):
+def create_expense_groups(workspace_id: int, fund_source: List[str], task_log: TaskLog):
     """
     Create expense groups
     :param task_log: Task log object
@@ -66,7 +66,7 @@ def create_expense_groups(workspace_id: int, state: List[str], fund_source: List
     :return: task log
     """
 
-    async_create_expense_groups(workspace_id, state, fund_source, task_log)
+    async_create_expense_groups(workspace_id, fund_source, task_log)
 
     task_log.detail = {
         'message': 'Creating expense groups'
@@ -76,7 +76,7 @@ def create_expense_groups(workspace_id: int, state: List[str], fund_source: List
     return task_log
 
 
-def async_create_expense_groups(workspace_id: int, state: List[str], fund_source: List[str], task_log: TaskLog):
+def async_create_expense_groups(workspace_id: int, fund_source: List[str], task_log: TaskLog):
     try:
         with transaction.atomic():
 
@@ -96,13 +96,17 @@ def async_create_expense_groups(workspace_id: int, state: List[str], fund_source
 
             fyle_connector = FyleConnector(fyle_credentials.refresh_token, workspace_id)
 
+            expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=workspace_id)
+
             expenses = fyle_connector.get_expenses(
-                state=state,
+                state=expense_group_settings.expense_state,
                 updated_at=updated_at,
                 fund_source=fund_source
             )
 
-            expense_objects = Expense.create_expense_objects(expenses)
+            custom_fields = fyle_connector.sync_expense_custom_fields(active_only=True)
+
+            expense_objects = Expense.create_expense_objects(expenses, custom_fields)
 
             expense_group_objects = ExpenseGroup.create_expense_groups_by_report_id_fund_source(
                 expense_objects, workspace_id

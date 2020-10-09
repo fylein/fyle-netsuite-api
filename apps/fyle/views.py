@@ -1,3 +1,5 @@
+from django.db.models import Q
+
 from rest_framework.views import status
 from rest_framework import generics
 from rest_framework.response import Response
@@ -10,8 +12,9 @@ from apps.workspaces.models import FyleCredential, WorkspaceGeneralSettings
 
 from .tasks import create_expense_groups, schedule_expense_group_creation
 from .utils import FyleConnector
-from .models import Expense, ExpenseGroup
-from .serializers import ExpenseGroupSerializer, ExpenseSerializer
+from .models import Expense, ExpenseGroup, ExpenseGroupSettings
+from .serializers import ExpenseGroupSerializer, ExpenseSerializer, ExpenseFieldSerializer, \
+    ExpenseGroupSettingsSerializer
 
 
 class ExpenseGroupView(generics.ListCreateAPIView):
@@ -46,7 +49,6 @@ class ExpenseGroupView(generics.ListCreateAPIView):
         """
         Create expense groups
         """
-        state = request.data.get('state', ['PAYMENT_PROCESSING'])
         task_log = TaskLog.objects.get(pk=request.data.get('task_log_id'))
 
         general_settings = WorkspaceGeneralSettings.objects.get(workspace_id=kwargs['workspace_id'])
@@ -57,7 +59,6 @@ class ExpenseGroupView(generics.ListCreateAPIView):
 
         create_expense_groups(
             kwargs['workspace_id'],
-            state=state,
             fund_source=fund_source,
             task_log=task_log
         )
@@ -65,6 +66,81 @@ class ExpenseGroupView(generics.ListCreateAPIView):
         return Response(
             status=status.HTTP_200_OK
         )
+
+
+class ExpenseGroupSettingsView(generics.ListCreateAPIView):
+    """
+    Expense Group Settings View
+    """
+    serializer_class = ExpenseGroupSettingsSerializer
+
+    def get(self, request, *args, **kwargs):
+        expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=self.kwargs['workspace_id'])
+
+        return Response(
+            data=self.serializer_class(expense_group_settings).data,
+            status=status.HTTP_200_OK
+        )
+
+    def post(self, request, *args, **kwargs):
+        expense_group_settings, _ = ExpenseGroupSettings.update_expense_group_settings(
+            request.data, self.kwargs['workspace_id'])
+        return Response(
+            data=self.serializer_class(expense_group_settings).data,
+            status=status.HTTP_200_OK
+        )
+
+
+class ExpenseCustomFieldsView(generics.ListCreateAPIView):
+    """
+    Project view
+    """
+    serializer_class = ExpenseAttributeSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        attribute_type = self.request.query_params.get('attribute_type')
+
+        return ExpenseAttribute.objects.filter(
+            attribute_type=attribute_type, workspace_id=self.kwargs['workspace_id']).order_by('value')
+
+    def post(self, request, *args, **kwargs):
+        """
+        Get Expense Custom Fields from Fyle
+        """
+        try:
+            active_only = request.GET.get('active_only', True)
+            fyle_credentials = FyleCredential.objects.get(
+                workspace_id=kwargs['workspace_id'])
+
+            fyle_connector = FyleConnector(fyle_credentials.refresh_token, kwargs['workspace_id'])
+
+            expense_custom_field_attributes = fyle_connector.sync_expense_custom_fields(active_only=active_only)
+
+            return Response(
+                data=self.serializer_class(expense_custom_field_attributes, many=True).data,
+                status=status.HTTP_200_OK
+            )
+        except FyleCredential.DoesNotExist:
+            return Response(
+                data={
+                    'message': 'Fyle credentials not found in workspace'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class ExpenseFieldsView(generics.ListAPIView):
+    pagination_class = None
+    serializer_class = ExpenseFieldSerializer
+
+    def get_queryset(self):
+        attributes = ExpenseAttribute.objects.filter(
+            ~Q(attribute_type='EMPLOYEE') & ~Q(attribute_type='CATEGORY'),
+            workspace_id=self.kwargs['workspace_id']
+        ).values('attribute_type', 'display_name').distinct()
+
+        return attributes
 
 
 class ExpenseGroupScheduleView(generics.CreateAPIView):
