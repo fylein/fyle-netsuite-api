@@ -3,6 +3,7 @@ import logging
 import traceback
 from typing import List
 import base64
+from datetime import datetime
 
 from django.conf import settings
 from django.db import transaction
@@ -99,6 +100,9 @@ def create_bill(expense_group, task_log):
 
             task_log.save(update_fields=['detail', 'bill', 'status'])
 
+            expense_group.exported_at = datetime.now()
+            expense_group.save()
+
     except NetSuiteCredentials.DoesNotExist:
         logger.exception(
             'NetSuite Credentials not found for workspace_id %s / expense group %s',
@@ -180,6 +184,9 @@ def create_expense_report(expense_group, task_log):
 
             task_log.save(update_fields=['detail', 'expense_report', 'status'])
 
+            expense_group.exported_at = datetime.now()
+            expense_group.save()
+
     except NetSuiteCredentials.DoesNotExist:
         logger.exception(
             'NetSuite Credentials not found for workspace_id %s / expense group %s',
@@ -260,6 +267,9 @@ def create_journal_entry(expense_group, task_log):
             task_log.status = 'COMPLETE'
 
             task_log.save(update_fields=['detail', 'journal_entry', 'status'])
+
+            expense_group.exported_at = datetime.now()
+            expense_group.save()
 
     except NetSuiteCredentials.DoesNotExist:
         logger.exception(
