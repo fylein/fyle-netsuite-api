@@ -31,6 +31,10 @@ Django Rest Framework API for Fyle Netsuite Integration
     export FYLE_CLIENT_ID=FYLE CLIENT ID
     export FYLE_CLIENT_SECRET=FYLE CLIENT SECRET
     export FYLE_TOKEN_URI=FYLE TOKEN URI
+
+    # Netsuite Settings
+    export NS_CONSUMER_KEY=NETSUITE CONSUMER KEY
+    export NS_CONSUMER_SECRET=NETSUITE CONSUMER SECRET
    ```
   
 * Install the requirements
