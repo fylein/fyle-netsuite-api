@@ -35,7 +35,7 @@ class ExpenseGroupView(generics.ListCreateAPIView):
 
         elif state == 'COMPLETE':
             return ExpenseGroup.objects.filter(tasklog__status='COMPLETE',
-                                               workspace_id=self.kwargs['workspace_id']).order_by('-updated_at')
+                                               workspace_id=self.kwargs['workspace_id']).order_by('-exported_at')
 
         elif state == 'READY':
             return ExpenseGroup.objects.filter(
