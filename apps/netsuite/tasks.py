@@ -576,3 +576,31 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
                 task_log.detail = e.response
 
             task_log.save()
+
+def schedule_sync_netsuite(workspace_id: int, user):
+    """
+    Schedule sync netsuite
+    :param workspace_id: workspace id
+    :param user: user email
+    :return: None
+    """
+
+    fyle_credentials = FyleCredential.objects.get(
+        workspace_id=workspace_id)
+    fyle_connector = FyleConnector(fyle_credentials.refresh_token, workspace_id)
+    fyle_sdk_connection = fyle_connector.connection
+    jobs = fyle_sdk_connection.Jobs
+    user_profile = fyle_sdk_connection.Employees.get_my_profile()['data']
+
+    try:
+        jobs.trigger_now(
+            callback_url='{0}{1}'.format(settings.API_URL, '/workspaces/{0}/netsuite/sync_netsuite/'.format(workspace_id)),
+            callback_method='POST', 
+            object_id=workspace_id, # TODO: have to check if we need to pass them
+            payload={},
+            job_description='Sync Netsuite: Workspace id - {0}, user - {1}'.format(workspace_id, user),
+            org_user_id=user_profile['id']
+        )
+
+    except Exception as e:
+        logger.error(e.response)

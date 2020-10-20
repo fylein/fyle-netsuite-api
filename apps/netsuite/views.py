@@ -1,5 +1,6 @@
 import json
 import logging
+from datetime import datetime
 
 from django.db.models import Q
 from rest_framework import generics
@@ -19,7 +20,7 @@ from apps.workspaces.models import NetSuiteCredentials
 
 from .serializers import BillSerializer, ExpenseReportSerializer, JournalEntrySerializer, NetSuiteFieldSerializer
 from .tasks import schedule_bills_creation, create_bill, schedule_expense_reports_creation, create_expense_report, \
-    create_journal_entry, schedule_journal_entry_creation
+    create_journal_entry, schedule_journal_entry_creation, schedule_sync_netsuite
 from .models import Bill, ExpenseReport, JournalEntry
 from .utils import NetSuiteConnector
 
@@ -657,3 +658,122 @@ class NetSuiteFieldsView(generics.ListAPIView):
         ).values('attribute_type', 'display_name').distinct()
 
         return attributes
+
+
+class SyncNetSuiteScheduleView(generics.CreateAPIView):
+    """
+    Schedule SyncNetSuite
+    """
+
+    def post(self, request, *args, **kwargs):
+
+        schedule_sync_netsuite(kwargs['workspace_id'], request.user)
+
+        return Response(
+            status=status.HTTP_200_OK
+        )
+
+
+class SyncNetSuiteView(generics.ListCreateAPIView):
+    """
+    Sync NetSuite
+    """
+      # TODO: remove this off later - did this to reach fyle jobs on local without access token
+    authentication_classes = []
+    permission_classes = []
+
+    def post(self, request, *args, **kwargs):
+        """
+        Sync NetSuite for the workspace
+        """
+        try:
+            ns_credentials = NetSuiteCredentials.objects.get(workspace_id=kwargs['workspace_id'])
+            ns_connector = NetSuiteConnector(ns_credentials, workspace_id=kwargs['workspace_id'])
+
+            try:
+                ns_connector.sync_expense_categories()
+                print('synced',datetime.now())
+            except NetSuiteRequestError as exception:
+                logger.exception(exception)
+                detail = json.dumps(exception.__dict__)
+                detail = json.loads(detail)
+
+            try:
+                ns_connector.sync_locations()
+                print('synced',datetime.now())
+            except NetSuiteRequestError as exception:
+                logger.exception(exception)
+                detail = json.dumps(exception.__dict__)
+                detail = json.loads(detail)
+
+            try:
+                ns_connector.sync_vendors()
+                print('synced',datetime.now())
+            except NetSuiteRequestError as exception:
+                logger.exception(exception)
+                detail = json.dumps(exception.__dict__)
+                detail = json.loads(detail)
+
+            try:
+                ns_connector.sync_currencies()
+                print('synced',datetime.now())
+            except NetSuiteRequestError as exception:
+                logger.exception(exception)
+                detail = json.dumps(exception.__dict__)
+                detail = json.loads(detail)
+
+            try:
+                ns_connector.sync_classifications()
+                print('synced',datetime.now())
+            except NetSuiteRequestError as exception:
+                logger.exception(exception)
+                detail = json.dumps(exception.__dict__)
+                detail = json.loads(detail)
+
+            try:
+                ns_connector.sync_departments()
+                print('synced',datetime.now())
+            except NetSuiteRequestError as exception:
+                logger.exception(exception)
+                detail = json.dumps(exception.__dict__)
+                detail = json.loads(detail)
+
+            try:
+                ns_connector.sync_employees()
+                print('synced',datetime.now())
+            except NetSuiteRequestError as exception:
+                logger.exception(exception)
+                detail = json.dumps(exception.__dict__)
+                detail = json.loads(detail)
+
+            try:
+                ns_connector.sync_accounts()
+                print('synced',datetime.now())
+            except NetSuiteRequestError as exception:
+                logger.exception(exception)
+                detail = json.dumps(exception.__dict__)
+                detail = json.loads(detail)
+
+            return Response(
+                data={},
+                status=status.HTTP_200_OK
+            )
+
+        except NetSuiteCredentials.DoesNotExist:
+            return Response(
+                data={
+                    'message': 'NetSuite credentials not found in workspace'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except NetSuiteRequestError as exception:
+            logger.exception(exception)
+            detail = json.dumps(exception.__dict__)
+            detail = json.loads(detail)
+
+            return Response(
+                data={
+                    'message': '{0} - {1}'.format(detail['code'], detail['message'])
+                },
+                status=status.HTTP_401_UNAUTHORIZED
+            )
