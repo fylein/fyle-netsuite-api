@@ -665,9 +665,9 @@ class NetSuiteConnector:
             expense = Expense.objects.get(pk=line.expense_id)
             account_ref = None
             if credit is None:
-                account_ref = line.debit_account_id
-            if debit is None:
                 account_ref = line.account_id
+            if debit is None:
+                account_ref = line.debit_account_id
             line = {
                 "account": {
                     "name": None,
