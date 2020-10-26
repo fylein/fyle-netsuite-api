@@ -661,8 +661,8 @@ class NetSuiteConnector:
             'amount': None,
             'memo': expense_report.memo,
             'complete': None,
-            'supervisorApproval': None,
-            'accountingApproval': None,
+            'supervisorApproval': True,
+            'accountingApproval': True,
             'useMultiCurrency': None,
             'tax2Amt': None,
             'department': {
@@ -719,9 +719,10 @@ class NetSuiteConnector:
             expense = Expense.objects.get(pk=line.expense_id)
             account_ref = None
             if credit is None:
-                account_ref = line.debit_account_id
-            if debit is None:
                 account_ref = line.account_id
+
+            if debit is None:
+                account_ref = line.debit_account_id
 
             custom_lists = line.custom_lists
 
