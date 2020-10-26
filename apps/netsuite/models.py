@@ -3,6 +3,7 @@ NetSuite models
 """
 from datetime import datetime
 
+from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.db.models import Q
 
@@ -10,6 +11,7 @@ from fyle_accounting_mappings.models import Mapping, MappingSetting, Destination
 
 from apps.fyle.models import ExpenseGroup, Expense, ExpenseAttribute
 from apps.mappings.models import GeneralMapping, SubsidiaryMapping
+from apps.workspaces.models import Workspace
 
 
 def get_department_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
@@ -126,6 +128,23 @@ def get_expense_purpose(lineitem, category) -> str:
         lineitem.employee_email, category, spent_at, lineitem.claim_number, expense_purpose)
 
 
+class CustomList(models.Model):
+    """
+    NetSuite Custom List
+    """
+    id = models.AutoField(primary_key=True)
+    record_name = models.CharField(max_length=255, help_text='NetSuite Record Name')
+    custom_type = models.CharField(max_length=255, help_text='NetSuite Custom Type')
+    script_id = models.CharField(max_length=255, help_text='NetSuite Transaction Custom Field script id')
+    internal_id = models.CharField(max_length=255, help_text='NetSuite Custom Record / Field internal id')
+    workspace = models.ForeignKey(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
+    created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
+    updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
+
+    class Meta:
+        db_table = 'custom_lists'
+
+
 class Bill(models.Model):
     """
     NetSuite Vendor Bill
@@ -205,6 +224,8 @@ class BillLineitem(models.Model):
     class_id = models.CharField(max_length=255, help_text='NetSuite Class id', null=True)
     amount = models.FloatField(help_text='Bill amount')
     memo = models.CharField(max_length=255, help_text='NetSuite bill lineitem memo', null=True)
+    custom_lists = JSONField(null=True)
+    custom_properties = JSONField(null=True)
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
@@ -222,6 +243,7 @@ class BillLineitem(models.Model):
         bill = Bill.objects.get(expense_group=expense_group)
 
         bill_lineitem_objects = []
+        default_list = ['CATEGORY', 'EMPLOYEE']
 
         for lineitem in expenses:
             category = lineitem.category if lineitem.category == lineitem.sub_category else '{0} / {1}'.format(
@@ -249,18 +271,50 @@ class BillLineitem(models.Model):
 
             location_id = get_location_id_or_none(expense_group, lineitem)
 
-            general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
+            if location_id is None:
+                general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
+                if general_mappings and general_mappings.location_id:
+                    location_id = general_mappings.location_id
+
+            mapping_settings = MappingSetting.objects.filter(workspace_id=expense_group.workspace_id).all()
+
+            custom_list = []
+            for setting in mapping_settings:
+                if setting.source_field not in default_list:
+                    attribute = ExpenseAttribute.objects.filter(attribute_type=setting.source_field).first()
+                    source_value = lineitem.custom_properties.get(attribute.display_name, None)
+
+                    mapping: Mapping = Mapping.objects.filter(
+                        source_type=setting.source_field,
+                        destination_type=setting.destination_field,
+                        source__value=source_value,
+                        workspace_id=expense_group.workspace_id
+                    ).first()
+                    if mapping:
+                        cus_list = CustomList.objects.filter(
+                            record_name=setting.destination_field,
+                            workspace_id=expense_group.workspace_id
+                        ).first()
+                        if cus_list:
+                            value = mapping.destination.destination_id
+                            custom_list.append({
+                                'scriptId': cus_list.script_id,
+                                'type': 'Select',
+                                'value': value
+                            })
 
             bill_lineitem_object, _ = BillLineitem.objects.update_or_create(
                 bill=bill,
                 expense_id=lineitem.id,
                 defaults={
                     'account_id': account.destination.destination_id if account else None,
-                    'location_id': general_mappings.location_id if general_mappings.location_id else location_id,
+                    'location_id': location_id if location_id else None,
                     'class_id': class_id,
                     'department_id': department_id,
                     'amount': lineitem.amount,
-                    'memo': get_expense_purpose(lineitem, category)
+                    'memo': get_expense_purpose(lineitem, category),
+                    'custom_lists': custom_list,
+                    'custom_properties': lineitem.custom_properties
                 }
             )
 
@@ -360,6 +414,8 @@ class ExpenseReportLineItem(models.Model):
     department_id = models.CharField(max_length=255, help_text='NetSuite department id', null=True)
     currency = models.CharField(max_length=255, help_text='NetSuite Currency id')
     memo = models.CharField(max_length=255, help_text='NetSuite bill lineitem memo', null=True)
+    custom_lists = JSONField(null=True)
+    custom_properties = JSONField(null=True)
     transaction_date = models.DateTimeField(help_text='Expense Report transaction date')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
@@ -378,6 +434,7 @@ class ExpenseReportLineItem(models.Model):
         expense_report = ExpenseReport.objects.get(expense_group=expense_group)
 
         expense_report_lineitem_objects = []
+        default_list = ['CATEGORY', 'EMPLOYEE']
 
         for lineitem in expenses:
             category = lineitem.category if lineitem.category == lineitem.sub_category else '{0} / {1}'.format(
@@ -409,7 +466,37 @@ class ExpenseReportLineItem(models.Model):
 
             location_id = get_location_id_or_none(expense_group, lineitem)
 
-            general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
+            if location_id is None:
+                general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
+                if general_mappings and general_mappings.location_id:
+                    location_id = general_mappings.location_id
+
+            mapping_settings = MappingSetting.objects.filter(workspace_id=expense_group.workspace_id).all()
+
+            custom_list = []
+            for setting in mapping_settings:
+                if setting.source_field not in default_list:
+                    attribute = ExpenseAttribute.objects.filter(attribute_type=setting.source_field).first()
+                    source_value = lineitem.custom_properties.get(attribute.display_name, None)
+
+                    mapping: Mapping = Mapping.objects.filter(
+                        source_type=setting.source_field,
+                        destination_type=setting.destination_field,
+                        source__value=source_value,
+                        workspace_id=expense_group.workspace_id
+                    ).first()
+                    if mapping:
+                        cus_list = CustomList.objects.filter(
+                            record_name=setting.destination_field,
+                            workspace_id=expense_group.workspace_id
+                        ).first()
+                        if cus_list:
+                            value = mapping.destination.destination_id
+                            custom_list.append({
+                                'scriptId': cus_list.script_id,
+                                'type': 'Select',
+                                'value': value
+                            })
 
             expense_report_lineitem_object, _ = ExpenseReportLineItem.objects.update_or_create(
                 expense_report=expense_report,
@@ -419,11 +506,13 @@ class ExpenseReportLineItem(models.Model):
                     'category': account.destination.destination_id,
                     'class_id': class_id if class_id else None,
                     'customer_id': None,
-                    'location_id': general_mappings.location_id if general_mappings.location_id else location_id,
+                    'location_id': location_id if location_id else None,
                     'department_id': department_id,
                     'currency': currency.destination_id if currency else '1',
                     'transaction_date': get_transaction_date(expense_group),
-                    'memo': get_expense_purpose(lineitem, category)
+                    'memo': get_expense_purpose(lineitem, category),
+                    'custom_lists': custom_list,
+                    'custom_properties': lineitem.custom_properties
                 }
             )
 
@@ -496,6 +585,8 @@ class JournalEntryLineItem(models.Model):
     entity_id = models.CharField(max_length=255, help_text='NetSuite entity id')
     amount = models.FloatField(help_text='JournalEntry amount')
     memo = models.CharField(max_length=255, help_text='NetSuite JournalEntry lineitem description', null=True)
+    custom_lists = JSONField(null=True)
+    custom_properties = JSONField(null=True)
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
@@ -539,6 +630,7 @@ class JournalEntryLineItem(models.Model):
             ).destination.destination_id
 
         journal_entry_lineitem_objects = []
+        default_list = ['CATEGORY', 'EMPLOYEE']
 
         for lineitem in expenses:
             category = lineitem.category if lineitem.category == lineitem.sub_category else '{0} / {1}'.format(
@@ -566,7 +658,37 @@ class JournalEntryLineItem(models.Model):
 
             location_id = get_location_id_or_none(expense_group, lineitem)
 
-            general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
+            if location_id is None:
+                general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
+                if general_mappings and general_mappings.location_id:
+                    location_id = general_mappings.location_id
+
+            mapping_settings = MappingSetting.objects.filter(workspace_id=expense_group.workspace_id).all()
+
+            custom_list = []
+            for setting in mapping_settings:
+                if setting.source_field not in default_list:
+                    attribute = ExpenseAttribute.objects.filter(attribute_type=setting.source_field).first()
+                    source_value = lineitem.custom_properties.get(attribute.display_name, None)
+
+                    mapping: Mapping = Mapping.objects.filter(
+                        source_type=setting.source_field,
+                        destination_type=setting.destination_field,
+                        source__value=source_value,
+                        workspace_id=expense_group.workspace_id
+                    ).first()
+                    if mapping:
+                        cus_list = CustomList.objects.filter(
+                            record_name=setting.destination_field,
+                            workspace_id=expense_group.workspace_id
+                        ).first()
+                        if cus_list:
+                            value = mapping.destination.destination_id
+                            custom_list.append({
+                                'scriptId': cus_list.script_id,
+                                'type': 'Select',
+                                'value': value
+                            })
 
             journal_entry_lineitem_object, _ = JournalEntryLineItem.objects.update_or_create(
                 journal_entry=journal_entry,
@@ -575,11 +697,13 @@ class JournalEntryLineItem(models.Model):
                     'debit_account_id': debit_account_id,
                     'account_id': account.destination.destination_id,
                     'department_id': department_id,
-                    'location_id': general_mappings.location_id if general_mappings.location_id else location_id,
+                    'location_id': location_id if location_id else None,
                     'class_id': class_id if class_id else None,
                     'entity_id': entity.destination.destination_id,
                     'amount': lineitem.amount,
-                    'memo': get_expense_purpose(lineitem, category)
+                    'memo': get_expense_purpose(lineitem, category),
+                    'custom_lists': custom_list,
+                    'custom_properties': lineitem.custom_properties
                 }
             )
 

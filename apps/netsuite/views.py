@@ -17,10 +17,11 @@ from apps.fyle.models import ExpenseGroup
 from apps.tasks.models import TaskLog
 from apps.workspaces.models import NetSuiteCredentials
 
-from .serializers import BillSerializer, ExpenseReportSerializer, JournalEntrySerializer, NetSuiteFieldSerializer
+from .serializers import BillSerializer, ExpenseReportSerializer, JournalEntrySerializer, NetSuiteFieldSerializer, \
+    CustomListSerializer
 from .tasks import schedule_bills_creation, create_bill, schedule_expense_reports_creation, create_expense_report, \
     create_journal_entry, schedule_journal_entry_creation
-from .models import Bill, ExpenseReport, JournalEntry
+from .models import Bill, ExpenseReport, JournalEntry, CustomList
 from .utils import NetSuiteConnector
 
 logger = logging.getLogger(__name__)
@@ -318,7 +319,7 @@ class LocationView(generics.ListCreateAPIView):
 
 class ExpenseCategoryView(generics.ListCreateAPIView):
     """
-    Location view
+    Expense Category view
     """
 
     serializer_class = DestinationAttributeSerializer
@@ -657,3 +658,138 @@ class NetSuiteFieldsView(generics.ListAPIView):
         ).values('attribute_type', 'display_name').distinct()
 
         return attributes
+
+
+class CustomFieldView(generics.ListCreateAPIView):
+    """
+    CustomField view
+    """
+    serializer_class = DestinationAttributeSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        attribute_type = self.request.query_params.get('attribute_type')
+
+        return DestinationAttribute.objects.filter(
+            attribute_type=attribute_type, workspace_id=self.kwargs['workspace_id']).order_by('value')
+
+    def post(self, request, *args, **kwargs):
+        """
+        Get Expense Category from NetSuite
+        """
+        try:
+            ns_credentials = NetSuiteCredentials.objects.get(workspace_id=kwargs['workspace_id'])
+            ns_connector = NetSuiteConnector(ns_credentials, workspace_id=kwargs['workspace_id'])
+
+            all_custom_list = CustomList.objects.filter(workspace_id=kwargs['workspace_id']).all()
+
+            custom_lists = ns_connector.sync_custom_fields(all_custom_list)
+
+            return Response(
+                data=self.serializer_class(custom_lists, many=True).data,
+                status=status.HTTP_200_OK
+            )
+        except NetSuiteCredentials.DoesNotExist:
+            return Response(
+                data={
+                    'message': 'NetSuite credentials not found in workspace'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except NetSuiteRequestError as exception:
+            logger.exception(exception)
+            detail = json.dumps(exception.__dict__)
+            detail = json.loads(detail)
+
+            return Response(
+                data={
+                    'message': '{0} - {1}'.format(detail['code'], detail['message'])
+                },
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+
+class CustomListView(generics.ListCreateAPIView):
+    """
+    CustomList view
+    """
+    pagination_class = None
+    serializer_class = CustomListSerializer
+
+    def get(self, request, *args, **kwargs):
+        custom_lists = CustomList.objects.filter(workspace_id=self.kwargs['workspace_id']).all()
+
+        return Response(
+            data=CustomListSerializer(custom_lists, many=True).data,
+            status=status.HTTP_200_OK
+        )
+
+    def post(self, request, *args, **kwargs):
+        """
+        Validate Custom List from NetSuite
+        """
+        try:
+            custom_type = request.data.get('custom_type')
+            script_id = request.data.get('script_id')
+            internal_id = request.data.get('internal_id')
+
+            assert_valid(custom_type is not None, 'Custom type not found')
+            assert_valid(script_id is not None, 'Script ID not found')
+            assert_valid(internal_id is not None, 'Internal ID not found')
+
+            ns_credentials = NetSuiteCredentials.objects.get(workspace_id=kwargs['workspace_id'])
+            ns_connector = NetSuiteConnector(ns_credentials, workspace_id=kwargs['workspace_id'])
+
+            if custom_type == 'CUSTOM_LIST':
+                custom_list = ns_connector.connection.custom_lists.get(internal_id)
+
+                CustomList.objects.update_or_create(
+                    workspace_id=kwargs['workspace_id'],
+                    internal_id=internal_id,
+                    defaults={
+                        'record_name': custom_list['name'].upper().replace(' ', '_'),
+                        'script_id': script_id,
+                        'custom_type': custom_type
+                    }
+                )
+
+            elif custom_type == 'CUSTOM_RECORD':
+                custom_record = ns_connector.connection.custom_records.get_all_by_id(internal_id)
+
+                CustomList.objects.update_or_create(
+                    workspace_id=kwargs['workspace_id'],
+                    internal_id=internal_id,
+                    defaults={
+                        'record_name': custom_record[0]['recType']['name'].upper().replace(' ', '_'),
+                        'script_id': script_id,
+                        'custom_type': custom_type
+                    }
+                )
+
+            return Response(
+                status=status.HTTP_200_OK
+            )
+
+        except NetSuiteRequestError as exception:
+            logger.exception(exception)
+            detail = json.dumps(exception.__dict__)
+            detail = json.loads(detail)
+
+            return Response(
+                data={
+                    'message': '{0} - {1}'.format(detail['code'], detail['message'])
+                },
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        except Exception as e:
+            logger.exception(e)
+            detail = json.dumps(e.__dict__)
+            detail = json.loads(detail)
+
+            return Response(
+                data={
+                    'message': '{0} - {1}'.format(detail['code'], detail['message'])
+                },
+                status=status.HTTP_401_UNAUTHORIZED
+            )
