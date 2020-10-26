@@ -165,10 +165,11 @@ CACHES = {
 }
 
 Q_CLUSTER = {
-    'name': 'fyle_netsuite_api',
+    'name': 'fyle_xero_api',
     'compress': True,
     'save_limit': 0,
-    'orm': 'default'
+    'orm': 'default',
+    'ack_failures': True
 }
 
 # Database
