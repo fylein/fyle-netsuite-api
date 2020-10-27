@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from fyle_accounting_mappings.models import DestinationAttribute
 from .models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, JournalEntryLineItem, \
-    CustomList
+    CustomSegment
 
 
 class BillSerializer(serializers.ModelSerializer):
@@ -67,10 +67,10 @@ class NetSuiteFieldSerializer(serializers.ModelSerializer):
         model = DestinationAttribute
         fields = ['attribute_type', 'display_name']
 
-class CustomListSerializer(serializers.ModelSerializer):
+class CustomSegmentSerializer(serializers.ModelSerializer):
     """
     Custom List Serializer
     """
     class Meta:
-        model = CustomList
+        model = CustomSegment
         fields = '__all__'

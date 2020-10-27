@@ -109,6 +109,36 @@ def get_location_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
             location_id = mapping.destination.destination_id
     return location_id
 
+def get_custom_segments(expense_group: ExpenseGroup, lineitem: Expense):
+    mapping_settings = MappingSetting.objects.filter(workspace_id=expense_group.workspace_id).all()
+
+    custom_segments = []
+    default_list = ['CATEGORY', 'EMPLOYEE']
+
+    for setting in mapping_settings:
+        if setting.source_field not in default_list:
+            attribute = ExpenseAttribute.objects.filter(attribute_type=setting.source_field).first()
+            source_value = lineitem.custom_properties.get(attribute.display_name, None)
+
+            mapping: Mapping = Mapping.objects.filter(
+                source_type=setting.source_field,
+                destination_type=setting.destination_field,
+                source__value=source_value,
+                workspace_id=expense_group.workspace_id
+            ).first()
+            if mapping:
+                cus_list = CustomSegment.objects.filter(
+                    name=setting.destination_field,
+                    workspace_id=expense_group.workspace_id
+                ).first()
+                value = mapping.destination.destination_id
+                custom_segments.append({
+                    'scriptId': cus_list.script_id,
+                    'type': 'Select',
+                    'value': value
+                })
+
+    return custom_segments
 
 def get_transaction_date(expense_group: ExpenseGroup) -> str:
     if 'spent_at' in expense_group.description and expense_group.description['spent_at']:
@@ -128,13 +158,13 @@ def get_expense_purpose(lineitem, category) -> str:
         lineitem.employee_email, category, spent_at, lineitem.claim_number, expense_purpose)
 
 
-class CustomList(models.Model):
+class CustomSegment(models.Model):
     """
-    NetSuite Custom List
+    NetSuite Custom Segment
     """
     id = models.AutoField(primary_key=True)
-    record_name = models.CharField(max_length=255, help_text='NetSuite Record Name')
-    custom_type = models.CharField(max_length=255, help_text='NetSuite Custom Type')
+    name = models.CharField(max_length=255, help_text='NetSuite Record Name')
+    segment_type = models.CharField(max_length=255, help_text='NetSuite Custom Type')
     script_id = models.CharField(max_length=255, help_text='NetSuite Transaction Custom Field script id')
     internal_id = models.CharField(max_length=255, help_text='NetSuite Custom Record / Field internal id')
     workspace = models.ForeignKey(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
@@ -142,7 +172,7 @@ class CustomList(models.Model):
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
     class Meta:
-        db_table = 'custom_lists'
+        db_table = 'custom_segments'
 
 
 class Bill(models.Model):
@@ -224,8 +254,7 @@ class BillLineitem(models.Model):
     class_id = models.CharField(max_length=255, help_text='NetSuite Class id', null=True)
     amount = models.FloatField(help_text='Bill amount')
     memo = models.CharField(max_length=255, help_text='NetSuite bill lineitem memo', null=True)
-    custom_lists = JSONField(null=True)
-    custom_properties = JSONField(null=True)
+    netsuite_custom_segments = JSONField(null=True, help_text='NetSuite Custom Segments')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
@@ -276,32 +305,7 @@ class BillLineitem(models.Model):
                 if general_mappings and general_mappings.location_id:
                     location_id = general_mappings.location_id
 
-            mapping_settings = MappingSetting.objects.filter(workspace_id=expense_group.workspace_id).all()
-
-            custom_list = []
-            for setting in mapping_settings:
-                if setting.source_field not in default_list:
-                    attribute = ExpenseAttribute.objects.filter(attribute_type=setting.source_field).first()
-                    source_value = lineitem.custom_properties.get(attribute.display_name, None)
-
-                    mapping: Mapping = Mapping.objects.filter(
-                        source_type=setting.source_field,
-                        destination_type=setting.destination_field,
-                        source__value=source_value,
-                        workspace_id=expense_group.workspace_id
-                    ).first()
-                    if mapping:
-                        cus_list = CustomList.objects.filter(
-                            record_name=setting.destination_field,
-                            workspace_id=expense_group.workspace_id
-                        ).first()
-                        if cus_list:
-                            value = mapping.destination.destination_id
-                            custom_list.append({
-                                'scriptId': cus_list.script_id,
-                                'type': 'Select',
-                                'value': value
-                            })
+            custom_segments = get_custom_segments(expense_group, lineitem)
 
             bill_lineitem_object, _ = BillLineitem.objects.update_or_create(
                 bill=bill,
@@ -313,8 +317,7 @@ class BillLineitem(models.Model):
                     'department_id': department_id,
                     'amount': lineitem.amount,
                     'memo': get_expense_purpose(lineitem, category),
-                    'custom_lists': custom_list,
-                    'custom_properties': lineitem.custom_properties
+                    'netsuite_custom_segments': custom_segments
                 }
             )
 
@@ -414,8 +417,7 @@ class ExpenseReportLineItem(models.Model):
     department_id = models.CharField(max_length=255, help_text='NetSuite department id', null=True)
     currency = models.CharField(max_length=255, help_text='NetSuite Currency id')
     memo = models.CharField(max_length=255, help_text='NetSuite bill lineitem memo', null=True)
-    custom_lists = JSONField(null=True)
-    custom_properties = JSONField(null=True)
+    netsuite_custom_segments = JSONField(null=True, help_text='NetSuite Custom Segments')
     transaction_date = models.DateTimeField(help_text='Expense Report transaction date')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
@@ -471,32 +473,7 @@ class ExpenseReportLineItem(models.Model):
                 if general_mappings and general_mappings.location_id:
                     location_id = general_mappings.location_id
 
-            mapping_settings = MappingSetting.objects.filter(workspace_id=expense_group.workspace_id).all()
-
-            custom_list = []
-            for setting in mapping_settings:
-                if setting.source_field not in default_list:
-                    attribute = ExpenseAttribute.objects.filter(attribute_type=setting.source_field).first()
-                    source_value = lineitem.custom_properties.get(attribute.display_name, None)
-
-                    mapping: Mapping = Mapping.objects.filter(
-                        source_type=setting.source_field,
-                        destination_type=setting.destination_field,
-                        source__value=source_value,
-                        workspace_id=expense_group.workspace_id
-                    ).first()
-                    if mapping:
-                        cus_list = CustomList.objects.filter(
-                            record_name=setting.destination_field,
-                            workspace_id=expense_group.workspace_id
-                        ).first()
-                        if cus_list:
-                            value = mapping.destination.destination_id
-                            custom_list.append({
-                                'scriptId': cus_list.script_id,
-                                'type': 'Select',
-                                'value': value
-                            })
+            custom_segments = get_custom_segments(expense_group, lineitem)
 
             expense_report_lineitem_object, _ = ExpenseReportLineItem.objects.update_or_create(
                 expense_report=expense_report,
@@ -511,8 +488,7 @@ class ExpenseReportLineItem(models.Model):
                     'currency': currency.destination_id if currency else '1',
                     'transaction_date': get_transaction_date(expense_group),
                     'memo': get_expense_purpose(lineitem, category),
-                    'custom_lists': custom_list,
-                    'custom_properties': lineitem.custom_properties
+                    'netsuite_custom_segments': custom_segments
                 }
             )
 
@@ -585,8 +561,7 @@ class JournalEntryLineItem(models.Model):
     entity_id = models.CharField(max_length=255, help_text='NetSuite entity id')
     amount = models.FloatField(help_text='JournalEntry amount')
     memo = models.CharField(max_length=255, help_text='NetSuite JournalEntry lineitem description', null=True)
-    custom_lists = JSONField(null=True)
-    custom_properties = JSONField(null=True)
+    netsuite_custom_segments = JSONField(null=True, help_text='NetSuite Custom Segments')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
@@ -630,7 +605,6 @@ class JournalEntryLineItem(models.Model):
             ).destination.destination_id
 
         journal_entry_lineitem_objects = []
-        default_list = ['CATEGORY', 'EMPLOYEE']
 
         for lineitem in expenses:
             category = lineitem.category if lineitem.category == lineitem.sub_category else '{0} / {1}'.format(
@@ -658,37 +632,13 @@ class JournalEntryLineItem(models.Model):
 
             location_id = get_location_id_or_none(expense_group, lineitem)
 
-            if location_id is None:
+            if not location_id:
                 general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
-                if general_mappings and general_mappings.location_id:
+                if general_mappings.location_id:
                     location_id = general_mappings.location_id
 
-            mapping_settings = MappingSetting.objects.filter(workspace_id=expense_group.workspace_id).all()
 
-            custom_list = []
-            for setting in mapping_settings:
-                if setting.source_field not in default_list:
-                    attribute = ExpenseAttribute.objects.filter(attribute_type=setting.source_field).first()
-                    source_value = lineitem.custom_properties.get(attribute.display_name, None)
-
-                    mapping: Mapping = Mapping.objects.filter(
-                        source_type=setting.source_field,
-                        destination_type=setting.destination_field,
-                        source__value=source_value,
-                        workspace_id=expense_group.workspace_id
-                    ).first()
-                    if mapping:
-                        cus_list = CustomList.objects.filter(
-                            record_name=setting.destination_field,
-                            workspace_id=expense_group.workspace_id
-                        ).first()
-                        if cus_list:
-                            value = mapping.destination.destination_id
-                            custom_list.append({
-                                'scriptId': cus_list.script_id,
-                                'type': 'Select',
-                                'value': value
-                            })
+            custom_segments = get_custom_segments(expense_group, lineitem)
 
             journal_entry_lineitem_object, _ = JournalEntryLineItem.objects.update_or_create(
                 journal_entry=journal_entry,
@@ -697,13 +647,12 @@ class JournalEntryLineItem(models.Model):
                     'debit_account_id': debit_account_id,
                     'account_id': account.destination.destination_id,
                     'department_id': department_id,
-                    'location_id': location_id if location_id else None,
+                    'location_id': location_id,
                     'class_id': class_id if class_id else None,
                     'entity_id': entity.destination.destination_id,
                     'amount': lineitem.amount,
                     'memo': get_expense_purpose(lineitem, category),
-                    'custom_lists': custom_list,
-                    'custom_properties': lineitem.custom_properties
+                    'netsuite_custom_segments': custom_segments
                 }
             )
 

@@ -18,10 +18,10 @@ from apps.tasks.models import TaskLog
 from apps.workspaces.models import NetSuiteCredentials
 
 from .serializers import BillSerializer, ExpenseReportSerializer, JournalEntrySerializer, NetSuiteFieldSerializer, \
-    CustomListSerializer
+    CustomSegmentSerializer
 from .tasks import schedule_bills_creation, create_bill, schedule_expense_reports_creation, create_expense_report, \
     create_journal_entry, schedule_journal_entry_creation
-from .models import Bill, ExpenseReport, JournalEntry, CustomList
+from .models import Bill, ExpenseReport, JournalEntry, CustomSegment
 from .utils import NetSuiteConnector
 
 logger = logging.getLogger(__name__)
@@ -660,9 +660,9 @@ class NetSuiteFieldsView(generics.ListAPIView):
         return attributes
 
 
-class CustomFieldView(generics.ListCreateAPIView):
+class SyncCustomFieldsView(generics.ListCreateAPIView):
     """
-    CustomField view
+    SyncCustomFields view
     """
     serializer_class = DestinationAttributeSerializer
     pagination_class = None
@@ -681,9 +681,9 @@ class CustomFieldView(generics.ListCreateAPIView):
             ns_credentials = NetSuiteCredentials.objects.get(workspace_id=kwargs['workspace_id'])
             ns_connector = NetSuiteConnector(ns_credentials, workspace_id=kwargs['workspace_id'])
 
-            all_custom_list = CustomList.objects.filter(workspace_id=kwargs['workspace_id']).all()
+            all_custom_list = CustomSegment.objects.filter(workspace_id=kwargs['workspace_id']).all()
 
-            custom_lists = ns_connector.sync_custom_fields(all_custom_list)
+            custom_lists = ns_connector.sync_custom_segments(all_custom_list)
 
             return Response(
                 data=self.serializer_class(custom_lists, many=True).data,
@@ -709,18 +709,18 @@ class CustomFieldView(generics.ListCreateAPIView):
             )
 
 
-class CustomListView(generics.ListCreateAPIView):
+class CustomSegmentView(generics.ListCreateAPIView):
     """
-    CustomList view
+    CustomSegment view
     """
     pagination_class = None
-    serializer_class = CustomListSerializer
+    serializer_class = CustomSegmentSerializer
 
     def get(self, request, *args, **kwargs):
-        custom_lists = CustomList.objects.filter(workspace_id=self.kwargs['workspace_id']).all()
+        custom_lists = CustomSegment.objects.filter(workspace_id=self.kwargs['workspace_id']).all()
 
         return Response(
-            data=CustomListSerializer(custom_lists, many=True).data,
+            data=CustomSegmentSerializer(custom_lists, many=True).data,
             status=status.HTTP_200_OK
         )
 
@@ -729,40 +729,40 @@ class CustomListView(generics.ListCreateAPIView):
         Validate Custom List from NetSuite
         """
         try:
-            custom_type = request.data.get('custom_type')
+            segment_type = request.data.get('segment_type')
             script_id = request.data.get('script_id')
             internal_id = request.data.get('internal_id')
 
-            assert_valid(custom_type is not None, 'Custom type not found')
+            assert_valid(segment_type is not None, 'Segment type not found')
             assert_valid(script_id is not None, 'Script ID not found')
             assert_valid(internal_id is not None, 'Internal ID not found')
 
             ns_credentials = NetSuiteCredentials.objects.get(workspace_id=kwargs['workspace_id'])
             ns_connector = NetSuiteConnector(ns_credentials, workspace_id=kwargs['workspace_id'])
 
-            if custom_type == 'CUSTOM_LIST':
+            if segment_type == 'CUSTOM_LIST':
                 custom_list = ns_connector.connection.custom_lists.get(internal_id)
 
-                CustomList.objects.update_or_create(
+                CustomSegment.objects.update_or_create(
                     workspace_id=kwargs['workspace_id'],
                     internal_id=internal_id,
                     defaults={
-                        'record_name': custom_list['name'].upper().replace(' ', '_'),
+                        'name': custom_list['name'].upper().replace(' ', '_'),
                         'script_id': script_id,
-                        'custom_type': custom_type
+                        'segment_type': segment_type
                     }
                 )
 
-            elif custom_type == 'CUSTOM_RECORD':
+            elif segment_type == 'CUSTOM_RECORD':
                 custom_record = ns_connector.connection.custom_records.get_all_by_id(internal_id)
 
-                CustomList.objects.update_or_create(
+                CustomSegment.objects.update_or_create(
                     workspace_id=kwargs['workspace_id'],
                     internal_id=internal_id,
                     defaults={
-                        'record_name': custom_record[0]['recType']['name'].upper().replace(' ', '_'),
+                        'name': custom_record[0]['recType']['name'].upper().replace(' ', '_'),
                         'script_id': script_id,
-                        'custom_type': custom_type
+                        'segment_type': segment_type
                     }
                 )
 

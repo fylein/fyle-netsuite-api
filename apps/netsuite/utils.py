@@ -9,7 +9,7 @@ from apps.fyle.utils import FyleConnector
 
 from apps.mappings.models import SubsidiaryMapping
 from apps.netsuite.models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, \
-    JournalEntryLineItem, CustomList
+    JournalEntryLineItem, CustomSegment
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential
 
 
@@ -112,52 +112,44 @@ class NetSuiteConnector:
 
         return category_attributes
 
-    def sync_custom_fields(self, all_custom_list: List[CustomList]):
+    def sync_custom_segments(self, all_custom_list: List[CustomSegment]):
         """
-        Sync Custom Fields
+        Sync Custom Segments
         """
-        custom_list_attributes = []
+        custom_segment_attributes = []
+
         for custom_list_values in all_custom_list:
-            if custom_list_values.custom_type == 'CUSTOM_LIST':
+            if custom_list_values.segment_type == 'CUSTOM_LIST':
                 custom_lists = self.connection.custom_lists.get(custom_list_values.internal_id)
 
-                custom_list_attributes = []
-
                 for field in custom_lists['customValueList']['customValue']:
-                    custom_list_attributes.append(
+                    custom_segment_attributes.append(
                         {
-                            'attribute_type': custom_list_values.record_name.upper().replace(' ', '_'),
+                            'attribute_type': custom_list_values.name.upper().replace(' ', '_'),
                             'display_name': custom_lists['name'],
                             'value': field['value'],
                             'destination_id': field['valueId']
                         }
                     )
 
-                custom_list_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
-                    custom_list_attributes, self.workspace_id)
-
-            elif custom_list_values.custom_type == 'CUSTOM_RECORD':
+            elif custom_list_values.segment_type == 'CUSTOM_RECORD':
                 custom_records = self.connection.custom_records.get_all_by_id(custom_list_values.internal_id)
 
-                custom_record_attributes = []
-
                 for field in custom_records:
-                    custom_record_attributes.append(
+                    custom_segment_attributes.append(
                         {
-                            'attribute_type': custom_list_values.record_name.upper().replace(' ', '_'),
+                            'attribute_type': custom_list_values.name.upper().replace(' ', '_'),
                             'display_name': custom_records[0]['recType']['name'],
                             'value': field['name'],
                             'destination_id': field['internalId']
                         }
                     )
 
-                custom_record_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
-                    custom_record_attributes, self.workspace_id)
+        if custom_segment_attributes:
+            custom_segment_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
+                custom_segment_attributes, self.workspace_id)
 
-        if custom_list_attributes:
-            return custom_list_attributes
-        else:
-            return []
+        return custom_segment_attributes
 
     def sync_currencies(self):
         """
@@ -332,10 +324,10 @@ class NetSuiteConnector:
         for line in bill_lineitems:
             expense = Expense.objects.get(pk=line.expense_id)
 
-            custom_lists = line.custom_lists
+            netsuite_custom_segments = line.netsuite_custom_segments
 
-            if attachment_links and attachment_links and expense.expense_id in attachment_links:
-                custom_lists.append(
+            if attachment_links and expense.expense_id in attachment_links:
+                netsuite_custom_segments.append(
                     {
                         'scriptId': 'custcolfyle_receipt_link',
                         'type': 'String',
@@ -343,7 +335,7 @@ class NetSuiteConnector:
                     }
                 )
 
-            custom_lists.append(
+            netsuite_custom_segments.append(
                 {
                     'scriptId': 'custcolfyle_expense_url',
                     'type': 'String',
@@ -391,7 +383,7 @@ class NetSuiteConnector:
                 },
 
                 'customer': None,
-                'customFieldList': custom_lists,
+                'customFieldList': netsuite_custom_segments,
                 'isBillable': None,
                 'projectTask': None,
                 'taxCode': None,
@@ -493,7 +485,7 @@ class NetSuiteConnector:
             'taxDetailsList': None,
             'customFieldList': None,
             'internalId': None,
-            'externalId': bill.external_id+'ashash'
+            'externalId': bill.external_id
         }
 
         return bill_payload
@@ -519,9 +511,9 @@ class NetSuiteConnector:
         for line in expense_report_lineitems:
             expense = Expense.objects.get(pk=line.expense_id)
 
-            custom_lists = line.custom_lists
+            netsuite_custom_segments = line.netsuite_custom_segments
             if attachment_links and expense.expense_id in attachment_links:
-                custom_lists.append(
+                netsuite_custom_segments.append(
                     {
                         'scriptId': 'custcolfyle_receipt_link',
                         'type': 'String',
@@ -529,7 +521,7 @@ class NetSuiteConnector:
                     }
                 )
 
-            custom_lists.append(
+            netsuite_custom_segments.append(
                 {
                     'scriptId': 'custcolfyle_expense_url',
                     'type': 'String',
@@ -579,7 +571,7 @@ class NetSuiteConnector:
                     "externalId": None,
                     "type": "classification"
                 },
-                'customFieldList': custom_lists,
+                'customFieldList': netsuite_custom_segments,
                 "exchangeRate": None,
                 "expenseDate": line.transaction_date,
                 "expMediaItem": None,
@@ -724,10 +716,10 @@ class NetSuiteConnector:
             if debit is None:
                 account_ref = line.debit_account_id
 
-            custom_lists = line.custom_lists
+            netsuite_custom_segments = line.netsuite_custom_segments
 
             if attachment_links and expense.expense_id in attachment_links:
-                custom_lists.append(
+                netsuite_custom_segments.append(
                     {
                         'scriptId': 'custcolfyle_receipt_link',
                         'type': 'String',
@@ -736,7 +728,7 @@ class NetSuiteConnector:
                 )
 
             if debit:
-                custom_lists.append(
+                netsuite_custom_segments.append(
                     {
                         'scriptId': 'custcolfyle_expense_url',
                         'type': 'String',
@@ -780,7 +772,7 @@ class NetSuiteConnector:
                 },
                 "credit": line.amount if credit is not None else None,
                 "creditTax": None,
-                'customFieldList': custom_lists,
+                'customFieldList': netsuite_custom_segments,
                 "debit": line.amount if debit is not None else None,
                 "debitTax": None,
                 "eliminate": None,
