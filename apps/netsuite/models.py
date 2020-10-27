@@ -300,9 +300,9 @@ class BillLineitem(models.Model):
 
             location_id = get_location_id_or_none(expense_group, lineitem)
 
-            if location_id is None:
+            if not location_id:
                 general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
-                if general_mappings and general_mappings.location_id:
+                if general_mappings.location_id:
                     location_id = general_mappings.location_id
 
             custom_segments = get_custom_segments(expense_group, lineitem)
@@ -312,7 +312,7 @@ class BillLineitem(models.Model):
                 expense_id=lineitem.id,
                 defaults={
                     'account_id': account.destination.destination_id if account else None,
-                    'location_id': location_id if location_id else None,
+                    'location_id': location_id,
                     'class_id': class_id,
                     'department_id': department_id,
                     'amount': lineitem.amount,
@@ -468,9 +468,9 @@ class ExpenseReportLineItem(models.Model):
 
             location_id = get_location_id_or_none(expense_group, lineitem)
 
-            if location_id is None:
+            if not location_id:
                 general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
-                if general_mappings and general_mappings.location_id:
+                if general_mappings.location_id:
                     location_id = general_mappings.location_id
 
             custom_segments = get_custom_segments(expense_group, lineitem)
@@ -483,7 +483,7 @@ class ExpenseReportLineItem(models.Model):
                     'category': account.destination.destination_id,
                     'class_id': class_id if class_id else None,
                     'customer_id': None,
-                    'location_id': location_id if location_id else None,
+                    'location_id': location_id,
                     'department_id': department_id,
                     'currency': currency.destination_id if currency else '1',
                     'transaction_date': get_transaction_date(expense_group),
