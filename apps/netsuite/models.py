@@ -113,12 +113,22 @@ def get_custom_segments(expense_group: ExpenseGroup, lineitem: Expense):
     mapping_settings = MappingSetting.objects.filter(workspace_id=expense_group.workspace_id).all()
 
     custom_segments = []
-    default_list = ['CATEGORY', 'EMPLOYEE']
+    default_expense_attributes = ['CATEGORY', 'EMPLOYEE']
+    default_destination_attributes = ['DEPARTMENT', 'LOCATION', 'CLASS']
 
     for setting in mapping_settings:
-        if setting.source_field not in default_list:
-            attribute = ExpenseAttribute.objects.filter(attribute_type=setting.source_field).first()
-            source_value = lineitem.custom_properties.get(attribute.display_name, None)
+        if setting.source_field not in default_expense_attributes and \
+            setting.destination_field not in default_destination_attributes:
+            if setting.source_field == 'PROJECT':
+                source_value = lineitem.project
+            elif setting.source_field == 'COST_CENTER':
+                source_value = lineitem.cost_center
+            else:
+                attribute = ExpenseAttribute.objects.filter(
+                    attribute_type=setting.source_field,
+                    workspace_id=expense_group.workspace_id
+                ).first()
+                source_value = lineitem.custom_properties.get(attribute.display_name, None)
 
             mapping: Mapping = Mapping.objects.filter(
                 source_type=setting.source_field,
@@ -272,7 +282,6 @@ class BillLineitem(models.Model):
         bill = Bill.objects.get(expense_group=expense_group)
 
         bill_lineitem_objects = []
-        default_list = ['CATEGORY', 'EMPLOYEE']
 
         for lineitem in expenses:
             category = lineitem.category if lineitem.category == lineitem.sub_category else '{0} / {1}'.format(
@@ -436,7 +445,6 @@ class ExpenseReportLineItem(models.Model):
         expense_report = ExpenseReport.objects.get(expense_group=expense_group)
 
         expense_report_lineitem_objects = []
-        default_list = ['CATEGORY', 'EMPLOYEE']
 
         for lineitem in expenses:
             category = lineitem.category if lineitem.category == lineitem.sub_category else '{0} / {1}'.format(
