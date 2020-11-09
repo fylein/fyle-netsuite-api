@@ -5,10 +5,9 @@ from typing import List
 import base64
 from datetime import datetime
 
-from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
-from fylesdk import FyleSDKError
+from django_q.tasks import Chain
 
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
 
@@ -419,7 +418,7 @@ def __validate_expense_group(expense_group: ExpenseGroup):
         raise BulkError('Mappings are missing', bulk_errors)
 
 
-def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str], user):
+def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str]):
     """
     Schedule bills creation
     :param expense_group_ids: List of expense group ids
@@ -436,12 +435,7 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str], use
             workspace_id=workspace_id, bill__id__isnull=True
         ).all()
 
-    fyle_credentials = FyleCredential.objects.get(
-        workspace_id=workspace_id)
-    fyle_connector = FyleConnector(fyle_credentials.refresh_token, workspace_id)
-    fyle_sdk_connection = fyle_connector.connection
-    jobs = fyle_sdk_connection.Jobs
-    user_profile = fyle_sdk_connection.Employees.get_my_profile()['data']
+    chain = Chain(cached=True)
 
     for expense_group in expense_groups:
         task_log, _ = TaskLog.objects.update_or_create(
@@ -452,28 +446,15 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str], use
                 'type': 'CREATING_BILL'
             }
         )
-        try:
-            created_job = jobs.trigger_now(
-                callback_url='{0}{1}'.format(settings.API_URL, '/workspaces/{0}/netsuite/bills/'.format(workspace_id)),
-                callback_method='POST', object_id=task_log.id, payload={
-                    'expense_group_id': expense_group.id,
-                    'task_log_id': task_log.id
-                }, job_description='Create Bill: Workspace id - {0}, user - {1}, expense group id - {2}'.format(
-                    workspace_id, user, expense_group.id
-                ),
-                org_user_id=user_profile['id']
-            )
-            task_log.task_id = created_job['id']
 
-        except FyleSDKError as e:
-            task_log.status = 'FATAL'
-            logger.error(e.response)
-            task_log.detail = e.response
+        chain.append('apps.netsuite.tasks.create_bill', expense_group, task_log)
 
         task_log.save()
 
+    chain.run()
 
-def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List[str], user):
+
+def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List[str]):
     """
     Schedule expense reports creation
     :param expense_group_ids: List of expense group ids
@@ -486,12 +467,7 @@ def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List
             workspace_id=workspace_id, id__in=expense_group_ids, expensereport__id__isnull=True
         ).all()
 
-    fyle_credentials = FyleCredential.objects.get(
-        workspace_id=workspace_id)
-    fyle_connector = FyleConnector(fyle_credentials.refresh_token, workspace_id)
-    fyle_sdk_connection = fyle_connector.connection
-    jobs = fyle_sdk_connection.Jobs
-    user_profile = fyle_sdk_connection.Employees.get_my_profile()['data']
+    chain = Chain(cached=True)
 
     for expense_group in expense_groups:
         task_log, _ = TaskLog.objects.update_or_create(
@@ -502,30 +478,14 @@ def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List
                 'type': 'CREATING_EXPENSE_REPORT'
             }
         )
-        try:
-            created_job = jobs.trigger_now(
-                callback_url='{0}{1}'.format(
-                    settings.API_URL, '/workspaces/{0}/netsuite/expense_reports/'.format(workspace_id)
-                ),
-                callback_method='POST', object_id=task_log.id, payload={
-                    'expense_group_id': expense_group.id,
-                    'task_log_id': task_log.id
-                }, job_description='Create Expense Report: Workspace id - {0}, user - {1}, expense group id - {2}'.format(
-                    workspace_id, user, expense_group.id
-                ),
-                org_user_id=user_profile['id']
-            )
-            task_log.task_id = created_job['id']
 
-        except FyleSDKError as e:
-            task_log.status = 'FATAL'
-            logger.error(e.response)
-            task_log.detail = e.response
-
+        chain.append('apps.netsuite.tasks.create_expense_report', expense_group, task_log)
         task_log.save()
 
+    chain.run()
 
-def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[str], user):
+
+def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[str]):
     """
     Schedule journal entries creation
     :param expense_group_ids: List of expense group ids
@@ -538,41 +498,19 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
             workspace_id=workspace_id, id__in=expense_group_ids, journalentry__id__isnull=True
         ).all()
 
-        fyle_credentials = FyleCredential.objects.get(
-            workspace_id=workspace_id)
-        fyle_connector = FyleConnector(fyle_credentials.refresh_token, workspace_id)
-        fyle_sdk_connection = fyle_connector.connection
-        jobs = fyle_sdk_connection.Jobs
-        user_profile = fyle_sdk_connection.Employees.get_my_profile()['data']
+    chain = Chain(cached=True)
 
-        for expense_group in expense_groups:
-            task_log, _ = TaskLog.objects.update_or_create(
-                workspace_id=expense_group.workspace_id,
-                expense_group=expense_group,
-                defaults={
-                    'status': 'IN_PROGRESS',
-                    'type': 'CREATING_JOURNAL_ENTRY'
-                }
-            )
-            try:
-                created_job = jobs.trigger_now(
-                    callback_url='{0}{1}'.format(settings.API_URL, '/workspaces/{0}/netsuite/journal_entries/'.format(
-                        workspace_id
-                    )),
-                    callback_method='POST', object_id=task_log.id, payload={
-                        'expense_group_id': expense_group.id,
-                        'task_log_id': task_log.id
-                    },
-                    job_description='Create Journal Entry: Workspace id - {0}, user - {1}, expense group id - {2}'.format(
-                        workspace_id, user, expense_group.id
-                    ),
-                    org_user_id=user_profile['id']
-                )
-                task_log.task_id = created_job['id']
+    for expense_group in expense_groups:
+        task_log, _ = TaskLog.objects.update_or_create(
+            workspace_id=expense_group.workspace_id,
+            expense_group=expense_group,
+            defaults={
+                'status': 'IN_PROGRESS',
+                'type': 'CREATING_JOURNAL_ENTRY'
+            }
+        )
 
-            except FyleSDKError as e:
-                task_log.status = 'FATAL'
-                logger.error(e.response)
-                task_log.detail = e.response
+        chain.append('apps.netsuite.tasks.create_journal_entry', expense_group, task_log)
+        task_log.save()
 
-            task_log.save()
+    chain.run()

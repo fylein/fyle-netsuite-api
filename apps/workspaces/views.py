@@ -324,7 +324,7 @@ class ScheduledSyncView(viewsets.ViewSet):
         """
         Scheduled sync
         """
-        run_sync_schedule(kwargs['workspace_id'], request.user)
+        run_sync_schedule(kwargs['workspace_id'])
         return Response(
             status=status.HTTP_200_OK
         )

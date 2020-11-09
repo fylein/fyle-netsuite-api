@@ -78,7 +78,7 @@ def create_schedule_job(workspace_id: int, schedule: WorkspaceSchedule, user: st
     return created_job
 
 
-def run_sync_schedule(workspace_id, user: str):
+def run_sync_schedule(workspace_id):
     """
     Run schedule
     :param user: user email
@@ -109,17 +109,17 @@ def run_sync_schedule(workspace_id, user: str):
 
             if general_settings.reimbursable_expenses_object == 'VENDOR BILL':
                 schedule_bills_creation(
-                    workspace_id=workspace_id, expense_group_ids=expense_group_ids, user=user
+                    workspace_id=workspace_id, expense_group_ids=expense_group_ids
                 )
 
             elif general_settings.reimbursable_expenses_object == 'EXPENSE REPORT':
                 schedule_expense_reports_creation(
-                    workspace_id=workspace_id, expense_group_ids=expense_group_ids, user=user
+                    workspace_id=workspace_id, expense_group_ids=expense_group_ids
                 )
 
             elif general_settings.reimbursable_expenses_object == 'JOURNAL ENTRY':
                 schedule_journal_entry_creation(
-                    workspace_id=workspace_id, expense_group_ids=expense_group_ids, user=user
+                    workspace_id=workspace_id, expense_group_ids=expense_group_ids
                 )
 
         if general_settings.corporate_credit_card_expenses_object:
@@ -127,15 +127,15 @@ def run_sync_schedule(workspace_id, user: str):
 
             if general_settings.corporate_credit_card_expenses_object == 'JOURNAL ENTRY':
                 schedule_journal_entry_creation(
-                    workspace_id=workspace_id, expense_group_ids=expense_group_ids, user=user
+                    workspace_id=workspace_id, expense_group_ids=expense_group_ids
                 )
 
             elif general_settings.corporate_credit_card_expenses_object == 'VENDOR BILL':
                 schedule_bills_creation(
-                    workspace_id=workspace_id, expense_group_ids=expense_group_ids, user=user
+                    workspace_id=workspace_id, expense_group_ids=expense_group_ids
                 )
 
             elif general_settings.corporate_credit_card_expenses_object == 'EXPENSE REPORT':
                 schedule_expense_reports_creation(
-                    workspace_id=workspace_id, expense_group_ids=expense_group_ids, user=user
+                    workspace_id=workspace_id, expense_group_ids=expense_group_ids
                 )
