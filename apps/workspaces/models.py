@@ -3,6 +3,7 @@ Workspace Models
 """
 from django.db import models
 from django.contrib.auth import get_user_model
+from django_q.models import Schedule
 
 User = get_user_model()
 
@@ -65,7 +66,7 @@ class WorkspaceSchedule(models.Model):
     enabled = models.BooleanField(default=False)
     start_datetime = models.DateTimeField(help_text='Datetime for start of schedule', null=True)
     interval_hours = models.IntegerField(null=True)
-    fyle_job_id = models.CharField(unique=True, null=True, max_length=255)
+    schedule = models.OneToOneField(Schedule, on_delete=models.PROTECT, null=True)
 
 
 class WorkspaceGeneralSettings(models.Model):

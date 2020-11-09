@@ -1,17 +1,16 @@
 from datetime import datetime
 
-from django.conf import settings
+from django_q.models import Schedule
 
 from apps.fyle.models import ExpenseGroup
-from apps.fyle.tasks import create_expense_groups
-from apps.fyle.utils import FyleConnector
+from apps.fyle.tasks import async_create_expense_groups
 from apps.netsuite.tasks import schedule_bills_creation, schedule_journal_entry_creation, \
     schedule_expense_reports_creation
 from apps.tasks.models import TaskLog
-from apps.workspaces.models import WorkspaceSchedule, FyleCredential, WorkspaceGeneralSettings
+from apps.workspaces.models import WorkspaceSchedule, WorkspaceGeneralSettings
 
 
-def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int, next_run: str, user: str):
+def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int, next_run: str):
     ws_schedule, _ = WorkspaceSchedule.objects.get_or_create(
         workspace_id=workspace_id
     )
@@ -22,60 +21,28 @@ def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int, next_ru
         ws_schedule.start_datetime = start_datetime
         ws_schedule.interval_hours = hours
 
-        created_job = create_schedule_job(
-            workspace_id=workspace_id,
-            schedule=ws_schedule,
-            user=user,
-            start_datetime=start_datetime,
-            hours=hours
+        schedule, _ = Schedule.objects.update_or_create(
+            func='apps.workspaces.tasks.run_sync_schedule',
+            args='{}'.format(workspace_id),
+            defaults={
+                'schedule_type': Schedule.MINUTES,
+                'minutes': hours * 60,
+                'next_run': start_datetime
+            }
         )
-        ws_schedule.fyle_job_id = created_job['id']
 
-        ws_schedule.save(update_fields=['enabled', 'start_datetime', 'interval_hours', 'fyle_job_id'])
+        ws_schedule.schedule = schedule
+
+        ws_schedule.save(update_fields=['enabled', 'start_datetime', 'interval_hours', 'schedule'])
 
     elif not schedule_enabled:
-        fyle_credentials = FyleCredential.objects.get(
-            workspace_id=workspace_id)
-        fyle_connector = FyleConnector(fyle_credentials.refresh_token, workspace_id)
-        fyle_sdk_connection = fyle_connector.connection
-
-        jobs = fyle_sdk_connection.Jobs
-        if ws_schedule.fyle_job_id:
-            jobs.delete(ws_schedule.fyle_job_id)
-
-        ws_schedule.fyle_job_id = None
-        ws_schedule.enabled = False
-
-        ws_schedule.save(update_fields=['enabled', 'fyle_job_id'])
+        schedule = ws_schedule.schedule
+        ws_schedule.enabled = schedule_enabled
+        ws_schedule.schedule = None
+        ws_schedule.save()
+        schedule.delete()
 
     return ws_schedule
-
-
-def create_schedule_job(workspace_id: int, schedule: WorkspaceSchedule, user: str,
-                        start_datetime: datetime, hours: int):
-    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-    fyle_connector = FyleConnector(fyle_credentials.refresh_token, workspace_id)
-    fyle_sdk_connection = fyle_connector.connection
-
-    jobs = fyle_sdk_connection.Jobs
-    user_profile = fyle_sdk_connection.Employees.get_my_profile()['data']
-
-    created_job = jobs.trigger_interval(
-        callback_url='{0}{1}'.format(
-            settings.API_URL,
-            '/workspaces/{0}/schedule/trigger/'.format(workspace_id)
-        ),
-        callback_method='POST',
-        object_id=schedule.id,
-        job_description='Fetch expenses: Workspace id - {0}, user - {1}'.format(
-            workspace_id, user
-        ),
-        start_datetime=start_datetime.strftime('%Y-%m-%d %H:%M:00.00'),
-        hours=hours,
-        org_user_id=user_profile['id'],
-        payload={}
-    )
-    return created_job
 
 
 def run_sync_schedule(workspace_id):
@@ -97,7 +64,7 @@ def run_sync_schedule(workspace_id):
     if general_settings.corporate_credit_card_expenses_object:
         fund_source.append('CCC')
     if general_settings.reimbursable_expenses_object:
-        task_log: TaskLog = create_expense_groups(
+        async_create_expense_groups(
             workspace_id=workspace_id, fund_source=fund_source, task_log=task_log
         )
 
