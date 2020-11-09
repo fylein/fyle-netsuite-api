@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.conf import settings
 
 from rest_framework.response import Response
 from rest_framework.views import status
@@ -132,8 +133,8 @@ class ConnectNetSuiteView(viewsets.ViewSet):
         """
         try:
             ns_account_id = request.data.get('ns_account_id')
-            ns_consumer_key = request.data.get('ns_consumer_key')
-            ns_consumer_secret = request.data.get('ns_consumer_secret')
+            ns_consumer_key = settings.NS_CONSUMER_KEY
+            ns_consumer_secret = settings.NS_CONSUMER_SECRET
             ns_token_key = request.data.get('ns_token_id')
             ns_token_secret = request.data.get('ns_token_secret')
 

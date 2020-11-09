@@ -239,6 +239,11 @@ FYLE_CLIENT_ID = os.environ.get('FYLE_CLIENT_ID')
 FYLE_CLIENT_SECRET = os.environ.get('FYLE_CLIENT_SECRET')
 FYLE_BASE_URL = os.environ.get('FYLE_BASE_URL')
 FYLE_JOBS_URL = os.environ.get('FYLE_JOBS_URL')
+
+# Netsuite Settings
+NS_CONSUMER_KEY = os.environ.get('NS_CONSUMER_KEY')
+NS_CONSUMER_SECRET = os.environ.get('NS_CONSUMER_SECRET')
+
 CACHE_EXPIRY = 900
 
 CORS_ORIGIN_ALLOW_ALL = True
