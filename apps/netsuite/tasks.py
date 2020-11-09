@@ -450,8 +450,8 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str]):
         chain.append('apps.netsuite.tasks.create_bill', expense_group, task_log)
 
         task_log.save()
-
-    chain.run()
+    if chain.length():
+        chain.run()
 
 
 def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List[str]):
@@ -481,8 +481,8 @@ def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List
 
         chain.append('apps.netsuite.tasks.create_expense_report', expense_group, task_log)
         task_log.save()
-
-    chain.run()
+    if chain.length():
+        chain.run()
 
 
 def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[str]):
@@ -512,5 +512,5 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
 
         chain.append('apps.netsuite.tasks.create_journal_entry', expense_group, task_log)
         task_log.save()
-
-    chain.run()
+    if chain.length():
+        chain.run()
