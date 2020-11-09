@@ -52,7 +52,8 @@ INSTALLED_APPS = [
     'apps.fyle',
     'apps.tasks',
     'apps.mappings',
-    'apps.netsuite'
+    'apps.netsuite',
+    'django_q'
 ]
 
 MIDDLEWARE = [
@@ -161,6 +162,14 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
         'LOCATION': 'auth_cache',
     }
+}
+
+Q_CLUSTER = {
+    'name': 'fyle_netsuite_api',
+    'compress': True,
+    'save_limit': 0,
+    'orm': 'default',
+    'ack_failures': True
 }
 
 # Database

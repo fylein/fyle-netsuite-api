@@ -152,7 +152,7 @@ class ExpenseGroupScheduleView(generics.CreateAPIView):
         """
         Post expense schedule
         """
-        schedule_expense_group_creation(kwargs['workspace_id'], request.user)
+        schedule_expense_group_creation(kwargs['workspace_id'])
 
         return Response(
             status=status.HTTP_200_OK
