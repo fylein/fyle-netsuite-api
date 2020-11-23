@@ -29,6 +29,6 @@ def create_or_update_general_settings(general_settings_payload: Dict, workspace_
         }
     )
 
-    schedule_vendor_payment_creation(sync_payments=general_settings.import_projects, workspace_id=workspace_id)
+    schedule_vendor_payment_creation(sync_payments=general_settings.sync_payments, workspace_id=workspace_id)
 
     return general_settings
