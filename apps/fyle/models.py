@@ -328,7 +328,7 @@ class Reimbursement(models.Model):
         reimbursement_attributes = []
 
         for attribute in attributes:
-            reimbursement_attribute = Reimbursement.objects.create(
+            reimbursement_attribute, _ = Reimbursement.objects.update_or_create(
                 workspace_id=workspace_id,
                 settlement_id=attribute['settlement_id'],
                 reimbursement_id=attribute['reimbursement_id'],
