@@ -2,6 +2,7 @@ from typing import Dict
 
 
 from fyle_netsuite_api.utils import assert_valid
+from apps.netsuite.tasks import schedule_vendor_payment_creation
 from .models import WorkspaceGeneralSettings
 
 
@@ -24,6 +25,10 @@ def create_or_update_general_settings(general_settings_payload: Dict, workspace_
                 general_settings_payload['corporate_credit_card_expenses_object']
                 if 'corporate_credit_card_expenses_object' in general_settings_payload
                 and general_settings_payload['corporate_credit_card_expenses_object'] else None,
+            'sync_payments': general_settings_payload['sync_payments'],
         }
     )
+
+    schedule_vendor_payment_creation(sync_payments=general_settings.import_projects, workspace_id=workspace_id)
+
     return general_settings

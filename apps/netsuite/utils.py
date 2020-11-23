@@ -9,7 +9,7 @@ from apps.fyle.utils import FyleConnector
 
 from apps.mappings.models import SubsidiaryMapping
 from apps.netsuite.models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, \
-    JournalEntryLineItem, CustomSegment
+    JournalEntryLineItem, CustomSegment, VendorPayment, VendorPaymentLineitem
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential
 
 
@@ -888,3 +888,135 @@ class NetSuiteConnector:
         journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems, attachment_links)
         created_journal_entry = self.connection.journal_entries.post(journal_entry_payload)
         return created_journal_entry
+
+    @staticmethod
+    def __construct_vendor_payment_lineitems(vendor_payment_lineitems: List[VendorPaymentLineitem]) -> List[Dict]:
+        """
+        Create vendor payment line items
+        :return: constructed line items
+        """
+        lines = []
+
+        for line in vendor_payment_lineitems:
+            line = {
+                "apply": 'true',
+                "doc": line.doc_id,
+                "line": 0,
+                "job": None,
+                "applyDate": None,
+                "type": None,
+                "refNum": None,
+                "total": None,
+                "due": None,
+                "currency": None,
+                "discDate": None,
+                "discAmt": None,
+                "disc": None,
+                "amount": None
+            }
+
+            lines.append(line)
+
+        return lines
+
+    def __construct_vendor_payment(self, vendor_payment: VendorPayment,
+                                   vendor_payment_lineitems: List[VendorPaymentLineitem]) -> Dict:
+        """
+        Create a vendor payment
+        :return: constructed vendor payment
+        """
+        vendor_payment_payload = {
+            "nullFieldList": None,
+            "createdDate": None,
+            "lastModifiedDate": None,
+            "customForm": None,
+            "account": {
+                "name": None,
+                "internalId": vendor_payment.account_id,
+                "externalId": None,
+                "type": None
+            },
+            "balance": None,
+            "apAcct": {
+                "name": None,
+                "internalId": vendor_payment.accounts_payable_id,
+                "externalId": None,
+                "type": None
+            },
+            "entity": {
+                "name": None,
+                "internalId": vendor_payment.entity_id,
+                "externalId": None,
+                "type": None
+            },
+            "address": None,
+            "tranDate": None,
+            "voidJournal": None,
+            "postingPeriod": None,
+            "currencyName": None,
+            "exchangeRate": None,
+            "toAch": 'false',
+            "toBePrinted": 'false',
+            "printVoucher": 'false',
+            "tranId": None,
+            "total": None,
+            "currency": {
+                "name": None,
+                "internalId": vendor_payment.currency,
+                "externalId": None,
+                "type": None
+            },
+            "department": {
+                "name": None,
+                "internalId": vendor_payment.department_id,
+                "externalId": None,
+                "type": "department"
+            },
+            "memo": vendor_payment.memo,
+            "subsidiary": {
+                "name": None,
+                "internalId": vendor_payment.subsidiary_id,
+                "externalId": None,
+                "type": None
+            },
+            "class": {
+                "name": None,
+                "internalId": vendor_payment.class_id,
+                "externalId": None,
+                "type": "classification"
+            },
+            "location": {
+                "name": None,
+                "internalId": vendor_payment.location_id,
+                "externalId": None,
+                "type": "location"
+            },
+            "status": None,
+            "transactionNumber": None,
+            "applyList": {
+                "apply":
+                    self.__construct_vendor_payment_lineitems(vendor_payment_lineitems),
+                    "replaceAll": "true"
+            },
+            "creditList": None,
+            "billPay": None,
+            "accountingBookDetailList": None,
+            "availableBalance": None,
+            "isInTransitPayment": None,
+            "approvalStatus": None,
+            "nextApprover": None,
+            "customFieldList": None,
+            "internalId": None,
+            "externalId": 'Expense Group - {0} - {1}'.format(vendor_payment.expense_group, vendor_payment.external_id)
+        }
+
+        return vendor_payment_payload
+
+    def post_vendor_payment(self, vendor_payment: VendorPayment,
+                            vendor_payment_lineitems: List[VendorPaymentLineitem]):
+        """
+        Post vendor payments to NetSuite
+        """
+        vendor_payment_payload = self.__construct_vendor_payment(vendor_payment, vendor_payment_lineitems)
+        created_vendor_payment = self.connection.vendor_payments.post(vendor_payment_payload)
+        return created_vendor_payment
