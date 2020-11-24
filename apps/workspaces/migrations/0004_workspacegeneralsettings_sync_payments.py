@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name='workspacegeneralsettings',
-            name='sync_payments',
+            name='sync_fyle_to_netsuite_payments',
             field=models.BooleanField(default=False, help_text='Auto Sync Payments from Fyle to Netsuite'),
         ),
     ]

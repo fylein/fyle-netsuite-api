@@ -818,8 +818,8 @@ def create_vendor_payment(workspace_id):
         logger.exception('Something unexpected happened workspace_id: %s %s', workspace_id, error)
 
 
-def schedule_vendor_payment_creation(sync_payments, workspace_id):
-    if sync_payments:
+def schedule_vendor_payment_creation(sync_fyle_to_netsuite_payments, workspace_id):
+    if sync_fyle_to_netsuite_payments:
         start_datetime = datetime.now()
         schedule, _ = Schedule.objects.update_or_create(
             func='apps.netsuite.tasks.create_vendor_payment',
