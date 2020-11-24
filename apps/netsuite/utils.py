@@ -627,8 +627,8 @@ class NetSuiteConnector:
                 "type": "vendor"
             },
             "expenseReportCurrency": {
-                "name": expense_report.currency,
-                "internalId": None,
+                "name": None,
+                'internalId': expense_report.currency,
                 "externalId": None,
                 "type": "currency"
             },

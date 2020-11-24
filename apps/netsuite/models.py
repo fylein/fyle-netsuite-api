@@ -384,6 +384,10 @@ class ExpenseReport(models.Model):
             workspace_id=expense_group.workspace_id
         )
 
+        currency = DestinationAttribute.objects.filter(value=expense.currency,
+                                                       workspace_id=expense_group.workspace_id,
+                                                       attribute_type='CURRENCY').first()
+
         if expense_group.fund_source == 'PERSONAL':
             debit_account_id = GeneralMapping.objects.get(
                 workspace_id=expense_group.workspace_id).reimbursable_account_id
@@ -400,7 +404,7 @@ class ExpenseReport(models.Model):
             defaults={
                 'account_id': debit_account_id,
                 'entity_id': entity.destination.destination_id,
-                'currency': expense.currency,
+                'currency': currency.destination_id if currency else '1',
                 'department_id': None,
                 'class_id': None,
                 'location_id': general_mappings.location_id,

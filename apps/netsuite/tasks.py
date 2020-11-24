@@ -662,8 +662,8 @@ def create_vendor_payment(workspace_id):
 
                             vendor_payment_object = VendorPayment.create_vendor_payment(
                                 expense_report.expense_group, expense_report.subsidiary_id, expense_report.entity_id,
-                                '', expense_report.memo,
-                                expense_report.external_id, expense_report.account_id)
+                                expense_report.currency, expense_report.memo, expense_report.external_id,
+                                expense_report.location_id, expense_report.account_id)
 
                             vendor_payment_lineitems = VendorPaymentLineitem.create_vendor_payment_lineitems(
                                 detail['internalId']
