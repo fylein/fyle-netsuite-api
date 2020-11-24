@@ -331,8 +331,9 @@ class Reimbursement(models.Model):
             reimbursement_attribute, _ = Reimbursement.objects.update_or_create(
                 workspace_id=workspace_id,
                 settlement_id=attribute['settlement_id'],
-                reimbursement_id=attribute['reimbursement_id'],
-                state=attribute['state']
-            )
+                defaults={
+                    'reimbursement_id': attribute['reimbursement_id'],
+                    'state': attribute['state']
+                })
             reimbursement_attributes.append(reimbursement_attribute)
         return reimbursement_attributes
