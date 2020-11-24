@@ -12,9 +12,9 @@ from apps.workspaces.models import FyleCredential, WorkspaceGeneralSettings
 
 from .tasks import create_expense_groups, schedule_expense_group_creation
 from .utils import FyleConnector
-from .models import Expense, ExpenseGroup, ExpenseGroupSettings, Reimbursement
+from .models import Expense, ExpenseGroup, ExpenseGroupSettings
 from .serializers import ExpenseGroupSerializer, ExpenseSerializer, ExpenseFieldSerializer, \
-    ExpenseGroupSettingsSerializer, ReimbursementSerializer
+    ExpenseGroupSettingsSerializer
 
 
 class ExpenseGroupView(generics.ListCreateAPIView):
@@ -355,41 +355,6 @@ class ProjectView(generics.ListCreateAPIView):
 
             return Response(
                 data=self.serializer_class(project_attributes, many=True).data,
-                status=status.HTTP_200_OK
-            )
-        except FyleCredential.DoesNotExist:
-            return Response(
-                data={
-                    'message': 'Fyle credentials not found in workspace'
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-
-class ReimbursementView(generics.ListCreateAPIView):
-    """
-    Reimbursement view
-    """
-    serializer_class = ReimbursementSerializer
-    pagination_class = None
-
-    def get_queryset(self):
-        return Reimbursement.objects.filter(workspace_id=self.kwargs['workspace_id']).order_by('id')
-
-    def post(self, request, *args, **kwargs):
-        """
-        Get reimbursements from Fyle
-        """
-        try:
-            fyle_credentials = FyleCredential.objects.get(
-                workspace_id=kwargs['workspace_id'])
-
-            fyle_connector = FyleConnector(fyle_credentials.refresh_token, kwargs['workspace_id'])
-
-            reimbursement_attributes = fyle_connector.sync_reimbursements()
-
-            return Response(
-                data=self.serializer_class(reimbursement_attributes, many=True).data,
                 status=status.HTTP_200_OK
             )
         except FyleCredential.DoesNotExist:
