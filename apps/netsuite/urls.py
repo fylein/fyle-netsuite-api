@@ -27,5 +27,5 @@ urlpatterns = [
     path('journal_entries/trigger/', JournalEntryScheduleView.as_view()),
     path('netsuite_fields/', NetSuiteFieldsView.as_view()),
     path('custom_fields/', SyncCustomFieldsView.as_view()),
-    path('custom_segments/', CustomSegmentView.as_view()),
+    path('custom_segments/', CustomSegmentView.as_view())
 ]
