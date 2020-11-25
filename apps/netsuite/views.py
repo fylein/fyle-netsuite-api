@@ -225,6 +225,26 @@ class BankAccountView(generics.ListCreateAPIView):
         )
 
 
+class VendorPaymentAccountView(generics.ListCreateAPIView):
+    """
+    VendorPaymentAccount view
+    """
+    serializer_class = DestinationAttributeSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return DestinationAttribute.objects.filter(
+            attribute_type='VENDOR_PAYMENT_ACCOUNT', workspace_id=self.kwargs['workspace_id']).order_by('value')
+
+    def post(self, request, *args, **kwargs):
+        return Response(
+            data={
+                'message': 'Method Not Allowed'
+            },
+            status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )
+
+
 class EmployeeView(generics.ListCreateAPIView):
     """
     Employee view

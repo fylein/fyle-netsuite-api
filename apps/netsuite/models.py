@@ -520,6 +520,7 @@ class JournalEntry(models.Model):
     id = models.AutoField(primary_key=True)
     expense_group = models.OneToOneField(ExpenseGroup, on_delete=models.PROTECT, help_text='Expense group reference')
     currency = models.CharField(max_length=255, help_text='Journal Entry Currency')
+    location_id = models.CharField(max_length=255, help_text='NetSuite Location id', null=True)
     subsidiary_id = models.CharField(max_length=255, help_text='NetSuite Subsidiary ID')
     memo = models.CharField(max_length=255, help_text='Journal Entry Memo')
     external_id = models.CharField(max_length=255, help_text='Journal Entry External ID')
@@ -548,10 +549,13 @@ class JournalEntry(models.Model):
 
         subsidiary_mappings = SubsidiaryMapping.objects.get(workspace_id=expense_group.workspace_id)
 
+        general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
+
         journal_entry_object, _ = JournalEntry.objects.update_or_create(
             expense_group=expense_group,
             defaults={
                 'currency': currency.destination_id if currency else '1',
+                'location_id': general_mappings.location_id,
                 'subsidiary_id': subsidiary_mappings.internal_id,
                 'memo': "Reimbursable expenses by {0}".format(description.get('employee_email')) if
                 expense_group.fund_source == 'PERSONAL' else
@@ -700,24 +704,24 @@ class VendorPayment(models.Model):
         db_table = 'vendor_payments'
 
     @staticmethod
-    def create_vendor_payment(
-            expense_group, subsidiary_id, entity_id, currency, memo, external_id, accounts_payable_id=None,
-            location_id=None, account_id=None):
+    def create_vendor_payment(expense_group: ExpenseGroup, netsuite_object, entity=None):
         """
         Create Vendor payment
         :return: vendor payment object
         """
+        general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
+
         vendor_payment_object, _ = VendorPayment.objects.update_or_create(
             expense_group=expense_group,
             defaults={
-                'subsidiary_id': subsidiary_id,
-                'accounts_payable_id': accounts_payable_id if accounts_payable_id else None,
-                'account_id': account_id if account_id else None,
-                'entity_id': entity_id,
-                'location_id': location_id if location_id else None,
-                'currency': currency,
-                'memo': memo,
-                'external_id': external_id
+                'subsidiary_id': netsuite_object.subsidiary_id,
+                'accounts_payable_id': None,
+                'account_id': general_mappings.vendor_payment_account_id,
+                'entity_id': entity,
+                'location_id': netsuite_object.location_id,
+                'currency': netsuite_object.currency,
+                'memo': netsuite_object.memo,
+                'external_id': netsuite_object.external_id
             }
         )
         return vendor_payment_object
@@ -728,6 +732,7 @@ class VendorPaymentLineitem(models.Model):
     NetSuite VendorPayment Lineitem
     """
     id = models.AutoField(primary_key=True)
+    vendor_payment = models.ForeignKey(VendorPayment, on_delete=models.PROTECT, help_text='Reference to vendor payment')
     doc_id = models.CharField(max_length=255, help_text='NetSuite Object id')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
@@ -736,19 +741,18 @@ class VendorPaymentLineitem(models.Model):
         db_table = 'vendor_payment_lineitems'
 
     @staticmethod
-    def create_vendor_payment_lineitems(doc_id):
+    def create_vendor_payment_lineitems(expense_group: ExpenseGroup, doc_id):
         """
         Create vendor payment lineitems
         :return: lineitems objects
         """
-        vendor_payment_lineitem_objects = []
+        vendor_payment = VendorPayment.objects.get(expense_group=expense_group)
 
         vendor_payment_lineitem_object, _ = VendorPaymentLineitem.objects.update_or_create(
+            vendor_payment=vendor_payment,
             defaults={
                 'doc_id': doc_id,
             }
         )
 
-        vendor_payment_lineitem_objects.append(vendor_payment_lineitem_object)
-
-        return vendor_payment_lineitem_objects
+        return vendor_payment_lineitem_object

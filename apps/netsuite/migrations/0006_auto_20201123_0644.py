@@ -17,6 +17,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(primary_key=True, serialize=False)),
                 ('doc_id', models.CharField(help_text='NetSuite Object id', max_length=255)),
+                ('vendor_payment', models.ForeignKey(help_text='Reference to vendor payment', on_delete=django.db.models.deletion.PROTECT, to='netsuite.VendorPayment')),
                 ('created_at', models.DateTimeField(auto_now_add=True, help_text='Created at')),
                 ('updated_at', models.DateTimeField(auto_now=True, help_text='Updated at')),
             ],
@@ -38,6 +39,11 @@ class Migration(migrations.Migration):
             model_name='journalentry',
             name='payment_synced',
             field=models.BooleanField(default=False, help_text='Payment synced status'),
+        ),
+        migrations.AddField(
+            model_name='journalentry',
+            name='location_id',
+            field=models.CharField(help_text='NetSuite Location id', max_length=255, null=True),
         ),
         migrations.AlterField(
             model_name='billlineitem',

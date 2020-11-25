@@ -518,6 +518,116 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
         chain.run()
 
 
+def process_vendor_payment(netsuite_object, line_items, workspace_id, object_type):
+
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+
+    netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
+
+    all_expenses_paid = True
+
+    task_log = None
+
+    for line_item in line_items:
+        expense = Expense.objects.get(id=line_item.expense.id)
+        reimbursement = Reimbursement.objects.filter(settlement_id=expense.settlement_id).first()
+
+        if not reimbursement:
+            all_expenses_paid = False
+            break
+
+        if reimbursement.state != 'COMPLETE':
+            all_expenses_paid = False
+
+    if all_expenses_paid:
+        try:
+            task_log, _ = TaskLog.objects.update_or_create(
+                workspace_id=workspace_id,
+                task_id='PAYMENT_{}'.format(netsuite_object.expense_group.id),
+                defaults={
+                    'status': 'IN_PROGRESS',
+                    'type': 'CREATING_VENDOR_PAYMENT'
+                }
+            )
+            with transaction.atomic():
+                netsuite_object_task_log = TaskLog.objects.get(expense_group=netsuite_object.expense_group)
+
+                detail = netsuite_object_task_log.detail
+
+                entity_id = None
+
+                if object_type == 'BILL':
+                    entity_id = netsuite_object.vendor_id
+
+                if object_type == 'EXPENSE REPORT':
+                    entity_id = netsuite_object.entity_id
+
+                if object_type == 'JOURNAL ENTRY':
+                    for line_item in line_items:
+                        entity_id = line_item.entity_id
+
+                vendor_payment_object = VendorPayment.create_vendor_payment(
+                    netsuite_object.expense_group, netsuite_object, entity_id
+                )
+
+                vendor_payment_lineitems = VendorPaymentLineitem.create_vendor_payment_lineitems(
+                    netsuite_object.expense_group, detail['internalId']
+                )
+
+                created_vendor_payment = netsuite_connection.post_vendor_payment(
+                    vendor_payment_object, vendor_payment_lineitems
+                )
+
+                task_log.expense_group_id = netsuite_object.expense_group
+                task_log.detail = created_vendor_payment
+                task_log.vendor_payment = vendor_payment_object
+                task_log.status = 'COMPLETE'
+
+                netsuite_object.payment_synced = True
+                netsuite_object.save(update_fields=['payment_synced'])
+
+                task_log.save(update_fields=['detail', 'vendor_payment', 'status', 'expense_group_id'])
+
+        except NetSuiteCredentials.DoesNotExist:
+            logger.exception(
+                'NetSuite Credentials not found for workspace_id %s / expense group %s',
+                netsuite_object.expense_group,
+                workspace_id
+            )
+            detail = {
+                'expense_group_id': netsuite_object.expense_group,
+                'message': 'NetSuite Account not connected'
+            }
+            task_log.status = 'FAILED'
+            task_log.detail = detail
+
+            task_log.save(update_fields=['detail', 'status'])
+
+        except NetSuiteRequestError as exception:
+            all_details = []
+            logger.exception(exception)
+            detail = json.dumps(exception.__dict__)
+            detail = json.loads(detail)
+            task_log.status = 'FAILED'
+
+            all_details.append({
+                'value': 'NetSuite System Error',
+                'type': detail['code'],
+                'message': detail['message']
+            })
+            task_log.detail = all_details
+
+            task_log.save(update_fields=['detail', 'status'])
+
+        except BulkError as exception:
+            logger.error(exception.response)
+            detail = exception.response
+            task_log.status = 'FAILED'
+            task_log.detail = detail
+
+            task_log.save(update_fields=['detail', 'status'])
+
+
 def create_vendor_payment(workspace_id):
     try:
         with transaction.atomic():
@@ -527,10 +637,6 @@ def create_vendor_payment(workspace_id):
             fyle_connector = FyleConnector(fyle_credentials.refresh_token, workspace_id)
 
             fyle_connector.sync_reimbursements()
-
-            netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
-
-            netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
 
             bills = Bill.objects.filter(payment_synced=False, expense_group__workspace_id=workspace_id).all()
 
@@ -545,273 +651,17 @@ def create_vendor_payment(workspace_id):
             if bills:
                 for bill in bills:
                     line_items = BillLineitem.objects.filter(bill_id=bill.id)
-
-                    all_expenses_paid = True
-
-                    for line_item in line_items:
-                        expense = Expense.objects.get(id=line_item.expense.id)
-                        reimbursement = Reimbursement.objects.filter(settlement_id=expense.settlement_id).first()
-
-                        if not reimbursement:
-                            all_expenses_paid = False
-                            break
-
-                        if reimbursement.state != 'COMPLETE':
-                            all_expenses_paid = False
-
-                    if all_expenses_paid:
-                        try:
-                            task_log = TaskLog.objects.create(
-                                workspace_id=workspace_id,
-                                type='CREATING_VENDOR_PAYMENT_FOR_BILL',
-                                status='IN_PROGRESS'
-                            )
-                            bill_task_log = TaskLog.objects.get(expense_group=bill.expense_group)
-
-                            detail = bill_task_log.detail
-
-                            vendor_payment_object = VendorPayment.create_vendor_payment(
-                                bill.expense_group, bill.subsidiary_id, bill.vendor_id, bill.currency, bill.memo,
-                                bill.external_id, bill.accounts_payable_id, bill.location_id)
-
-                            vendor_payment_lineitems = VendorPaymentLineitem.create_vendor_payment_lineitems(
-                                detail['internalId']
-                            )
-
-                            created_vendor_payment = netsuite_connection.post_vendor_payment(
-                                vendor_payment_object, vendor_payment_lineitems
-                            )
-
-                            task_log.expense_group_id = bill.expense_group
-                            task_log.detail = created_vendor_payment
-                            task_log.vendor_payment = vendor_payment_object
-                            task_log.status = 'COMPLETE'
-
-                            bill.payment_synced = True
-                            bill.save(update_fields=['payment_synced'])
-
-                            task_log.save(update_fields=['detail', 'vendor_payment', 'status', 'expense_group_id'])
-
-                        except NetSuiteCredentials.DoesNotExist:
-                            logger.exception(
-                                'NetSuite Credentials not found for workspace_id %s / expense group %s',
-                                bill.expense_group,
-                                workspace_id
-                            )
-                            detail = {
-                                'expense_group_id': bill.expense_group,
-                                'message': 'NetSuite Account not connected'
-                            }
-                            task_log.status = 'FAILED'
-                            task_log.detail = detail
-
-                            task_log.save(update_fields=['detail', 'status'])
-
-                        except NetSuiteRequestError as exception:
-                            all_details = []
-                            logger.exception(exception)
-                            detail = json.dumps(exception.__dict__)
-                            detail = json.loads(detail)
-                            task_log.status = 'FAILED'
-
-                            all_details.append({
-                                'expense_group_id': bill.expense_group,
-                                'value': 'NetSuite System Error',
-                                'type': detail['code'],
-                                'message': detail['message']
-                            })
-                            task_log.detail = all_details
-
-                            task_log.save(update_fields=['detail', 'status'])
-
-                        except BulkError as exception:
-                            logger.error(exception.response)
-                            detail = exception.response
-                            task_log.status = 'FAILED'
-                            task_log.detail = detail
-
-                            task_log.save(update_fields=['detail', 'status'])
+                    process_vendor_payment(bill, line_items, workspace_id, 'BILL')
 
             if expense_reports:
                 for expense_report in expense_reports:
                     line_items = ExpenseReportLineItem.objects.filter(expense_report_id=expense_report.id)
-
-                    all_expenses_paid = True
-
-                    for line_item in line_items:
-                        expense = Expense.objects.get(id=line_item.expense.id)
-                        reimbursement = Reimbursement.objects.filter(settlement_id=expense.settlement_id).first()
-
-                        if not reimbursement:
-                            all_expenses_paid = False
-                            break
-
-                        if reimbursement.state != 'COMPLETE':
-                            all_expenses_paid = False
-
-                    if all_expenses_paid:
-                        try:
-                            task_log = TaskLog.objects.create(
-                                workspace_id=workspace_id,
-                                type='CREATING_VENDOR_PAYMENT_FOR_EXPENSE_REPORT',
-                                status='IN_PROGRESS'
-                            )
-                            expense_report_task_log = TaskLog.objects.get(expense_group=expense_report.expense_group)
-
-                            detail = expense_report_task_log.detail
-
-                            vendor_payment_object = VendorPayment.create_vendor_payment(
-                                expense_report.expense_group, expense_report.subsidiary_id, expense_report.entity_id,
-                                expense_report.currency, expense_report.memo, expense_report.external_id,
-                                expense_report.location_id, expense_report.account_id)
-
-                            vendor_payment_lineitems = VendorPaymentLineitem.create_vendor_payment_lineitems(
-                                detail['internalId']
-                            )
-
-                            created_vendor_payment = netsuite_connection.post_vendor_payment(
-                                vendor_payment_object, vendor_payment_lineitems
-                            )
-
-                            task_log.expense_group_id = expense_report.expense_group
-                            task_log.detail = created_vendor_payment
-                            task_log.vendor_payment = vendor_payment_object
-                            task_log.status = 'COMPLETE'
-
-                            expense_report.payment_synced = True
-                            expense_report.save(update_fields=['payment_synced'])
-
-                            task_log.save(update_fields=['detail', 'vendor_payment', 'status', 'expense_group_id'])
-
-                        except NetSuiteCredentials.DoesNotExist:
-                            logger.exception(
-                                'NetSuite Credentials not found for workspace_id %s / expense group %s',
-                                bill.expense_group,
-                                workspace_id
-                            )
-                            detail = {
-                                'expense_group_id': bill.expense_group,
-                                'message': 'NetSuite Account not connected'
-                            }
-                            task_log.status = 'FAILED'
-                            task_log.detail = detail
-
-                            task_log.save(update_fields=['detail', 'status'])
-
-                        except NetSuiteRequestError as exception:
-                            all_details = []
-                            logger.exception(exception)
-                            detail = json.dumps(exception.__dict__)
-                            detail = json.loads(detail)
-                            task_log.status = 'FAILED'
-
-                            all_details.append({
-                                'expense_group_id': bill.expense_group,
-                                'value': 'NetSuite System Error',
-                                'type': detail['code'],
-                                'message': detail['message']
-                            })
-                            task_log.detail = all_details
-
-                            task_log.save(update_fields=['detail', 'status'])
-
-                        except BulkError as exception:
-                            logger.error(exception.response)
-                            detail = exception.response
-                            task_log.status = 'FAILED'
-                            task_log.detail = detail
-
-                            task_log.save(update_fields=['detail', 'status'])
+                    process_vendor_payment(expense_report, line_items, workspace_id, 'EXPENSE REPORT')
 
             if journal_entries:
                 for journal_entry in journal_entries:
                     line_items = JournalEntryLineItem.objects.filter(journal_entry_id=journal_entry.id)
-
-                    all_expenses_paid = True
-
-                    for line_item in line_items:
-                        expense = Expense.objects.get(id=line_item.expense.id)
-                        account = line_item.account_id
-                        reimbursement = Reimbursement.objects.filter(settlement_id=expense.settlement_id).first()
-
-                        if not reimbursement:
-                            all_expenses_paid = False
-                            break
-
-                        if reimbursement.state != 'COMPLETE':
-                            all_expenses_paid = False
-
-                        if all_expenses_paid:
-                            try:
-                                task_log = TaskLog.objects.create(
-                                    workspace_id=workspace_id,
-                                    type='CREATING_VENDOR_PAYMENT_FOR_JOURNAL_ENTRY',
-                                    status='IN_PROGRESS'
-                                )
-                                journal_task_log = TaskLog.objects.get(expense_group=journal_entry.expense_group)
-
-                                detail = journal_task_log.detail
-                                vendor_payment_object = VendorPayment.create_vendor_payment(
-                                    journal_entry.expense_group, journal_entry.subsidiary_id, line_item.entity_id,
-                                    journal_entry.currency, journal_entry.memo, journal_entry.external_id, account)
-
-                                vendor_payment_lineitems = VendorPaymentLineitem.create_vendor_payment_lineitems(
-                                    detail['internalId']
-                                )
-
-                                created_vendor_payment = netsuite_connection.post_vendor_payment(
-                                    vendor_payment_object, vendor_payment_lineitems
-                                )
-
-                                task_log.expense_group_id = journal_entry.expense_group
-                                task_log.detail = created_vendor_payment
-                                task_log.vendor_payment = vendor_payment_object
-                                task_log.status = 'COMPLETE'
-
-                                journal_entry.payment_synced = True
-                                journal_entry.save(update_fields=['payment_synced'])
-
-                                task_log.save(update_fields=['detail', 'vendor_payment', 'status', 'expense_group_id'])
-
-                            except NetSuiteCredentials.DoesNotExist:
-                                logger.exception(
-                                    'NetSuite Credentials not found for workspace_id %s / expense group %s',
-                                    bill.expense_group,
-                                    workspace_id
-                                )
-                                detail = {
-                                    'expense_group_id': bill.expense_group,
-                                    'message': 'NetSuite Account not connected'
-                                }
-                                task_log.status = 'FAILED'
-                                task_log.detail = detail
-
-                                task_log.save(update_fields=['detail', 'status'])
-
-                            except NetSuiteRequestError as exception:
-                                all_details = []
-                                logger.exception(exception)
-                                detail = json.dumps(exception.__dict__)
-                                detail = json.loads(detail)
-                                task_log.status = 'FAILED'
-
-                                all_details.append({
-                                    'expense_group_id': bill.expense_group,
-                                    'value': 'NetSuite System Error',
-                                    'type': detail['code'],
-                                    'message': detail['message']
-                                })
-                                task_log.detail = all_details
-
-                                task_log.save(update_fields=['detail', 'status'])
-
-                            except BulkError as exception:
-                                logger.error(exception.response)
-                                detail = exception.response
-                                task_log.status = 'FAILED'
-                                task_log.detail = detail
-
-                                task_log.save(update_fields=['detail', 'status'])
+                    process_vendor_payment(journal_entry, line_items, workspace_id, 'JOURNAL ENTRY')
 
     except Exception:
         error = traceback.format_exc()

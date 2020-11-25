@@ -76,6 +76,14 @@ class NetSuiteConnector:
                     'destination_id': account['internalId']
                 })
 
+            if account['acctType'] == '_bank' or account['acctType'] == '_creditCard':
+                account_attributes.append({
+                    'attribute_type': 'VENDOR_PAYMENT_ACCOUNT',
+                    'display_name': 'Vendor Payment Account',
+                    'value': account['acctName'],
+                    'destination_id': account['internalId']
+                })
+
         account_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
             account_attributes, self.workspace_id)
         return account_attributes
@@ -843,7 +851,7 @@ class NetSuiteConnector:
             },
             'location': {
                 'name': None,
-                'internalId': None,
+                'internalId': journal_entry.location_id,
                 'externalId': None,
                 'type': 'location'
             },
@@ -1001,7 +1009,9 @@ class NetSuiteConnector:
             'nextApprover': None,
             'customFieldList': None,
             'internalId': None,
-            'externalId': 'Expense Group - {0} - {1}'.format(vendor_payment.expense_group, vendor_payment.external_id)
+            'externalId': 'Expense Group - {0} - {1}'.format(
+                vendor_payment.expense_group.id, vendor_payment.external_id
+            )
         }
 
         return vendor_payment_payload
