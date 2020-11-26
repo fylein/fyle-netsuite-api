@@ -526,8 +526,6 @@ def process_vendor_payment(netsuite_object, line_items, workspace_id, object_typ
 
     all_expenses_paid = True
 
-    task_log = None
-
     for line_item in line_items:
         expense = Expense.objects.get(id=line_item.expense.id)
         reimbursement = Reimbursement.objects.filter(settlement_id=expense.settlement_id).first()
@@ -540,15 +538,15 @@ def process_vendor_payment(netsuite_object, line_items, workspace_id, object_typ
             all_expenses_paid = False
 
     if all_expenses_paid:
+        task_log, _ = TaskLog.objects.update_or_create(
+            workspace_id=workspace_id,
+            task_id='PAYMENT_{}'.format(netsuite_object.expense_group.id),
+            defaults={
+                'status': 'IN_PROGRESS',
+                'type': 'CREATING_VENDOR_PAYMENT'
+            }
+        )
         try:
-            task_log, _ = TaskLog.objects.update_or_create(
-                workspace_id=workspace_id,
-                task_id='PAYMENT_{}'.format(netsuite_object.expense_group.id),
-                defaults={
-                    'status': 'IN_PROGRESS',
-                    'type': 'CREATING_VENDOR_PAYMENT'
-                }
-            )
             with transaction.atomic():
                 netsuite_object_task_log = TaskLog.objects.get(expense_group=netsuite_object.expense_group)
 
