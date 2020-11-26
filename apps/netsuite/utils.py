@@ -312,6 +312,36 @@ class NetSuiteConnector:
             subsidiary_attributes, self.workspace_id)
         return subsidiary_attributes
 
+    def sync_projects(self):
+        """
+        Sync projects
+        """
+        subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
+        projects = self.connection.projects.get_all()
+
+        project_attributes = []
+        project_mappings_attributes = []
+
+        for project in projects:
+            if project['subsidiary']['internalId'] == subsidiary_mapping.internal_id:
+                project_attributes.append({
+                    'value': project['entityId'],
+                    'destination_id': project['internalId'],
+                    'active': not project['isInactive'],
+                    'parent_name': project['parent']['name'] if project['parent'] else None
+                })
+                project_mappings_attributes.append({
+                    'attribute_type': 'PROJECT',
+                    'display_name': 'Project',
+                    'value': project['parent']['name'] if project['parent'] else project['entityId'],
+                    'destination_id': project['internalId'],
+                    'active': not project['isInactive']
+                })
+
+        DestinationAttribute.bulk_upsert_destination_attributes(
+            project_mappings_attributes, self.workspace_id)
+        return project_attributes
+
     @staticmethod
     def __construct_bill_lineitems(bill_lineitems: List[BillLineitem],
                                    attachment_links: Dict, cluster_domain: str) -> List[Dict]:

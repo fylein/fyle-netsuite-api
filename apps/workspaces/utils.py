@@ -1,5 +1,6 @@
 from typing import Dict
 
+from apps.mappings.tasks import schedule_projects_creation
 
 from fyle_netsuite_api.utils import assert_valid
 from .models import WorkspaceGeneralSettings
@@ -24,6 +25,10 @@ def create_or_update_general_settings(general_settings_payload: Dict, workspace_
                 general_settings_payload['corporate_credit_card_expenses_object']
                 if 'corporate_credit_card_expenses_object' in general_settings_payload
                 and general_settings_payload['corporate_credit_card_expenses_object'] else None,
+            'import_projects': general_settings_payload['import_projects']
         }
     )
+
+    schedule_projects_creation(import_projects=general_settings.import_projects, workspace_id=workspace_id)
+
     return general_settings
