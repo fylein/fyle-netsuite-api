@@ -1009,9 +1009,7 @@ class NetSuiteConnector:
             'nextApprover': None,
             'customFieldList': None,
             'internalId': None,
-            'externalId': 'Expense Group - {0} - {1}'.format(
-                vendor_payment.expense_group.id, vendor_payment.external_id
-            )
+            'externalId': vendor_payment.external_id
         }
 
         return vendor_payment_payload

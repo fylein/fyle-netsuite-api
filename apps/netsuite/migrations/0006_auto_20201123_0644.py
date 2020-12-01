@@ -18,6 +18,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(primary_key=True, serialize=False)),
                 ('doc_id', models.CharField(help_text='NetSuite Object id', max_length=255)),
                 ('vendor_payment', models.ForeignKey(help_text='Reference to vendor payment', on_delete=django.db.models.deletion.PROTECT, to='netsuite.VendorPayment')),
+                ('expense_group', models.OneToOneField(help_text='Expense group reference', on_delete=django.db.models.deletion.PROTECT, to='fyle.ExpenseGroup')),
                 ('created_at', models.DateTimeField(auto_now_add=True, help_text='Created at')),
                 ('updated_at', models.DateTimeField(auto_now=True, help_text='Updated at')),
             ],
@@ -81,7 +82,6 @@ class Migration(migrations.Migration):
                 ('memo', models.TextField(help_text='Vendor Payment Description', null=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True, help_text='Created at')),
                 ('updated_at', models.DateTimeField(auto_now=True, help_text='Updated at')),
-                ('expense_group', models.OneToOneField(help_text='Expense group reference', on_delete=django.db.models.deletion.PROTECT, to='fyle.ExpenseGroup')),
             ],
             options={
                 'db_table': 'vendor_payments',
