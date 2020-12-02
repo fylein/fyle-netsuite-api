@@ -710,12 +710,11 @@ class VendorPayment(models.Model):
         """
         general_mappings = GeneralMapping.objects.get(workspace_id=workspace_id)
 
-        vendor_payment_object, _ = VendorPayment.objects.create(
+        vendor_payment_object = VendorPayment.objects.create(
             subsidiary_id=netsuite_object['subsidiary_id'],
             accounts_payable_id=netsuite_object['accounts_payable'],
             account_id=general_mappings.vendor_payment_account_id,
             entity_id=netsuite_object['entity_id'],
-            location_id=None,
             currency=netsuite_object['currency'],
             memo=netsuite_object['memo'],
             external_id=netsuite_object['unique_id']
@@ -747,7 +746,7 @@ class VendorPaymentLineitem(models.Model):
         vendor_payment_lineitem_objects = []
 
         for line in lines_payload:
-            vendor_payment_lineitem_object, _ = VendorPaymentLineitem.objects.create(
+            vendor_payment_lineitem_object = VendorPaymentLineitem.objects.create(
                 vendor_payment=vendor_payment_object,
                 expense_group=line['expense_group'],
                 doc_id=line['internal_id']
