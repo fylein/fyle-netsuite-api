@@ -725,11 +725,10 @@ def create_vendor_payment(workspace_id):
             if expense_reports:
                 expense_report_entity_map = create_netsite_object_payload(expense_reports, 'EXPENSE REPORT')
                 for expense_report in expense_reports:
-                    if expense_report.entity_id:
-                        line_items = ExpenseReportLineItem.objects.filter(expense_report_id=expense_report.id)
-                        process_vendor_payment(
-                            expense_report_entity_map, line_items, workspace_id, expense_report.entity_id, expense_report
-                        )
+                    line_items = ExpenseReportLineItem.objects.filter(expense_report_id=expense_report.id)
+                    process_vendor_payment(
+                        expense_report_entity_map, line_items, workspace_id, expense_report.entity_id, expense_report
+                    )
 
             if journal_entries:
                 for journal_entry in journal_entries:
