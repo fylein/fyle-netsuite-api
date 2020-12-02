@@ -429,7 +429,7 @@ class NetSuiteConnector:
             },
             'entity': {
                 'name': None,
-                'internalId': bill.vendor_id,
+                'internalId': bill.entity_id,
                 'externalId': None,
                 'type': 'vendor'
             },

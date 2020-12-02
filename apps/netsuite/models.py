@@ -194,7 +194,7 @@ class Bill(models.Model):
     id = models.AutoField(primary_key=True)
     expense_group = models.OneToOneField(ExpenseGroup, on_delete=models.PROTECT, help_text='Expense group reference')
     accounts_payable_id = models.CharField(max_length=255, help_text='NetSuite Accounts Payable Account id')
-    vendor_id = models.CharField(max_length=255, help_text='NetSuite vendor id')
+    entity_id = models.CharField(max_length=255, help_text='NetSuite vendor id')
     subsidiary_id = models.CharField(max_length=255, help_text='NetSuite subsidiary id')
     location_id = models.CharField(max_length=255, help_text='NetSuite Location id', null=True)
     currency = models.CharField(max_length=255, help_text='Bill Currency')
@@ -241,7 +241,7 @@ class Bill(models.Model):
             defaults={
                 'subsidiary_id': subsidiary_mappings.internal_id,
                 'accounts_payable_id': general_mappings.accounts_payable_id,
-                'vendor_id': vendor_id,
+                'entity_id': vendor_id,
                 'location_id': general_mappings.location_id,
                 'memo': 'Reimbursable expenses by {0}'.format(description.get('employee_email')) if
                 expense_group.fund_source == 'PERSONAL' else

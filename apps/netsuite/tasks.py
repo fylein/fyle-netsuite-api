@@ -59,9 +59,7 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense_id: str, ex
                     "externalId": folder['externalId'],
                     "type": "folder"
                 }
-            }
-            )
-
+            })
             file = netsuite_connection.connection.files.get(externalId=expense_id)
             return file['url']
     except Exception:
@@ -532,7 +530,7 @@ def __validate_vendor_payment(expense_group: ExpenseGroup):
                 bulk_errors.append({
                     'row': None,
                     'expense_group_id': expense_group.id,
-                    'value': expense_group.description.get('employee_email'),
+                    'value': 'payment account mapping',
                     'type': 'General Mapping',
                     'message': 'Payment Account Mapping not found'
                 })
@@ -548,10 +546,6 @@ def check_expenses_status(line_items):
         expense = Expense.objects.get(id=line_item.expense.id)
         reimbursement = Reimbursement.objects.filter(settlement_id=expense.settlement_id).first()
 
-        if not reimbursement:
-            all_expenses_paid = False
-            break
-
         if reimbursement.state != 'COMPLETE':
             all_expenses_paid = False
 
@@ -565,7 +559,7 @@ def create_netsite_object_payload(netsuite_objects, object_type, line_items=None
         entity_id = None
         accounts_payable = None
         if object_type == 'BILL':
-            entity_id = netsuite_object.vendor_id
+            entity_id = netsuite_object.entity_id
             accounts_payable = netsuite_object.accounts_payable_id
 
         if object_type == 'EXPENSE REPORT':
@@ -720,7 +714,7 @@ def create_vendor_payment(workspace_id):
                 bill_vendor_map = create_netsite_object_payload(bills, 'BILL')
                 for bill in bills:
                     line_items = BillLineitem.objects.filter(bill_id=bill.id)
-                    process_vendor_payment(bill_vendor_map, line_items, workspace_id, bill.vendor_id, bill)
+                    process_vendor_payment(bill_vendor_map, line_items, workspace_id, bill.entity_id, bill)
 
             if expense_reports:
                 expense_report_entity_map = create_netsite_object_payload(expense_reports, 'EXPENSE REPORT')

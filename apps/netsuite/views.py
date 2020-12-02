@@ -165,7 +165,7 @@ class AccountView(generics.ListCreateAPIView):
             )
 
 
-class AccountsPayableView(generics.ListCreateAPIView):
+class AccountsPayableView(generics.ListAPIView):
     """
     AccountsPayable view
     """
@@ -176,16 +176,8 @@ class AccountsPayableView(generics.ListCreateAPIView):
         return DestinationAttribute.objects.filter(
             attribute_type='ACCOUNTS_PAYABLE', workspace_id=self.kwargs['workspace_id']).order_by('value')
 
-    def post(self, request, *args, **kwargs):
-        return Response(
-            data={
-                'message': 'Method Not Allowed'
-            },
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
-        )
 
-
-class CreditCardAccountView(generics.ListCreateAPIView):
+class CreditCardAccountView(generics.ListAPIView):
     """
     CreditCardAccount view
     """
@@ -196,16 +188,8 @@ class CreditCardAccountView(generics.ListCreateAPIView):
         return DestinationAttribute.objects.filter(
             attribute_type='CREDIT_CARD_ACCOUNT', workspace_id=self.kwargs['workspace_id']).order_by('value')
 
-    def post(self, request, *args, **kwargs):
-        return Response(
-            data={
-                'message': 'Method Not Allowed'
-            },
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
-        )
 
-
-class BankAccountView(generics.ListCreateAPIView):
+class BankAccountView(generics.ListAPIView):
     """
     BankAccount view
     """
@@ -216,16 +200,8 @@ class BankAccountView(generics.ListCreateAPIView):
         return DestinationAttribute.objects.filter(
             attribute_type='BANK_ACCOUNT', workspace_id=self.kwargs['workspace_id']).order_by('value')
 
-    def post(self, request, *args, **kwargs):
-        return Response(
-            data={
-                'message': 'Method Not Allowed'
-            },
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
-        )
 
-
-class VendorPaymentAccountView(generics.ListCreateAPIView):
+class VendorPaymentAccountView(generics.ListAPIView):
     """
     VendorPaymentAccount view
     """
@@ -235,14 +211,6 @@ class VendorPaymentAccountView(generics.ListCreateAPIView):
     def get_queryset(self):
         return DestinationAttribute.objects.filter(
             attribute_type='VENDOR_PAYMENT_ACCOUNT', workspace_id=self.kwargs['workspace_id']).order_by('value')
-
-    def post(self, request, *args, **kwargs):
-        return Response(
-            data={
-                'message': 'Method Not Allowed'
-            },
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
-        )
 
 
 class EmployeeView(generics.ListCreateAPIView):
