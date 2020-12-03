@@ -66,6 +66,11 @@ class Migration(migrations.Migration):
             name='memo',
             field=models.TextField(help_text='NetSuite JournalEntry lineitem description', null=True),
         ),
+        migrations.AlterField(
+            model_name='journalentry',
+            name='external_id',
+            field=models.CharField(help_text='Journal Entry External ID', max_length=255, unique=True),
+        ),
         migrations.RenameField(
             model_name='bill',
             old_name='vendor_id',

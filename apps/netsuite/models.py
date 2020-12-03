@@ -523,7 +523,7 @@ class JournalEntry(models.Model):
     location_id = models.CharField(max_length=255, help_text='NetSuite Location id', null=True)
     subsidiary_id = models.CharField(max_length=255, help_text='NetSuite Subsidiary ID')
     memo = models.CharField(max_length=255, help_text='Journal Entry Memo')
-    external_id = models.CharField(max_length=255, help_text='Journal Entry External ID')
+    external_id = models.CharField(max_length=255, unique=True, help_text='Journal Entry External ID')
     transaction_date = models.DateTimeField(help_text='Journal Entry transaction date')
     payment_synced = models.BooleanField(help_text='Payment synced status', default=False)
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
