@@ -46,6 +46,12 @@ class Migration(migrations.Migration):
             name='location_id',
             field=models.CharField(help_text='NetSuite Location id', max_length=255, null=True),
         ),
+        migrations.AddField(
+            model_name='journalentry',
+            name='entity_id',
+            field=models.CharField(default=1, help_text='NetSuite Entity id (Employee / Vendor)', max_length=255),
+            preserve_default=False,
+        ),
         migrations.AlterField(
             model_name='billlineitem',
             name='memo',

@@ -519,6 +519,7 @@ class JournalEntry(models.Model):
     """
     id = models.AutoField(primary_key=True)
     expense_group = models.OneToOneField(ExpenseGroup, on_delete=models.PROTECT, help_text='Expense group reference')
+    entity_id = models.CharField(max_length=255, help_text='NetSuite Entity id (Employee / Vendor)')
     currency = models.CharField(max_length=255, help_text='Journal Entry Currency')
     location_id = models.CharField(max_length=255, help_text='NetSuite Location id', null=True)
     subsidiary_id = models.CharField(max_length=255, help_text='NetSuite Subsidiary ID')
@@ -543,6 +544,13 @@ class JournalEntry(models.Model):
 
         description = expense_group.description
 
+        entity = Mapping.objects.get(
+            Q(destination_type='EMPLOYEE') | Q(destination_type='VENDOR'),
+            source_type='EMPLOYEE',
+            source__value=description.get('employee_email'),
+            workspace_id=expense_group.workspace_id
+        )
+
         currency = DestinationAttribute.objects.filter(value=expense.currency,
                                                        workspace_id=expense_group.workspace_id,
                                                        attribute_type='CURRENCY').first()
@@ -554,6 +562,7 @@ class JournalEntry(models.Model):
         journal_entry_object, _ = JournalEntry.objects.update_or_create(
             expense_group=expense_group,
             defaults={
+                'entity_id': entity.destination.destination_id,
                 'currency': currency.destination_id if currency else '1',
                 'location_id': general_mappings.location_id,
                 'subsidiary_id': subsidiary_mappings.internal_id,
