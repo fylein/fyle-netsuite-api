@@ -710,7 +710,6 @@ def create_vendor_payment(workspace_id):
                             expense_report_entity_map[expense_report.entity_id]['processed']:
                         expense_report.payment_synced = True
                         expense_report.save(update_fields=['payment_synced'])
-                        pass
 
             if journal_entries:
                 journal_entry_entity_map = create_netsuite_payment_objects(journal_entries, 'JOURNAL ENTRY')
