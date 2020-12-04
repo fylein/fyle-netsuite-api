@@ -168,6 +168,8 @@ Q_CLUSTER = {
     'name': 'fyle_netsuite_api',
     'compress': True,
     'save_limit': 0,
+    'workers': 1,
+    'queue_limit': 30,
     'orm': 'default',
     'ack_failures': True
 }
