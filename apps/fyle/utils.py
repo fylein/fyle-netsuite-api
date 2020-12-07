@@ -9,6 +9,8 @@ from fyle_accounting_mappings.models import ExpenseAttribute
 
 import requests
 
+from apps.fyle.models import Reimbursement
+
 
 class FyleConnector:
     """
@@ -254,6 +256,27 @@ class FyleConnector:
             expense_custom_field_attributes, self.workspace_id)
 
         return expense_custom_field_attributes
+
+    def sync_reimbursements(self):
+        """
+        Get reimbursements from fyle
+        """
+        reimbursements = self.connection.Reimbursements.get()['data']
+
+        reimbursement_attributes = []
+
+        for reimbursement in reimbursements:
+            reimbursement_attributes.append({
+                'reimbursement_id': reimbursement['id'],
+                'settlement_id': reimbursement['settlement_id'],
+                'state': reimbursement['state']
+            })
+
+        reimbursement_attributes = Reimbursement.create_reimbursement_objects(
+            reimbursement_attributes, self.workspace_id
+        )
+
+        return reimbursement_attributes
 
     def get_attachment(self, expense_id: str):
         """

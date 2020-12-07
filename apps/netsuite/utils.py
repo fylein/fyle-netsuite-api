@@ -2,14 +2,14 @@ from typing import List, Dict
 
 from netsuitesdk import NetSuiteConnection
 
-from fyle_accounting_mappings.models import DestinationAttribute, Mapping, MappingSetting, ExpenseAttribute
+from fyle_accounting_mappings.models import DestinationAttribute
 
 from apps.fyle.models import Expense
 from apps.fyle.utils import FyleConnector
 
 from apps.mappings.models import SubsidiaryMapping
 from apps.netsuite.models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, \
-    JournalEntryLineItem, CustomSegment
+    JournalEntryLineItem, CustomSegment, VendorPayment, VendorPaymentLineitem
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential
 
 
@@ -72,6 +72,14 @@ class NetSuiteConnector:
                 account_attributes.append({
                     'attribute_type': 'CCC_ACCOUNT',
                     'display_name': 'Credit Card Account',
+                    'value': account['acctName'],
+                    'destination_id': account['internalId']
+                })
+
+            if account['acctType'] == '_bank' or account['acctType'] == '_creditCard':
+                account_attributes.append({
+                    'attribute_type': 'VENDOR_PAYMENT_ACCOUNT',
+                    'display_name': 'Vendor Payment Account',
                     'value': account['acctName'],
                     'destination_id': account['internalId']
                 })
@@ -204,14 +212,11 @@ class NetSuiteConnector:
         """
         Sync classification
         """
-        subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
-
         classifications = self.connection.classifications.get_all()
 
         classification_attributes = []
 
         for classification in classifications:
-            subsidiaries = classification['subsidiaryList']['recordRef']
             classification_attributes.append({
                 'attribute_type': 'CLASS',
                 'display_name': 'Class',
@@ -227,14 +232,11 @@ class NetSuiteConnector:
         """
         Sync departments
         """
-        subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
-
         departments = self.connection.departments.get_all()
 
         department_attributes = []
 
         for department in departments:
-            subsidiaries = department['subsidiaryList']['recordRef']
             department_attributes.append({
                 'attribute_type': 'DEPARTMENT',
                 'display_name': 'Department',
@@ -376,8 +378,8 @@ class NetSuiteConnector:
                     'type': 'classification'
                 },
                 'location': {
-                    "name": None,
-                    "internalId": line.location_id,
+                    'name': None,
+                    'internalId': line.location_id,
                     'externalId': None,
                     'type': 'location'
                 },
@@ -427,7 +429,7 @@ class NetSuiteConnector:
             },
             'entity': {
                 'name': None,
-                'internalId': bill.vendor_id,
+                'internalId': bill.entity_id,
                 'externalId': None,
                 'type': 'vendor'
             },
@@ -438,8 +440,8 @@ class NetSuiteConnector:
                 'type': 'subsidiary'
             },
             'location': {
-                "name": None,
-                "internalId": bill.location_id,
+                'name': None,
+                'internalId': bill.location_id,
                 'externalId': None,
                 'type': 'location'
             },
@@ -533,62 +535,62 @@ class NetSuiteConnector:
             )
 
             line = {
-                "amount": line.amount,
-                "category": {
+                'amount': line.amount,
+                'category': {
                     'name': None,
                     'internalId': line.category,
                     'externalId': None,
                     'type': 'account'
                 },
-                "corporateCreditCard": None,
-                "currency": {
-                    "name": None,
-                    "internalId": line.currency,
-                    "externalId": None,
-                    "type": "currency"
+                'corporateCreditCard': None,
+                'currency': {
+                    'name': None,
+                    'internalId': line.currency,
+                    'externalId': None,
+                    'type': 'currency'
                 },
-                "customer": {
-                    "name": None,
-                    "internalId": line.customer_id,
-                    "externalId": None,
-                    "type": "customer"
+                'customer': {
+                    'name': None,
+                    'internalId': line.customer_id,
+                    'externalId': None,
+                    'type': 'customer'
                 },
-                "location": {
-                    "name": None,
-                    "internalId": line.location_id,
-                    "externalId": None,
-                    "type": "location"
+                'location': {
+                    'name': None,
+                    'internalId': line.location_id,
+                    'externalId': None,
+                    'type': 'location'
                 },
-                "department": {
-                    "name": None,
-                    "internalId": line.department_id,
-                    "externalId": None,
-                    "type": "department"
+                'department': {
+                    'name': None,
+                    'internalId': line.department_id,
+                    'externalId': None,
+                    'type': 'department'
                 },
-                "class": {
-                    "name": None,
-                    "internalId": line.class_id,
-                    "externalId": None,
-                    "type": "classification"
+                'class': {
+                    'name': None,
+                    'internalId': line.class_id,
+                    'externalId': None,
+                    'type': 'classification'
                 },
                 'customFieldList': netsuite_custom_segments,
-                "exchangeRate": None,
-                "expenseDate": line.transaction_date,
-                "expMediaItem": None,
-                "foreignAmount": None,
-                "grossAmt": None,
-                "isBillable": None,
-                "isNonReimbursable": None,
-                "line": None,
-                "memo": line.memo,
-                "quantity": None,
-                "rate": None,
-                "receipt": None,
-                "refNumber": None,
-                "tax1Amt": None,
-                "taxCode": None,
-                "taxRate1": None,
-                "taxRate2": None
+                'exchangeRate': None,
+                'expenseDate': line.transaction_date,
+                'expMediaItem': None,
+                'foreignAmount': None,
+                'grossAmt': None,
+                'isBillable': None,
+                'isNonReimbursable': None,
+                'line': None,
+                'memo': line.memo,
+                'quantity': None,
+                'rate': None,
+                'receipt': None,
+                'refNumber': None,
+                'tax1Amt': None,
+                'taxCode': None,
+                'taxRate1': None,
+                'taxRate2': None
             }
 
             lines.append(line)
@@ -615,28 +617,28 @@ class NetSuiteConnector:
             'status': None,
             'customForm': None,
             'account': {
-                "name": None,
-                "internalId": expense_report.account_id,
-                "externalId": None,
-                "type": "account"
+                'name': None,
+                'internalId': expense_report.account_id,
+                'externalId': None,
+                'type': 'account'
             },
-            "entity": {
-                "name": None,
-                "internalId": expense_report.entity_id,
-                "externalId": None,
-                "type": "vendor"
+            'entity': {
+                'name': None,
+                'internalId': expense_report.entity_id,
+                'externalId': None,
+                'type': 'vendor'
             },
-            "expenseReportCurrency": {
-                "name": expense_report.currency,
-                "internalId": None,
-                "externalId": None,
-                "type": "currency"
+            'expenseReportCurrency': {
+                'name': None,
+                'internalId': expense_report.currency,
+                'externalId': None,
+                'type': 'currency'
             },
-            "subsidiary": {
-                "name": None,
-                "internalId": expense_report.subsidiary_id,
-                "externalId": None,
-                "type": "subsidiary"
+            'subsidiary': {
+                'name': None,
+                'internalId': expense_report.subsidiary_id,
+                'externalId': None,
+                'type': 'subsidiary'
             },
             'expenseReportExchangeRate': None,
             'taxPointDate': None,
@@ -658,24 +660,24 @@ class NetSuiteConnector:
             'useMultiCurrency': None,
             'tax2Amt': None,
             'department': {
-                "name": None,
-                "internalId": None,
-                "externalId": None,
-                "type": "department"
+                'name': None,
+                'internalId': None,
+                'externalId': None,
+                'type': 'department'
             },
             'class': {
-                "name": None,
-                "internalId": None,
-                "externalId": None,
-                "type": "classification"
+                'name': None,
+                'internalId': None,
+                'externalId': None,
+                'type': 'classification'
             },
-            "location": {
-                "name": None,
-                "internalId": None,
-                "externalId": None,
-                "type": "location"
+            'location': {
+                'name': None,
+                'internalId': None,
+                'externalId': None,
+                'type': 'location'
             },
-            "expenseList": self.__construct_expense_report_lineitems(
+            'expenseList': self.__construct_expense_report_lineitems(
                 expense_report_lineitems, attachment_links, cluster_domain['cluster_domain']
             ),
             'accountingBookDetailList': None,
@@ -740,60 +742,60 @@ class NetSuiteConnector:
                 )
 
             line = {
-                "account": {
-                    "name": None,
-                    "internalId": account_ref,
-                    "externalId": None,
-                    "type": "account"
+                'account': {
+                    'name': None,
+                    'internalId': account_ref,
+                    'externalId': None,
+                    'type': 'account'
                 },
-                "department": {
-                    "name": None,
-                    "internalId": line.department_id,
-                    "externalId": None,
-                    "type": "department"
+                'department': {
+                    'name': None,
+                    'internalId': line.department_id,
+                    'externalId': None,
+                    'type': 'department'
                 },
-                "location": {
-                    "name": None,
-                    "internalId": line.location_id,
-                    "externalId": None,
-                    "type": "location"
+                'location': {
+                    'name': None,
+                    'internalId': line.location_id,
+                    'externalId': None,
+                    'type': 'location'
                 },
-                "class": {
-                    "name": None,
-                    "internalId": line.class_id,
-                    "externalId": None,
-                    "type": "classification"
+                'class': {
+                    'name': None,
+                    'internalId': line.class_id,
+                    'externalId': None,
+                    'type': 'classification'
                 },
-                "entity": {
-                    "name": None,
-                    "internalId": line.entity_id,
-                    "externalId": None,
-                    "type": 'vendor'
+                'entity': {
+                    'name': None,
+                    'internalId': line.entity_id,
+                    'externalId': None,
+                    'type': 'vendor'
                 },
-                "credit": line.amount if credit is not None else None,
-                "creditTax": None,
+                'credit': line.amount if credit is not None else None,
+                'creditTax': None,
                 'customFieldList': netsuite_custom_segments,
-                "debit": line.amount if debit is not None else None,
-                "debitTax": None,
-                "eliminate": None,
-                "endDate": None,
-                "grossAmt": None,
-                "line": None,
-                "lineTaxCode": None,
-                "lineTaxRate": None,
-                "memo": line.memo,
-                "residual": None,
-                "revenueRecognitionRule": None,
-                "schedule": None,
-                "scheduleNum": None,
-                "startDate": None,
-                "tax1Acct": None,
-                "tax1Amt": None,
-                "taxAccount": None,
-                "taxBasis": None,
-                "taxCode": None,
-                "taxRate1": None,
-                "totalAmount": None,
+                'debit': line.amount if debit is not None else None,
+                'debitTax': None,
+                'eliminate': None,
+                'endDate': None,
+                'grossAmt': None,
+                'line': None,
+                'lineTaxCode': None,
+                'lineTaxRate': None,
+                'memo': line.memo,
+                'residual': None,
+                'revenueRecognitionRule': None,
+                'schedule': None,
+                'scheduleNum': None,
+                'startDate': None,
+                'tax1Acct': None,
+                'tax1Amt': None,
+                'taxAccount': None,
+                'taxBasis': None,
+                'taxCode': None,
+                'taxRate1': None,
+                'totalAmount': None,
             }
 
             lines.append(line)
@@ -822,60 +824,60 @@ class NetSuiteConnector:
         lines.extend(debit_line)
 
         journal_entry_payload = {
-            "accountingBook": None,
-            "accountingBookDetailList": None,
-            "approved": None,
-            "createdDate": None,
-            "createdFrom": None,
-            "currency": {
-                "name": None,
-                "internalId": journal_entry.currency,
-                "externalId": None,
-                "type": "currency"
+            'accountingBook': None,
+            'accountingBookDetailList': None,
+            'approved': None,
+            'createdDate': None,
+            'createdFrom': None,
+            'currency': {
+                'name': None,
+                'internalId': journal_entry.currency,
+                'externalId': None,
+                'type': 'currency'
             },
-            "customFieldList": None,
-            "customForm": None,
-            "class": {
-                "name": None,
-                "internalId": None,
-                "externalId": None,
-                "type": "classification"
+            'customFieldList': None,
+            'customForm': None,
+            'class': {
+                'name': None,
+                'internalId': None,
+                'externalId': None,
+                'type': 'classification'
             },
-            "department": {
-                "name": None,
-                "internalId": None,
-                "externalId": None,
-                "type": "department"
+            'department': {
+                'name': None,
+                'internalId': None,
+                'externalId': None,
+                'type': 'department'
             },
-            "location": {
-                "name": None,
-                "internalId": None,
-                "externalId": None,
-                "type": "location"
+            'location': {
+                'name': None,
+                'internalId': journal_entry.location_id,
+                'externalId': None,
+                'type': 'location'
             },
-            "exchangeRate": None,
-            "isBookSpecific": None,
-            "lastModifiedDate": None,
-            "lineList": lines,
-            "memo": journal_entry.memo,
-            "nexus": None,
-            "parentExpenseAlloc": None,
-            "postingPeriod": None,
-            "reversalDate": None,
-            "reversalDefer": None,
-            "reversalEntry": None,
-            "subsidiary": {
-                "name": None,
-                "internalId": journal_entry.subsidiary_id,
-                "externalId": None,
-                "type": "subsidiary"
+            'exchangeRate': None,
+            'isBookSpecific': None,
+            'lastModifiedDate': None,
+            'lineList': lines,
+            'memo': journal_entry.memo,
+            'nexus': None,
+            'parentExpenseAlloc': None,
+            'postingPeriod': None,
+            'reversalDate': None,
+            'reversalDefer': None,
+            'reversalEntry': None,
+            'subsidiary': {
+                'name': None,
+                'internalId': journal_entry.subsidiary_id,
+                'externalId': None,
+                'type': 'subsidiary'
             },
-            "subsidiaryTaxRegNum": None,
-            "taxPointDate": None,
-            "toSubsidiary": None,
-            "tranDate": journal_entry.transaction_date,
-            "tranId": None,
-            "externalId": journal_entry.external_id
+            'subsidiaryTaxRegNum': None,
+            'taxPointDate': None,
+            'toSubsidiary': None,
+            'tranDate': journal_entry.transaction_date,
+            'tranId': None,
+            'externalId': journal_entry.external_id
         }
 
         return journal_entry_payload
@@ -888,3 +890,135 @@ class NetSuiteConnector:
         journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems, attachment_links)
         created_journal_entry = self.connection.journal_entries.post(journal_entry_payload)
         return created_journal_entry
+
+    @staticmethod
+    def __construct_vendor_payment_lineitems(vendor_payment_lineitems: List[VendorPaymentLineitem]) -> List[Dict]:
+        """
+        Create vendor payment line items
+        :return: constructed line items
+        """
+        lines = []
+
+        for line in vendor_payment_lineitems:
+            line = {
+                'apply': 'true',
+                'doc': line.doc_id,
+                'line': 0,
+                'job': None,
+                'applyDate': None,
+                'type': None,
+                'refNum': None,
+                'total': None,
+                'due': None,
+                'currency': None,
+                'discDate': None,
+                'discAmt': None,
+                'disc': None,
+                'amount': None
+            }
+
+            lines.append(line)
+
+        return lines
+
+    def __construct_vendor_payment(self, vendor_payment: VendorPayment,
+                                   vendor_payment_lineitems: List[VendorPaymentLineitem]) -> Dict:
+        """
+        Create a vendor payment
+        :return: constructed vendor payment
+        """
+        vendor_payment_payload = {
+            'nullFieldList': None,
+            'createdDate': None,
+            'lastModifiedDate': None,
+            'customForm': None,
+            'account': {
+                'name': None,
+                'internalId': vendor_payment.account_id,
+                'externalId': None,
+                'type': None
+            },
+            'balance': None,
+            'apAcct': {
+                'name': None,
+                'internalId': vendor_payment.accounts_payable_id,
+                'externalId': None,
+                'type': None
+            },
+            'entity': {
+                'name': None,
+                'internalId': vendor_payment.entity_id,
+                'externalId': None,
+                'type': None
+            },
+            'address': None,
+            'tranDate': None,
+            'voidJournal': None,
+            'postingPeriod': None,
+            'currencyName': None,
+            'exchangeRate': None,
+            'toAch': 'false',
+            'toBePrinted': 'false',
+            'printVoucher': 'false',
+            'tranId': None,
+            'total': None,
+            'currency': {
+                'name': None,
+                'internalId': vendor_payment.currency,
+                'externalId': None,
+                'type': None
+            },
+            'department': {
+                'name': None,
+                'internalId': vendor_payment.department_id,
+                'externalId': None,
+                'type': 'department'
+            },
+            'memo': vendor_payment.memo,
+            'subsidiary': {
+                'name': None,
+                'internalId': vendor_payment.subsidiary_id,
+                'externalId': None,
+                'type': None
+            },
+            'class': {
+                'name': None,
+                'internalId': vendor_payment.class_id,
+                'externalId': None,
+                'type': 'classification'
+            },
+            'location': {
+                'name': None,
+                'internalId': vendor_payment.location_id,
+                'externalId': None,
+                'type': 'location'
+            },
+            'status': None,
+            'transactionNumber': None,
+            'applyList': {
+                'apply':
+                    self.__construct_vendor_payment_lineitems(vendor_payment_lineitems),
+                    'replaceAll': 'true'
+            },
+            'creditList': None,
+            'billPay': None,
+            'accountingBookDetailList': None,
+            'availableBalance': None,
+            'isInTransitPayment': None,
+            'approvalStatus': None,
+            'nextApprover': None,
+            'customFieldList': None,
+            'internalId': None,
+            'externalId': vendor_payment.external_id
+        }
+
+        return vendor_payment_payload
+
+    def post_vendor_payment(self, vendor_payment: VendorPayment,
+                            vendor_payment_lineitems: List[VendorPaymentLineitem]):
+        """
+        Post vendor payments to NetSuite
+        """
+        vendor_payment_payload = self.__construct_vendor_payment(vendor_payment, vendor_payment_lineitems)
+        created_vendor_payment = self.connection.vendor_payments.post(vendor_payment_payload)
+        return created_vendor_payment

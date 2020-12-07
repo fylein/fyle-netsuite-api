@@ -301,3 +301,39 @@ class ExpenseGroup(models.Model):
             expense_group_objects.append(expense_group_object)
 
         return expense_group_objects
+
+
+class Reimbursement(models.Model):
+    """
+    Reimbursements
+    """
+    id = models.AutoField(primary_key=True)
+    workspace = models.ForeignKey(
+        Workspace, on_delete=models.PROTECT, help_text='To which workspace this reimbursement belongs to'
+    )
+    settlement_id = models.CharField(max_length=255, help_text='Fyle Settlement ID')
+    reimbursement_id = models.CharField(max_length=255, help_text='Fyle Reimbursement ID')
+    state = models.CharField(max_length=255, help_text='Fyle Reimbursement State')
+    created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
+    updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
+
+    class Meta:
+        db_table = 'reimbursements'
+
+    @staticmethod
+    def create_reimbursement_objects(attributes: List[Dict], workspace_id):
+        """
+        Get or create reimbursement attributes
+        """
+        reimbursement_attributes = []
+
+        for attribute in attributes:
+            reimbursement_attribute, _ = Reimbursement.objects.update_or_create(
+                workspace_id=workspace_id,
+                settlement_id=attribute['settlement_id'],
+                defaults={
+                    'reimbursement_id': attribute['reimbursement_id'],
+                    'state': attribute['state']
+                })
+            reimbursement_attributes.append(reimbursement_attribute)
+        return reimbursement_attributes
