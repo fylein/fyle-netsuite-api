@@ -533,26 +533,12 @@ def create_netsuite_payment_objects(netsuite_objects, object_type):
     netsuite_payment_objects = {}
 
     for netsuite_object in netsuite_objects:
-        entity_id = None
-        accounts_payable = None
-        if object_type == 'BILL':
-            entity_id = netsuite_object.entity_id
-            accounts_payable = netsuite_object.accounts_payable_id
-
-        if object_type == 'EXPENSE REPORT':
-            entity_id = netsuite_object.entity_id
-            accounts_payable = netsuite_object.account_id
-
-        if object_type == 'JOURNAL ENTRY':
-            journal_entry_line_item = JournalEntryLineItem.objects.filter(journal_entry_id=netsuite_object.id).first()
-            entity_id = journal_entry_line_item.entity_id
-            accounts_payable = journal_entry_line_item.debit_account_id
+        entity_id = netsuite_object.entity_id
 
         if entity_id not in netsuite_payment_objects:
             netsuite_object_task_log = TaskLog.objects.get(expense_group=netsuite_object.expense_group)
             netsuite_payment_objects[entity_id] = {
                 'processed': False,
-                'accounts_payable': accounts_payable,
                 'subsidiary_id': netsuite_object.subsidiary_id,
                 'entity_id': entity_id,
                 'currency': netsuite_object.currency,

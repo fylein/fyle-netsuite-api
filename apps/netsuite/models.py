@@ -721,7 +721,6 @@ class VendorPayment(models.Model):
 
         vendor_payment_object = VendorPayment.objects.create(
             subsidiary_id=netsuite_object['subsidiary_id'],
-            accounts_payable_id=netsuite_object['accounts_payable'],
             account_id=general_mappings.vendor_payment_account_id,
             entity_id=netsuite_object['entity_id'],
             currency=netsuite_object['currency'],

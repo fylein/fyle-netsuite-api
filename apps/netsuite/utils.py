@@ -941,7 +941,7 @@ class NetSuiteConnector:
             'balance': None,
             'apAcct': {
                 'name': None,
-                'internalId': vendor_payment.accounts_payable_id,
+                'internalId': None,
                 'externalId': None,
                 'type': None
             },
