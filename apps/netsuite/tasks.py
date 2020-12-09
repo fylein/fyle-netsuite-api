@@ -715,7 +715,7 @@ def create_vendor_payment(workspace_id):
 
     except Exception:
         error = traceback.format_exc()
-        logger.exception('Something unexpected happened workspace_id: %s %s', workspace_id, error)
+        logger.exception('Something unexpected happened workspace_id: %s %s', workspace_id, {'error': error})
 
 
 def schedule_vendor_payment_creation(sync_fyle_to_netsuite_payments, workspace_id):
