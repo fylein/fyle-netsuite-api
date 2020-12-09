@@ -61,7 +61,7 @@ class DepartmentView(generics.ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         except NetSuiteRequestError as exception:
-            logger.exception(exception)
+            logger.exception({'error': exception})
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
 
@@ -107,7 +107,7 @@ class VendorView(generics.ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         except NetSuiteRequestError as exception:
-            logger.exception(exception)
+            logger.exception({'error': exception})
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
 
@@ -153,7 +153,7 @@ class AccountView(generics.ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         except NetSuiteRequestError as exception:
-            logger.exception(exception)
+            logger.exception({'error': exception})
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
 
@@ -247,7 +247,7 @@ class EmployeeView(generics.ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         except NetSuiteRequestError as exception:
-            logger.exception(exception)
+            logger.exception({'error': exception})
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
 
@@ -293,7 +293,7 @@ class LocationView(generics.ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         except NetSuiteRequestError as exception:
-            logger.exception(exception)
+            logger.exception({'error': exception})
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
 
@@ -339,7 +339,7 @@ class ExpenseCategoryView(generics.ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         except NetSuiteRequestError as exception:
-            logger.exception(exception)
+            logger.exception({'error': exception})
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
 
@@ -385,7 +385,7 @@ class CurrencyView(generics.ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         except NetSuiteRequestError as exception:
-            logger.exception(exception)
+            logger.exception({'error': exception})
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
 
@@ -431,7 +431,7 @@ class ClassificationView(generics.ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         except NetSuiteRequestError as exception:
-            logger.exception(exception)
+            logger.exception({'error': exception})
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
 
@@ -477,7 +477,7 @@ class SubsidiaryView(generics.ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         except NetSuiteRequestError as exception:
-            logger.exception(exception)
+            logger.exception({'error': exception})
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
 
@@ -685,7 +685,7 @@ class SyncCustomFieldsView(generics.ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         except NetSuiteRequestError as exception:
-            logger.exception(exception)
+            logger.exception({'error': exception})
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
 
@@ -759,7 +759,7 @@ class CustomSegmentView(generics.ListCreateAPIView):
             )
 
         except NetSuiteRequestError as exception:
-            logger.exception(exception)
+            logger.exception({'error': exception})
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
 

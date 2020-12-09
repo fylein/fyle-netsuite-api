@@ -939,12 +939,7 @@ class NetSuiteConnector:
                 'type': None
             },
             'balance': None,
-            'apAcct': {
-                'name': None,
-                'internalId': vendor_payment.accounts_payable_id,
-                'externalId': None,
-                'type': None
-            },
+            'apAcct': None,
             'entity': {
                 'name': None,
                 'internalId': vendor_payment.entity_id,

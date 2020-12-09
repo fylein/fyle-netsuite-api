@@ -119,7 +119,7 @@ def create_bill(expense_group, task_log):
 
     except NetSuiteRequestError as exception:
         all_details = []
-        logger.exception(exception)
+        logger.exception({'error': exception})
         detail = json.dumps(exception.__dict__)
         detail = json.loads(detail)
         task_log.status = 'FAILED'
@@ -203,7 +203,7 @@ def create_expense_report(expense_group, task_log):
 
     except NetSuiteRequestError as exception:
         all_details = []
-        logger.exception(exception)
+        logger.exception({'error': exception})
         detail = json.dumps(exception.__dict__)
         detail = json.loads(detail)
         task_log.status = 'FAILED'
@@ -287,7 +287,7 @@ def create_journal_entry(expense_group, task_log):
 
     except NetSuiteRequestError as exception:
         all_details = []
-        logger.exception(exception)
+        logger.exception({'error': exception})
         detail = json.dumps(exception.__dict__)
         detail = json.loads(detail)
         task_log.status = 'FAILED'
@@ -533,26 +533,12 @@ def create_netsuite_payment_objects(netsuite_objects, object_type):
     netsuite_payment_objects = {}
 
     for netsuite_object in netsuite_objects:
-        entity_id = None
-        accounts_payable = None
-        if object_type == 'BILL':
-            entity_id = netsuite_object.entity_id
-            accounts_payable = netsuite_object.accounts_payable_id
-
-        if object_type == 'EXPENSE REPORT':
-            entity_id = netsuite_object.entity_id
-            accounts_payable = netsuite_object.account_id
-
-        if object_type == 'JOURNAL ENTRY':
-            journal_entry_line_item = JournalEntryLineItem.objects.filter(journal_entry_id=netsuite_object.id).first()
-            entity_id = journal_entry_line_item.entity_id
-            accounts_payable = journal_entry_line_item.debit_account_id
+        entity_id = netsuite_object.entity_id
 
         if entity_id not in netsuite_payment_objects:
             netsuite_object_task_log = TaskLog.objects.get(expense_group=netsuite_object.expense_group)
             netsuite_payment_objects[entity_id] = {
                 'processed': False,
-                'accounts_payable': accounts_payable,
                 'subsidiary_id': netsuite_object.subsidiary_id,
                 'entity_id': entity_id,
                 'currency': netsuite_object.currency,
@@ -636,7 +622,7 @@ def process_vendor_payment(netsuite_objects_map, workspace_id, netsuite_object):
 
     except NetSuiteRequestError as exception:
         all_details = []
-        logger.exception(exception)
+        logger.exception({'error': exception})
         detail = json.dumps(exception.__dict__)
         detail = json.loads(detail)
         task_log.status = 'FAILED'
@@ -729,7 +715,7 @@ def create_vendor_payment(workspace_id):
 
     except Exception:
         error = traceback.format_exc()
-        logger.exception('Something unexpected happened workspace_id: %s %s', workspace_id, error)
+        logger.exception('Something unexpected happened workspace_id: %s %s', workspace_id, {'error': error})
 
 
 def schedule_vendor_payment_creation(sync_fyle_to_netsuite_payments, workspace_id):
