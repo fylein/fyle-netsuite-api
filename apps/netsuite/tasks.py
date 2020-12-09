@@ -644,6 +644,10 @@ def process_vendor_payment(netsuite_objects_map, workspace_id, netsuite_object):
 
         task_log.save(update_fields=['detail', 'status'])
 
+    except Exception:
+        error = traceback.format_exc()
+        logger.exception('Something unexpected happened workspace_id: %s %s', workspace_id, {'error': error})
+
 
 def create_vendor_payment(workspace_id):
     try:
