@@ -667,7 +667,7 @@ def create_vendor_payment(workspace_id):
 
             general_mappings: GeneralMapping = GeneralMapping.objects.get(workspace_id=workspace_id)
 
-            if general_mappings.vendor_payment_account_id and bills:
+            if bills:
                 bill_vendor_map = create_netsuite_payment_objects(bills, 'BILL')
 
                 for bill in bills:
@@ -731,7 +731,7 @@ def schedule_vendor_payment_creation(sync_fyle_to_netsuite_payments, workspace_i
                 'next_run': start_datetime
             }
         )
-    else:
+    if not sync_fyle_to_netsuite_payments:
         schedule: Schedule = Schedule.objects.filter(
             func='apps.netsuite.tasks.create_vendor_payment',
             args='{}'.format(workspace_id)
