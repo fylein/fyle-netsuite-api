@@ -18,10 +18,10 @@ from apps.tasks.models import TaskLog
 from apps.workspaces.models import NetSuiteCredentials
 
 from .serializers import BillSerializer, ExpenseReportSerializer, JournalEntrySerializer, NetSuiteFieldSerializer, \
-    CustomSegmentSerializer
+    CustomSegmentSerializer, VendorPaymentSerializer
 from .tasks import schedule_bills_creation, create_bill, schedule_expense_reports_creation, create_expense_report, \
-    create_journal_entry, schedule_journal_entry_creation
-from .models import Bill, ExpenseReport, JournalEntry, CustomSegment
+    create_journal_entry, schedule_journal_entry_creation, create_vendor_payment
+from .models import Bill, ExpenseReport, JournalEntry, CustomSegment, VendorPayment
 from .utils import NetSuiteConnector
 
 logger = logging.getLogger(__name__)
@@ -781,3 +781,26 @@ class CustomSegmentView(generics.ListCreateAPIView):
                 },
                 status=status.HTTP_401_UNAUTHORIZED
             )
+
+
+class VendorPaymentView(generics.ListCreateAPIView):
+    """
+    Create Vendor Payment
+    """
+    serializer_class = VendorPaymentSerializer
+
+    def get_queryset(self):
+        return VendorPayment.objects.filter(
+            expense_group__workspace_id=self.kwargs['workspace_id']
+        ).order_by('-updated_at')
+
+    def post(self, request, *args, **kwargs):
+        """
+        Create bill from expense group
+        """
+        create_vendor_payment(workspace_id=self.kwargs['workspace_id'])
+
+        return Response(
+            data={},
+            status=status.HTTP_200_OK
+        )
