@@ -25,6 +25,7 @@ def create_or_update_general_settings(general_settings_payload: Dict, workspace_
                 if 'corporate_credit_card_expenses_object' in general_settings_payload
                 and general_settings_payload['corporate_credit_card_expenses_object'] else None,
             'sync_fyle_to_netsuite_payments': general_settings_payload['sync_fyle_to_netsuite_payments'],
+            'sync_netsuite_to_fyle_payments': general_settings_payload['sync_netsuite_to_fyle_payments']
         }
     )
 

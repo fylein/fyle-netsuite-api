@@ -20,7 +20,7 @@ from apps.workspaces.models import NetSuiteCredentials
 from .serializers import BillSerializer, ExpenseReportSerializer, JournalEntrySerializer, NetSuiteFieldSerializer, \
     CustomSegmentSerializer
 from .tasks import schedule_bills_creation, create_bill, schedule_expense_reports_creation, create_expense_report, \
-    create_journal_entry, schedule_journal_entry_creation
+    create_journal_entry, schedule_journal_entry_creation, process_reimbursements, check_netsuite_object_status
 from .models import Bill, ExpenseReport, JournalEntry, CustomSegment
 from .utils import NetSuiteConnector
 
@@ -781,3 +781,20 @@ class CustomSegmentView(generics.ListCreateAPIView):
                 },
                 status=status.HTTP_401_UNAUTHORIZED
             )
+
+
+class ReimburseNetSuitePaymentsView(generics.ListCreateAPIView):
+    """
+    Reimburse NetSuite Payments View
+    """
+    def post(self, request, *args, **kwargs):
+        """
+        Process Reimbursements in Fyle
+        """
+        check_netsuite_object_status(workspace_id=self.kwargs['workspace_id'])
+        process_reimbursements(workspace_id=self.kwargs['workspace_id'])
+
+        return Response(
+            data={},
+            status=status.HTTP_200_OK
+        )

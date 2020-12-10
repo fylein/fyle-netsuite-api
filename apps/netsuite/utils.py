@@ -500,6 +500,13 @@ class NetSuiteConnector:
         created_bill = self.connection.vendor_bills.post(bills_payload)
         return created_bill
 
+    def get_bill(self, internal_id):
+        """
+        GET vendor bill from NetSuite
+        """
+        bill = self.connection.vendor_bills.get(internal_id)
+        return bill
+
     @staticmethod
     def __construct_expense_report_lineitems(
             expense_report_lineitems: List[ExpenseReportLineItem], attachment_links: Dict, cluster_domain: str
@@ -698,6 +705,13 @@ class NetSuiteConnector:
                                                                  expense_report_lineitems, attachment_links)
         created_expense_report = self.connection.expense_reports.post(expense_report_payload)
         return created_expense_report
+
+    def get_expense_report(self, internal_id):
+        """
+        GET expense report from NetSuite
+        """
+        expense_report = self.connection.expense_reports.get(internal_id)
+        return expense_report
 
     @staticmethod
     def __construct_journal_entry_lineitems(journal_entry_lineitems: List[JournalEntryLineItem],

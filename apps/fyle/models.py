@@ -66,6 +66,7 @@ class Expense(models.Model):
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
     fund_source = models.CharField(max_length=255, help_text='Expense fund source')
     verified_at = models.DateTimeField(help_text='Report verified at', null=True)
+    paid_on_netsuite = models.BooleanField(help_text='Expense Payment status on NetSuite', default=False)
     custom_properties = JSONField(null=True)
 
     class Meta:
