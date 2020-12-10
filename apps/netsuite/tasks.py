@@ -665,8 +665,6 @@ def create_vendor_payment(workspace_id):
                 payment_synced=False, expense_group__workspace_id=workspace_id
             ).all()
 
-            general_mappings: GeneralMapping = GeneralMapping.objects.get(workspace_id=workspace_id)
-
             if bills:
                 bill_vendor_map = create_netsuite_payment_objects(bills, 'BILL')
 
