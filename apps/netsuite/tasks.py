@@ -781,7 +781,7 @@ def check_netsuite_object_status(workspace_id):
                     expense.paid_on_netsuite = True
                     expense.save(update_fields=['paid_on_netsuite'])
 
-                bill.netsuite_payments_applied = True
+                bill.paid_on_netsuite = True
                 bill.save(update_fields=['paid_on_netsuite'])
 
     if expense_reports:
@@ -798,7 +798,7 @@ def check_netsuite_object_status(workspace_id):
                     expense.paid_on_netsuite = True
                     expense.save(update_fields=['paid_on_netsuite'])
 
-                expense_report.netsuite_payments_applied = True
+                expense_report.paid_on_netsuite = True
                 expense_report.save(update_fields=['paid_on_netsuite'])
 
 
