@@ -796,7 +796,7 @@ class VendorPaymentView(generics.ListCreateAPIView):
 
     def post(self, request, *args, **kwargs):
         """
-        Create bill from expense group
+        Create vendor payment
         """
         create_vendor_payment(workspace_id=self.kwargs['workspace_id'])
 
