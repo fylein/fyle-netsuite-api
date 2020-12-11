@@ -3,7 +3,7 @@ import logging
 import traceback
 from typing import List
 import base64
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.db import transaction
 from django.db.models import Q
@@ -826,3 +826,47 @@ def process_reimbursements(workspace_id):
     if reimbursement_ids:
         fyle_connector.process_reimbursement(reimbursement_ids)
         fyle_connector.sync_reimbursements()
+
+
+def schedule_netsuite_objects_status_sync(sync_netsuite_to_fyle_payments, workspace_id):
+    if sync_netsuite_to_fyle_payments:
+        start_datetime = datetime.now()
+        schedule, _ = Schedule.objects.update_or_create(
+            func='apps.netsuite.tasks.check_netsuite_object_status',
+            args='{}'.format(workspace_id),
+            defaults={
+                'schedule_type': Schedule.MINUTES,
+                'minutes': 24 * 60,
+                'next_run': start_datetime
+            }
+        )
+    else:
+        schedule: Schedule = Schedule.objects.filter(
+            func='apps.netsuite.tasks.check_netsuite_object_status',
+            args='{}'.format(workspace_id)
+        ).first()
+
+        if schedule:
+            schedule.delete()
+
+
+def schedule_reimbursements_sync(sync_netsuite_to_fyle_payments, workspace_id):
+    if sync_netsuite_to_fyle_payments:
+        start_datetime = datetime.now() + timedelta(hours=12)
+        schedule, _ = Schedule.objects.update_or_create(
+            func='apps.netsuite.tasks.process_reimbursements',
+            args='{}'.format(workspace_id),
+            defaults={
+                'schedule_type': Schedule.MINUTES,
+                'minutes': 24 * 60,
+                'next_run': start_datetime
+            }
+        )
+    else:
+        schedule: Schedule = Schedule.objects.filter(
+            func='apps.netsuite.tasks.process_reimbursements',
+            args='{}'.format(workspace_id)
+        ).first()
+
+        if schedule:
+            schedule.delete()

@@ -1,6 +1,6 @@
 from typing import Dict
 
-
+from apps.netsuite.tasks import schedule_reimbursements_sync, schedule_netsuite_objects_status_sync
 from fyle_netsuite_api.utils import assert_valid
 from .models import WorkspaceGeneralSettings
 
@@ -27,6 +27,15 @@ def create_or_update_general_settings(general_settings_payload: Dict, workspace_
             'sync_fyle_to_netsuite_payments': general_settings_payload['sync_fyle_to_netsuite_payments'],
             'sync_netsuite_to_fyle_payments': general_settings_payload['sync_netsuite_to_fyle_payments']
         }
+    )
+
+    schedule_netsuite_objects_status_sync(
+        sync_netsuite_to_fyle_payments=general_settings.sync_netsuite_to_fyle_payments,
+        workspace_id=workspace_id
+    )
+    schedule_reimbursements_sync(
+        sync_netsuite_to_fyle_payments=general_settings.sync_netsuite_to_fyle_payments,
+        workspace_id=workspace_id
     )
 
     return general_settings
