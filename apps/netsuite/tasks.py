@@ -820,7 +820,7 @@ def process_reimbursements(workspace_id):
 
             all_expense_paid = len(expenses) == len(paid_expenses)
 
-            if all_expense_paid and reimbursement.state == 'PENDING':
+            if all_expense_paid:
                 reimbursement_ids.append(reimbursement.reimbursement_id)
 
     if reimbursement_ids:
