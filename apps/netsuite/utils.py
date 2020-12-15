@@ -513,6 +513,10 @@ class NetSuiteConnector:
         for line in expense_report_lineitems:
             expense = Expense.objects.get(pk=line.expense_id)
 
+            is_ccc = None
+            if expense.fund_source == 'CCC':
+                is_ccc = True
+
             netsuite_custom_segments = line.netsuite_custom_segments
             if attachment_links and expense.expense_id in attachment_links:
                 netsuite_custom_segments.append(
@@ -542,7 +546,7 @@ class NetSuiteConnector:
                     'externalId': None,
                     'type': 'account'
                 },
-                'corporateCreditCard': None,
+                'corporateCreditCard': is_ccc,
                 'currency': {
                     'name': None,
                     'internalId': line.currency,
