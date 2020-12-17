@@ -762,10 +762,12 @@ def check_netsuite_object_status(workspace_id):
 
     netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
 
-    bills = Bill.objects.filter(expense_group__workspace_id=workspace_id, paid_on_netsuite=False).all()
+    bills = Bill.objects.filter(
+        expense_group__workspace_id=workspace_id, paid_on_netsuite=False, expense_group__fund_source='PERSONAL'
+    ).all()
 
     expense_reports = ExpenseReport.objects.filter(
-        expense_group__workspace_id=workspace_id, paid_on_netsuite=False
+        expense_group__workspace_id=workspace_id, paid_on_netsuite=False, expense_group__fund_source='PERSONAL'
     ).all()
 
     if bills:
@@ -802,32 +804,6 @@ def check_netsuite_object_status(workspace_id):
                 expense_report.save(update_fields=['paid_on_netsuite'])
 
 
-def process_reimbursements(workspace_id):
-    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-
-    fyle_connector = FyleConnector(fyle_credentials.refresh_token, workspace_id)
-
-    fyle_connector.sync_reimbursements()
-
-    reimbursements = Reimbursement.objects.filter(state='PENDING').all()
-
-    reimbursement_ids = []
-
-    if reimbursements:
-        for reimbursement in reimbursements:
-            expenses = Expense.objects.filter(settlement_id=reimbursement.settlement_id).all()
-            paid_expenses = expenses.filter(paid_on_netsuite=True)
-
-            all_expense_paid = len(expenses) == len(paid_expenses)
-
-            if all_expense_paid:
-                reimbursement_ids.append(reimbursement.reimbursement_id)
-
-    if reimbursement_ids:
-        fyle_connector.process_reimbursement(reimbursement_ids)
-        fyle_connector.sync_reimbursements()
-
-
 def schedule_netsuite_objects_status_sync(sync_netsuite_to_fyle_payments, workspace_id):
     if sync_netsuite_to_fyle_payments:
         start_datetime = datetime.now()
@@ -848,6 +824,32 @@ def schedule_netsuite_objects_status_sync(sync_netsuite_to_fyle_payments, worksp
 
         if schedule:
             schedule.delete()
+
+
+def process_reimbursements(workspace_id):
+    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+
+    fyle_connector = FyleConnector(fyle_credentials.refresh_token, workspace_id)
+
+    fyle_connector.sync_reimbursements()
+
+    reimbursements = Reimbursement.objects.filter(state='PENDING').all()
+
+    reimbursement_ids = []
+
+    if reimbursements:
+        for reimbursement in reimbursements:
+            expenses = Expense.objects.filter(settlement_id=reimbursement.settlement_id, fund_source='PERSONAL').all()
+            paid_expenses = expenses.filter(paid_on_netsuite=True)
+
+            all_expense_paid = len(expenses) == len(paid_expenses)
+
+            if all_expense_paid:
+                reimbursement_ids.append(reimbursement.reimbursement_id)
+
+    if reimbursement_ids:
+        fyle_connector.post_reimbursement(reimbursement_ids)
+        fyle_connector.sync_reimbursements()
 
 
 def schedule_reimbursements_sync(sync_netsuite_to_fyle_payments, workspace_id):
