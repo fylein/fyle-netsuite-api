@@ -655,14 +655,16 @@ def create_vendor_payment(workspace_id):
 
             fyle_connector.sync_reimbursements()
 
-            bills = Bill.objects.filter(payment_synced=False, expense_group__workspace_id=workspace_id).all()
+            bills = Bill.objects.filter(
+                payment_synced=False, expense_group__workspace_id=workspace_id, expense_group__fund_source='PERSONAL'
+            ).all()
 
             expense_reports = ExpenseReport.objects.filter(
-                payment_synced=False, expense_group__workspace_id=workspace_id
+                payment_synced=False, expense_group__workspace_id=workspace_id, expense_group__fund_source='PERSONAL'
             ).all()
 
             journal_entries = JournalEntry.objects.filter(
-                payment_synced=False, expense_group__workspace_id=workspace_id
+                payment_synced=False, expense_group__workspace_id=workspace_id, expense_group__fund_source='PERSONAL'
             ).all()
 
             general_mappings: GeneralMapping = GeneralMapping.objects.get(workspace_id=workspace_id)
