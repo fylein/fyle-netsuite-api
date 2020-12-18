@@ -1,4 +1,4 @@
--- Script to set paid_on_netsuite as True for existing bills, expense_reports
+-- Script to set paid_on_netsuite as True for existing bills, expense_reports and expenses
 rollback;
 begin;
 
