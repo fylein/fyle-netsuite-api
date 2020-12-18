@@ -202,6 +202,7 @@ class Bill(models.Model):
     external_id = models.CharField(max_length=255, unique=True, help_text='Fyle reimbursement id')
     transaction_date = models.DateTimeField(help_text='Bill transaction date')
     payment_synced = models.BooleanField(help_text='Payment synced status', default=False)
+    paid_on_netsuite = models.BooleanField(help_text='Payment Status in NetSuite', default=False)
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
@@ -355,6 +356,7 @@ class ExpenseReport(models.Model):
     external_id = models.CharField(max_length=255, unique=True, help_text='Fyle reimbursement id')
     transaction_date = models.DateTimeField(help_text='Expense Report transaction date')
     payment_synced = models.BooleanField(help_text='Payment synced status', default=False)
+    paid_on_netsuite = models.BooleanField(help_text='Payment Status in NetSuite', default=False)
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
@@ -527,6 +529,7 @@ class JournalEntry(models.Model):
     external_id = models.CharField(max_length=255, unique=True, help_text='Journal Entry External ID')
     transaction_date = models.DateTimeField(help_text='Journal Entry transaction date')
     payment_synced = models.BooleanField(help_text='Payment synced status', default=False)
+    paid_on_netsuite = models.BooleanField(help_text='Payment Status in NetSuite', default=False)
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 

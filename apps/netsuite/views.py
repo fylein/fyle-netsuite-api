@@ -20,7 +20,8 @@ from apps.workspaces.models import NetSuiteCredentials
 from .serializers import BillSerializer, ExpenseReportSerializer, JournalEntrySerializer, NetSuiteFieldSerializer, \
     CustomSegmentSerializer, VendorPaymentSerializer
 from .tasks import schedule_bills_creation, create_bill, schedule_expense_reports_creation, create_expense_report, \
-    create_journal_entry, schedule_journal_entry_creation, create_vendor_payment
+    create_journal_entry, schedule_journal_entry_creation, create_vendor_payment, check_netsuite_object_status, \
+    process_reimbursements
 from .models import Bill, ExpenseReport, JournalEntry, CustomSegment, VendorPayment
 from .utils import NetSuiteConnector
 
@@ -799,6 +800,23 @@ class VendorPaymentView(generics.ListCreateAPIView):
         Create vendor payment
         """
         create_vendor_payment(workspace_id=self.kwargs['workspace_id'])
+
+        return Response(
+            data={},
+            status=status.HTTP_200_OK
+        )
+
+
+class ReimburseNetSuitePaymentsView(generics.ListCreateAPIView):
+    """
+    Reimburse NetSuite Payments View
+    """
+    def post(self, request, *args, **kwargs):
+        """
+        Process Reimbursements in Fyle
+        """
+        check_netsuite_object_status(workspace_id=self.kwargs['workspace_id'])
+        process_reimbursements(workspace_id=self.kwargs['workspace_id'])
 
         return Response(
             data={},

@@ -288,3 +288,9 @@ class FyleConnector:
             attachment = attachment['data'][0]
             attachment['expense_id'] = expense_id
             return attachment
+
+    def post_reimbursement(self, reimbursement_ids: list):
+        """
+        Process Reimbursements in bulk.
+        """
+        return self.connection.Reimbursements.post(reimbursement_ids)

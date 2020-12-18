@@ -80,5 +80,7 @@ class WorkspaceGeneralSettings(models.Model):
                                                              help_text='Non Reimbursable Expenses type', null=True)
     sync_fyle_to_netsuite_payments = models.BooleanField(default=False,
                                                          help_text='Auto Sync Payments from Fyle to Netsuite')
+    sync_netsuite_to_fyle_payments = models.BooleanField(default=False,
+                                                         help_text='Auto Sync Payments from NetSuite to Fyle')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')

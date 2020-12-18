@@ -3,7 +3,7 @@ import logging
 import traceback
 from typing import List
 import base64
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.db import transaction
 from django.db.models import Q
@@ -600,7 +600,8 @@ def process_vendor_payment(netsuite_objects_map, workspace_id, netsuite_object):
             task_log.status = 'COMPLETE'
 
             netsuite_object.payment_synced = True
-            netsuite_object.save(update_fields=['payment_synced'])
+            netsuite_object.paid_on_netsuite = True
+            netsuite_object.save(update_fields=['payment_synced', 'paid_on_netsuite'])
 
             task_log.save(update_fields=['detail', 'vendor_payment', 'status'])
             netsuite_objects_map[netsuite_object.entity_id]['processed'] = True
@@ -655,14 +656,16 @@ def create_vendor_payment(workspace_id):
 
             fyle_connector.sync_reimbursements()
 
-            bills = Bill.objects.filter(payment_synced=False, expense_group__workspace_id=workspace_id).all()
+            bills = Bill.objects.filter(
+                payment_synced=False, expense_group__workspace_id=workspace_id, expense_group__fund_source='PERSONAL'
+            ).all()
 
             expense_reports = ExpenseReport.objects.filter(
-                payment_synced=False, expense_group__workspace_id=workspace_id
+                payment_synced=False, expense_group__workspace_id=workspace_id, expense_group__fund_source='PERSONAL'
             ).all()
 
             journal_entries = JournalEntry.objects.filter(
-                payment_synced=False, expense_group__workspace_id=workspace_id
+                payment_synced=False, expense_group__workspace_id=workspace_id, expense_group__fund_source='PERSONAL'
             ).all()
 
             if bills:
@@ -732,6 +735,141 @@ def schedule_vendor_payment_creation(sync_fyle_to_netsuite_payments, workspace_i
     if not sync_fyle_to_netsuite_payments:
         schedule: Schedule = Schedule.objects.filter(
             func='apps.netsuite.tasks.create_vendor_payment',
+            args='{}'.format(workspace_id)
+        ).first()
+
+        if schedule:
+            schedule.delete()
+
+
+def get_all_internal_ids(netsuite_objects):
+    netsuite_objects_details = {}
+
+    expense_group_ids = [netsuite_object.expense_group_id for netsuite_object in netsuite_objects]
+
+    task_logs = TaskLog.objects.filter(expense_group_id__in=expense_group_ids).all()
+
+    for task_log in task_logs:
+        netsuite_objects_details[task_log.expense_group.id] = {
+            'expense_group': task_log.expense_group,
+            'internal_id': task_log.detail['internalId']
+        }
+
+    return netsuite_objects_details
+
+
+def check_netsuite_object_status(workspace_id):
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+
+    netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
+
+    bills = Bill.objects.filter(
+        expense_group__workspace_id=workspace_id, paid_on_netsuite=False, expense_group__fund_source='PERSONAL'
+    ).all()
+
+    expense_reports = ExpenseReport.objects.filter(
+        expense_group__workspace_id=workspace_id, paid_on_netsuite=False, expense_group__fund_source='PERSONAL'
+    ).all()
+
+    if bills:
+        internal_ids = get_all_internal_ids(bills)
+
+        for bill in bills:
+            bill_object = netsuite_connection.get_bill(internal_ids[bill.expense_group.id]['internal_id'])
+
+            if bill_object['status'] == 'Paid In Full':
+                line_items = BillLineitem.objects.filter(bill_id=bill.id)
+                for line_item in line_items:
+                    expense = line_item.expense
+                    expense.paid_on_netsuite = True
+                    expense.save(update_fields=['paid_on_netsuite'])
+
+                bill.paid_on_netsuite = True
+                bill.payment_synced = True
+                bill.save(update_fields=['paid_on_netsuite', 'payment_synced'])
+
+    if expense_reports:
+        internal_ids = get_all_internal_ids(expense_reports)
+
+        for expense_report in expense_reports:
+            expense_report_object = netsuite_connection.get_expense_report(
+                internal_ids[expense_report.expense_group.id]['internal_id'])
+
+            if expense_report_object['status'] == 'Paid In Full':
+                line_items = ExpenseReportLineItem.objects.filter(expense_report_id=expense_report.id)
+                for line_item in line_items:
+                    expense = line_item.expense
+                    expense.paid_on_netsuite = True
+                    expense.save(update_fields=['paid_on_netsuite'])
+
+                expense_report.paid_on_netsuite = True
+                expense_report.payment_synced = True
+                expense_report.save(update_fields=['paid_on_netsuite', 'payment_synced'])
+
+
+def schedule_netsuite_objects_status_sync(sync_netsuite_to_fyle_payments, workspace_id):
+    if sync_netsuite_to_fyle_payments:
+        start_datetime = datetime.now()
+        schedule, _ = Schedule.objects.update_or_create(
+            func='apps.netsuite.tasks.check_netsuite_object_status',
+            args='{}'.format(workspace_id),
+            defaults={
+                'schedule_type': Schedule.MINUTES,
+                'minutes': 24 * 60,
+                'next_run': start_datetime
+            }
+        )
+    else:
+        schedule: Schedule = Schedule.objects.filter(
+            func='apps.netsuite.tasks.check_netsuite_object_status',
+            args='{}'.format(workspace_id)
+        ).first()
+
+        if schedule:
+            schedule.delete()
+
+
+def process_reimbursements(workspace_id):
+    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+
+    fyle_connector = FyleConnector(fyle_credentials.refresh_token, workspace_id)
+
+    fyle_connector.sync_reimbursements()
+
+    reimbursements = Reimbursement.objects.filter(state='PENDING').all()
+
+    reimbursement_ids = []
+
+    if reimbursements:
+        for reimbursement in reimbursements:
+            expenses = Expense.objects.filter(settlement_id=reimbursement.settlement_id, fund_source='PERSONAL').all()
+            paid_expenses = expenses.filter(paid_on_netsuite=True)
+
+            all_expense_paid = len(expenses) == len(paid_expenses)
+
+            if all_expense_paid:
+                reimbursement_ids.append(reimbursement.reimbursement_id)
+
+    if reimbursement_ids:
+        fyle_connector.post_reimbursement(reimbursement_ids)
+        fyle_connector.sync_reimbursements()
+
+
+def schedule_reimbursements_sync(sync_netsuite_to_fyle_payments, workspace_id):
+    if sync_netsuite_to_fyle_payments:
+        start_datetime = datetime.now() + timedelta(hours=12)
+        schedule, _ = Schedule.objects.update_or_create(
+            func='apps.netsuite.tasks.process_reimbursements',
+            args='{}'.format(workspace_id),
+            defaults={
+                'schedule_type': Schedule.MINUTES,
+                'minutes': 24 * 60,
+                'next_run': start_datetime
+            }
+        )
+    else:
+        schedule: Schedule = Schedule.objects.filter(
+            func='apps.netsuite.tasks.process_reimbursements',
             args='{}'.format(workspace_id)
         ).first()
 
