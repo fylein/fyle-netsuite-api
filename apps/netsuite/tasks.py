@@ -667,9 +667,7 @@ def create_vendor_payment(workspace_id):
                 payment_synced=False, expense_group__workspace_id=workspace_id, expense_group__fund_source='PERSONAL'
             ).all()
 
-            general_mappings: GeneralMapping = GeneralMapping.objects.get(workspace_id=workspace_id)
-
-            if general_mappings.vendor_payment_account_id and bills:
+            if bills:
                 bill_vendor_map = create_netsuite_payment_objects(bills, 'BILL')
 
                 for bill in bills:
@@ -733,7 +731,7 @@ def schedule_vendor_payment_creation(sync_fyle_to_netsuite_payments, workspace_i
                 'next_run': start_datetime
             }
         )
-    else:
+    if not sync_fyle_to_netsuite_payments:
         schedule: Schedule = Schedule.objects.filter(
             func='apps.netsuite.tasks.create_vendor_payment',
             args='{}'.format(workspace_id)
@@ -746,14 +744,14 @@ def schedule_vendor_payment_creation(sync_fyle_to_netsuite_payments, workspace_i
 def get_all_internal_ids(netsuite_objects):
     netsuite_objects_details = {}
 
-    for netsuite_object in netsuite_objects:
-        expense_group = netsuite_object.expense_group
+    expense_group_ids = [netsuite_object.expense_group_id for netsuite_object in netsuite_objects]
 
-        netsuite_object_task_log = TaskLog.objects.get(expense_group=netsuite_object.expense_group)
+    task_logs = TaskLog.objects.filter(expense_group_id__in=expense_group_ids).all()
 
-        netsuite_objects_details[expense_group.id] = {
-            'expense_group': expense_group,
-            'internal_id': netsuite_object_task_log.detail['internalId']
+    for task_log in task_logs:
+        netsuite_objects_details[task_log.expense_group_id] = {
+            'expense_group': task_log.expense_group,
+            'internal_id': task_log.detail['internalId']
         }
 
     return netsuite_objects_details

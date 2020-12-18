@@ -549,7 +549,7 @@ class NetSuiteConnector:
                     'externalId': None,
                     'type': 'account'
                 },
-                'corporateCreditCard': None,
+                'corporateCreditCard': True if expense.fund_source == 'CCC' else None,
                 'currency': {
                     'name': None,
                     'internalId': line.currency,
