@@ -20,4 +20,9 @@ class Migration(migrations.Migration):
             name='paid_on_netsuite',
             field=models.BooleanField(default=False, help_text='Payment Status in NetSuite'),
         ),
+        migrations.AddField(
+            model_name='journalentry',
+            name='paid_on_netsuite',
+            field=models.BooleanField(default=False, help_text='Payment Status in NetSuite'),
+        ),
     ]

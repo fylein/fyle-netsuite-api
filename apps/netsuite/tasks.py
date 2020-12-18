@@ -600,7 +600,8 @@ def process_vendor_payment(netsuite_objects_map, workspace_id, netsuite_object):
             task_log.status = 'COMPLETE'
 
             netsuite_object.payment_synced = True
-            netsuite_object.save(update_fields=['payment_synced'])
+            netsuite_object.paid_on_netsuite = True
+            netsuite_object.save(update_fields=['payment_synced', 'paid_on_netsuite'])
 
             task_log.save(update_fields=['detail', 'vendor_payment', 'status'])
             netsuite_objects_map[netsuite_object.entity_id]['processed'] = True
@@ -749,7 +750,7 @@ def get_all_internal_ids(netsuite_objects):
     task_logs = TaskLog.objects.filter(expense_group_id__in=expense_group_ids).all()
 
     for task_log in task_logs:
-        netsuite_objects_details[task_log.expense_group_id] = {
+        netsuite_objects_details[task_log.expense_group.id] = {
             'expense_group': task_log.expense_group,
             'internal_id': task_log.detail['internalId']
         }
@@ -784,7 +785,8 @@ def check_netsuite_object_status(workspace_id):
                     expense.save(update_fields=['paid_on_netsuite'])
 
                 bill.paid_on_netsuite = True
-                bill.save(update_fields=['paid_on_netsuite'])
+                bill.payment_synced = True
+                bill.save(update_fields=['paid_on_netsuite', 'payment_synced'])
 
     if expense_reports:
         internal_ids = get_all_internal_ids(expense_reports)
@@ -801,7 +803,8 @@ def check_netsuite_object_status(workspace_id):
                     expense.save(update_fields=['paid_on_netsuite'])
 
                 expense_report.paid_on_netsuite = True
-                expense_report.save(update_fields=['paid_on_netsuite'])
+                expense_report.payment_synced = True
+                expense_report.save(update_fields=['paid_on_netsuite', 'payment_synced'])
 
 
 def schedule_netsuite_objects_status_sync(sync_netsuite_to_fyle_payments, workspace_id):
