@@ -836,7 +836,7 @@ def process_reimbursements(workspace_id):
 
     fyle_connector.sync_reimbursements()
 
-    reimbursements = Reimbursement.objects.filter(state='PENDING').all()
+    reimbursements = Reimbursement.objects.filter(state='PENDING', workspace_id=workspace_id).all()
 
     reimbursement_ids = []
 
