@@ -786,15 +786,8 @@ class CustomSegmentView(generics.ListCreateAPIView):
 
 class VendorPaymentView(generics.ListCreateAPIView):
     """
-    Create Vendor Payment
+    Create Vendor Payment View
     """
-    serializer_class = VendorPaymentSerializer
-
-    def get_queryset(self):
-        return VendorPayment.objects.filter(
-            expense_group__workspace_id=self.kwargs['workspace_id']
-        ).order_by('-updated_at')
-
     def post(self, request, *args, **kwargs):
         """
         Create vendor payment
