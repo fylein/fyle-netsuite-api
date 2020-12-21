@@ -35,4 +35,4 @@ class TaskLog(models.Model):
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime')
 
     class Meta:
-        db_table = 'task_log'
+        db_table = 'task_logs'

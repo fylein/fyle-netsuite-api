@@ -158,6 +158,9 @@ class ExpenseGroupSettings(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
+    class Meta:
+        db_table = 'expense_group_settings'
+
     @staticmethod
     def update_expense_group_settings(expense_group_settings: Dict, workspace_id: int):
         settings = ExpenseGroupSettings.objects.get(workspace_id=workspace_id)
