@@ -784,7 +784,7 @@ class CustomSegmentView(generics.ListCreateAPIView):
             )
 
 
-class VendorPaymentView(generics.ListCreateAPIView):
+class VendorPaymentView(generics.CreateAPIView):
     """
     Create Vendor Payment View
     """
@@ -800,7 +800,7 @@ class VendorPaymentView(generics.ListCreateAPIView):
         )
 
 
-class ReimburseNetSuitePaymentsView(generics.ListCreateAPIView):
+class ReimburseNetSuitePaymentsView(generics.CreateAPIView):
     """
     Reimburse NetSuite Payments View
     """
