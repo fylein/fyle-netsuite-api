@@ -18,11 +18,11 @@ from apps.tasks.models import TaskLog
 from apps.workspaces.models import NetSuiteCredentials
 
 from .serializers import BillSerializer, ExpenseReportSerializer, JournalEntrySerializer, NetSuiteFieldSerializer, \
-    CustomSegmentSerializer, VendorPaymentSerializer
+    CustomSegmentSerializer
 from .tasks import schedule_bills_creation, create_bill, schedule_expense_reports_creation, create_expense_report, \
     create_journal_entry, schedule_journal_entry_creation, create_vendor_payment, check_netsuite_object_status, \
     process_reimbursements
-from .models import Bill, ExpenseReport, JournalEntry, CustomSegment, VendorPayment
+from .models import Bill, ExpenseReport, JournalEntry, CustomSegment
 from .utils import NetSuiteConnector
 
 logger = logging.getLogger(__name__)
@@ -784,17 +784,10 @@ class CustomSegmentView(generics.ListCreateAPIView):
             )
 
 
-class VendorPaymentView(generics.ListCreateAPIView):
+class VendorPaymentView(generics.CreateAPIView):
     """
-    Create Vendor Payment
+    Create Vendor Payment View
     """
-    serializer_class = VendorPaymentSerializer
-
-    def get_queryset(self):
-        return VendorPayment.objects.filter(
-            expense_group__workspace_id=self.kwargs['workspace_id']
-        ).order_by('-updated_at')
-
     def post(self, request, *args, **kwargs):
         """
         Create vendor payment
@@ -807,7 +800,7 @@ class VendorPaymentView(generics.ListCreateAPIView):
         )
 
 
-class ReimburseNetSuitePaymentsView(generics.ListCreateAPIView):
+class ReimburseNetSuitePaymentsView(generics.CreateAPIView):
     """
     Reimburse NetSuite Payments View
     """
