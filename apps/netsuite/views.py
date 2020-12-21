@@ -18,11 +18,11 @@ from apps.tasks.models import TaskLog
 from apps.workspaces.models import NetSuiteCredentials
 
 from .serializers import BillSerializer, ExpenseReportSerializer, JournalEntrySerializer, NetSuiteFieldSerializer, \
-    CustomSegmentSerializer, VendorPaymentSerializer
+    CustomSegmentSerializer
 from .tasks import schedule_bills_creation, create_bill, schedule_expense_reports_creation, create_expense_report, \
     create_journal_entry, schedule_journal_entry_creation, create_vendor_payment, check_netsuite_object_status, \
     process_reimbursements
-from .models import Bill, ExpenseReport, JournalEntry, CustomSegment, VendorPayment
+from .models import Bill, ExpenseReport, JournalEntry, CustomSegment
 from .utils import NetSuiteConnector
 
 logger = logging.getLogger(__name__)

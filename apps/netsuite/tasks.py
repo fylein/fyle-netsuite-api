@@ -847,7 +847,7 @@ def process_reimbursements(workspace_id):
             paid_expenses = expenses.filter(paid_on_netsuite=True)
 
             all_expense_paid = False
-            if len(expenses) and len(paid_expenses) > 0:
+            if len(expenses):
                 all_expense_paid = len(expenses) == len(paid_expenses)
 
             if all_expense_paid:
