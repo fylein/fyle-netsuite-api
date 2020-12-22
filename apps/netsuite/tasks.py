@@ -664,64 +664,33 @@ def create_vendor_payment(workspace_id):
             ).all()
 
             if bills:
-                bill_entity_map = create_netsuite_payment_objects(bills, 'BILL')
+                entity_map = create_netsuite_payment_objects(bills, 'BILL')
+            elif expense_reports:
+                create_netsuite_payment_objects(expense_reports, 'EXPENSE REPORT')
+            else:
+                entity_map = create_netsuite_payment_objects(journal_entries, 'JOURNAL ENTRY')
 
-                for entity_object_key in bill_entity_map:
-                    entity_id = entity_object_key
-                    entity_object = bill_entity_map[entity_id]
+            for entity_object_key in entity_map:
+                entity_id = entity_object_key
+                entity_object = entity_map[entity_id]
 
-                    lines = entity_object['line']
+                lines = entity_object['line']
 
-                    expense_group_ids = [line['expense_group'].id for line in lines]
+                expense_group_ids = [line['expense_group'].id for line in lines]
 
-                    process_vendor_payment(entity_object, workspace_id)
+                process_vendor_payment(entity_object, workspace_id)
 
-                    paid_bills = Bill.objects.filter(expense_group_id__in=expense_group_ids).all()
+                if bills:
+                    paid_objects = Bill.objects.filter(expense_group_id__in=expense_group_ids).all()
+                elif expense_reports:
+                    paid_objects = ExpenseReport.objects.filter(expense_group_id__in=expense_group_ids).all()
+                else:
+                    paid_objects = JournalEntry.objects.filter(expense_group_id__in=expense_group_ids).all()
 
-                    for paid_bill in paid_bills:
-                        paid_bill.payment_synced = True
-                        paid_bill.paid_on_netsuite = True
-                        paid_bill.save(update_fields=['payment_synced', 'paid_on_netsuite'])
-
-            if expense_reports:
-                expense_report_entity_map = create_netsuite_payment_objects(expense_reports, 'EXPENSE REPORT')
-
-                for entity_object_key in expense_report_entity_map:
-                    entity_id = entity_object_key
-                    entity_object = expense_report_entity_map[entity_id]
-
-                    lines = entity_object['line']
-
-                    expense_group_ids = [line['expense_group'].id for line in lines]
-
-                    process_vendor_payment(entity_object, workspace_id)
-
-                    paid_expense_reports = ExpenseReport.objects.filter(expense_group_id__in=expense_group_ids).all()
-
-                    for paid_expense_report in paid_expense_reports:
-                        paid_expense_report.payment_synced = True
-                        paid_expense_report.paid_on_netsuite = True
-                        paid_expense_report.save(update_fields=['payment_synced', 'paid_on_netsuite'])
-
-            if journal_entries:
-                journal_entry_entity_map = create_netsuite_payment_objects(journal_entries, 'JOURNAL ENTRY')
-
-                for entity_object_key in journal_entry_entity_map:
-                    entity_id = entity_object_key
-                    entity_object = journal_entry_entity_map[entity_id]
-
-                    lines = entity_object['line']
-
-                    expense_group_ids = [line['expense_group'].id for line in lines]
-
-                    process_vendor_payment(entity_object, workspace_id)
-
-                    paid_journal_entries = JournalEntry.objects.filter(expense_group_id__in=expense_group_ids).all()
-
-                    for paid_journal_entry in paid_journal_entries:
-                        paid_journal_entry.payment_synced = True
-                        paid_journal_entry.paid_on_netsuite = True
-                        paid_journal_entry.save(update_fields=['payment_synced', 'paid_on_netsuite'])
+                for paid_object in paid_objects:
+                    paid_object.payment_synced = True
+                    paid_object.paid_on_netsuite = True
+                    paid_object.save(update_fields=['payment_synced', 'paid_on_netsuite'])
     except Exception:
         error = traceback.format_exc()
         logger.exception('Something unexpected happened workspace_id: %s %s', workspace_id, {'error': error})
