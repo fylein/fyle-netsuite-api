@@ -656,10 +656,6 @@ def create_vendor_payment(workspace_id):
             payment_synced=False, expense_group__workspace_id=workspace_id, expense_group__fund_source='PERSONAL'
         ).all()
 
-        journal_entries = JournalEntry.objects.filter(
-            payment_synced=False, expense_group__workspace_id=workspace_id, expense_group__fund_source='PERSONAL'
-        ).all()
-
         if bills:
             bill_entity_map = create_netsuite_payment_objects(bills, 'BILL')
 
@@ -701,27 +697,6 @@ def create_vendor_payment(workspace_id):
                         paid_expense_report.payment_synced = True
                         paid_expense_report.paid_on_netsuite = True
                         paid_expense_report.save(update_fields=['payment_synced', 'paid_on_netsuite'])
-
-        if journal_entries:
-            journal_entry_entity_map = create_netsuite_payment_objects(journal_entries, 'JOURNAL ENTRY')
-
-            for entity_object_key in journal_entry_entity_map:
-                with transaction.atomic():
-                    entity_id = entity_object_key
-                    entity_object = journal_entry_entity_map[entity_id]
-
-                    lines = entity_object['line']
-
-                    process_vendor_payment(entity_object, workspace_id)
-
-                    expense_group_ids = [line['expense_group'].id for line in lines]
-
-                    paid_journal_entries = JournalEntry.objects.filter(expense_group_id__in=expense_group_ids).all()
-
-                    for paid_journal_entry in paid_journal_entries:
-                        paid_journal_entry.payment_synced = True
-                        paid_journal_entry.paid_on_netsuite = True
-                        paid_journal_entry.save(update_fields=['payment_synced', 'paid_on_netsuite'])
     except Exception:
         error = traceback.format_exc()
         logger.exception('Something unexpected happened workspace_id: %s %s', workspace_id, {'error': error})
