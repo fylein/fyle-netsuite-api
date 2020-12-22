@@ -535,7 +535,7 @@ def create_netsuite_payment_objects(netsuite_objects, object_type):
         entity_id = netsuite_object.entity_id
 
         expense_group_reimbursement_status = check_expenses_reimbursement_status(
-            netsuite_object.expense_group.expenses)
+            netsuite_object.expense_group.expenses.all())
 
         if expense_group_reimbursement_status:
             if entity_id not in netsuite_payment_objects:
