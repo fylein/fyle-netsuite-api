@@ -516,11 +516,10 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
         chain.run()
 
 
-def check_expenses_reimbursement_status(line_items):
+def check_expenses_reimbursement_status(expenses):
     all_expenses_paid = True
 
-    for line_item in line_items:
-        expense = Expense.objects.get(id=line_item.expense.id)
+    for expense in expenses:
         reimbursement = Reimbursement.objects.filter(settlement_id=expense.settlement_id).first()
 
         if reimbursement.state != 'COMPLETE':
@@ -535,85 +534,80 @@ def create_netsuite_payment_objects(netsuite_objects, object_type):
     for netsuite_object in netsuite_objects:
         entity_id = netsuite_object.entity_id
 
-        if entity_id not in netsuite_payment_objects:
-            netsuite_object_task_log = TaskLog.objects.get(expense_group=netsuite_object.expense_group)
-            netsuite_payment_objects[entity_id] = {
-                'processed': False,
-                'subsidiary_id': netsuite_object.subsidiary_id,
-                'entity_id': entity_id,
-                'currency': netsuite_object.currency,
-                'memo': 'Payment for {0} by {1}'.format(
-                    object_type.lower(), netsuite_object.expense_group.description['employee_email']
-                ),
-                'unique_id': '{0}-{1}'.format(netsuite_object.external_id, netsuite_object.id),
-                'line': [
+        expense_group_reimbursement_status = check_expenses_reimbursement_status(
+            netsuite_object.expense_group.expenses.all())
+
+        if expense_group_reimbursement_status:
+            if entity_id not in netsuite_payment_objects:
+                netsuite_object_task_log = TaskLog.objects.get(expense_group=netsuite_object.expense_group)
+                netsuite_payment_objects[entity_id] = {
+                    'subsidiary_id': netsuite_object.subsidiary_id,
+                    'entity_id': entity_id,
+                    'currency': netsuite_object.currency,
+                    'memo': 'Payment for {0} by {1}'.format(
+                        object_type.lower(), netsuite_object.expense_group.description['employee_email']
+                    ),
+                    'unique_id': '{0}-{1}'.format(netsuite_object.external_id, netsuite_object.id),
+                    'line': [
+                        {
+                            'internal_id': netsuite_object_task_log.detail['internalId'],
+                            'entity_id': entity_id,
+                            'expense_group': netsuite_object.expense_group,
+                        }
+                    ]
+                }
+
+            else:
+                netsuite_object_task_log = TaskLog.objects.get(expense_group=netsuite_object.expense_group)
+                netsuite_payment_objects[entity_id]['line'].append(
                     {
                         'internal_id': netsuite_object_task_log.detail['internalId'],
                         'entity_id': entity_id,
                         'expense_group': netsuite_object.expense_group,
                     }
-                ]
-            }
-
-        else:
-            netsuite_object_task_log = TaskLog.objects.get(expense_group=netsuite_object.expense_group)
-            netsuite_payment_objects[entity_id]['line'].append(
-                {
-                    'internal_id': netsuite_object_task_log.detail['internalId'],
-                    'entity_id': entity_id,
-                    'expense_group': netsuite_object.expense_group,
-                }
-            )
+                )
 
     return netsuite_payment_objects
 
 
-def process_vendor_payment(netsuite_objects_map, workspace_id, netsuite_object):
+def process_vendor_payment(entity_object, workspace_id):
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
 
     netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
 
     task_log, _ = TaskLog.objects.update_or_create(
         workspace_id=workspace_id,
-        task_id='PAYMENT_{}'.format(netsuite_objects_map[netsuite_object.entity_id]['unique_id']),
+        task_id='PAYMENT_{}'.format(entity_object['unique_id']),
         defaults={
             'status': 'IN_PROGRESS',
             'type': 'CREATING_VENDOR_PAYMENT'
         }
     )
     try:
-        with transaction.atomic():
-            vendor_payment_object = VendorPayment.create_vendor_payment(
-                workspace_id, netsuite_objects_map[netsuite_object.entity_id]
-            )
+        vendor_payment_object = VendorPayment.create_vendor_payment(
+            workspace_id, entity_object
+        )
 
-            vendor_payment_lineitems = VendorPaymentLineitem.create_vendor_payment_lineitems(
-                netsuite_objects_map[netsuite_object.entity_id]['line'], vendor_payment_object
-            )
+        vendor_payment_lineitems = VendorPaymentLineitem.create_vendor_payment_lineitems(
+            entity_object['line'], vendor_payment_object
+        )
 
-            created_vendor_payment = netsuite_connection.post_vendor_payment(
-                vendor_payment_object, vendor_payment_lineitems
-            )
+        created_vendor_payment = netsuite_connection.post_vendor_payment(
+            vendor_payment_object, vendor_payment_lineitems
+        )
 
-            task_log.detail = created_vendor_payment
-            task_log.vendor_payment = vendor_payment_object
-            task_log.status = 'COMPLETE'
+        task_log.detail = created_vendor_payment
+        task_log.vendor_payment = vendor_payment_object
+        task_log.status = 'COMPLETE'
 
-            netsuite_object.payment_synced = True
-            netsuite_object.paid_on_netsuite = True
-            netsuite_object.save(update_fields=['payment_synced', 'paid_on_netsuite'])
-
-            task_log.save(update_fields=['detail', 'vendor_payment', 'status'])
-            netsuite_objects_map[netsuite_object.entity_id]['processed'] = True
+        task_log.save(update_fields=['detail', 'vendor_payment', 'status'])
 
     except NetSuiteCredentials.DoesNotExist:
-        logger.exception(
-            'NetSuite Credentials not found for workspace_id %s / expense group %s',
-            netsuite_object.expense_group,
+        logger.error(
+            'NetSuite Credentials not found for workspace_id %s',
             workspace_id
         )
         detail = {
-            'expense_group_id': netsuite_object.expense_group,
             'message': 'NetSuite Account not connected'
         }
         task_log.status = 'FAILED'
@@ -648,72 +642,61 @@ def process_vendor_payment(netsuite_objects_map, workspace_id, netsuite_object):
 
 def create_vendor_payment(workspace_id):
     try:
-        with transaction.atomic():
+        fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
 
-            fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+        fyle_connector = FyleConnector(fyle_credentials.refresh_token, workspace_id)
 
-            fyle_connector = FyleConnector(fyle_credentials.refresh_token, workspace_id)
+        fyle_connector.sync_reimbursements()
 
-            fyle_connector.sync_reimbursements()
+        bills = Bill.objects.filter(
+            payment_synced=False, expense_group__workspace_id=workspace_id, expense_group__fund_source='PERSONAL'
+        ).all()
 
-            bills = Bill.objects.filter(
-                payment_synced=False, expense_group__workspace_id=workspace_id, expense_group__fund_source='PERSONAL'
-            ).all()
+        expense_reports = ExpenseReport.objects.filter(
+            payment_synced=False, expense_group__workspace_id=workspace_id, expense_group__fund_source='PERSONAL'
+        ).all()
 
-            expense_reports = ExpenseReport.objects.filter(
-                payment_synced=False, expense_group__workspace_id=workspace_id, expense_group__fund_source='PERSONAL'
-            ).all()
+        if bills:
+            bill_entity_map = create_netsuite_payment_objects(bills, 'BILL')
 
-            journal_entries = JournalEntry.objects.filter(
-                payment_synced=False, expense_group__workspace_id=workspace_id, expense_group__fund_source='PERSONAL'
-            ).all()
+            for entity_object_key in bill_entity_map:
+                with transaction.atomic():
+                    entity_id = entity_object_key
+                    entity_object = bill_entity_map[entity_id]
 
-            if bills:
-                bill_vendor_map = create_netsuite_payment_objects(bills, 'BILL')
+                    lines = entity_object['line']
 
-                for bill in bills:
-                    line_items = BillLineitem.objects.filter(bill_id=bill.id)
-                    expenses_reimbursement_status = check_expenses_reimbursement_status(line_items)
+                    expense_group_ids = [line['expense_group'].id for line in lines]
 
-                    if expenses_reimbursement_status and bill_vendor_map[bill.entity_id]['processed'] is False:
-                        process_vendor_payment(bill_vendor_map, workspace_id, bill)
+                    process_vendor_payment(entity_object, workspace_id)
 
-                    elif expenses_reimbursement_status and bill_vendor_map[bill.entity_id]['processed']:
-                        bill.payment_synced = True
-                        bill.save(update_fields=['payment_synced'])
+                    paid_bills = Bill.objects.filter(expense_group_id__in=expense_group_ids).all()
 
-            if expense_reports:
-                expense_report_entity_map = create_netsuite_payment_objects(expense_reports, 'EXPENSE REPORT')
+                    for paid_bill in paid_bills:
+                        paid_bill.payment_synced = True
+                        paid_bill.paid_on_netsuite = True
+                        paid_bill.save(update_fields=['payment_synced', 'paid_on_netsuite'])
 
-                for expense_report in expense_reports:
-                    line_items = ExpenseReportLineItem.objects.filter(expense_report_id=expense_report.id)
-                    expenses_reimbursement_status = check_expenses_reimbursement_status(line_items)
+        if expense_reports:
+            expense_report_entity_map = create_netsuite_payment_objects(expense_reports, 'EXPENSE REPORT')
 
-                    if expenses_reimbursement_status and \
-                            expense_report_entity_map[expense_report.entity_id]['processed'] is False:
-                        process_vendor_payment(expense_report_entity_map, workspace_id, expense_report)
+            for entity_object_key in expense_report_entity_map:
+                with transaction.atomic():
+                    entity_id = entity_object_key
+                    entity_object = expense_report_entity_map[entity_id]
 
-                    elif expenses_reimbursement_status and \
-                            expense_report_entity_map[expense_report.entity_id]['processed']:
-                        expense_report.payment_synced = True
-                        expense_report.save(update_fields=['payment_synced'])
+                    lines = entity_object['line']
 
-            if journal_entries:
-                journal_entry_entity_map = create_netsuite_payment_objects(journal_entries, 'JOURNAL ENTRY')
+                    expense_group_ids = [line['expense_group'].id for line in lines]
 
-                for journal_entry in journal_entries:
-                    line_items = JournalEntryLineItem.objects.filter(journal_entry_id=journal_entry.id)
-                    expenses_reimbursement_status = check_expenses_reimbursement_status(line_items)
+                    process_vendor_payment(entity_object, workspace_id)
 
-                    if expenses_reimbursement_status and \
-                            journal_entry_entity_map[journal_entry.entity_id]['processed'] is False:
-                        process_vendor_payment(journal_entry_entity_map, workspace_id, journal_entry)
+                    paid_expense_reports = ExpenseReport.objects.filter(expense_group_id__in=expense_group_ids).all()
 
-                    elif expenses_reimbursement_status and \
-                            journal_entry_entity_map[journal_entry.entity_id]['processed']:
-                        journal_entry.payment_synced = True
-                        journal_entry.save(update_fields=['payment_synced'])
-
+                    for paid_expense_report in paid_expense_reports:
+                        paid_expense_report.payment_synced = True
+                        paid_expense_report.paid_on_netsuite = True
+                        paid_expense_report.save(update_fields=['payment_synced', 'paid_on_netsuite'])
     except Exception:
         error = traceback.format_exc()
         logger.exception('Something unexpected happened workspace_id: %s %s', workspace_id, {'error': error})
