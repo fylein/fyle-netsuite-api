@@ -664,10 +664,6 @@ def create_vendor_payment(workspace_id):
                 payment_synced=False, expense_group__workspace_id=workspace_id, expense_group__fund_source='PERSONAL'
             ).all()
 
-            journal_entries = JournalEntry.objects.filter(
-                payment_synced=False, expense_group__workspace_id=workspace_id, expense_group__fund_source='PERSONAL'
-            ).all()
-
             if bills:
                 bill_vendor_map = create_netsuite_payment_objects(bills, 'BILL')
 
@@ -697,22 +693,6 @@ def create_vendor_payment(workspace_id):
                             expense_report_entity_map[expense_report.entity_id]['processed']:
                         expense_report.payment_synced = True
                         expense_report.save(update_fields=['payment_synced'])
-
-            if journal_entries:
-                journal_entry_entity_map = create_netsuite_payment_objects(journal_entries, 'JOURNAL ENTRY')
-
-                for journal_entry in journal_entries:
-                    line_items = JournalEntryLineItem.objects.filter(journal_entry_id=journal_entry.id)
-                    expenses_reimbursement_status = check_expenses_reimbursement_status(line_items)
-
-                    if expenses_reimbursement_status and \
-                            journal_entry_entity_map[journal_entry.entity_id]['processed'] is False:
-                        process_vendor_payment(journal_entry_entity_map, workspace_id, journal_entry)
-
-                    elif expenses_reimbursement_status and \
-                            journal_entry_entity_map[journal_entry.entity_id]['processed']:
-                        journal_entry.payment_synced = True
-                        journal_entry.save(update_fields=['payment_synced'])
 
     except Exception:
         error = traceback.format_exc()
