@@ -570,7 +570,7 @@ def create_netsuite_payment_objects(netsuite_objects, object_type):
     return netsuite_payment_objects
 
 
-def process_vendor_payment(entity_object, workspace_id):
+def process_vendor_payment(entity_object, workspace_id, object_type):
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
 
     netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
@@ -595,6 +595,20 @@ def process_vendor_payment(entity_object, workspace_id):
         created_vendor_payment = netsuite_connection.post_vendor_payment(
             vendor_payment_object, vendor_payment_lineitems
         )
+
+        lines = entity_object['line']
+        expense_group_ids = [line['expense_group'].id for line in lines]
+
+        if object_type == 'BILL':
+            paid_objects = Bill.objects.filter(expense_group_id__in=expense_group_ids).all()
+
+        else:
+            paid_objects = ExpenseReport.objects.filter(expense_group_id__in=expense_group_ids).all()
+
+        for paid_object in paid_objects:
+            paid_object.payment_synced = True
+            paid_object.paid_on_netsuite = True
+            paid_object.save(update_fields=['payment_synced', 'paid_on_netsuite'])
 
         task_log.detail = created_vendor_payment
         task_log.vendor_payment = vendor_payment_object
@@ -664,18 +678,7 @@ def create_vendor_payment(workspace_id):
                     entity_id = entity_object_key
                     entity_object = bill_entity_map[entity_id]
 
-                    lines = entity_object['line']
-
-                    expense_group_ids = [line['expense_group'].id for line in lines]
-
-                    process_vendor_payment(entity_object, workspace_id)
-
-                    paid_bills = Bill.objects.filter(expense_group_id__in=expense_group_ids).all()
-
-                    for paid_bill in paid_bills:
-                        paid_bill.payment_synced = True
-                        paid_bill.paid_on_netsuite = True
-                        paid_bill.save(update_fields=['payment_synced', 'paid_on_netsuite'])
+                    process_vendor_payment(entity_object, workspace_id, 'BILL')
 
         if expense_reports:
             expense_report_entity_map = create_netsuite_payment_objects(expense_reports, 'EXPENSE REPORT')
@@ -685,18 +688,7 @@ def create_vendor_payment(workspace_id):
                     entity_id = entity_object_key
                     entity_object = expense_report_entity_map[entity_id]
 
-                    lines = entity_object['line']
-
-                    expense_group_ids = [line['expense_group'].id for line in lines]
-
-                    process_vendor_payment(entity_object, workspace_id)
-
-                    paid_expense_reports = ExpenseReport.objects.filter(expense_group_id__in=expense_group_ids).all()
-
-                    for paid_expense_report in paid_expense_reports:
-                        paid_expense_report.payment_synced = True
-                        paid_expense_report.paid_on_netsuite = True
-                        paid_expense_report.save(update_fields=['payment_synced', 'paid_on_netsuite'])
+                    process_vendor_payment(entity_object, workspace_id, 'EXPENSE REPORT')
     except Exception:
         error = traceback.format_exc()
         logger.exception('Something unexpected happened workspace_id: %s %s', workspace_id, {'error': error})
