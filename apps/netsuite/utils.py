@@ -1,4 +1,3 @@
-import logging
 from typing import List, Dict
 
 from netsuitesdk import NetSuiteConnection
@@ -12,9 +11,6 @@ from apps.mappings.models import SubsidiaryMapping
 from apps.netsuite.models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, \
     JournalEntryLineItem, CustomSegment, VendorPayment, VendorPaymentLineitem
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential
-
-
-logger = logging.getLogger(__name__)
 
 
 class NetSuiteConnector:
@@ -1033,6 +1029,5 @@ class NetSuiteConnector:
         Post vendor payments to NetSuite
         """
         vendor_payment_payload = self.__construct_vendor_payment(vendor_payment, vendor_payment_lineitems)
-        logger.error(vendor_payment_payload)
         created_vendor_payment = self.connection.vendor_payments.post(vendor_payment_payload)
         return created_vendor_payment
