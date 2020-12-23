@@ -528,8 +528,12 @@ def check_expenses_reimbursement_status(expenses):
     return all_expenses_paid
 
 
-def create_netsuite_payment_objects(netsuite_objects, object_type):
+def create_netsuite_payment_objects(netsuite_objects, object_type, workspace_id):
     netsuite_payment_objects = {}
+
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+
+    netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
 
     for netsuite_object in netsuite_objects:
         entity_id = netsuite_object.entity_id
@@ -537,9 +541,15 @@ def create_netsuite_payment_objects(netsuite_objects, object_type):
         expense_group_reimbursement_status = check_expenses_reimbursement_status(
             netsuite_object.expense_group.expenses.all())
 
-        if expense_group_reimbursement_status:
+        netsuite_object_task_log = TaskLog.objects.get(expense_group=netsuite_object.expense_group)
+
+        if object_type == 'BILL':
+            netsuite_entry = netsuite_connection.get_bill(netsuite_object_task_log.detail['internalId'])
+        else:
+            netsuite_entry = netsuite_connection.get_expense_report(netsuite_object_task_log.detail['internalId'])
+
+        if expense_group_reimbursement_status and netsuite_entry != 'Paid In Full':
             if entity_id not in netsuite_payment_objects:
-                netsuite_object_task_log = TaskLog.objects.get(expense_group=netsuite_object.expense_group)
                 netsuite_payment_objects[entity_id] = {
                     'subsidiary_id': netsuite_object.subsidiary_id,
                     'entity_id': entity_id,
@@ -556,9 +566,7 @@ def create_netsuite_payment_objects(netsuite_objects, object_type):
                         }
                     ]
                 }
-
             else:
-                netsuite_object_task_log = TaskLog.objects.get(expense_group=netsuite_object.expense_group)
                 netsuite_payment_objects[entity_id]['line'].append(
                     {
                         'internal_id': netsuite_object_task_log.detail['internalId'],
@@ -672,7 +680,7 @@ def create_vendor_payment(workspace_id):
         ).all()
 
         if bills:
-            bill_entity_map = create_netsuite_payment_objects(bills, 'BILL')
+            bill_entity_map = create_netsuite_payment_objects(bills, 'BILL', workspace_id)
 
             for entity_object_key in bill_entity_map:
                 entity_id = entity_object_key
@@ -681,7 +689,7 @@ def create_vendor_payment(workspace_id):
                 process_vendor_payment(entity_object, workspace_id, 'BILL')
 
         if expense_reports:
-            expense_report_entity_map = create_netsuite_payment_objects(expense_reports, 'EXPENSE REPORT')
+            expense_report_entity_map = create_netsuite_payment_objects(expense_reports, 'EXPENSE REPORT', workspace_id)
 
             for entity_object_key in expense_report_entity_map:
                 entity_id = entity_object_key
