@@ -584,38 +584,39 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
         }
     )
     try:
-        vendor_payment_object = VendorPayment.create_vendor_payment(
-            workspace_id, entity_object
-        )
+        with transaction.atomic():
 
-        vendor_payment_lineitems = VendorPaymentLineitem.create_vendor_payment_lineitems(
-            entity_object['line'], vendor_payment_object
-        )
+            vendor_payment_object = VendorPayment.create_vendor_payment(
+                workspace_id, entity_object
+            )
 
-        created_vendor_payment = netsuite_connection.post_vendor_payment(
-            vendor_payment_object, vendor_payment_lineitems
-        )
+            vendor_payment_lineitems = VendorPaymentLineitem.create_vendor_payment_lineitems(
+                entity_object['line'], vendor_payment_object
+            )
 
-        lines = entity_object['line']
-        expense_group_ids = [line['expense_group'].id for line in lines]
+            created_vendor_payment = netsuite_connection.post_vendor_payment(
+                vendor_payment_object, vendor_payment_lineitems
+            )
 
-        if object_type == 'BILL':
-            paid_objects = Bill.objects.filter(expense_group_id__in=expense_group_ids).all()
+            lines = entity_object['line']
+            expense_group_ids = [line['expense_group'].id for line in lines]
 
-        else:
-            paid_objects = ExpenseReport.objects.filter(expense_group_id__in=expense_group_ids).all()
+            if object_type == 'BILL':
+                paid_objects = Bill.objects.filter(expense_group_id__in=expense_group_ids).all()
 
-        for paid_object in paid_objects:
-            paid_object.payment_synced = True
-            paid_object.paid_on_netsuite = True
-            paid_object.save(update_fields=['payment_synced', 'paid_on_netsuite'])
+            else:
+                paid_objects = ExpenseReport.objects.filter(expense_group_id__in=expense_group_ids).all()
 
-        task_log.detail = created_vendor_payment
-        task_log.vendor_payment = vendor_payment_object
-        task_log.status = 'COMPLETE'
+            for paid_object in paid_objects:
+                paid_object.payment_synced = True
+                paid_object.paid_on_netsuite = True
+                paid_object.save(update_fields=['payment_synced', 'paid_on_netsuite'])
 
-        task_log.save(update_fields=['detail', 'vendor_payment', 'status'])
+            task_log.detail = created_vendor_payment
+            task_log.vendor_payment = vendor_payment_object
+            task_log.status = 'COMPLETE'
 
+            task_log.save(update_fields=['detail', 'vendor_payment', 'status'])
     except NetSuiteCredentials.DoesNotExist:
         logger.error(
             'NetSuite Credentials not found for workspace_id %s',
@@ -674,21 +675,19 @@ def create_vendor_payment(workspace_id):
             bill_entity_map = create_netsuite_payment_objects(bills, 'BILL')
 
             for entity_object_key in bill_entity_map:
-                with transaction.atomic():
-                    entity_id = entity_object_key
-                    entity_object = bill_entity_map[entity_id]
+                entity_id = entity_object_key
+                entity_object = bill_entity_map[entity_id]
 
-                    process_vendor_payment(entity_object, workspace_id, 'BILL')
+                process_vendor_payment(entity_object, workspace_id, 'BILL')
 
         if expense_reports:
             expense_report_entity_map = create_netsuite_payment_objects(expense_reports, 'EXPENSE REPORT')
 
             for entity_object_key in expense_report_entity_map:
-                with transaction.atomic():
-                    entity_id = entity_object_key
-                    entity_object = expense_report_entity_map[entity_id]
+                entity_id = entity_object_key
+                entity_object = expense_report_entity_map[entity_id]
 
-                    process_vendor_payment(entity_object, workspace_id, 'EXPENSE REPORT')
+                process_vendor_payment(entity_object, workspace_id, 'EXPENSE REPORT')
     except Exception:
         error = traceback.format_exc()
         logger.exception('Something unexpected happened workspace_id: %s %s', workspace_id, {'error': error})
