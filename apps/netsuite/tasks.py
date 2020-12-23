@@ -548,32 +548,37 @@ def create_netsuite_payment_objects(netsuite_objects, object_type, workspace_id)
         else:
             netsuite_entry = netsuite_connection.get_expense_report(netsuite_object_task_log.detail['internalId'])
 
-        if expense_group_reimbursement_status and netsuite_entry != 'Paid In Full':
-            if entity_id not in netsuite_payment_objects:
-                netsuite_payment_objects[entity_id] = {
-                    'subsidiary_id': netsuite_object.subsidiary_id,
-                    'entity_id': entity_id,
-                    'currency': netsuite_object.currency,
-                    'memo': 'Payment for {0} by {1}'.format(
-                        object_type.lower(), netsuite_object.expense_group.description['employee_email']
-                    ),
-                    'unique_id': '{0}-{1}'.format(netsuite_object.external_id, netsuite_object.id),
-                    'line': [
+        if netsuite_entry != 'Paid In Full':
+            if expense_group_reimbursement_status:
+                if entity_id not in netsuite_payment_objects:
+                    netsuite_payment_objects[entity_id] = {
+                        'subsidiary_id': netsuite_object.subsidiary_id,
+                        'entity_id': entity_id,
+                        'currency': netsuite_object.currency,
+                        'memo': 'Payment for {0} by {1}'.format(
+                            object_type.lower(), netsuite_object.expense_group.description['employee_email']
+                        ),
+                        'unique_id': '{0}-{1}'.format(netsuite_object.external_id, netsuite_object.id),
+                        'line': [
+                            {
+                                'internal_id': netsuite_object_task_log.detail['internalId'],
+                                'entity_id': entity_id,
+                                'expense_group': netsuite_object.expense_group,
+                            }
+                        ]
+                    }
+                else:
+                    netsuite_payment_objects[entity_id]['line'].append(
                         {
                             'internal_id': netsuite_object_task_log.detail['internalId'],
                             'entity_id': entity_id,
                             'expense_group': netsuite_object.expense_group,
                         }
-                    ]
-                }
+                    )
             else:
-                netsuite_payment_objects[entity_id]['line'].append(
-                    {
-                        'internal_id': netsuite_object_task_log.detail['internalId'],
-                        'entity_id': entity_id,
-                        'expense_group': netsuite_object.expense_group,
-                    }
-                )
+                netsuite_object.payment_synced = True
+                netsuite_object.paid_on_netsuite = True
+                netsuite_object.save(update_fields=['payment_synced', 'paid_on_netsuite'])
 
     return netsuite_payment_objects
 
