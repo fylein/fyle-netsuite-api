@@ -575,10 +575,10 @@ def create_netsuite_payment_objects(netsuite_objects, object_type, workspace_id)
                             'expense_group': netsuite_object.expense_group,
                         }
                     )
-            else:
-                netsuite_object.payment_synced = True
-                netsuite_object.paid_on_netsuite = True
-                netsuite_object.save(update_fields=['payment_synced', 'paid_on_netsuite'])
+        else:
+            netsuite_object.payment_synced = True
+            netsuite_object.paid_on_netsuite = True
+            netsuite_object.save(update_fields=['payment_synced', 'paid_on_netsuite'])
 
     return netsuite_payment_objects
 
