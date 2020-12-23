@@ -548,7 +548,7 @@ def create_netsuite_payment_objects(netsuite_objects, object_type, workspace_id)
         else:
             netsuite_entry = netsuite_connection.get_expense_report(netsuite_object_task_log.detail['internalId'])
 
-        if netsuite_entry != 'Paid In Full':
+        if netsuite_entry['status'] != 'Paid In Full':
             if expense_group_reimbursement_status:
                 if entity_id not in netsuite_payment_objects:
                     netsuite_payment_objects[entity_id] = {
