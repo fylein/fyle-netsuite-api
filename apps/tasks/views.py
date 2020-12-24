@@ -1,3 +1,5 @@
+from django.db.models import Q
+
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import status
@@ -23,8 +25,11 @@ class TasksView(generics.ListAPIView):
         if len(task_status) == 1 and task_status[0] == 'ALL':
             task_status = ['IN_PROGRESS', 'FAILED', 'COMPLETE']
 
-        task_logs = TaskLog.objects.filter(workspace_id=self.kwargs['workspace_id'],
-                                           status__in=task_status).order_by('-updated_at').all()
+        task_logs = TaskLog.objects.filter(
+            ~Q(type='CREATING_VENDOR_PAYMENT') & ~Q(type='FETCHING_EXPENSES'),
+            workspace_id=self.kwargs['workspace_id'],
+            status__in=task_status,
+        ).order_by('-updated_at').all()
         return task_logs
 
 
