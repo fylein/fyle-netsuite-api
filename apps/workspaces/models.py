@@ -68,6 +68,8 @@ class WorkspaceSchedule(models.Model):
     interval_hours = models.IntegerField(null=True)
     schedule = models.OneToOneField(Schedule, on_delete=models.PROTECT, null=True)
 
+    class Meta:
+        db_table = 'workspace_schedules'
 
 class WorkspaceGeneralSettings(models.Model):
     """
@@ -84,3 +86,6 @@ class WorkspaceGeneralSettings(models.Model):
                                                          help_text='Auto Sync Payments from NetSuite to Fyle')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
+
+    class Meta:
+        db_table = 'workspace_general_settings'
