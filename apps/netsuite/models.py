@@ -109,6 +109,7 @@ def get_location_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
             location_id = mapping.destination.destination_id
     return location_id
 
+
 def get_custom_segments(expense_group: ExpenseGroup, lineitem: Expense):
     mapping_settings = MappingSetting.objects.filter(workspace_id=expense_group.workspace_id).all()
 
@@ -118,7 +119,7 @@ def get_custom_segments(expense_group: ExpenseGroup, lineitem: Expense):
 
     for setting in mapping_settings:
         if setting.source_field not in default_expense_attributes and \
-            setting.destination_field not in default_destination_attributes:
+                setting.destination_field not in default_destination_attributes:
             if setting.source_field == 'PROJECT':
                 source_value = lineitem.project
             elif setting.source_field == 'COST_CENTER':
@@ -149,6 +150,7 @@ def get_custom_segments(expense_group: ExpenseGroup, lineitem: Expense):
                 })
 
     return custom_segments
+
 
 def get_transaction_date(expense_group: ExpenseGroup) -> str:
     if 'spent_at' in expense_group.description and expense_group.description['spent_at']:
@@ -192,13 +194,15 @@ class Bill(models.Model):
     id = models.AutoField(primary_key=True)
     expense_group = models.OneToOneField(ExpenseGroup, on_delete=models.PROTECT, help_text='Expense group reference')
     accounts_payable_id = models.CharField(max_length=255, help_text='NetSuite Accounts Payable Account id')
-    vendor_id = models.CharField(max_length=255, help_text='NetSuite vendor id')
+    entity_id = models.CharField(max_length=255, help_text='NetSuite vendor id')
     subsidiary_id = models.CharField(max_length=255, help_text='NetSuite subsidiary id')
     location_id = models.CharField(max_length=255, help_text='NetSuite Location id', null=True)
     currency = models.CharField(max_length=255, help_text='Bill Currency')
     memo = models.TextField(help_text='Bill Description')
     external_id = models.CharField(max_length=255, unique=True, help_text='Fyle reimbursement id')
     transaction_date = models.DateTimeField(help_text='Bill transaction date')
+    payment_synced = models.BooleanField(help_text='Payment synced status', default=False)
+    paid_on_netsuite = models.BooleanField(help_text='Payment Status in NetSuite', default=False)
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
@@ -238,7 +242,7 @@ class Bill(models.Model):
             defaults={
                 'subsidiary_id': subsidiary_mappings.internal_id,
                 'accounts_payable_id': general_mappings.accounts_payable_id,
-                'vendor_id': vendor_id,
+                'entity_id': vendor_id,
                 'location_id': general_mappings.location_id,
                 'memo': 'Reimbursable expenses by {0}'.format(description.get('employee_email')) if
                 expense_group.fund_source == 'PERSONAL' else
@@ -263,7 +267,7 @@ class BillLineitem(models.Model):
     department_id = models.CharField(max_length=255, help_text='NetSuite department id', null=True)
     class_id = models.CharField(max_length=255, help_text='NetSuite Class id', null=True)
     amount = models.FloatField(help_text='Bill amount')
-    memo = models.CharField(max_length=255, help_text='NetSuite bill lineitem memo', null=True)
+    memo = models.TextField(help_text='NetSuite bill lineitem memo', null=True)
     netsuite_custom_segments = JSONField(null=True, help_text='NetSuite Custom Segments')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
@@ -348,9 +352,11 @@ class ExpenseReport(models.Model):
     class_id = models.CharField(max_length=255, help_text='NetSuite Class id', null=True)
     location_id = models.CharField(max_length=255, help_text='NetSuite Location id', null=True)
     subsidiary_id = models.CharField(max_length=255, help_text='NetSuite subsidiary id')
-    memo = models.CharField(max_length=255, help_text='Expense Report Description')
+    memo = models.TextField(help_text='Expense Report Description')
     external_id = models.CharField(max_length=255, unique=True, help_text='Fyle reimbursement id')
     transaction_date = models.DateTimeField(help_text='Expense Report transaction date')
+    payment_synced = models.BooleanField(help_text='Payment synced status', default=False)
+    paid_on_netsuite = models.BooleanField(help_text='Payment Status in NetSuite', default=False)
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
@@ -380,6 +386,10 @@ class ExpenseReport(models.Model):
             workspace_id=expense_group.workspace_id
         )
 
+        currency = DestinationAttribute.objects.filter(value=expense.currency,
+                                                       workspace_id=expense_group.workspace_id,
+                                                       attribute_type='CURRENCY').first()
+
         if expense_group.fund_source == 'PERSONAL':
             debit_account_id = GeneralMapping.objects.get(
                 workspace_id=expense_group.workspace_id).reimbursable_account_id
@@ -396,7 +406,7 @@ class ExpenseReport(models.Model):
             defaults={
                 'account_id': debit_account_id,
                 'entity_id': entity.destination.destination_id,
-                'currency': expense.currency,
+                'currency': currency.destination_id if currency else '1',
                 'department_id': None,
                 'class_id': None,
                 'location_id': general_mappings.location_id,
@@ -425,7 +435,7 @@ class ExpenseReportLineItem(models.Model):
     location_id = models.CharField(max_length=255, help_text='NetSuite location id', null=True)
     department_id = models.CharField(max_length=255, help_text='NetSuite department id', null=True)
     currency = models.CharField(max_length=255, help_text='NetSuite Currency id')
-    memo = models.CharField(max_length=255, help_text='NetSuite bill lineitem memo', null=True)
+    memo = models.TextField(help_text='NetSuite ExpenseReport lineitem memo', null=True)
     netsuite_custom_segments = JSONField(null=True, help_text='NetSuite Custom Segments')
     transaction_date = models.DateTimeField(help_text='Expense Report transaction date')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
@@ -511,11 +521,15 @@ class JournalEntry(models.Model):
     """
     id = models.AutoField(primary_key=True)
     expense_group = models.OneToOneField(ExpenseGroup, on_delete=models.PROTECT, help_text='Expense group reference')
+    entity_id = models.CharField(max_length=255, help_text='NetSuite Entity id (Employee / Vendor)')
     currency = models.CharField(max_length=255, help_text='Journal Entry Currency')
+    location_id = models.CharField(max_length=255, help_text='NetSuite Location id', null=True)
     subsidiary_id = models.CharField(max_length=255, help_text='NetSuite Subsidiary ID')
     memo = models.CharField(max_length=255, help_text='Journal Entry Memo')
-    external_id = models.CharField(max_length=255, help_text='Journal Entry External ID')
+    external_id = models.CharField(max_length=255, unique=True, help_text='Journal Entry External ID')
     transaction_date = models.DateTimeField(help_text='Journal Entry transaction date')
+    payment_synced = models.BooleanField(help_text='Payment synced status', default=False)
+    paid_on_netsuite = models.BooleanField(help_text='Payment Status in NetSuite', default=False)
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
@@ -533,16 +547,27 @@ class JournalEntry(models.Model):
 
         description = expense_group.description
 
+        entity = Mapping.objects.get(
+            Q(destination_type='EMPLOYEE') | Q(destination_type='VENDOR'),
+            source_type='EMPLOYEE',
+            source__value=description.get('employee_email'),
+            workspace_id=expense_group.workspace_id
+        )
+
         currency = DestinationAttribute.objects.filter(value=expense.currency,
                                                        workspace_id=expense_group.workspace_id,
                                                        attribute_type='CURRENCY').first()
 
         subsidiary_mappings = SubsidiaryMapping.objects.get(workspace_id=expense_group.workspace_id)
 
+        general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
+
         journal_entry_object, _ = JournalEntry.objects.update_or_create(
             expense_group=expense_group,
             defaults={
+                'entity_id': entity.destination.destination_id,
                 'currency': currency.destination_id if currency else '1',
+                'location_id': general_mappings.location_id,
                 'subsidiary_id': subsidiary_mappings.internal_id,
                 'memo': "Reimbursable expenses by {0}".format(description.get('employee_email')) if
                 expense_group.fund_source == 'PERSONAL' else
@@ -568,7 +593,7 @@ class JournalEntryLineItem(models.Model):
     class_id = models.CharField(max_length=255, help_text='NetSuite class id', null=True)
     entity_id = models.CharField(max_length=255, help_text='NetSuite entity id')
     amount = models.FloatField(help_text='JournalEntry amount')
-    memo = models.CharField(max_length=255, help_text='NetSuite JournalEntry lineitem description', null=True)
+    memo = models.TextField(help_text='NetSuite JournalEntry lineitem description', null=True)
     netsuite_custom_segments = JSONField(null=True, help_text='NetSuite Custom Segments')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
@@ -645,7 +670,6 @@ class JournalEntryLineItem(models.Model):
                 if general_mappings.location_id:
                     location_id = general_mappings.location_id
 
-
             custom_segments = get_custom_segments(expense_group, lineitem)
 
             journal_entry_lineitem_object, _ = JournalEntryLineItem.objects.update_or_create(
@@ -667,3 +691,78 @@ class JournalEntryLineItem(models.Model):
             journal_entry_lineitem_objects.append(journal_entry_lineitem_object)
 
         return journal_entry_lineitem_objects
+
+
+class VendorPayment(models.Model):
+    """
+    NetSuite Vendor Payment
+    """
+    id = models.AutoField(primary_key=True)
+    accounts_payable_id = models.CharField(max_length=255, help_text='NetSuite Accounts Payable Account id', null=True)
+    account_id = models.CharField(max_length=255, help_text='NetSuite Account id', null=True)
+    entity_id = models.CharField(max_length=255, help_text='NetSuite entity id ( Vendor / Employee )')
+    currency = models.CharField(max_length=255, help_text='Vendor Payment Currency')
+    department_id = models.CharField(max_length=255, help_text='NetSuite Department id', null=True)
+    location_id = models.CharField(max_length=255, help_text='NetSuite Location id', null=True)
+    class_id = models.CharField(max_length=255, help_text='NetSuite Class id', null=True)
+    subsidiary_id = models.CharField(max_length=255, help_text='NetSuite subsidiary id')
+    external_id = models.CharField(max_length=255, unique=True, help_text='Fyle settlement id')
+    memo = models.TextField(help_text='Vendor Payment Description', null=True)
+    created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
+    updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
+
+    class Meta:
+        db_table = 'vendor_payments'
+
+    @staticmethod
+    def create_vendor_payment(workspace_id, netsuite_object):
+        """
+        Create Vendor payment
+        :return: vendor payment object
+        """
+        general_mappings = GeneralMapping.objects.get(workspace_id=workspace_id)
+
+        vendor_payment_object = VendorPayment.objects.create(
+            subsidiary_id=netsuite_object['subsidiary_id'],
+            account_id=general_mappings.vendor_payment_account_id,
+            entity_id=netsuite_object['entity_id'],
+            currency=netsuite_object['currency'],
+            memo=netsuite_object['memo'],
+            external_id=netsuite_object['unique_id']
+        )
+
+        return vendor_payment_object
+
+
+class VendorPaymentLineitem(models.Model):
+    """
+    NetSuite VendorPayment Lineitem
+    """
+    id = models.AutoField(primary_key=True)
+    vendor_payment = models.ForeignKey(VendorPayment, on_delete=models.PROTECT, help_text='Reference to Vendor Payment')
+    expense_group = models.OneToOneField(ExpenseGroup, on_delete=models.PROTECT, help_text='Reference to Expense Group')
+    doc_id = models.CharField(max_length=255, help_text='NetSuite object internalId')
+    created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
+    updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
+
+    class Meta:
+        db_table = 'vendor_payment_lineitems'
+
+    @staticmethod
+    def create_vendor_payment_lineitems(lines_payload, vendor_payment_object):
+        """
+        Create vendor payment lineitems
+        :return: lineitems objects
+        """
+        vendor_payment_lineitem_objects = []
+
+        for line in lines_payload:
+            vendor_payment_lineitem_object = VendorPaymentLineitem.objects.create(
+                vendor_payment=vendor_payment_object,
+                expense_group=line['expense_group'],
+                doc_id=line['internal_id']
+            )
+
+            vendor_payment_lineitem_objects.append(vendor_payment_lineitem_object)
+
+        return vendor_payment_lineitem_objects

@@ -20,7 +20,8 @@ from apps.workspaces.models import NetSuiteCredentials
 from .serializers import BillSerializer, ExpenseReportSerializer, JournalEntrySerializer, NetSuiteFieldSerializer, \
     CustomSegmentSerializer
 from .tasks import schedule_bills_creation, create_bill, schedule_expense_reports_creation, create_expense_report, \
-    create_journal_entry, schedule_journal_entry_creation
+    create_journal_entry, schedule_journal_entry_creation, create_vendor_payment, check_netsuite_object_status, \
+    process_reimbursements
 from .models import Bill, ExpenseReport, JournalEntry, CustomSegment
 from .utils import NetSuiteConnector
 
@@ -61,7 +62,7 @@ class DepartmentView(generics.ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         except NetSuiteRequestError as exception:
-            logger.exception(exception)
+            logger.exception({'error': exception})
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
 
@@ -107,7 +108,7 @@ class VendorView(generics.ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         except NetSuiteRequestError as exception:
-            logger.exception(exception)
+            logger.exception({'error': exception})
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
 
@@ -153,7 +154,7 @@ class AccountView(generics.ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         except NetSuiteRequestError as exception:
-            logger.exception(exception)
+            logger.exception({'error': exception})
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
 
@@ -165,7 +166,7 @@ class AccountView(generics.ListCreateAPIView):
             )
 
 
-class AccountsPayableView(generics.ListCreateAPIView):
+class AccountsPayableView(generics.ListAPIView):
     """
     AccountsPayable view
     """
@@ -176,16 +177,8 @@ class AccountsPayableView(generics.ListCreateAPIView):
         return DestinationAttribute.objects.filter(
             attribute_type='ACCOUNTS_PAYABLE', workspace_id=self.kwargs['workspace_id']).order_by('value')
 
-    def post(self, request, *args, **kwargs):
-        return Response(
-            data={
-                'message': 'Method Not Allowed'
-            },
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
-        )
 
-
-class CreditCardAccountView(generics.ListCreateAPIView):
+class CreditCardAccountView(generics.ListAPIView):
     """
     CreditCardAccount view
     """
@@ -196,16 +189,8 @@ class CreditCardAccountView(generics.ListCreateAPIView):
         return DestinationAttribute.objects.filter(
             attribute_type='CREDIT_CARD_ACCOUNT', workspace_id=self.kwargs['workspace_id']).order_by('value')
 
-    def post(self, request, *args, **kwargs):
-        return Response(
-            data={
-                'message': 'Method Not Allowed'
-            },
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
-        )
 
-
-class BankAccountView(generics.ListCreateAPIView):
+class BankAccountView(generics.ListAPIView):
     """
     BankAccount view
     """
@@ -216,13 +201,17 @@ class BankAccountView(generics.ListCreateAPIView):
         return DestinationAttribute.objects.filter(
             attribute_type='BANK_ACCOUNT', workspace_id=self.kwargs['workspace_id']).order_by('value')
 
-    def post(self, request, *args, **kwargs):
-        return Response(
-            data={
-                'message': 'Method Not Allowed'
-            },
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
-        )
+
+class VendorPaymentAccountView(generics.ListAPIView):
+    """
+    VendorPaymentAccount view
+    """
+    serializer_class = DestinationAttributeSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return DestinationAttribute.objects.filter(
+            attribute_type='VENDOR_PAYMENT_ACCOUNT', workspace_id=self.kwargs['workspace_id']).order_by('value')
 
 
 class EmployeeView(generics.ListCreateAPIView):
@@ -259,7 +248,7 @@ class EmployeeView(generics.ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         except NetSuiteRequestError as exception:
-            logger.exception(exception)
+            logger.exception({'error': exception})
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
 
@@ -305,7 +294,7 @@ class LocationView(generics.ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         except NetSuiteRequestError as exception:
-            logger.exception(exception)
+            logger.exception({'error': exception})
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
 
@@ -351,7 +340,7 @@ class ExpenseCategoryView(generics.ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         except NetSuiteRequestError as exception:
-            logger.exception(exception)
+            logger.exception({'error': exception})
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
 
@@ -397,7 +386,7 @@ class CurrencyView(generics.ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         except NetSuiteRequestError as exception:
-            logger.exception(exception)
+            logger.exception({'error': exception})
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
 
@@ -443,7 +432,7 @@ class ClassificationView(generics.ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         except NetSuiteRequestError as exception:
-            logger.exception(exception)
+            logger.exception({'error': exception})
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
 
@@ -489,7 +478,7 @@ class SubsidiaryView(generics.ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         except NetSuiteRequestError as exception:
-            logger.exception(exception)
+            logger.exception({'error': exception})
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
 
@@ -697,7 +686,7 @@ class SyncCustomFieldsView(generics.ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         except NetSuiteRequestError as exception:
-            logger.exception(exception)
+            logger.exception({'error': exception})
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
 
@@ -771,7 +760,7 @@ class CustomSegmentView(generics.ListCreateAPIView):
             )
 
         except NetSuiteRequestError as exception:
-            logger.exception(exception)
+            logger.exception({'error': exception})
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
 
@@ -793,3 +782,36 @@ class CustomSegmentView(generics.ListCreateAPIView):
                 },
                 status=status.HTTP_401_UNAUTHORIZED
             )
+
+
+class VendorPaymentView(generics.CreateAPIView):
+    """
+    Create Vendor Payment View
+    """
+    def post(self, request, *args, **kwargs):
+        """
+        Create vendor payment
+        """
+        create_vendor_payment(workspace_id=self.kwargs['workspace_id'])
+
+        return Response(
+            data={},
+            status=status.HTTP_200_OK
+        )
+
+
+class ReimburseNetSuitePaymentsView(generics.CreateAPIView):
+    """
+    Reimburse NetSuite Payments View
+    """
+    def post(self, request, *args, **kwargs):
+        """
+        Process Reimbursements in Fyle
+        """
+        check_netsuite_object_status(workspace_id=self.kwargs['workspace_id'])
+        process_reimbursements(workspace_id=self.kwargs['workspace_id'])
+
+        return Response(
+            data={},
+            status=status.HTTP_200_OK
+        )

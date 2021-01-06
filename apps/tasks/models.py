@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.postgres.fields import JSONField
 
-from apps.netsuite.models import Bill, ExpenseReport, JournalEntry
+from apps.netsuite.models import Bill, ExpenseReport, JournalEntry, VendorPayment
 from apps.workspaces.models import Workspace
 from apps.fyle.models import ExpenseGroup
 
@@ -27,10 +27,12 @@ class TaskLog(models.Model):
                                        null=True)
     journal_entry = models.ForeignKey(JournalEntry, on_delete=models.PROTECT,
                                       help_text='Reference to journal_entry', null=True)
+    vendor_payment = models.ForeignKey(VendorPayment, on_delete=models.PROTECT, help_text='Reference to VendorPayment',
+                                       null=True)
     status = models.CharField(max_length=255, help_text='Task Status')
     detail = JSONField(help_text='Task response', null=True, default=get_default)
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime')
 
     class Meta:
-        db_table = 'task_log'
+        db_table = 'task_logs'

@@ -4,5 +4,5 @@ from .views import GeneralMappingView, SubsidiaryMappingView
 
 urlpatterns = [
     path('subsidiaries/', SubsidiaryMappingView.as_view()),
-    path('general/', GeneralMappingView.as_view()),
+    path('general/', GeneralMappingView.as_view())
 ]

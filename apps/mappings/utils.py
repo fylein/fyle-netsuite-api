@@ -3,6 +3,7 @@ from typing import Dict
 from django.db.models import Q
 from fyle_accounting_mappings.models import MappingSetting
 
+from apps.netsuite.tasks import schedule_vendor_payment_creation
 from apps.workspaces.models import WorkspaceGeneralSettings
 from fyle_netsuite_api.utils import assert_valid
 
@@ -105,9 +106,25 @@ class MappingUtils:
             params['default_ccc_vendor_name'] = general_mapping.get('default_ccc_vendor_name')
             params['default_ccc_vendor_id'] = general_mapping.get('default_ccc_vendor_id')
 
+        if general_settings.sync_fyle_to_netsuite_payments:
+            assert_valid(
+                'vendor_payment_account_name' in general_mapping and general_mapping['vendor_payment_account_name'],
+                'vendor payment account name field is blank')
+            assert_valid(
+                'vendor_payment_account_id' in general_mapping and general_mapping['vendor_payment_account_id'],
+                'vendor payment account id field is blank')
+
+            params['vendor_payment_account_name'] = general_mapping.get('vendor_payment_account_name')
+            params['vendor_payment_account_id'] = general_mapping.get('vendor_payment_account_id')
+
         general_mapping_object, _ = GeneralMapping.objects.update_or_create(
             workspace_id=self.__workspace_id,
             defaults=params
+        )
+
+        schedule_vendor_payment_creation(
+            sync_fyle_to_netsuite_payments=general_settings.sync_fyle_to_netsuite_payments,
+            workspace_id=self.__workspace_id
         )
 
         return general_mapping_object

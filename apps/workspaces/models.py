@@ -68,6 +68,8 @@ class WorkspaceSchedule(models.Model):
     interval_hours = models.IntegerField(null=True)
     schedule = models.OneToOneField(Schedule, on_delete=models.PROTECT, null=True)
 
+    class Meta:
+        db_table = 'workspace_schedules'
 
 class WorkspaceGeneralSettings(models.Model):
     """
@@ -79,5 +81,12 @@ class WorkspaceGeneralSettings(models.Model):
     corporate_credit_card_expenses_object = models.CharField(max_length=50,
                                                              help_text='Non Reimbursable Expenses type', null=True)
     import_projects = models.BooleanField(default=False, help_text='Auto import projects to Fyle')
+    sync_fyle_to_netsuite_payments = models.BooleanField(default=False,
+                                                         help_text='Auto Sync Payments from Fyle to Netsuite')
+    sync_netsuite_to_fyle_payments = models.BooleanField(default=False,
+                                                         help_text='Auto Sync Payments from NetSuite to Fyle')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
+
+    class Meta:
+        db_table = 'workspace_general_settings'

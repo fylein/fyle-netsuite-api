@@ -14,5 +14,5 @@ urlpatterns = [
     path('projects/', ProjectView.as_view()),
     path('expense_custom_fields/', ExpenseCustomFieldsView.as_view()),
     path('expense_fields/', ExpenseFieldsView.as_view()),
-    path('expense_group_settings/', ExpenseGroupSettingsView.as_view()),
+    path('expense_group_settings/', ExpenseGroupSettingsView.as_view())
 ]

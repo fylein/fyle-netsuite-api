@@ -66,6 +66,9 @@ class User(AbstractBaseUser):
 
     objects = UserManager()
 
+    class Meta:
+        db_table = 'users'
+
     def has_module_perms(self, app_label):
         return True
 
