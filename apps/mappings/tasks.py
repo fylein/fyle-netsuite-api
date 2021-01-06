@@ -6,11 +6,12 @@ from typing import List, Dict
 
 from django_q.models import Schedule
 
+from fylesdk import WrongParamsError
+from fyle_accounting_mappings.models import MappingSetting, Mapping, ExpenseAttribute
+
 from apps.fyle.utils import FyleConnector
 from apps.netsuite.utils import NetSuiteConnector
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential
-from fyle_accounting_mappings.models import MappingSetting, Mapping, ExpenseAttribute, DestinationAttribute
-from fylesdk import WrongParamsError
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +59,7 @@ def upload_projects_to_fyle(workspace_id):
     Upload projects to Fyle
     """
     fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
-    ns_credentials: NSCredential = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+    ns_credentials: NetSuiteCredentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
 
     fyle_connection = FyleConnector(
         refresh_token=fyle_credentials.refresh_token,
