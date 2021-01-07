@@ -193,7 +193,7 @@ class NetSuiteConnector:
         location_attributes = []
 
         for location in locations:
-            if 'subsidiaryList' in location:
+            if 'subsidiaryList' in location and location['subsidiaryList']:
                 subsidiaries = location['subsidiaryList']['recordRef']
                 counter = 0
                 if subsidiaries[counter]['internalId'] == subsidiary_mapping.internal_id:
@@ -267,7 +267,7 @@ class NetSuiteConnector:
         vendor_attributes = []
 
         for vendor in vendors:
-            if 'subsidiary' in vendor:
+            if 'subsidiary' in vendor and vendor['subsidiary']:
                 if vendor['subsidiary']['internalId'] == subsidiary_mapping.internal_id:
                     vendor_attributes.append({
                         'attribute_type': 'VENDOR',
@@ -298,7 +298,7 @@ class NetSuiteConnector:
         employee_attributes = []
 
         for employee in employees:
-            if 'subsidiary' in employee:
+            if 'subsidiary' in employee and employee['subsidiary']:
                 if employee['subsidiary']['internalId'] == subsidiary_mapping.internal_id:
                     employee_attributes.append({
                         'attribute_type': 'EMPLOYEE',
