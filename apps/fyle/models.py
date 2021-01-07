@@ -52,6 +52,7 @@ class Expense(models.Model):
     foreign_currency = models.CharField(null=True, max_length=5, help_text='Foreign Currency')
     settlement_id = models.CharField(max_length=255, help_text='Settlement ID', null=True)
     reimbursable = models.BooleanField(default=False, help_text='Expense reimbursable or not')
+    billable = models.BooleanField(null=True, help_text='Expense Billable or not')
     exported = models.BooleanField(default=False, help_text='Expense exported or not')
     state = models.CharField(max_length=255, help_text='Expense state')
     vendor = models.CharField(max_length=255, null=True, blank=True, help_text='Vendor')
@@ -105,6 +106,7 @@ class Expense(models.Model):
                     'foreign_currency': expense['foreign_currency'],
                     'settlement_id': expense['settlement_id'],
                     'reimbursable': expense['reimbursable'],
+                    'billable': expense['billable'] if expense['billable'] else None,
                     'exported': expense['exported'],
                     'state': expense['state'],
                     'vendor': expense['vendor'],

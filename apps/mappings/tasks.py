@@ -7,7 +7,7 @@ from typing import List, Dict
 from django_q.models import Schedule
 
 from fylesdk import WrongParamsError
-from fyle_accounting_mappings.models import MappingSetting, Mapping, ExpenseAttribute
+from fyle_accounting_mappings.models import MappingSetting, Mapping, ExpenseAttribute, DestinationAttribute
 
 from apps.fyle.utils import FyleConnector
 from apps.netsuite.utils import NetSuiteConnector
@@ -16,7 +16,7 @@ from apps.workspaces.models import NetSuiteCredentials, FyleCredential
 logger = logging.getLogger(__name__)
 
 
-def create_fyle_projects_payload(projects: List[dict], workspace_id: int):
+def create_fyle_projects_payload(projects: List[DestinationAttribute], workspace_id: int):
     """
     Create Fyle Projects Payload from NetSuite Projects
     :param projects: NetSuite Projects
@@ -28,28 +28,16 @@ def create_fyle_projects_payload(projects: List[dict], workspace_id: int):
         attribute_type='PROJECT', workspace_id=workspace_id).values_list('value', flat=True)
 
     for project in projects:
-        if project['value'] not in existing_project_names and project['parent_name'] not in existing_project_names:
-            if project['parent_name']:
-                payload.append({
-                    'name': project['parent_name'],
-                    'code': project['destination_id'],
-                    'description': 'NetSuite Project - {0}, Id - {1}'.format(
-                        project['value'],
-                        project['destination_id']
-                    ),
-                    'sub_project': project['value'],
-                    'active': project['active']
-                })
-            else:
-                payload.append({
-                    'name': project['value'],
-                    'code': project['destination_id'],
-                    'description': 'NetSuite Project - {0}, Id - {1}'.format(
-                        project['value'],
-                        project['destination_id']
-                    ),
-                    'active': project['active']
-                })
+        if project.value not in existing_project_names:
+            payload.append({
+                'name': project.value,
+                'code': project.destination_id,
+                'description': 'NetSuite Project - {0}, Id - {1}'.format(
+                    project.value,
+                    project.destination_id
+                ),
+                'active': True if project.active is None else project.active
+            })
 
     return payload
 
@@ -73,14 +61,14 @@ def upload_projects_to_fyle(workspace_id):
 
     fyle_connection.sync_projects(False)
 
-    ns_attributes = ns_connection.sync_projects()
+    ns_attributes: List[DestinationAttribute] = ns_connection.sync_projects()
 
     fyle_payload: List[Dict] = create_fyle_projects_payload(ns_attributes, workspace_id)
     if fyle_payload:
         fyle_connection.connection.Projects.post(fyle_payload)
         fyle_connection.sync_projects(False)
 
-    return fyle_payload
+    return ns_attributes
 
 
 def auto_create_project_mappings(workspace_id):
@@ -93,17 +81,17 @@ def auto_create_project_mappings(workspace_id):
         'destination_field': 'PROJECT'
     }], workspace_id=workspace_id)
 
-    fyle_projects = upload_projects_to_fyle(workspace_id=workspace_id)
+    ns_attributes = upload_projects_to_fyle(workspace_id=workspace_id)
 
     project_mappings = []
 
     try:
-        for project in fyle_projects:
+        for project in ns_attributes:
             mapping = Mapping.create_or_update_mapping(
                 source_type='PROJECT',
                 destination_type='PROJECT',
-                source_value=project['name'],
-                destination_value=project['name'],
+                source_value=project.value,
+                destination_value=project.value,
                 workspace_id=workspace_id
             )
             project_mappings.append(mapping)

@@ -322,26 +322,19 @@ class NetSuiteConnector:
         projects = self.connection.projects.get_all()
 
         project_attributes = []
-        project_mappings_attributes = []
 
         for project in projects:
             if project['subsidiary']['internalId'] == subsidiary_mapping.internal_id:
                 project_attributes.append({
-                    'value': project['entityId'],
-                    'destination_id': project['internalId'],
-                    'active': not project['isInactive'],
-                    'parent_name': project['parent']['name'] if project['parent'] else None
-                })
-                project_mappings_attributes.append({
                     'attribute_type': 'PROJECT',
                     'display_name': 'Project',
-                    'value': project['parent']['name'] if project['parent'] else project['entityId'],
+                    'value': project['entityId'],
                     'destination_id': project['internalId'],
                     'active': not project['isInactive']
                 })
 
-        DestinationAttribute.bulk_upsert_destination_attributes(
-            project_mappings_attributes, self.workspace_id)
+        project_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
+            project_attributes, self.workspace_id)
         return project_attributes
 
     @staticmethod
@@ -413,10 +406,14 @@ class NetSuiteConnector:
                     'externalId': None,
                     'type': 'location'
                 },
-
-                'customer': None,
+                'customer': {
+                    'name': None,
+                    'internalId': line.customer_id,
+                    'externalId': None,
+                    'type': 'customer'
+                },
                 'customFieldList': netsuite_custom_segments,
-                'isBillable': None,
+                'isBillable': line.billable,
                 'projectTask': None,
                 'taxCode': None,
                 'taxRate1': None,
@@ -616,7 +613,7 @@ class NetSuiteConnector:
                 'expMediaItem': None,
                 'foreignAmount': None,
                 'grossAmt': None,
-                'isBillable': None,
+                'isBillable': line.billable,
                 'isNonReimbursable': None,
                 'line': None,
                 'memo': line.memo,
