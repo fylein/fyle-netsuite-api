@@ -193,10 +193,18 @@ class NetSuiteConnector:
         location_attributes = []
 
         for location in locations:
-            subsidiaries = location['subsidiaryList']['recordRef']
-            counter = 0
-            if subsidiaries[counter]['internalId'] == subsidiary_mapping.internal_id:
-                counter += 1
+            if 'subsidiaryList' in location:
+                subsidiaries = location['subsidiaryList']['recordRef']
+                counter = 0
+                if subsidiaries[counter]['internalId'] == subsidiary_mapping.internal_id:
+                    counter += 1
+                    location_attributes.append({
+                        'attribute_type': 'LOCATION',
+                        'display_name': 'Location',
+                        'value': location['name'],
+                        'destination_id': location['internalId']
+                    })
+            else:
                 location_attributes.append({
                     'attribute_type': 'LOCATION',
                     'display_name': 'Location',
@@ -259,7 +267,15 @@ class NetSuiteConnector:
         vendor_attributes = []
 
         for vendor in vendors:
-            if vendor['subsidiary']['internalId'] == subsidiary_mapping.internal_id:
+            if 'subsidiary' in vendor:
+                if vendor['subsidiary']['internalId'] == subsidiary_mapping.internal_id:
+                    vendor_attributes.append({
+                        'attribute_type': 'VENDOR',
+                        'display_name': 'Vendor',
+                        'value': vendor['entityId'],
+                        'destination_id': vendor['internalId']
+                    })
+            else:
                 vendor_attributes.append({
                     'attribute_type': 'VENDOR',
                     'display_name': 'Vendor',
@@ -282,7 +298,15 @@ class NetSuiteConnector:
         employee_attributes = []
 
         for employee in employees:
-            if employee['subsidiary']['internalId'] == subsidiary_mapping.internal_id:
+            if 'subsidiary' in employee:
+                if employee['subsidiary']['internalId'] == subsidiary_mapping.internal_id:
+                    employee_attributes.append({
+                        'attribute_type': 'EMPLOYEE',
+                        'display_name': 'Employee',
+                        'value': employee['entityId'],
+                        'destination_id': employee['internalId']
+                    })
+            else:
                 employee_attributes.append({
                     'attribute_type': 'EMPLOYEE',
                     'display_name': 'Employee',
