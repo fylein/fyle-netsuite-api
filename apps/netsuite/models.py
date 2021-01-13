@@ -316,7 +316,6 @@ class BillLineitem(models.Model):
             location_id = get_location_id_or_none(expense_group, lineitem)
 
             if not location_id:
-                general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
                 if general_mappings.location_id:
                     location_id = general_mappings.location_id
 
