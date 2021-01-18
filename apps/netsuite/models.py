@@ -266,7 +266,8 @@ class Bill(models.Model):
                 'subsidiary_id': subsidiary_mappings.internal_id,
                 'accounts_payable_id': general_mappings.accounts_payable_id,
                 'entity_id': vendor_id,
-                'location_id': general_mappings.location_id,
+                'location_id': general_mappings.location_id if general_mappings.location_level in [
+                    'TRANSACTION_BODY', 'ALL'] else None,
                 'memo': 'Reimbursable expenses by {0}'.format(description.get('employee_email')) if
                 expense_group.fund_source == 'PERSONAL' else
                 'Credit card expenses by {0}'.format(description.get('employee_email')),
@@ -311,6 +312,7 @@ class BillLineitem(models.Model):
         bill = Bill.objects.get(expense_group=expense_group)
         general_settings: WorkspaceGeneralSettings = WorkspaceGeneralSettings.objects.get(
             workspace_id=expense_group.workspace_id)
+        general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
         bill_lineitem_objects = []
 
@@ -341,7 +343,6 @@ class BillLineitem(models.Model):
             location_id = get_location_id_or_none(expense_group, lineitem)
 
             if not location_id:
-                general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
                 if general_mappings.location_id:
                     location_id = general_mappings.location_id
 
@@ -356,7 +357,8 @@ class BillLineitem(models.Model):
                 expense_id=lineitem.id,
                 defaults={
                     'account_id': account.destination.destination_id if account else None,
-                    'location_id': location_id,
+                    'location_id': location_id if general_mappings.location_level in [
+                        'TRANSACTION_LINE', 'ALL'] else None,
                     'class_id': class_id,
                     'department_id': department_id,
                     'customer_id': customer_id,
