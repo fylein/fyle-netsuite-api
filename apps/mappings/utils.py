@@ -55,7 +55,7 @@ class MappingUtils:
         params = {
             'location_name': general_mapping['location_name'],
             'location_id': general_mapping['location_id'],
-            'location_level': general_mapping['location_level'],
+            # 'location_level': general_mapping['location_level'],
             'accounts_payable_name': None,
             'accounts_payable_id': None,
             'reimbursable_account_name': None,
