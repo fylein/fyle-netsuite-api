@@ -412,23 +412,6 @@ def __validate_expense_group(expense_group: ExpenseGroup):
                 'message': error_message
             })
 
-        if lineitem.billable and general_settings.import_projects:
-            project = Mapping.objects.filter(
-                source_type='PROJECT',
-                source__value=lineitem.project,
-                destination_type='PROJECT',
-                workspace_id=expense_group.workspace_id
-            ).first()
-
-            if not project:
-                bulk_errors.append({
-                    'row': row,
-                    'expense_group_id': expense_group.id,
-                    'value': lineitem.project,
-                    'type': 'Project Mapping',
-                    'message': 'Project mapping not found'
-                })
-
         row = row + 1
 
     if bulk_errors:

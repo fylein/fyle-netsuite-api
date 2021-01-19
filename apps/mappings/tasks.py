@@ -63,15 +63,12 @@ def upload_projects_to_fyle(workspace_id):
 
     ns_connection.sync_projects()
 
-    # ns_connection.sync_customers()
-    # TODO: remove comment
+    ns_connection.sync_customers()
 
     ns_attributes = DestinationAttribute.objects.filter(attribute_type='PROJECT', workspace_id=workspace_id).all()
 
     fyle_payload: List[Dict] = create_fyle_projects_payload(ns_attributes, workspace_id)
     if fyle_payload:
-        # TODO: rm print
-        print('fyle_payload', fyle_payload)
         fyle_connection.connection.Projects.post(fyle_payload)
         fyle_connection.sync_projects()
 
