@@ -13,6 +13,13 @@ from apps.netsuite.models import Bill, BillLineitem, ExpenseReport, ExpenseRepor
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential
 
 
+def _decode_project_or_customer_name(name):
+    value = name.replace(u'\xa0', ' ')
+    value = value.replace('/', '-')
+
+    return value
+
+
 class NetSuiteConnector:
     """
     NetSuite utility functions
@@ -347,10 +354,11 @@ class NetSuiteConnector:
         project_attributes = []
 
         for project in projects:
+            value = _decode_project_or_customer_name(project['entityId'])
             project_attributes.append({
                 'attribute_type': 'PROJECT',
                 'display_name': 'Project',
-                'value': project['entityId'],
+                'value': value,
                 'destination_id': project['internalId'],
                 'active': not project['isInactive']
             })
@@ -358,6 +366,28 @@ class NetSuiteConnector:
         project_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
             project_attributes, self.workspace_id)
         return project_attributes
+
+    def sync_customers(self):
+        """
+        Sync customers
+        """
+        customers = self.connection.customers.get_all()
+
+        customers_attributes = []
+
+        for customer in customers:
+            value = _decode_project_or_customer_name(customer['entityId'])
+            customers_attributes.append({
+                'attribute_type': 'PROJECT',
+                'display_name': 'Customer',
+                'value': value,
+                'destination_id': customer['internalId'],
+                'active': not customer['isInactive']
+            })
+
+        customers_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
+            customers_attributes, self.workspace_id)
+        return customers_attributes
 
     @staticmethod
     def __construct_bill_lineitems(bill_lineitems: List[BillLineitem],

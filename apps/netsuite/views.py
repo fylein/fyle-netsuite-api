@@ -444,6 +444,98 @@ class ClassificationView(generics.ListCreateAPIView):
             )
 
 
+class CustomerView(generics.ListCreateAPIView):
+    """
+    Customer view
+    """
+    serializer_class = DestinationAttributeSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return DestinationAttribute.objects.filter(
+            attribute_type='PROJECT', workspace_id=self.kwargs['workspace_id']).order_by('value')
+
+    def post(self, request, *args, **kwargs):
+        """
+        Get customer from NetSuite
+        """
+        try:
+            ns_credentials = NetSuiteCredentials.objects.get(workspace_id=kwargs['workspace_id'])
+
+            ns_connector = NetSuiteConnector(ns_credentials, workspace_id=kwargs['workspace_id'])
+
+            customers = ns_connector.sync_customers()
+
+            return Response(
+                data=self.serializer_class(customers, many=True).data,
+                status=status.HTTP_200_OK
+            )
+        except NetSuiteCredentials.DoesNotExist:
+            return Response(
+                data={
+                    'message': 'NetSuite credentials not found in workspace'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except NetSuiteRequestError as exception:
+            logger.exception({'error': exception})
+            detail = json.dumps(exception.__dict__)
+            detail = json.loads(detail)
+
+            return Response(
+                data={
+                    'message': '{0} - {1}'.format(detail['code'], detail['message'])
+                },
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+
+class ProjectView(generics.ListCreateAPIView):
+    """
+    Project view
+    """
+    serializer_class = DestinationAttributeSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return DestinationAttribute.objects.filter(
+            attribute_type='PROJECT', workspace_id=self.kwargs['workspace_id']).order_by('value')
+
+    def post(self, request, *args, **kwargs):
+        """
+        Get project from NetSuite
+        """
+        try:
+            ns_credentials = NetSuiteCredentials.objects.get(workspace_id=kwargs['workspace_id'])
+
+            ns_connector = NetSuiteConnector(ns_credentials, workspace_id=kwargs['workspace_id'])
+
+            projects = ns_connector.sync_projects()
+
+            return Response(
+                data=self.serializer_class(projects, many=True).data,
+                status=status.HTTP_200_OK
+            )
+        except NetSuiteCredentials.DoesNotExist:
+            return Response(
+                data={
+                    'message': 'NetSuite credentials not found in workspace'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except NetSuiteRequestError as exception:
+            logger.exception({'error': exception})
+            detail = json.dumps(exception.__dict__)
+            detail = json.loads(detail)
+
+            return Response(
+                data={
+                    'message': '{0} - {1}'.format(detail['code'], detail['message'])
+                },
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+
 class SubsidiaryView(generics.ListCreateAPIView):
     """
     Subsidiary view

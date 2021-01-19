@@ -32,7 +32,7 @@ def create_fyle_projects_payload(projects: List[DestinationAttribute], workspace
             payload.append({
                 'name': project.value,
                 'code': project.destination_id,
-                'description': 'NetSuite Project - {0}, Id - {1}'.format(
+                'description': 'NetSuite Customer / Project - {0}, Id - {1}'.format(
                     project.value,
                     project.destination_id
                 ),
@@ -59,14 +59,21 @@ def upload_projects_to_fyle(workspace_id):
         workspace_id=workspace_id
     )
 
-    fyle_connection.sync_projects(False)
+    fyle_connection.sync_projects()
 
-    ns_attributes: List[DestinationAttribute] = ns_connection.sync_projects()
+    ns_connection.sync_projects()
+
+    # ns_connection.sync_customers()
+    # TODO: remove comment
+
+    ns_attributes = DestinationAttribute.objects.filter(attribute_type='PROJECT', workspace_id=workspace_id).all()
 
     fyle_payload: List[Dict] = create_fyle_projects_payload(ns_attributes, workspace_id)
     if fyle_payload:
+        # TODO: rm print
+        print('fyle_payload', fyle_payload)
         fyle_connection.connection.Projects.post(fyle_payload)
-        fyle_connection.sync_projects(False)
+        fyle_connection.sync_projects()
 
     return ns_attributes
 
@@ -76,11 +83,6 @@ def auto_create_project_mappings(workspace_id):
     Create Project Mappings
     :return: mappings
     """
-    MappingSetting.bulk_upsert_mapping_setting([{
-        'source_field': 'PROJECT',
-        'destination_field': 'PROJECT'
-    }], workspace_id=workspace_id)
-
     ns_attributes = upload_projects_to_fyle(workspace_id=workspace_id)
 
     project_mappings = []
