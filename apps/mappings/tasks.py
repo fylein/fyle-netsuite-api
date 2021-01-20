@@ -97,7 +97,7 @@ def auto_create_project_mappings(workspace_id):
 
         return project_mappings
     except WrongParamsError as exception:
-        logger.exception(
+        logger.error(
             'Error while creating projects workspace_id - %s in Fyle %s %s',
             workspace_id, exception.message, {'error': exception.response}
         )
@@ -106,7 +106,7 @@ def auto_create_project_mappings(workspace_id):
         error = {
             'error': error
         }
-        logger.exception(
+        logger.error(
             'Error while creating projects workspace_id - %s error: %s',
             workspace_id, error
         )
@@ -120,7 +120,7 @@ def schedule_projects_creation(import_projects, workspace_id):
             args='{}'.format(workspace_id),
             defaults={
                 'schedule_type': Schedule.MINUTES,
-                'minutes': 6 * 60,
+                'minutes': 24 * 60,
                 'next_run': start_datetime
             }
         )

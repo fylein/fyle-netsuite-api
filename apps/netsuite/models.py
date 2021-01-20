@@ -352,6 +352,13 @@ class BillLineitem(models.Model):
             if general_settings.import_projects:
                 customer_id = get_customer_id_or_none(expense_group, lineitem)
 
+            billable = lineitem.billable
+            if billable is None and customer_id:
+                billable = False
+
+            if customer_id is None and billable:
+                billable = None
+
             bill_lineitem_object, _ = BillLineitem.objects.update_or_create(
                 bill=bill,
                 expense_id=lineitem.id,
@@ -361,9 +368,9 @@ class BillLineitem(models.Model):
                         'TRANSACTION_LINE', 'ALL'] else None,
                     'class_id': class_id,
                     'department_id': department_id,
-                    'customer_id': customer_id if lineitem.billable else None,
+                    'customer_id': customer_id,
                     'amount': lineitem.amount,
-                    'billable': lineitem.billable if customer_id else None,
+                    'billable': billable,
                     'memo': get_expense_purpose(lineitem, category),
                     'netsuite_custom_segments': custom_segments
                 }
@@ -535,15 +542,22 @@ class ExpenseReportLineItem(models.Model):
 
             custom_segments = get_custom_segments(expense_group, lineitem)
 
+            billable = lineitem.billable
+            if billable is None and customer_id:
+                billable = False
+
+            if customer_id is None and billable:
+                billable = None
+
             expense_report_lineitem_object, _ = ExpenseReportLineItem.objects.update_or_create(
                 expense_report=expense_report,
                 expense_id=lineitem.id,
                 defaults={
                     'amount': lineitem.amount,
-                    'billable': lineitem.billable if customer_id else None,
+                    'billable': billable,
                     'category': account.destination.destination_id,
                     'class_id': class_id if class_id else None,
-                    'customer_id': customer_id if lineitem.billable else None,
+                    'customer_id': customer_id,
                     'location_id': location_id,
                     'department_id': department_id,
                     'currency': currency.destination_id if currency else '1',
