@@ -353,10 +353,10 @@ class BillLineitem(models.Model):
                 customer_id = get_customer_id_or_none(expense_group, lineitem)
 
             billable = lineitem.billable
-            if billable is None and customer_id:
-                billable = False
-
-            if customer_id is None and billable:
+            if customer_id:
+                if not billable:
+                    billable = False
+            else:
                 billable = None
 
             bill_lineitem_object, _ = BillLineitem.objects.update_or_create(
@@ -543,10 +543,10 @@ class ExpenseReportLineItem(models.Model):
             custom_segments = get_custom_segments(expense_group, lineitem)
 
             billable = lineitem.billable
-            if billable is None and customer_id:
-                billable = False
-
-            if customer_id is None and billable:
+            if customer_id:
+                if not billable:
+                    billable = False
+            else:
                 billable = None
 
             expense_report_lineitem_object, _ = ExpenseReportLineItem.objects.update_or_create(
