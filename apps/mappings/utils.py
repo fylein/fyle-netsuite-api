@@ -47,15 +47,15 @@ class MappingUtils:
 
         assert_valid('location_id' in general_mapping, 'location id field is blank')
         assert_valid('location_name' in general_mapping, 'location name field is blank')
-        # assert_valid('location_level' in general_mapping, 'location level field is blank')
+        assert_valid('location_level' in general_mapping, 'location level field is blank')
 
-        # if general_mapping['location_id'] and general_mapping['location_name']:
-        #     assert_valid(general_mapping['location_level'] is not None, 'location level field is blank')
+        if general_mapping['location_id'] and general_mapping['location_name']:
+            assert_valid(general_mapping['location_level'] is not None, 'location level field is blank')
 
         params = {
             'location_name': general_mapping['location_name'],
             'location_id': general_mapping['location_id'],
-            # 'location_level': general_mapping['location_level'],
+            'location_level': general_mapping['location_level'],
             'accounts_payable_name': None,
             'accounts_payable_id': None,
             'reimbursable_account_name': None,
