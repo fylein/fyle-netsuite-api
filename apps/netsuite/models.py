@@ -497,6 +497,8 @@ class ExpenseReportLineItem(models.Model):
         """
         expenses = expense_group.expenses.all()
         expense_report = ExpenseReport.objects.get(expense_group=expense_group)
+        general_settings: WorkspaceGeneralSettings = WorkspaceGeneralSettings.objects.get(
+            workspace_id=expense_group.workspace_id)
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
         expense_report_lineitem_objects = []
