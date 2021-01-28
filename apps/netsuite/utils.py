@@ -13,6 +13,13 @@ from apps.netsuite.models import Bill, BillLineitem, ExpenseReport, ExpenseRepor
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential
 
 
+def _decode_project_or_customer_name(name):
+    value = name.replace(u'\xa0', ' ')
+    value = value.replace('/', '-')
+
+    return value
+
+
 class NetSuiteConnector:
     """
     NetSuite utility functions
@@ -338,6 +345,50 @@ class NetSuiteConnector:
             subsidiary_attributes, self.workspace_id)
         return subsidiary_attributes
 
+    def sync_projects(self):
+        """
+        Sync projects
+        """
+        projects = self.connection.projects.get_all()
+
+        project_attributes = []
+
+        for project in projects:
+            value = _decode_project_or_customer_name(project['entityId'])
+            project_attributes.append({
+                'attribute_type': 'PROJECT',
+                'display_name': 'Project',
+                'value': value,
+                'destination_id': project['internalId'],
+                'active': not project['isInactive']
+            })
+
+        project_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
+            project_attributes, self.workspace_id)
+        return project_attributes
+
+    def sync_customers(self):
+        """
+        Sync customers
+        """
+        customers = self.connection.customers.get_all()
+
+        customers_attributes = []
+
+        for customer in customers:
+            value = _decode_project_or_customer_name(customer['entityId'])
+            customers_attributes.append({
+                'attribute_type': 'PROJECT',
+                'display_name': 'Customer',
+                'value': value,
+                'destination_id': customer['internalId'],
+                'active': not customer['isInactive']
+            })
+
+        customers_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
+            customers_attributes, self.workspace_id)
+        return customers_attributes
+
     @staticmethod
     def __construct_bill_lineitems(bill_lineitems: List[BillLineitem],
                                    attachment_links: Dict, cluster_domain: str) -> List[Dict]:
@@ -407,10 +458,14 @@ class NetSuiteConnector:
                     'externalId': None,
                     'type': 'location'
                 },
-
-                'customer': None,
+                'customer': {
+                    'name': None,
+                    'internalId': line.customer_id,
+                    'externalId': None,
+                    'type': 'customer'
+                },
                 'customFieldList': netsuite_custom_segments,
-                'isBillable': None,
+                'isBillable': line.billable,
                 'projectTask': None,
                 'taxCode': None,
                 'taxRate1': None,
@@ -610,7 +665,7 @@ class NetSuiteConnector:
                 'expMediaItem': None,
                 'foreignAmount': None,
                 'grossAmt': None,
-                'isBillable': None,
+                'isBillable': line.billable,
                 'isNonReimbursable': None,
                 'line': None,
                 'memo': line.memo,
@@ -704,7 +759,7 @@ class NetSuiteConnector:
             },
             'location': {
                 'name': None,
-                'internalId': None,
+                'internalId': expense_report.location_id,
                 'externalId': None,
                 'type': 'location'
             },

@@ -348,7 +348,7 @@ class ScheduleView(viewsets.ViewSet):
         next_run = request.data.get('next_run')
         assert_valid(next_run is not None, 'next_run value cannot be empty')
 
-        settings = schedule_sync(
+        workspace_schedule_settings = schedule_sync(
             workspace_id=kwargs['workspace_id'],
             schedule_enabled=schedule_enabled,
             hours=hours,
@@ -356,7 +356,7 @@ class ScheduleView(viewsets.ViewSet):
         )
 
         return Response(
-            data=WorkspaceScheduleSerializer(settings).data,
+            data=WorkspaceScheduleSerializer(workspace_schedule_settings).data,
             status=status.HTTP_200_OK
         )
 

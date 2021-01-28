@@ -11,7 +11,7 @@ from fyle_accounting_mappings.models import Mapping, MappingSetting, Destination
 
 from apps.fyle.models import ExpenseGroup, Expense, ExpenseAttribute
 from apps.mappings.models import GeneralMapping, SubsidiaryMapping
-from apps.workspaces.models import Workspace
+from apps.workspaces.models import Workspace, WorkspaceGeneralSettings
 
 
 def get_department_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
@@ -77,6 +77,29 @@ def get_class_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
             class_id = mapping.destination.destination_id
     return class_id
 
+def get_customer_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
+    project_setting: MappingSetting = MappingSetting.objects.filter(
+        workspace_id=expense_group.workspace_id,
+        destination_field='PROJECT'
+    ).first()
+
+    customer_id = None
+    source_value = None
+
+    if project_setting:
+        if lineitem and project_setting.source_field == 'PROJECT':
+            source_value = lineitem.project
+
+        mapping: Mapping = Mapping.objects.filter(
+            source_type=project_setting.source_field,
+            destination_type='PROJECT',
+            source__value=source_value,
+            workspace_id=expense_group.workspace_id
+        ).first()
+
+        if mapping:
+            customer_id = mapping.destination.destination_id
+    return customer_id
 
 def get_location_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
     location_setting: MappingSetting = MappingSetting.objects.filter(
@@ -115,7 +138,7 @@ def get_custom_segments(expense_group: ExpenseGroup, lineitem: Expense):
 
     custom_segments = []
     default_expense_attributes = ['CATEGORY', 'EMPLOYEE']
-    default_destination_attributes = ['DEPARTMENT', 'LOCATION', 'CLASS']
+    default_destination_attributes = ['DEPARTMENT', 'LOCATION', 'CLASS', 'PROJECT']
 
     for setting in mapping_settings:
         if setting.source_field not in default_expense_attributes and \
@@ -267,7 +290,9 @@ class BillLineitem(models.Model):
     location_id = models.CharField(max_length=255, help_text='NetSuite location id', null=True)
     department_id = models.CharField(max_length=255, help_text='NetSuite department id', null=True)
     class_id = models.CharField(max_length=255, help_text='NetSuite Class id', null=True)
+    customer_id = models.CharField(max_length=255, help_text='NetSuite customer id', null=True)
     amount = models.FloatField(help_text='Bill amount')
+    billable = models.BooleanField(null=True, help_text='Expense Billable or not')
     memo = models.TextField(help_text='NetSuite bill lineitem memo', null=True)
     netsuite_custom_segments = JSONField(null=True, help_text='NetSuite Custom Segments')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
@@ -285,6 +310,8 @@ class BillLineitem(models.Model):
         """
         expenses = expense_group.expenses.all()
         bill = Bill.objects.get(expense_group=expense_group)
+        general_settings: WorkspaceGeneralSettings = WorkspaceGeneralSettings.objects.get(
+            workspace_id=expense_group.workspace_id)
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
         bill_lineitem_objects = []
@@ -321,6 +348,17 @@ class BillLineitem(models.Model):
 
             custom_segments = get_custom_segments(expense_group, lineitem)
 
+            customer_id = None
+            if general_settings.import_projects:
+                customer_id = get_customer_id_or_none(expense_group, lineitem)
+
+            billable = lineitem.billable
+            if customer_id:
+                if not billable:
+                    billable = False
+            else:
+                billable = None
+
             bill_lineitem_object, _ = BillLineitem.objects.update_or_create(
                 bill=bill,
                 expense_id=lineitem.id,
@@ -330,7 +368,9 @@ class BillLineitem(models.Model):
                         'TRANSACTION_LINE', 'ALL'] else None,
                     'class_id': class_id,
                     'department_id': department_id,
+                    'customer_id': customer_id,
                     'amount': lineitem.amount,
+                    'billable': billable,
                     'memo': get_expense_purpose(lineitem, category),
                     'netsuite_custom_segments': custom_segments
                 }
@@ -432,6 +472,7 @@ class ExpenseReportLineItem(models.Model):
     expense_report = models.ForeignKey(ExpenseReport, on_delete=models.PROTECT, help_text='Reference to expense_report')
     expense = models.OneToOneField(Expense, on_delete=models.PROTECT, help_text='Reference to Expense')
     amount = models.FloatField(help_text='ExpenseReport amount')
+    billable = models.BooleanField(null=True, help_text='Expense Billable or not')
     category = models.CharField(max_length=255, help_text='NetSuite category account id')
     class_id = models.CharField(max_length=255, help_text='NetSuite Class id', null=True)
     customer_id = models.CharField(max_length=255, help_text='NetSuite Customer id', null=True)
@@ -456,6 +497,8 @@ class ExpenseReportLineItem(models.Model):
         """
         expenses = expense_group.expenses.all()
         expense_report = ExpenseReport.objects.get(expense_group=expense_group)
+        general_settings: WorkspaceGeneralSettings = WorkspaceGeneralSettings.objects.get(
+            workspace_id=expense_group.workspace_id)
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
         expense_report_lineitem_objects = []
@@ -488,6 +531,10 @@ class ExpenseReportLineItem(models.Model):
 
             department_id = get_department_id_or_none(expense_group, lineitem)
 
+            customer_id = None
+            if general_settings.import_projects:
+                customer_id = get_customer_id_or_none(expense_group, lineitem)
+
             location_id = get_location_id_or_none(expense_group, lineitem)
 
             if not location_id:
@@ -496,14 +543,22 @@ class ExpenseReportLineItem(models.Model):
 
             custom_segments = get_custom_segments(expense_group, lineitem)
 
+            billable = lineitem.billable
+            if customer_id:
+                if not billable:
+                    billable = False
+            else:
+                billable = None
+
             expense_report_lineitem_object, _ = ExpenseReportLineItem.objects.update_or_create(
                 expense_report=expense_report,
                 expense_id=lineitem.id,
                 defaults={
                     'amount': lineitem.amount,
+                    'billable': billable,
                     'category': account.destination.destination_id,
                     'class_id': class_id if class_id else None,
-                    'customer_id': None,
+                    'customer_id': customer_id,
                     'location_id': location_id if general_mappings.location_level in [
                         'TRANSACTION_LINE', 'ALL'] else None,
                     'department_id': department_id,
