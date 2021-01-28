@@ -759,7 +759,7 @@ class NetSuiteConnector:
             },
             'location': {
                 'name': None,
-                'internalId': None,
+                'internalId': expense_report.location_id,
                 'externalId': None,
                 'type': 'location'
             },
