@@ -272,7 +272,7 @@ class FyleConnector:
         """
         Get reimbursements from fyle
         """
-        reimbursements = self.connection.Reimbursements.get()['data']
+        reimbursements = self.connection.Reimbursements.get_all()
 
         reimbursement_attributes = []
 
