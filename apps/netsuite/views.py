@@ -279,7 +279,8 @@ class LocationView(generics.ListCreateAPIView):
         try:
             ns_credentials = NetSuiteCredentials.objects.get(workspace_id=kwargs['workspace_id'])
 
-            ns_connector = NetSuiteConnector(ns_credentials, workspace_id=kwargs['workspace_id'])
+            ns_connector = NetSuiteConnector(ns_credentials,
+                                             workspace_id=kwargs['workspace_id'], search_body_fields_only=False)
 
             locations = ns_connector.sync_locations()
             return Response(
