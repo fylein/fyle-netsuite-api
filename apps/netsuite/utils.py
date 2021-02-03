@@ -25,13 +25,16 @@ class NetSuiteConnector:
     NetSuite utility functions
     """
 
-    def __init__(self, netsuite_credentials: NetSuiteCredentials, workspace_id: int):
+    def __init__(self, netsuite_credentials: NetSuiteCredentials, workspace_id: int,
+                 search_body_fields_only: bool = True, page_size: int = 1000):
         self.connection = NetSuiteConnection(
             account=netsuite_credentials.ns_account_id,
             consumer_key=netsuite_credentials.ns_consumer_key,
             consumer_secret=netsuite_credentials.ns_consumer_secret,
             token_key=netsuite_credentials.ns_token_id,
-            token_secret=netsuite_credentials.ns_token_secret
+            token_secret=netsuite_credentials.ns_token_secret,
+            search_body_fields_only=search_body_fields_only,
+            page_size=page_size
         )
 
         self.workspace_id = workspace_id
