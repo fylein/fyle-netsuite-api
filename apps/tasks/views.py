@@ -26,7 +26,7 @@ class TasksView(generics.ListAPIView):
             task_status = ['IN_PROGRESS', 'FAILED', 'COMPLETE']
 
         task_logs = TaskLog.objects.filter(
-            ~Q(type='CREATING_VENDOR_PAYMENT') & ~Q(type='FETCHING_EXPENSES'),
+            ~Q(type='CREATING_VENDOR_PAYMENT'),
             workspace_id=self.kwargs['workspace_id'],
             status__in=task_status,
         ).order_by('-updated_at').all()

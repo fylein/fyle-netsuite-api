@@ -23,10 +23,12 @@ def schedule_expense_group_creation(workspace_id: int):
     :param user: User email
     :return: None
     """
-    task_log = TaskLog.objects.create(
+    task_log, _ = TaskLog.objects.update_or_create(
         workspace_id=workspace_id,
         type='FETCHING_EXPENSES',
-        status='IN_PROGRESS'
+        defaults={
+            'status': 'IN_PROGRESS'
+        }
     )
 
     general_settings = WorkspaceGeneralSettings.objects.get(workspace_id=workspace_id)
@@ -37,7 +39,6 @@ def schedule_expense_group_creation(workspace_id: int):
 
     async_task('apps.fyle.tasks.create_expense_groups', workspace_id, fund_source, task_log)
 
-    task_log.save()
 
 
 def create_expense_groups(workspace_id: int, fund_source: List[str], task_log: TaskLog):
