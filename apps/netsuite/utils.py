@@ -71,7 +71,8 @@ class NetSuiteConnector:
                     'destination_id': account['internalId']
                 })
 
-            if account['acctType'] == '_expense':
+            if account['acctType'] == '_expense' or account['acctType'] == '_costOfGoodsSold' or\
+                    account['acctType'] == '_otherCurrentAsset' or account['acctType'] == '_otherExpense':
                 account_attributes.append({
                     'attribute_type': 'ACCOUNT',
                     'display_name': 'Account',
