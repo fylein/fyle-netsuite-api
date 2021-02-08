@@ -2,7 +2,7 @@ from typing import List, Dict
 
 from netsuitesdk import NetSuiteConnection
 
-from fyle_accounting_mappings.models import DestinationAttribute
+from fyle_accounting_mappings.models import DestinationAttribute, Mapping, ExpenseAttribute
 
 from apps.fyle.models import Expense
 from apps.fyle.utils import FyleConnector
@@ -277,20 +277,25 @@ class NetSuiteConnector:
         vendor_attributes = []
 
         for vendor in vendors:
+            detail = {
+                'email': vendor['email'] if vendor['email'] else None
+            }
             if 'subsidiary' in vendor and vendor['subsidiary']:
                 if vendor['subsidiary']['internalId'] == subsidiary_mapping.internal_id:
                     vendor_attributes.append({
                         'attribute_type': 'VENDOR',
                         'display_name': 'Vendor',
                         'value': vendor['entityId'],
-                        'destination_id': vendor['internalId']
+                        'destination_id': vendor['internalId'],
+                        'detail': detail
                     })
             else:
                 vendor_attributes.append({
                     'attribute_type': 'VENDOR',
                     'display_name': 'Vendor',
                     'value': vendor['entityId'],
-                    'destination_id': vendor['internalId']
+                    'destination_id': vendor['internalId'],
+                    'detail': detail
                 })
 
         account_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
@@ -308,20 +313,25 @@ class NetSuiteConnector:
         employee_attributes = []
 
         for employee in employees:
+            detail = {
+                'email': employee['email'] if employee['email'] else None
+            }
             if 'subsidiary' in employee and employee['subsidiary']:
                 if employee['subsidiary']['internalId'] == subsidiary_mapping.internal_id:
                     employee_attributes.append({
                         'attribute_type': 'EMPLOYEE',
                         'display_name': 'Employee',
                         'value': employee['entityId'],
-                        'destination_id': employee['internalId']
+                        'destination_id': employee['internalId'],
+                        'detail': detail
                     })
             else:
                 employee_attributes.append({
                     'attribute_type': 'EMPLOYEE',
                     'display_name': 'Employee',
                     'value': employee['entityId'],
-                    'destination_id': employee['internalId']
+                    'destination_id': employee['internalId'],
+                    'detail': detail
                 })
 
         account_attributes = DestinationAttribute.bulk_upsert_destination_attributes(

@@ -5,13 +5,14 @@ from datetime import datetime
 from typing import List, Dict
 
 from django_q.models import Schedule
+from django.db.models import Q
 
 from fylesdk import WrongParamsError
 from fyle_accounting_mappings.models import MappingSetting, Mapping, ExpenseAttribute, DestinationAttribute
 
 from apps.fyle.utils import FyleConnector
 from apps.netsuite.utils import NetSuiteConnector
-from apps.workspaces.models import NetSuiteCredentials, FyleCredential
+from apps.workspaces.models import NetSuiteCredentials, FyleCredential, WorkspaceGeneralSettings
 
 logger = logging.getLogger(__name__)
 
@@ -132,3 +133,61 @@ def schedule_projects_creation(import_projects, workspace_id):
 
         if schedule:
             schedule.delete()
+
+def async_auto_map_employees(auto_map_option: str, general_settings: WorkspaceGeneralSettings, workspace_id: str):
+    mapping_setting = MappingSetting.objects.filter(
+        ~Q(destination_field='CREDIT_CARD_ACCOUNT'),
+        source_field='EMPLOYEE', workspace_id=workspace_id
+    ).first()
+
+    destination_type = None
+    if mapping_setting:
+        destination_type = mapping_setting.destination_field
+
+    source_attributes = []
+    filters = {}
+    employee_attributes = DestinationAttribute.objects.filter(attribute_type=destination_type,
+                                                              workspace_id=workspace_id)
+
+    for employee in employee_attributes:
+        if auto_map_option == 'EMAIL':
+            if employee.detail and employee.detail['email']:
+                filters = {
+                    'value': employee.detail['email']
+                }
+
+        elif auto_map_option == 'NAME':
+            filters = {
+                'detail__contains': {'full_name': employee.value}
+            }
+
+        elif auto_map_option == 'EMPLOYEE_CODE':
+            filters = {
+                'detail__contains': {'employee_code': employee.value}
+            }
+
+        if filters:
+            source_attributes = ExpenseAttribute.objects.filter(workspace_id=workspace_id, **filters).all()
+
+        for source in source_attributes:
+            Mapping.create_or_update_mapping(
+                source_type='EMPLOYEE',
+                destination_type=destination_type,
+                source_value=source.value,
+                destination_value=employee.value,
+                workspace_id=workspace_id
+            )
+
+
+def async_auto_map_ccc_account(default_ccc_account_name: str, workspace_id: str):
+    employee_attributes = ExpenseAttribute.objects.filter(attribute_type='EMPLOYEE',
+                                                              workspace_id=workspace_id)
+
+    for employee in employee_attributes:
+        Mapping.create_or_update_mapping(
+            source_type='EMPLOYEE',
+            destination_type='CREDIT_CARD_ACCOUNT',
+            source_value=employee.value,
+            destination_value=default_ccc_account_name,
+            workspace_id=workspace_id
+        )
