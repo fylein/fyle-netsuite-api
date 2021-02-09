@@ -134,7 +134,8 @@ def schedule_projects_creation(import_projects, workspace_id):
         if schedule:
             schedule.delete()
 
-def async_auto_map_employees(auto_map_option: str, general_settings: WorkspaceGeneralSettings, workspace_id: str):
+def async_auto_map_employees(employee_mapping_preference: str, general_settings: WorkspaceGeneralSettings, 
+                              workspace_id: str):
     mapping_setting = MappingSetting.objects.filter(
         ~Q(destination_field='CREDIT_CARD_ACCOUNT'),
         source_field='EMPLOYEE', workspace_id=workspace_id
@@ -150,20 +151,20 @@ def async_auto_map_employees(auto_map_option: str, general_settings: WorkspaceGe
                                                               workspace_id=workspace_id)
 
     for employee in employee_attributes:
-        if auto_map_option == 'EMAIL':
+        if employee_mapping_preference == 'EMAIL':
             if employee.detail and employee.detail['email']:
                 filters = {
                     'value': employee.detail['email']
                 }
 
-        elif auto_map_option == 'NAME':
+        elif employee_mapping_preference == 'NAME':
             filters = {
-                'detail__contains': {'full_name': employee.value}
+                'detail__full_name': employee.value
             }
 
-        elif auto_map_option == 'EMPLOYEE_CODE':
+        elif employee_mapping_preference == 'EMPLOYEE_CODE':
             filters = {
-                'detail__contains': {'employee_code': employee.value}
+                'detail__employee_code': employee.value
             }
 
         if filters:

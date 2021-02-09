@@ -85,8 +85,8 @@ class WorkspaceGeneralSettings(models.Model):
                                                          help_text='Auto Sync Payments from Fyle to Netsuite')
     sync_netsuite_to_fyle_payments = models.BooleanField(default=False,
                                                          help_text='Auto Sync Payments from NetSuite to Fyle')
-    auto_map_employees = models.CharField(max_length=50, help_text='Auto Map Employees type from \
-        NetSuite to Fyle', null=True)
+    auto_map_employees = models.CharField(max_length=50,
+                                            help_text='Auto Map Employees type from NetSuite to Fyle', null=True)
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 

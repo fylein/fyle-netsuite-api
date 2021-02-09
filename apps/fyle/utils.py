@@ -156,16 +156,19 @@ class FyleConnector:
         employee_attributes = []
 
         for employee in employees:
-            detail = {
-                'employee_code': employee['employee_code'],
-                'full_name': employee['full_name']
-            }
             employee_attributes.append({
                 'attribute_type': 'EMPLOYEE',
                 'display_name': 'Employee',
                 'value': employee['employee_email'],
                 'source_id': employee['id'],
-                'detail': detail
+                'detail': {
+                    'employee_code': employee['employee_code'],
+                    'full_name': employee['full_name'],
+                    'location': employee['location'],
+                    'department': employee['department'],
+                    'department_id': employee['department_id'],
+                    'department_code': employee['department_code']
+                }
             })
 
         employee_attributes = ExpenseAttribute.bulk_upsert_expense_attributes(employee_attributes, self.workspace_id)
