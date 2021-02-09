@@ -176,6 +176,7 @@ def async_auto_map_employees(employee_mapping_preference: str, general_settings:
                 destination_type=destination_type,
                 source_value=source.value,
                 destination_value=employee.value,
+                destination_id=employee.destination_id,
                 workspace_id=workspace_id
             )
 
