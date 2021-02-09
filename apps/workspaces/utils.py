@@ -57,7 +57,7 @@ def create_or_update_general_settings(general_settings_payload: Dict, workspace_
         workspace_id=workspace_id
     )
 
-    if 'auto_map_employees' in general_settings_payload:
+    if general_settings_payload['auto_map_employees']:
         async_task('apps.mappings.tasks.async_auto_map_employees', general_settings_payload['auto_map_employees'], 
                     general_settings, workspace_id)
 
