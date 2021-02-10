@@ -2,6 +2,8 @@ from typing import List, Dict
 
 from netsuitesdk import NetSuiteConnection
 
+import unidecode
+
 from fyle_accounting_mappings.models import DestinationAttribute
 
 from apps.fyle.models import Expense
@@ -283,14 +285,14 @@ class NetSuiteConnector:
                     vendor_attributes.append({
                         'attribute_type': 'VENDOR',
                         'display_name': 'Vendor',
-                        'value': vendor['entityId'],
+                        'value': unidecode.unidecode(u'{0}'.format(vendor['entityId'])),
                         'destination_id': vendor['internalId']
                     })
             else:
                 vendor_attributes.append({
                     'attribute_type': 'VENDOR',
                     'display_name': 'Vendor',
-                    'value': vendor['entityId'],
+                    'value': unidecode.unidecode(u'{0}'.format(vendor['entityId'])),
                     'destination_id': vendor['internalId']
                 })
 
