@@ -91,6 +91,7 @@ def auto_create_project_mappings(workspace_id):
                 destination_type='PROJECT',
                 source_value=project.value,
                 destination_value=project.value,
+                destination_id=project.destination_id,
                 workspace_id=workspace_id
             )
             project_mappings.append(mapping)
