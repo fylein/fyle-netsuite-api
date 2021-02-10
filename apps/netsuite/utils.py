@@ -2,6 +2,8 @@ from typing import List, Dict
 
 from netsuitesdk import NetSuiteConnection
 
+import unidecode
+
 from fyle_accounting_mappings.models import DestinationAttribute
 
 from apps.fyle.models import Expense
@@ -110,7 +112,7 @@ class NetSuiteConnector:
         for category in categories:
             category_attributes.append(
                 {
-                    'attribute_type': 'ACCOUNT',
+                    'attribute_type': 'EXPENSE_CATEGORY',
                     'display_name': 'Expense Category',
                     'value': 'Expense Category - {}'.format(category['name']),
                     'destination_id': category['internalId']
@@ -119,7 +121,7 @@ class NetSuiteConnector:
 
             category_attributes.append(
                 {
-                    'attribute_type': 'CCC_ACCOUNT',
+                    'attribute_type': 'CCC_EXPENSE_CATEGORY',
                     'display_name': 'Credit Card Expense Category',
                     'value': 'Expense Category - {}'.format(category['name']),
                     'destination_id': category['internalId']
@@ -283,14 +285,14 @@ class NetSuiteConnector:
                     vendor_attributes.append({
                         'attribute_type': 'VENDOR',
                         'display_name': 'Vendor',
-                        'value': vendor['entityId'],
+                        'value': unidecode.unidecode(u'{0}'.format(vendor['entityId'])),
                         'destination_id': vendor['internalId']
                     })
             else:
                 vendor_attributes.append({
                     'attribute_type': 'VENDOR',
                     'display_name': 'Vendor',
-                    'value': vendor['entityId'],
+                    'value': unidecode.unidecode(u'{0}'.format(vendor['entityId'])),
                     'destination_id': vendor['internalId']
                 })
 
