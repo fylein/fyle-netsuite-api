@@ -353,6 +353,18 @@ class ExpenseCategoryView(generics.ListCreateAPIView):
             )
 
 
+class CCCExpenseCategoryView(generics.ListCreateAPIView):
+    """
+    CCC Expense Category view
+    """
+
+    serializer_class = DestinationAttributeSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return DestinationAttribute.objects.filter(
+            attribute_type='CCC_EXPENSE_CATEGORY', workspace_id=self.kwargs['workspace_id']).order_by('value')
+
 class CurrencyView(generics.ListCreateAPIView):
     """
     Location view

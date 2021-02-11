@@ -511,7 +511,7 @@ class ExpenseReportLineItem(models.Model):
                 account = Mapping.objects.filter(
                     source_type='CATEGORY',
                     source__value=category,
-                    destination_type='CCC_ACCOUNT',
+                    destination_type='CCC_EXPENSE_CATEGORY',
                     workspace_id=expense_group.workspace_id
                 ).first()
 
@@ -519,7 +519,7 @@ class ExpenseReportLineItem(models.Model):
                 account = Mapping.objects.filter(
                     source_type='CATEGORY',
                     source__value=category,
-                    destination_type='ACCOUNT',
+                    destination_type='EXPENSE_CATEGORY',
                     workspace_id=expense_group.workspace_id
                 ).first()
 
