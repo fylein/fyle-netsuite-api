@@ -288,27 +288,17 @@ class NetSuiteConnector:
                     vendor_attributes.append({
                         'attribute_type': 'VENDOR',
                         'display_name': 'Vendor',
-<<<<<<< HEAD
-                        'value': vendor['entityId'],
+                        'value': unidecode.unidecode(u'{0}'.format(vendor['entityId'])),
                         'destination_id': vendor['internalId'],
                         'detail': detail
-=======
-                        'value': unidecode.unidecode(u'{0}'.format(vendor['entityId'])),
-                        'destination_id': vendor['internalId']
->>>>>>> master
                     })
             else:
                 vendor_attributes.append({
                     'attribute_type': 'VENDOR',
                     'display_name': 'Vendor',
-<<<<<<< HEAD
-                    'value': vendor['entityId'],
+                    'value': unidecode.unidecode(u'{0}'.format(vendor['entityId'])),
                     'destination_id': vendor['internalId'],
                     'detail': detail
-=======
-                    'value': unidecode.unidecode(u'{0}'.format(vendor['entityId'])),
-                    'destination_id': vendor['internalId']
->>>>>>> master
                 })
 
         account_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
