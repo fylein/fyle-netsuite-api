@@ -177,11 +177,12 @@ def async_auto_map_employees(employee_mapping_preference: str, general_settings:
                 destination_type=destination_type,
                 source_value=source.value,
                 destination_value=employee.value,
+                destination_id=employee.destination_id,
                 workspace_id=workspace_id
             )
 
 
-def async_auto_map_ccc_account(default_ccc_account_name: str, workspace_id: str):
+def async_auto_map_ccc_account(default_ccc_account_name: str, default_ccc_account_id: str, workspace_id: str):
     employee_attributes = ExpenseAttribute.objects.filter(attribute_type='EMPLOYEE',
                                                               workspace_id=workspace_id)
 
@@ -191,5 +192,6 @@ def async_auto_map_ccc_account(default_ccc_account_name: str, workspace_id: str)
             destination_type='CREDIT_CARD_ACCOUNT',
             source_value=employee.value,
             destination_value=default_ccc_account_name,
+            destination_id=default_ccc_account_id,
             workspace_id=workspace_id
         )

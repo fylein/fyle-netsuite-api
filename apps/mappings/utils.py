@@ -134,7 +134,8 @@ class MappingUtils:
         )
 
         if general_mapping_object.default_ccc_account_name:
-            async_task('apps.mappings.tasks.async_auto_map_ccc_account', 
-                        general_mapping_object.default_ccc_account_name, self.__workspace_id)
+            async_task('apps.mappings.tasks.async_auto_map_ccc_account',
+                        general_mapping_object.default_ccc_account_name,
+                        general_mapping_object.default_ccc_account_id, self.__workspace_id)
 
         return general_mapping_object
