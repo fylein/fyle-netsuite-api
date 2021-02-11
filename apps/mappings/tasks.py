@@ -7,13 +7,26 @@ from typing import List, Dict
 from django_q.models import Schedule
 
 from fylesdk import WrongParamsError
-from fyle_accounting_mappings.models import MappingSetting, Mapping, ExpenseAttribute, DestinationAttribute
+from fyle_accounting_mappings.models import Mapping, ExpenseAttribute, DestinationAttribute
 
 from apps.fyle.utils import FyleConnector
 from apps.netsuite.utils import NetSuiteConnector
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential
 
 logger = logging.getLogger(__name__)
+
+
+def remove_duplicates(ns_attributes: List[DestinationAttribute]):
+    unique_attributes = []
+
+    attribute_values = []
+
+    for attribute in ns_attributes:
+        if attribute.value not in attribute_values:
+            unique_attributes.append(attribute)
+            attribute_values.append(attribute.value)
+
+    return unique_attributes
 
 
 def create_fyle_projects_payload(projects: List[DestinationAttribute], workspace_id: int):
@@ -67,7 +80,10 @@ def upload_projects_to_fyle(workspace_id):
 
     ns_attributes = DestinationAttribute.objects.filter(attribute_type='PROJECT', workspace_id=workspace_id).all()
 
+    ns_attributes = remove_duplicates(ns_attributes)
+
     fyle_payload: List[Dict] = create_fyle_projects_payload(ns_attributes, workspace_id)
+
     if fyle_payload:
         fyle_connection.connection.Projects.post(fyle_payload)
         fyle_connection.sync_projects()
