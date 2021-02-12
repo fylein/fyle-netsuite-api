@@ -135,7 +135,55 @@ def schedule_projects_creation(import_projects, workspace_id):
         if schedule:
             schedule.delete()
 
-def async_auto_map_employees(employee_mapping_preference: str, general_settings: WorkspaceGeneralSettings, 
+
+def filter_expense_attributes(workspace_id: str, **filters):
+    return ExpenseAttribute.objects.filter(attribute_type='EMPLOYEE', workspace_id=workspace_id, **filters).all()
+
+
+def auto_create_employee_mappings(source_attributes: List[ExpenseAttribute], mapping_attributes: dict):
+    for source in source_attributes:
+        mapping = Mapping.objects.filter(
+            source_type='EMPLOYEE',
+            destination_type=mapping_attributes['destination_type'],
+            source__value=source.value,
+            workspace_id=mapping_attributes['workspace_id']
+        ).first()
+
+        if not mapping:
+            Mapping.create_or_update_mapping(
+                source_type='EMPLOYEE',
+                destination_type=mapping_attributes['destination_type'],
+                source_value=source.value,
+                destination_value=mapping_attributes['destination_value'],
+                destination_id=mapping_attributes['destination_id'],
+                workspace_id=mapping_attributes['workspace_id']
+            )
+            source.auto_mapped = True
+            source.save(update_fields=['auto_mapped'])
+
+
+def construct_filters_employee_mappings(employee: DestinationAttribute, employee_mapping_preference: str):
+    filters = {}
+    if employee_mapping_preference == 'EMAIL':
+        if employee.detail and employee.detail['email']:
+            filters = {
+                'value': employee.detail['email']
+            }
+
+    elif employee_mapping_preference == 'NAME':
+        filters = {
+            'detail__full_name': employee.value
+        }
+
+    elif employee_mapping_preference == 'EMPLOYEE_CODE':
+        filters = {
+            'detail__employee_code': employee.value
+        }
+
+    return filters
+
+
+def async_auto_map_employees(employee_mapping_preference: str, general_settings: WorkspaceGeneralSettings,
                               workspace_id: str):
     mapping_setting = MappingSetting.objects.filter(
         ~Q(destination_field='CREDIT_CARD_ACCOUNT'),
@@ -147,51 +195,34 @@ def async_auto_map_employees(employee_mapping_preference: str, general_settings:
         destination_type = mapping_setting.destination_field
 
     source_attributes = []
-    filters = {}
     employee_attributes = DestinationAttribute.objects.filter(attribute_type=destination_type,
                                                               workspace_id=workspace_id)
 
     for employee in employee_attributes:
-        if employee_mapping_preference == 'EMAIL':
-            if employee.detail and employee.detail['email']:
-                filters = {
-                    'value': employee.detail['email']
-                }
-
-        elif employee_mapping_preference == 'NAME':
-            filters = {
-                'detail__full_name': employee.value
-            }
-
-        elif employee_mapping_preference == 'EMPLOYEE_CODE':
-            filters = {
-                'detail__employee_code': employee.value
-            }
+        filters = construct_filters_employee_mappings(employee, employee_mapping_preference)
 
         if filters:
-            source_attributes = ExpenseAttribute.objects.filter(workspace_id=workspace_id, **filters).all()
+            filters['auto_mapped'] = False
+            source_attributes = filter_expense_attributes(workspace_id, **filters)
 
-        for source in source_attributes:
-            Mapping.create_or_update_mapping(
-                source_type='EMPLOYEE',
-                destination_type=destination_type,
-                source_value=source.value,
-                destination_value=employee.value,
-                destination_id=employee.destination_id,
-                workspace_id=workspace_id
-            )
+        mapping_attributes = {
+            'destination_type': destination_type,
+            'destination_value': employee.value,
+            'destination_id': employee.destination_id,
+            'workspace_id': workspace_id
+        }
+
+        auto_create_employee_mappings(source_attributes, mapping_attributes)
 
 
 def async_auto_map_ccc_account(default_ccc_account_name: str, default_ccc_account_id: str, workspace_id: str):
-    employee_attributes = ExpenseAttribute.objects.filter(attribute_type='EMPLOYEE',
-                                                              workspace_id=workspace_id)
+    source_attributes = filter_expense_attributes(workspace_id)
 
-    for employee in employee_attributes:
-        Mapping.create_or_update_mapping(
-            source_type='EMPLOYEE',
-            destination_type='CREDIT_CARD_ACCOUNT',
-            source_value=employee.value,
-            destination_value=default_ccc_account_name,
-            destination_id=default_ccc_account_id,
-            workspace_id=workspace_id
-        )
+    mapping_attributes = {
+        'destination_type': 'CREDIT_CARD_ACCOUNT',
+        'destination_value': default_ccc_account_name,
+        'destination_id': default_ccc_account_id,
+        'workspace_id': workspace_id
+    }
+
+    auto_create_employee_mappings(source_attributes, mapping_attributes)
