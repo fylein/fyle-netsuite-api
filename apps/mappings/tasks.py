@@ -8,7 +8,7 @@ from django_q.models import Schedule
 from django.db.models import Q
 
 from fylesdk import WrongParamsError
-from fyle_accounting_mappings.models import Mapping, ExpenseAttribute, DestinationAttribute
+from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttribute, DestinationAttribute
 
 from apps.fyle.utils import FyleConnector
 from apps.netsuite.utils import NetSuiteConnector
@@ -174,8 +174,10 @@ def auto_create_employee_mappings(source_attributes: List[ExpenseAttribute], map
                 destination_id=mapping_attributes['destination_id'],
                 workspace_id=mapping_attributes['workspace_id']
             )
-            source.auto_mapped = True
-            source.save(update_fields=['auto_mapped'])
+
+            if mapping_attributes['destination_type'] != 'CREDIT_CARD_ACCOUNT':
+                source.auto_mapped = True
+                source.save(update_fields=['auto_mapped'])
 
 
 def construct_filters_employee_mappings(employee: DestinationAttribute, employee_mapping_preference: str):
