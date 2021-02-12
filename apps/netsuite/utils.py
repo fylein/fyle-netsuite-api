@@ -301,9 +301,9 @@ class NetSuiteConnector:
                     'detail': detail
                 })
 
-        account_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
+        vendor_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
             vendor_attributes, self.workspace_id)
-        return account_attributes
+        return vendor_attributes
 
     def sync_employees(self):
         """
@@ -337,9 +337,9 @@ class NetSuiteConnector:
                     'detail': detail
                 })
 
-        account_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
+        employee_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
             employee_attributes, self.workspace_id)
-        return account_attributes
+        return employee_attributes
 
     def sync_subsidiaries(self):
         """
