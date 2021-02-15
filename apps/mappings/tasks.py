@@ -185,17 +185,17 @@ def construct_filters_employee_mappings(employee: DestinationAttribute, employee
     if employee_mapping_preference == 'EMAIL':
         if employee.detail and employee.detail['email']:
             filters = {
-                'value': employee.detail['email']
+                'value__iexact': employee.detail['email']
             }
 
     elif employee_mapping_preference == 'NAME':
         filters = {
-            'detail__full_name': employee.value
+            'detail__full_name__iexact': employee.value
         }
 
     elif employee_mapping_preference == 'EMPLOYEE_CODE':
         filters = {
-            'detail__employee_code': employee.value
+            'detail__employee_code__iexact': employee.value
         }
 
     return filters
