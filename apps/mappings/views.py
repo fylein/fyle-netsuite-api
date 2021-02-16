@@ -2,11 +2,15 @@ from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import status
 
+from django_q.tasks import async_task
+
 from fyle_netsuite_api.utils import assert_valid
+from apps.workspaces.models import WorkspaceGeneralSettings
 
 from .serializers import GeneralMappingSerializer, SubsidiaryMappingSerializer
 from .models import GeneralMapping, SubsidiaryMapping
 from .utils import MappingUtils
+from .tasks import async_auto_map_employees, async_auto_map_ccc_account
 
 
 class SubsidiaryMappingView(generics.ListCreateAPIView):
@@ -88,6 +92,49 @@ class GeneralMappingView(generics.ListCreateAPIView):
             return Response(
                 {
                     'message': 'General mappings do not exist for the workspace'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class AutoMapEmployeeView(generics.CreateAPIView):
+    """
+    Auto Map Employees view
+    """
+
+    def post(self, request, *args, **kwargs):
+        """
+        Trigger Auto Map employees
+        """
+        try:
+            workspace_id = kwargs['workspace_id']
+            general_settings = WorkspaceGeneralSettings.objects.get(workspace_id=workspace_id)
+
+            if not general_settings.auto_map_employees:
+                return Response(
+                    data={
+                        'message': 'Employee mapping preference not found for this workspace'
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            async_task('apps.mappings.tasks.async_auto_map_employees',
+                        general_settings.auto_map_employees, workspace_id)
+
+            general_mappings = GeneralMapping.objects.get(workspace_id=workspace_id)
+            if general_mappings.default_ccc_account_name:
+                async_task('apps.mappings.tasks.async_auto_map_ccc_account', general_mappings.default_ccc_account_name,
+                            general_mappings.default_ccc_account_id, workspace_id)
+
+            return Response(
+                data={},
+                status=status.HTTP_200_OK
+            )
+
+        except GeneralMapping.DoesNotExist:
+            return Response(
+                {
+                    'message': 'General mappings do not exist for this workspace'
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
