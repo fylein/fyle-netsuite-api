@@ -353,6 +353,18 @@ class ExpenseCategoryView(generics.ListCreateAPIView):
             )
 
 
+class CCCExpenseCategoryView(generics.ListCreateAPIView):
+    """
+    CCC Expense Category view
+    """
+
+    serializer_class = DestinationAttributeSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return DestinationAttribute.objects.filter(
+            attribute_type='CCC_EXPENSE_CATEGORY', workspace_id=self.kwargs['workspace_id']).order_by('value')
+
 class CurrencyView(generics.ListCreateAPIView):
     """
     Location view
@@ -733,6 +745,8 @@ class NetSuiteFieldsView(generics.ListAPIView):
         attributes = DestinationAttribute.objects.filter(
             ~Q(attribute_type='EMPLOYEE') & ~Q(attribute_type='ACCOUNT') &
             ~Q(attribute_type='VENDOR') & ~Q(attribute_type='ACCOUNTS_PAYABLE') &
+            ~Q(attribute_type='VENDOR_PAYMENT_ACCOUNT') & ~Q(attribute_type='CCC_EXPENSE_CATEGORY') &
+            ~Q(attribute_type='EXPENSE_CATEGORY') & ~Q(attribute_type='BANK_ACCOUNT') &
             ~Q(attribute_type='CREDIT_CARD_ACCOUNT') & ~Q(attribute_type='BANK_ACCOUNT') &
             ~Q(attribute_type='SUBSIDIARY') & ~Q(attribute_type='CURRENCY') &
             ~Q(attribute_type='CCC_ACCOUNT'),

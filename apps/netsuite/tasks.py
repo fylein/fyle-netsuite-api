@@ -388,18 +388,18 @@ def __validate_expense_group(expense_group: ExpenseGroup):
         error_message = 'Category Mapping Not Found'
         if expense_group.fund_source == 'CCC':
             account = Mapping.objects.filter(
+                Q(destination_type='CCC_ACCOUNT') | Q(destination_type='CCC_EXPENSE_CATEGORY'),
                 source_type='CATEGORY',
                 source__value=category,
-                destination_type='CCC_ACCOUNT',
                 workspace_id=expense_group.workspace_id
             ).first()
 
             error_message = 'Credit Card Expense Category Mapping Not Found'
         else:
             account = Mapping.objects.filter(
+                Q(destination_type='ACCOUNT') | Q(destination_type='EXPENSE_CATEGORY'),
                 source_type='CATEGORY',
                 source__value=category,
-                destination_type='ACCOUNT',
                 workspace_id=expense_group.workspace_id
             ).first()
 

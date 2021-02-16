@@ -2,6 +2,8 @@ from typing import List, Dict
 
 from netsuitesdk import NetSuiteConnection
 
+import unidecode
+
 from fyle_accounting_mappings.models import DestinationAttribute
 
 from apps.fyle.models import Expense
@@ -110,7 +112,7 @@ class NetSuiteConnector:
         for category in categories:
             category_attributes.append(
                 {
-                    'attribute_type': 'ACCOUNT',
+                    'attribute_type': 'EXPENSE_CATEGORY',
                     'display_name': 'Expense Category',
                     'value': 'Expense Category - {}'.format(category['name']),
                     'destination_id': category['internalId']
@@ -119,7 +121,7 @@ class NetSuiteConnector:
 
             category_attributes.append(
                 {
-                    'attribute_type': 'CCC_ACCOUNT',
+                    'attribute_type': 'CCC_EXPENSE_CATEGORY',
                     'display_name': 'Credit Card Expense Category',
                     'value': 'Expense Category - {}'.format(category['name']),
                     'destination_id': category['internalId']
@@ -278,25 +280,30 @@ class NetSuiteConnector:
         vendor_attributes = []
 
         for vendor in vendors:
+            detail = {
+                'email': vendor['email'] if vendor['email'] else None
+            }
             if 'subsidiary' in vendor and vendor['subsidiary']:
                 if vendor['subsidiary']['internalId'] == subsidiary_mapping.internal_id:
                     vendor_attributes.append({
                         'attribute_type': 'VENDOR',
                         'display_name': 'Vendor',
-                        'value': vendor['entityId'],
-                        'destination_id': vendor['internalId']
+                        'value': unidecode.unidecode(u'{0}'.format(vendor['entityId'])),
+                        'destination_id': vendor['internalId'],
+                        'detail': detail
                     })
             else:
                 vendor_attributes.append({
                     'attribute_type': 'VENDOR',
                     'display_name': 'Vendor',
-                    'value': vendor['entityId'],
-                    'destination_id': vendor['internalId']
+                    'value': unidecode.unidecode(u'{0}'.format(vendor['entityId'])),
+                    'destination_id': vendor['internalId'],
+                    'detail': detail
                 })
 
-        account_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
+        vendor_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
             vendor_attributes, self.workspace_id)
-        return account_attributes
+        return vendor_attributes
 
     def sync_employees(self):
         """
@@ -309,25 +316,30 @@ class NetSuiteConnector:
         employee_attributes = []
 
         for employee in employees:
+            detail = {
+                'email': employee['email'] if employee['email'] else None
+            }
             if 'subsidiary' in employee and employee['subsidiary']:
                 if employee['subsidiary']['internalId'] == subsidiary_mapping.internal_id:
                     employee_attributes.append({
                         'attribute_type': 'EMPLOYEE',
                         'display_name': 'Employee',
                         'value': employee['entityId'],
-                        'destination_id': employee['internalId']
+                        'destination_id': employee['internalId'],
+                        'detail': detail
                     })
             else:
                 employee_attributes.append({
                     'attribute_type': 'EMPLOYEE',
                     'display_name': 'Employee',
                     'value': employee['entityId'],
-                    'destination_id': employee['internalId']
+                    'destination_id': employee['internalId'],
+                    'detail': detail
                 })
 
-        account_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
+        employee_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
             employee_attributes, self.workspace_id)
-        return account_attributes
+        return employee_attributes
 
     def sync_subsidiaries(self):
         """
