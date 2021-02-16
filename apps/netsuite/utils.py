@@ -4,7 +4,7 @@ from netsuitesdk import NetSuiteConnection
 
 import unidecode
 
-from fyle_accounting_mappings.models import DestinationAttribute
+from fyle_accounting_mappings.models import DestinationAttribute, Mapping, ExpenseAttribute
 
 from apps.fyle.models import Expense
 from apps.fyle.utils import FyleConnector
