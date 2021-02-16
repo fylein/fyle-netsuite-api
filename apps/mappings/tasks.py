@@ -1,6 +1,6 @@
 import logging
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from typing import List, Dict
 
@@ -12,7 +12,7 @@ from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttr
 
 from apps.fyle.utils import FyleConnector
 from apps.netsuite.utils import NetSuiteConnector
-from apps.workspaces.models import NetSuiteCredentials, FyleCredential, WorkspaceGeneralSettings
+from apps.workspaces.models import NetSuiteCredentials, FyleCredential
 
 logger = logging.getLogger(__name__)
 
@@ -201,8 +201,7 @@ def construct_filters_employee_mappings(employee: DestinationAttribute, employee
     return filters
 
 
-def async_auto_map_employees(employee_mapping_preference: str, general_settings: WorkspaceGeneralSettings,
-                              workspace_id: str):
+def async_auto_map_employees(employee_mapping_preference: str, workspace_id: str):
     mapping_setting = MappingSetting.objects.filter(
         ~Q(destination_field='CREDIT_CARD_ACCOUNT'),
         source_field='EMPLOYEE', workspace_id=workspace_id
@@ -233,6 +232,15 @@ def async_auto_map_employees(employee_mapping_preference: str, general_settings:
         auto_create_employee_mappings(source_attributes, mapping_attributes)
 
 
+def schedule_auto_map_employees(employee_mapping_preference: str, workspace_id: str):
+    Schedule.objects.create(
+        func='apps.mappings.tasks.async_auto_map_employees',
+        args='"{0}", {1}'.format(employee_mapping_preference, workspace_id),
+        schedule_type=Schedule.ONCE,
+        next_run=datetime.now() + timedelta(minutes=5)
+    )
+
+
 def async_auto_map_ccc_account(default_ccc_account_name: str, default_ccc_account_id: str, workspace_id: str):
     source_attributes = filter_expense_attributes(workspace_id)
 
@@ -244,3 +252,12 @@ def async_auto_map_ccc_account(default_ccc_account_name: str, default_ccc_accoun
     }
 
     auto_create_employee_mappings(source_attributes, mapping_attributes)
+
+
+def schedule_auto_map_ccc_employees(default_ccc_account_name: str, default_ccc_account_id: str, workspace_id: str):
+    Schedule.objects.create(
+        func='apps.mappings.tasks.async_auto_map_ccc_account',
+        args='"{0}", "{1}", {2}'.format(default_ccc_account_name, default_ccc_account_id, workspace_id),
+        schedule_type=Schedule.ONCE,
+        next_run=datetime.now() + timedelta(minutes=5)
+    )

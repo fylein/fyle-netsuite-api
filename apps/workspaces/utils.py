@@ -1,8 +1,6 @@
 from typing import Dict
 
-from django_q.tasks import async_task
-
-from apps.mappings.tasks import schedule_projects_creation
+from apps.mappings.tasks import schedule_projects_creation, schedule_auto_map_employees
 
 from apps.netsuite.tasks import schedule_vendor_payment_creation, schedule_reimbursements_sync,\
     schedule_netsuite_objects_status_sync
@@ -58,7 +56,6 @@ def create_or_update_general_settings(general_settings_payload: Dict, workspace_
     )
 
     if general_settings_payload['auto_map_employees']:
-        async_task('apps.mappings.tasks.async_auto_map_employees', general_settings_payload['auto_map_employees'], 
-                    general_settings, workspace_id)
+        schedule_auto_map_employees(general_settings_payload['auto_map_employees'], workspace_id)
 
     return general_settings

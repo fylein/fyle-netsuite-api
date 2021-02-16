@@ -1,7 +1,7 @@
 from typing import Dict
 
 from django.db.models import Q
-from django_q.tasks import async_task
+
 from fyle_accounting_mappings.models import MappingSetting
 
 from apps.netsuite.tasks import schedule_vendor_payment_creation
@@ -9,6 +9,7 @@ from apps.workspaces.models import WorkspaceGeneralSettings
 from fyle_netsuite_api.utils import assert_valid
 
 from .models import GeneralMapping, SubsidiaryMapping
+from .tasks import schedule_auto_map_ccc_employees
 
 
 class MappingUtils:
@@ -134,8 +135,7 @@ class MappingUtils:
         )
 
         if general_mapping_object.default_ccc_account_name:
-            async_task('apps.mappings.tasks.async_auto_map_ccc_account',
-                        general_mapping_object.default_ccc_account_name,
-                        general_mapping_object.default_ccc_account_id, self.__workspace_id)
+            schedule_auto_map_ccc_employees(general_mapping_object.default_ccc_account_name,
+                                            general_mapping_object.default_ccc_account_id, self.__workspace_id)
 
         return general_mapping_object
