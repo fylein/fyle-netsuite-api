@@ -127,8 +127,7 @@ class AutoMapEmployeeView(generics.CreateAPIView):
                 chain.append('apps.mappings.tasks.async_auto_map_ccc_account', general_mappings.default_ccc_account_name,
                             general_mappings.default_ccc_account_id, workspace_id)
 
-            if chain.length():
-                chain.run()
+            chain.run()
 
             return Response(
                 data={},
