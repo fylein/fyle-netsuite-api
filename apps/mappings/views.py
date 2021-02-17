@@ -10,7 +10,6 @@ from apps.workspaces.models import WorkspaceGeneralSettings
 from .serializers import GeneralMappingSerializer, SubsidiaryMappingSerializer
 from .models import GeneralMapping, SubsidiaryMapping
 from .utils import MappingUtils
-from .tasks import async_auto_map_employees, async_auto_map_ccc_account
 
 
 class SubsidiaryMappingView(generics.ListCreateAPIView):
