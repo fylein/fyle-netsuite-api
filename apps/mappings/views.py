@@ -2,7 +2,7 @@ from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import status
 
-from django_q.tasks import async_task
+from django_q.tasks import Chain
 
 from fyle_netsuite_api.utils import assert_valid
 from apps.workspaces.models import WorkspaceGeneralSettings
@@ -10,7 +10,6 @@ from apps.workspaces.models import WorkspaceGeneralSettings
 from .serializers import GeneralMappingSerializer, SubsidiaryMappingSerializer
 from .models import GeneralMapping, SubsidiaryMapping
 from .utils import MappingUtils
-from .tasks import async_auto_map_employees, async_auto_map_ccc_account
 
 
 class SubsidiaryMappingView(generics.ListCreateAPIView):
@@ -110,6 +109,8 @@ class AutoMapEmployeeView(generics.CreateAPIView):
             workspace_id = kwargs['workspace_id']
             general_settings = WorkspaceGeneralSettings.objects.get(workspace_id=workspace_id)
 
+            chain = Chain(cached=True)
+
             if not general_settings.auto_map_employees:
                 return Response(
                     data={
@@ -118,13 +119,16 @@ class AutoMapEmployeeView(generics.CreateAPIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            async_task('apps.mappings.tasks.async_auto_map_employees',
+            chain.append('apps.mappings.tasks.async_auto_map_employees',
                         general_settings.auto_map_employees, workspace_id)
 
             general_mappings = GeneralMapping.objects.get(workspace_id=workspace_id)
             if general_mappings.default_ccc_account_name:
-                async_task('apps.mappings.tasks.async_auto_map_ccc_account', general_mappings.default_ccc_account_name,
+                chain.append('apps.mappings.tasks.async_auto_map_ccc_account', general_mappings.default_ccc_account_name,
                             general_mappings.default_ccc_account_id, workspace_id)
+
+            if chain.length():
+                chain.run()
 
             return Response(
                 data={},
