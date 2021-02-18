@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 
 from django.urls import reverse
@@ -13,17 +14,16 @@ from fyle_netsuite_api import settings
 class FyleTests(APITestCase):
 
     def setUp(self):
-        client_id = settings.FYLE_CLIENT_ID
-        client_secret = settings.FYLE_CLIENT_SECRET
+        client_id = os.environ.get('FYLE_TEST_CLIENT_ID')
+        client_secret = os.environ.get('FYLE_TEST_CLIENT_SECRET')
         base_url = settings.FYLE_BASE_URL
-        refresh_token = settings.FYLE_REFRESH_TOKEN
+        refresh_token = os.environ.get('FYLE_TEST_REFRESH_TOKEN')
 
         self.connection = FyleSDK(
             base_url=base_url,
             client_id=client_id,
             client_secret=client_secret,
             refresh_token=refresh_token,
-            jobs_url=settings.FYLE_JOBS_URL
         )
 
         self.access_token = self.connection.access_token
