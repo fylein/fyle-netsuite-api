@@ -679,7 +679,7 @@ class NetSuiteConnector:
                 'exchangeRate': None,
                 'expenseDate': line.transaction_date,
                 'expMediaItem': None,
-                'foreignAmount': expense.foreign_amount,
+                'foreignAmount': expense.foreign_amount if expense.foreign_amount else None,
                 'grossAmt': None,
                 'isBillable': line.billable,
                 'isNonReimbursable': None,
