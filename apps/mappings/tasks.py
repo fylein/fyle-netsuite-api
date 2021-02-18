@@ -32,9 +32,9 @@ def remove_duplicates(ns_attributes: List[DestinationAttribute]):
 
 def create_fyle_categories_payload(categories: List[DestinationAttribute], workspace_id: int):
     """
-    Create Fyle Categories Payload from QBO Customer / Categories
+    Create Fyle Categories Payload from NetSuite Customer / Categories
     :param workspace_id: Workspace integer id
-    :param categories: QBO Categories
+    :param categories: NetSuite Categories
     :return: Fyle Categories Payload
     """
     payload = []
@@ -82,11 +82,7 @@ def upload_categories_to_fyle(workspace_id, reimbursable_expenses_object):
 
     if fyle_payload:
         fyle_connection.connection.Categories.post(fyle_payload)
-
-        if reimbursable_expenses_object == 'EXPENSE REPORT':
-            netsuite_connection.sync_expense_categories()
-        else:
-            netsuite_connection.sync_accounts()
+        fyle_connection.sync_categories(False)
 
     return netsuite_attributes
 
