@@ -155,9 +155,6 @@ def auto_create_category_mappings(workspace_id):
     reimbursable_expenses_object = general_settings.reimbursable_expenses_object
     corporate_credit_card_expenses_object = general_settings.corporate_credit_card_expenses_object
 
-    fyle_categories = upload_categories_to_fyle(
-        workspace_id=workspace_id, reimbursable_expenses_object=reimbursable_expenses_object)
-
     category_mappings = []
 
     if reimbursable_expenses_object == 'EXPENSE REPORT':
@@ -166,6 +163,9 @@ def auto_create_category_mappings(workspace_id):
         reimbursable_destination_type = 'ACCOUNT'
 
     try:
+        fyle_categories = upload_categories_to_fyle(
+            workspace_id=workspace_id, reimbursable_expenses_object=reimbursable_expenses_object)
+
         for category in fyle_categories:
             try:
                 mapping = Mapping.create_or_update_mapping(
@@ -250,7 +250,7 @@ def create_fyle_projects_payload(projects: List[DestinationAttribute], workspace
         if project.value not in existing_project_names:
             payload.append({
                 'name': project.value,
-                'code': project.destination_id,
+                'code': '',
                 'description': 'NetSuite Customer / Project - {0}, Id - {1}'.format(
                     project.value,
                     project.destination_id
@@ -302,11 +302,12 @@ def auto_create_project_mappings(workspace_id):
     Create Project Mappings
     :return: mappings
     """
-    ns_attributes = upload_projects_to_fyle(workspace_id=workspace_id)
 
     project_mappings = []
 
     try:
+        ns_attributes = upload_projects_to_fyle(workspace_id=workspace_id)
+
         for project in ns_attributes:
             mapping = Mapping.create_or_update_mapping(
                 source_type='PROJECT',
