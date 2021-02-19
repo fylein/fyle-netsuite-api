@@ -78,14 +78,14 @@ class NetSuiteConnector:
                 account_attributes.append({
                     'attribute_type': 'ACCOUNT',
                     'display_name': 'Account',
-                    'value': account['acctName'],
+                    'value': unidecode.unidecode(u'{0}'.format(account['acctName'])).replace('/', '-'),
                     'destination_id': account['internalId']
                 })
 
                 account_attributes.append({
                     'attribute_type': 'CCC_ACCOUNT',
                     'display_name': 'Credit Card Account',
-                    'value': account['acctName'],
+                    'value': unidecode.unidecode(u'{0}'.format(account['acctName'])).replace('/', '-'),
                     'destination_id': account['internalId']
                 })
 
@@ -110,12 +110,18 @@ class NetSuiteConnector:
         category_attributes = []
 
         for category in categories:
+            detail = {
+                'account_name': category['expenseAcct']['name'],
+                'account_internal_id': category['expenseAcct']['internalId']
+            }
+
             category_attributes.append(
                 {
                     'attribute_type': 'EXPENSE_CATEGORY',
                     'display_name': 'Expense Category',
-                    'value': 'Expense Category - {}'.format(category['name']),
-                    'destination_id': category['internalId']
+                    'value': unidecode.unidecode(u'{0}'.format(category['name'])).replace('/', '-'),
+                    'destination_id': category['internalId'],
+                    'detail': detail
                 }
             )
 
@@ -123,8 +129,9 @@ class NetSuiteConnector:
                 {
                     'attribute_type': 'CCC_EXPENSE_CATEGORY',
                     'display_name': 'Credit Card Expense Category',
-                    'value': 'Expense Category - {}'.format(category['name']),
-                    'destination_id': category['internalId']
+                    'value': unidecode.unidecode(u'{0}'.format(category['name'])).replace('/', '-'),
+                    'destination_id': category['internalId'],
+                    'detail': detail
                 }
             )
 
