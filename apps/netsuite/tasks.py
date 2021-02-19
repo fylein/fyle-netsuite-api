@@ -466,6 +466,10 @@ def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List
         expense_groups = ExpenseGroup.objects.filter(
             workspace_id=workspace_id, id__in=expense_group_ids, expensereport__id__isnull=True
         ).all()
+    else:
+        expense_groups = ExpenseGroup.objects.filter(
+            workspace_id=workspace_id, expensereport__id__isnull=True
+        ).all()
 
     chain = Chain(cached=True)
 
@@ -496,6 +500,10 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
     if expense_group_ids:
         expense_groups = ExpenseGroup.objects.filter(
             workspace_id=workspace_id, id__in=expense_group_ids, journalentry__id__isnull=True
+        ).all()
+    else:
+        expense_groups = ExpenseGroup.objects.filter(
+            workspace_id=workspace_id, journalentry__id__isnull=True
         ).all()
 
     chain = Chain(cached=True)
