@@ -74,7 +74,10 @@ def upload_categories_to_fyle(workspace_id, reimbursable_expenses_object):
     if reimbursable_expenses_object == 'EXPENSE REPORT':
         netsuite_attributes: List[DestinationAttribute] = netsuite_connection.sync_expense_categories()
     else:
-        netsuite_attributes: List[DestinationAttribute] = netsuite_connection.sync_accounts()
+        netsuite_connection.sync_accounts()
+        netsuite_attributes: List[DestinationAttribute] = DestinationAttribute.objects.filter(
+            workspace_id=workspace_id, attribute_type='ACCOUNT'
+        )
 
     netsuite_attributes = remove_duplicates(netsuite_attributes)
 
