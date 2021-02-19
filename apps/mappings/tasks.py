@@ -7,7 +7,7 @@ from typing import List, Dict
 from django_q.models import Schedule
 from django.db.models import Q
 
-from fylesdk import WrongParamsError
+from fylesdk.exceptions import WrongParamsError
 from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttribute, DestinationAttribute
 
 from apps.fyle.utils import FyleConnector
