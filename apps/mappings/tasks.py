@@ -250,7 +250,7 @@ def create_fyle_projects_payload(projects: List[DestinationAttribute], workspace
         if project.value not in existing_project_names:
             payload.append({
                 'name': project.value,
-                'code': 'project.destination_id',
+                'code': project.destination_id,
                 'description': 'NetSuite Customer / Project - {0}, Id - {1}'.format(
                     project.value,
                     project.destination_id
