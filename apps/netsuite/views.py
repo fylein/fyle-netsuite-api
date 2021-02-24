@@ -166,6 +166,18 @@ class AccountView(generics.ListCreateAPIView):
             )
 
 
+class CCCAccountView(generics.ListCreateAPIView):
+    """
+    CCCAccount view
+    """
+    serializer_class = DestinationAttributeSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return DestinationAttribute.objects.filter(
+            attribute_type='CCC_ACCOUNT', workspace_id=self.kwargs['workspace_id']).order_by('value')
+
+
 class AccountsPayableView(generics.ListAPIView):
     """
     AccountsPayable view
