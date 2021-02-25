@@ -4,12 +4,13 @@ from .views import VendorView, AccountView, DepartmentView, SubsidiaryView, Bill
     ClassificationView, LocationView, EmployeeView, ExpenseReportView, ExpenseReportScheduleView, JournalEntryView,\
     JournalEntryScheduleView, BankAccountView, CreditCardAccountView, AccountsPayableView, ExpenseCategoryView, \
     CurrencyView, NetSuiteFieldsView, SyncCustomFieldsView, CustomSegmentView, VendorPaymentAccountView,\
-    ReimburseNetSuitePaymentsView, VendorPaymentView, CustomerView, ProjectView, CCCExpenseCategoryView
+    ReimburseNetSuitePaymentsView, VendorPaymentView, CustomerView, ProjectView, CCCExpenseCategoryView, CCCAccountView
 
 urlpatterns = [
     path('vendors/', VendorView.as_view()),
     path('employees/', EmployeeView.as_view()),
     path('accounts/', AccountView.as_view()),
+    path('ccc_accounts/', CCCAccountView.as_view()),
     path('accounts_payables/', AccountsPayableView.as_view()),
     path('vendor_payment_accounts/', VendorPaymentAccountView.as_view()),
     path('bank_accounts/', BankAccountView.as_view()),
