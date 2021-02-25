@@ -1087,7 +1087,7 @@ class NetSuiteConnector:
             },
             'department': {
                 'name': None,
-                'internalId': department['internalId'] if 'internalId' in department else None,
+                'internalId': department['internalId'] if (department and 'internalId' in department) else None,
                 'externalId': None,
                 'type': 'department'
             },
