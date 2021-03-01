@@ -4,9 +4,9 @@ from netsuitesdk import NetSuiteConnection
 
 import unidecode
 
-from fyle_accounting_mappings.models import DestinationAttribute
+from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute
 
-from apps.fyle.models import Expense
+from apps.fyle.models import Expense, ExpenseGroup
 from apps.fyle.utils import FyleConnector
 
 from apps.mappings.models import SubsidiaryMapping
@@ -312,6 +312,74 @@ class NetSuiteConnector:
             vendor_attributes, self.workspace_id)
         return vendor_attributes
 
+    def post_vendor(self, vendor: ExpenseAttribute, auto_map_employee_preference: str, expense_group: ExpenseGroup):
+        """
+        Create an Vendor on NetSuite
+        :param expense_group: expense group
+        :param auto_map_employee_preference: Preference while doing automap of employees
+        :param vendor: vendor attribute to be created
+        :return: Vendor Destination Attribute
+        """
+        subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
+
+        expense = expense_group.expenses.first()
+
+        currency = DestinationAttribute.objects.filter(value=expense.currency,
+                                                       workspace_id=expense_group.workspace_id,
+                                                       attribute_type='CURRENCY').first()
+
+        netsuite_entity_id = vendor.detail['employee_code'] if (
+                auto_map_employee_preference == 'EMPLOYEE_CODE' and vendor.detail['employee_code']
+        ) else vendor.detail['full_name']
+
+        vendor = {
+            'firstName': vendor.detail['full_name'].split(' ')[0],
+            'lastName': vendor.detail['full_name'].split(' ')[-1]
+            if len(vendor.detail['full_name'].split(' ')) > 1 else '',
+            'entityId': netsuite_entity_id,
+            'email': vendor.value,
+            'currency': {
+                "name": None,
+                "internalId": currency.destination_id if currency else '1',
+                "externalId": None,
+                "type": "currency"
+            },
+            'representingSubsidiary': {
+                "name": None,
+                "internalId": subsidiary_mapping.internal_id,
+                "externalId": None,
+                "type": None
+            },
+            'subsidiary': {
+                'name': None,
+                'internalId': subsidiary_mapping.internal_id,
+                'externalId': None,
+                'type': None
+            },
+            'workCalendar': {
+                "name": None,
+                "internalId": 1,
+                "externalId": None,
+                "type": None
+            },
+            'externalId': vendor.value
+        }
+        created_vendor = self.connection.vendors.post(vendor)
+
+        vendor_detail = self.connection.vendors.get(created_vendor['internalId'])
+
+        created_vendor = DestinationAttribute.bulk_upsert_destination_attributes([{
+            'attribute_type': 'VENDOR',
+            'display_name': 'vendor',
+            'value': vendor_detail['entityId'],
+            'destination_id': vendor_detail['internalId'],
+            'detail': {
+                'email': vendor_detail['email']
+            }
+        }], self.workspace_id)[0]
+
+        return created_vendor
+
     def sync_employees(self):
         """
         Sync employees
@@ -347,6 +415,68 @@ class NetSuiteConnector:
         employee_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
             employee_attributes, self.workspace_id)
         return employee_attributes
+
+    def post_employee(self, employee: ExpenseAttribute, auto_map_employee_preference: str, expense_group: ExpenseGroup):
+        """
+        Create an Employee on NetSuite
+        :param expense_group: expense group
+        :param auto_map_employee_preference: Auto map employee preference chosen
+        :param employee: employee attribute to be created
+        :return: Employee Destination Attribute
+        """
+        subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
+
+        expense = expense_group.expenses.first()
+
+        currency = DestinationAttribute.objects.filter(value=expense.currency,
+                                                       workspace_id=expense_group.workspace_id,
+                                                       attribute_type='CURRENCY').first()
+
+        employee_entity_id = employee.detail['employee_code'] if (
+                auto_map_employee_preference == 'EMPLOYEE_CODE' and employee.detail['employee_code']
+        ) else employee.detail['full_name']
+
+        employee = {
+            'entityId': employee_entity_id,
+            'firstName': employee.detail['full_name'].split(' ')[0],
+            'lastName': employee.detail['full_name'].split(' ')[-1]
+            if len(employee.detail['full_name'].split(' ')) > 1 else '',
+            'inheritIPRules': True,
+            'payFrequency': '_monthly',
+            'subsidiary': {
+                'name': None,
+                'internalId': subsidiary_mapping.internal_id,
+                'externalId': None,
+                'type': None
+            },
+            'workCalendar': {
+                "name": None,
+                "internalId": 1,
+                "externalId": None,
+                "type": None
+            },
+            'defaultExpenseReportCurrency': {
+                "internalId": currency.destination_id if currency else '1',
+                "externalId": None,
+                "type": "currency"
+            },
+            'externalId': employee.value
+        }
+        created_employee = self.connection.employees.post(employee)
+
+        employee_detail = self.connection.employees.get(created_employee['internalId'])
+
+        created_employee = DestinationAttribute.bulk_upsert_destination_attributes([{
+            'attribute_type': 'EMPLOYEE',
+            'display_name': 'employee',
+            'value': employee_detail['entityId'],
+            'destination_id': employee_detail['internalId'],
+            'detail': {
+                'email': employee_detail['email']
+            }
+        }], self.workspace_id)[0]
+
+        return created_employee
 
     def sync_subsidiaries(self):
         """

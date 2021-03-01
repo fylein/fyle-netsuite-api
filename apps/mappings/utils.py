@@ -135,7 +135,6 @@ class MappingUtils:
         )
 
         if general_mapping_object.default_ccc_account_name:
-            schedule_auto_map_ccc_employees(general_mapping_object.default_ccc_account_name,
-                                            general_mapping_object.default_ccc_account_id, self.__workspace_id)
+            schedule_auto_map_ccc_employees(self.__workspace_id)
 
         return general_mapping_object

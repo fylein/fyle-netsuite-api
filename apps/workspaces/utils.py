@@ -35,7 +35,8 @@ def create_or_update_general_settings(general_settings_payload: Dict, workspace_
             'sync_netsuite_to_fyle_payments': general_settings_payload['sync_netsuite_to_fyle_payments'],
             'import_projects': general_settings_payload['import_projects'],
             'import_categories': general_settings_payload['import_categories'],
-            'auto_map_employees': general_settings_payload['auto_map_employees']
+            'auto_map_employees': general_settings_payload['auto_map_employees'],
+            'auto_create_destination_entity': general_settings_payload['auto_create_destination_entity']
         }
     )
 
