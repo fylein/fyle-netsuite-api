@@ -358,7 +358,7 @@ class NetSuiteConnector:
             },
             'workCalendar': {
                 "name": None,
-                "internalId": 1,
+                "internalId": '1',
                 "externalId": None,
                 "type": None
             },
@@ -366,15 +366,13 @@ class NetSuiteConnector:
         }
         created_vendor = self.connection.vendors.post(vendor)
 
-        vendor_detail = self.connection.vendors.get(created_vendor['internalId'])
-
         created_vendor = DestinationAttribute.bulk_upsert_destination_attributes([{
             'attribute_type': 'VENDOR',
             'display_name': 'vendor',
-            'value': vendor_detail['entityId'],
-            'destination_id': vendor_detail['internalId'],
+            'value': netsuite_entity_id,
+            'destination_id': created_vendor['internalId'],
             'detail': {
-                'email': vendor_detail['email']
+                'email': vendor.value
             }
         }], self.workspace_id)[0]
 
@@ -464,15 +462,13 @@ class NetSuiteConnector:
         }
         created_employee = self.connection.employees.post(employee)
 
-        employee_detail = self.connection.employees.get(created_employee['internalId'])
-
         created_employee = DestinationAttribute.bulk_upsert_destination_attributes([{
             'attribute_type': 'EMPLOYEE',
             'display_name': 'employee',
-            'value': employee_detail['entityId'],
-            'destination_id': employee_detail['internalId'],
+            'value': employee_entity_id,
+            'destination_id': created_employee['internalId'],
             'detail': {
-                'email': employee_detail['email']
+                'email': employee.value
             }
         }], self.workspace_id)[0]
 
