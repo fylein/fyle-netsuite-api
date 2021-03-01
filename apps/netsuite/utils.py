@@ -422,12 +422,20 @@ class NetSuiteConnector:
         :param employee: employee attribute to be created
         :return: Employee Destination Attribute
         """
+        department = DestinationAttribute.objects.filter(
+            workspace_id=self.workspace_id, attribute_type='DEPARTMENT',
+            value__iexact=employee.detail['department']).first()
+
+        location = DestinationAttribute.objects.filter(
+            workspace_id=self.workspace_id, attribute_type='LOCATION',
+            value__iexact=employee.detail['location']).first()
+
         subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
 
         expense = expense_group.expenses.first()
 
         currency = DestinationAttribute.objects.filter(value=expense.currency,
-                                                       workspace_id=expense_group.workspace_id,
+                                                       workspace_id=self.workspace_id,
                                                        attribute_type='CURRENCY').first()
 
         employee_entity_id = employee.detail['employee_code'] if (
@@ -435,6 +443,8 @@ class NetSuiteConnector:
         ) else employee.detail['full_name']
 
         employee = {
+            'location': location.destination_id,
+            'department': department.destination_id,
             'entityId': employee_entity_id,
             'email': employee.value,
             'firstName': employee.detail['full_name'].split(' ')[0],
