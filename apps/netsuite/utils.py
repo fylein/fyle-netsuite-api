@@ -358,7 +358,7 @@ class NetSuiteConnector:
             },
             'workCalendar': {
                 "name": None,
-                "internalId": '1',
+                "internalId": None,
                 "externalId": None,
                 "type": None
             },
@@ -372,7 +372,7 @@ class NetSuiteConnector:
             'value': netsuite_entity_id,
             'destination_id': created_vendor['internalId'],
             'detail': {
-                'email': vendor.value
+                'email': vendor['email']
             }
         }], self.workspace_id)[0]
 
@@ -436,11 +436,12 @@ class NetSuiteConnector:
 
         employee = {
             'entityId': employee_entity_id,
+            'email': employee.value,
             'firstName': employee.detail['full_name'].split(' ')[0],
             'lastName': employee.detail['full_name'].split(' ')[-1]
             if len(employee.detail['full_name'].split(' ')) > 1 else '',
             'inheritIPRules': True,
-            'payFrequency': '_monthly',
+            'payFrequency': None,
             'subsidiary': {
                 'name': None,
                 'internalId': subsidiary_mapping.internal_id,
@@ -449,7 +450,7 @@ class NetSuiteConnector:
             },
             'workCalendar': {
                 "name": None,
-                "internalId": 1,
+                "internalId": None,
                 "externalId": None,
                 "type": None
             },
@@ -468,7 +469,7 @@ class NetSuiteConnector:
             'value': employee_entity_id,
             'destination_id': created_employee['internalId'],
             'detail': {
-                'email': employee.value
+                'email': employee['email']
             }
         }], self.workspace_id)[0]
 
