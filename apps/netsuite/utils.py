@@ -1168,7 +1168,8 @@ class NetSuiteConnector:
         return lines
 
     def __construct_vendor_payment(self, vendor_payment: VendorPayment,
-                                   vendor_payment_lineitems: List[VendorPaymentLineitem]) -> Dict:
+                                   vendor_payment_lineitems: List[VendorPaymentLineitem],
+                                   department) -> Dict:
         """
         Create a vendor payment
         :return: constructed vendor payment
@@ -1185,7 +1186,12 @@ class NetSuiteConnector:
                 'type': None
             },
             'balance': None,
-            'apAcct': None,
+            'apAcct': {
+                'name': None,
+                'internalId': vendor_payment.accounts_payable_id,
+                'externalId': None,
+                'type': None
+            },
             'entity': {
                 'name': None,
                 'internalId': vendor_payment.entity_id,
@@ -1211,7 +1217,7 @@ class NetSuiteConnector:
             },
             'department': {
                 'name': None,
-                'internalId': vendor_payment.department_id,
+                'internalId': department['internalId'] if (department and 'internalId' in department) else None,
                 'externalId': None,
                 'type': 'department'
             },
@@ -1256,10 +1262,15 @@ class NetSuiteConnector:
         return vendor_payment_payload
 
     def post_vendor_payment(self, vendor_payment: VendorPayment,
-                            vendor_payment_lineitems: List[VendorPaymentLineitem]):
+                            vendor_payment_lineitems: List[VendorPaymentLineitem],
+                            first_object):
         """
         Post vendor payments to NetSuite
         """
-        vendor_payment_payload = self.__construct_vendor_payment(vendor_payment, vendor_payment_lineitems)
+        department = first_object['department']
+
+        vendor_payment_payload = self.__construct_vendor_payment(
+            vendor_payment, vendor_payment_lineitems, department
+        )
         created_vendor_payment = self.connection.vendor_payments.post(vendor_payment_payload)
         return created_vendor_payment

@@ -780,8 +780,12 @@ class VendorPayment(models.Model):
         :return: vendor payment object
         """
         general_mappings = GeneralMapping.objects.get(workspace_id=workspace_id)
+        general_settings = WorkspaceGeneralSettings.objects.get(workspace_id=workspace_id)
 
         vendor_payment_object = VendorPayment.objects.create(
+            accounts_payable_id=general_mappings.reimbursable_account_id
+            if general_settings.reimbursable_expenses_object == 'EXPENSE REPORT'
+            else general_mappings.accounts_payable_id,
             subsidiary_id=netsuite_object['subsidiary_id'],
             account_id=general_mappings.vendor_payment_account_id,
             entity_id=netsuite_object['entity_id'],

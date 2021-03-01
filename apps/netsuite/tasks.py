@@ -494,11 +494,11 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str]):
     """
     if expense_group_ids:
         expense_groups = ExpenseGroup.objects.filter(
-            workspace_id=workspace_id, id__in=expense_group_ids, bill__id__isnull=True
+            workspace_id=workspace_id, id__in=expense_group_ids, bill__id__isnull=True, exported_at__isnull=True
         ).all()
     else:
         expense_groups = ExpenseGroup.objects.filter(
-            workspace_id=workspace_id, bill__id__isnull=True
+            workspace_id=workspace_id, bill__id__isnull=True, exported_at__isnull=True
         ).all()
 
     chain = Chain(cached=True)
@@ -530,11 +530,11 @@ def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List
     """
     if expense_group_ids:
         expense_groups = ExpenseGroup.objects.filter(
-            workspace_id=workspace_id, id__in=expense_group_ids, expensereport__id__isnull=True
+            workspace_id=workspace_id, id__in=expense_group_ids, expensereport__id__isnull=True, exported_at__isnull=True
         ).all()
     else:
         expense_groups = ExpenseGroup.objects.filter(
-            workspace_id=workspace_id, expensereport__id__isnull=True
+            workspace_id=workspace_id, expensereport__id__isnull=True, exported_at__isnull=True
         ).all()
 
     chain = Chain(cached=True)
@@ -565,11 +565,11 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
     """
     if expense_group_ids:
         expense_groups = ExpenseGroup.objects.filter(
-            workspace_id=workspace_id, id__in=expense_group_ids, journalentry__id__isnull=True
+            workspace_id=workspace_id, id__in=expense_group_ids, journalentry__id__isnull=True, exported_at__isnull=True
         ).all()
     else:
         expense_groups = ExpenseGroup.objects.filter(
-            workspace_id=workspace_id, journalentry__id__isnull=True
+            workspace_id=workspace_id, journalentry__id__isnull=True, exported_at__isnull=True
         ).all()
 
     chain = Chain(cached=True)
@@ -681,8 +681,14 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
                 entity_object['line'], vendor_payment_object
             )
 
+            first_object_id = vendor_payment_lineitems[0].doc_id
+            if object_type == 'Bill':
+                first_object = netsuite_connection.get_bill(first_object_id)
+            else:
+                first_object = netsuite_connection.get_expense_report(first_object_id)
+
             created_vendor_payment = netsuite_connection.post_vendor_payment(
-                vendor_payment_object, vendor_payment_lineitems
+                vendor_payment_object, vendor_payment_lineitems, first_object
             )
 
             lines = entity_object['line']
