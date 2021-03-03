@@ -335,7 +335,8 @@ class NetSuiteConnector:
         vendor = {
             'firstName': vendor.detail['full_name'].split(' ')[0],
             'lastName': vendor.detail['full_name'].split(' ')[-1]
-            if len(vendor.detail['full_name'].split(' ')) > 1 else '',
+            if len(vendor.detail['full_name'].split(' ')) > 1 else vendor.detail['full_name'],
+            'isPerson': True,
             'entityId': netsuite_entity_id,
             'email': vendor.value,
             'currency': {
@@ -443,8 +444,18 @@ class NetSuiteConnector:
         ) else employee.detail['full_name']
 
         employee = {
-            'location': location.destination_id,
-            'department': department.destination_id,
+            'location': {
+                'name': None,
+                'internalId': location.destination_id if location else None,
+                'externalId': None,
+                'type': None
+            },
+            'department': {
+                'name': None,
+                'internalId': department.destination_id if department else None,
+                'externalId': None,
+                'type': None
+            },
             'entityId': employee_entity_id,
             'email': employee.value,
             'firstName': employee.detail['full_name'].split(' ')[0],
