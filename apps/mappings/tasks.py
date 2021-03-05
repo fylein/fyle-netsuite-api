@@ -318,6 +318,8 @@ def auto_create_project_mappings(workspace_id):
                 workspace_id=workspace_id
             )
             project_mappings.append(mapping)
+            mapping.source.auto_mapped = True
+            mapping.source.save(update_fields=['auto_mapped'])
 
         return project_mappings
     except WrongParamsError as exception:
