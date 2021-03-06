@@ -324,7 +324,8 @@ class NetSuiteConnector:
 
         for employee in employees:
             detail = {
-                'email': employee['email'] if employee['email'] else None
+                'email': employee['email'] if employee['email'] else None,
+                'department_id': employee['department']['internalId'] if employee['department'] else None
             }
             if 'subsidiary' in employee and employee['subsidiary']:
                 if employee['subsidiary']['internalId'] == subsidiary_mapping.internal_id:
@@ -961,7 +962,7 @@ class NetSuiteConnector:
             },
             'department': {
                 'name': None,
-                'internalId': None,
+                'internalId': journal_entry.department_id,
                 'externalId': None,
                 'type': 'department'
             },
