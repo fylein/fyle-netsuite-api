@@ -550,7 +550,7 @@ def create_netsuite_payment_objects(netsuite_objects, object_type, workspace_id)
                     netsuite_payment_objects[entity_id] = {
                         'subsidiary_id': netsuite_object.subsidiary_id,
                         'entity_id': entity_id,
-                        'currency': netsuite_object.currency,
+                        'currenccfy': netsuite_object.currency,
                         'memo': 'Payment for {0} by {1}'.format(
                             object_type.lower(), netsuite_object.expense_group.description['employee_email']
                         ),
