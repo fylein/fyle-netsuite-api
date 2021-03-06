@@ -627,7 +627,7 @@ class JournalEntry(models.Model):
         if general_mappings.use_employee_department:
             if general_mappings.department_level in ('ALL', 'TRANSACTION_BODY'):
                 if entity.destination_type == 'EMPLOYEE':
-                    department_id = entity.source.detail.get('department_id')
+                    department_id = entity.destination.detail.get('department_id')
 
         journal_entry_object, _ = JournalEntry.objects.update_or_create(
             expense_group=expense_group,
@@ -736,7 +736,7 @@ class JournalEntryLineItem(models.Model):
             if not department_id and general_mappings.use_employee_department:
                 if general_mappings.department_level in ('ALL', 'TRANSACTION_LINE'):
                     if entity.destination_type == 'EMPLOYEE':
-                        department_id = entity.source.detail.get('department_id')
+                        department_id = entity.destination.detail.get('department_id')
 
             location_id = get_location_id_or_none(expense_group, lineitem)
 
