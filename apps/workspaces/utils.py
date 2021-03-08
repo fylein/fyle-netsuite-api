@@ -1,6 +1,7 @@
 from typing import Dict
 
-from apps.mappings.tasks import schedule_projects_creation, schedule_categories_creation, schedule_auto_map_employees
+from apps.mappings.tasks import schedule_projects_creation, schedule_categories_creation, schedule_auto_map_employees, \
+    schedule_auto_map_ccc_employees
 
 from apps.netsuite.tasks import schedule_vendor_payment_creation, schedule_reimbursements_sync, \
     schedule_netsuite_objects_status_sync
@@ -18,7 +19,7 @@ def create_or_update_general_settings(general_settings_payload: Dict, workspace_
     assert_valid(
         'reimbursable_expenses_object' in general_settings_payload and general_settings_payload[
             'reimbursable_expenses_object'], 'reimbursable_expenses_object field is blank')
-
+a
     assert_valid('auto_map_employees' in general_settings_payload, 'auto_map_employees field is missing')
 
     if general_settings_payload['auto_map_employees']:
@@ -61,5 +62,8 @@ def create_or_update_general_settings(general_settings_payload: Dict, workspace_
     )
 
     schedule_auto_map_employees(general_settings_payload['auto_map_employees'], workspace_id)
+
+    if general_settings_payload['auto_map_employees'] is None:
+        schedule_auto_map_ccc_employees(workspace_id=workspace_id)
 
     return general_settings
