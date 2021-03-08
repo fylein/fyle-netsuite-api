@@ -19,7 +19,7 @@ def create_or_update_general_settings(general_settings_payload: Dict, workspace_
     assert_valid(
         'reimbursable_expenses_object' in general_settings_payload and general_settings_payload[
             'reimbursable_expenses_object'], 'reimbursable_expenses_object field is blank')
-a
+
     assert_valid('auto_map_employees' in general_settings_payload, 'auto_map_employees field is missing')
 
     if general_settings_payload['auto_map_employees']:
