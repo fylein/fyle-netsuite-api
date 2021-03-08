@@ -583,8 +583,9 @@ class JournalEntry(models.Model):
     entity_id = models.CharField(max_length=255, help_text='NetSuite Entity id (Employee / Vendor)')
     currency = models.CharField(max_length=255, help_text='Journal Entry Currency')
     location_id = models.CharField(max_length=255, help_text='NetSuite Location id', null=True)
+    department_id = models.CharField(max_length=255, help_text='NetSuite Department id', null=True)
     subsidiary_id = models.CharField(max_length=255, help_text='NetSuite Subsidiary ID')
-    memo = models.CharField(max_length=255, help_text='Journal Entry Memo')
+    memo = models.TextField(help_text='Journal Entry Memo')
     external_id = models.CharField(max_length=255, unique=True, help_text='Journal Entry External ID')
     transaction_date = models.DateTimeField(help_text='Journal Entry transaction date')
     payment_synced = models.BooleanField(help_text='Payment synced status', default=False)
@@ -621,6 +622,13 @@ class JournalEntry(models.Model):
 
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
+        department_id = None
+
+        if general_mappings.use_employee_department:
+            if general_mappings.department_level in ('ALL', 'TRANSACTION_BODY'):
+                if entity.destination_type == 'EMPLOYEE':
+                    department_id = entity.destination.detail.get('department_id')
+
         journal_entry_object, _ = JournalEntry.objects.update_or_create(
             expense_group=expense_group,
             defaults={
@@ -628,6 +636,7 @@ class JournalEntry(models.Model):
                 'currency': currency.destination_id if currency else '1',
                 'location_id': general_mappings.location_id,
                 'subsidiary_id': subsidiary_mappings.internal_id,
+                'department_id': department_id,
                 'memo': "Reimbursable expenses by {0}".format(description.get('employee_email')) if
                 expense_group.fund_source == 'PERSONAL' else
                 "Credit card expenses by {0}".format(description.get('employee_email')),
@@ -669,6 +678,8 @@ class JournalEntryLineItem(models.Model):
         """
         expenses = expense_group.expenses.all()
         journal_entry = JournalEntry.objects.get(expense_group=expense_group)
+
+        general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
         description = expense_group.description
 
@@ -722,10 +733,14 @@ class JournalEntryLineItem(models.Model):
 
             department_id = get_department_id_or_none(expense_group, lineitem)
 
+            if not department_id and general_mappings.use_employee_department:
+                if general_mappings.department_level in ('ALL', 'TRANSACTION_LINE'):
+                    if entity.destination_type == 'EMPLOYEE':
+                        department_id = entity.destination.detail.get('department_id')
+
             location_id = get_location_id_or_none(expense_group, lineitem)
 
             if not location_id:
-                general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
                 if general_mappings.location_id:
                     location_id = general_mappings.location_id
 
