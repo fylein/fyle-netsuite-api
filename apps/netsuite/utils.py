@@ -363,7 +363,7 @@ class NetSuiteConnector:
                 "externalId": None,
                 "type": None
             },
-            'externalId': vendor.value
+            'externalId': vendor.detail['user_id']
         }
         created_vendor = self.connection.vendors.post(vendor)
 
@@ -480,7 +480,7 @@ class NetSuiteConnector:
                 "externalId": None,
                 "type": "currency"
             },
-            'externalId': employee.value
+            'externalId': employee.detail['user_id']
         }
         created_employee = self.connection.employees.post(employee)
 

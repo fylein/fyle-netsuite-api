@@ -112,6 +112,9 @@ def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_conn
             mapping.source.auto_mapped = True
             mapping.source.save(update_fields=['auto_mapped'])
 
+            mapping.destination.auto_created = True
+            mapping.destination.save(update_fields=['auto_created'])
+
         except NetSuiteRequestError as exception:
             logger.exception({'error': exception})
 
