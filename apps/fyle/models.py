@@ -24,7 +24,7 @@ ALLOWED_FIELDS = [
 
 ALLOWED_FORM_INPUT = {
     'group_expenses_by': ['settlement_id', 'claim_number', 'report_id', 'category', 'vendor'],
-    'export_date_type': ['current_date', 'approved_at', 'spent_at', 'verified_at']
+    'export_date_type': ['current_date', 'approved_at', 'spent_at', 'verified_at', 'last_spent_at']
 }
 
 
@@ -240,7 +240,8 @@ def _group_expenses(expenses, group_fields, workspace_id):
             group_fields.pop(group_fields.index(field))
             field = ExpenseAttribute.objects.filter(workspace_id=workspace_id,
                                                     attribute_type=field.upper()).first()
-            custom_fields[field.attribute_type.lower()] = KeyTextTransform(field.display_name,
+            if field:
+                custom_fields[field.attribute_type.lower()] = KeyTextTransform(field.display_name,
                                                                            'custom_properties')
 
     expense_groups = list(expenses.values(*group_fields, **custom_fields).annotate(
@@ -287,6 +288,10 @@ class ExpenseGroup(models.Model):
         expense_group_objects = []
 
         for expense_group in expense_groups:
+            if expense_group_settings.export_date_type == 'last_spent_at':
+                expense_group['last_spent_at'] = Expense.objects.filter(
+                                                 id__in=expense_group['expense_ids']
+                                                 ).order_by('-spent_at').first().spent_at
 
             expense_ids = expense_group['expense_ids']
             expense_group.pop('total')
