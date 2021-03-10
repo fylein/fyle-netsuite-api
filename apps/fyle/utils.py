@@ -162,6 +162,7 @@ class FyleConnector:
                 'value': employee['employee_email'],
                 'source_id': employee['id'],
                 'detail': {
+                    'user_id': employee['user_id'],
                     'employee_code': employee['employee_code'],
                     'full_name': employee['full_name'],
                     'location': employee['location'],

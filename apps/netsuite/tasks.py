@@ -12,7 +12,7 @@ from django_q.tasks import Chain
 
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
 
-from fyle_accounting_mappings.models import Mapping
+from fyle_accounting_mappings.models import Mapping, ExpenseAttribute, MappingSetting, DestinationAttribute
 
 from fyle_netsuite_api.exceptions import BulkError
 
@@ -70,18 +70,80 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense_id: str, ex
         )
 
 
-def create_bill(expense_group, task_log):
+def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_connection: NetSuiteConnector,
+                                      auto_map_employees_preference: str):
     try:
+        Mapping.objects.get(
+            Q(destination_type='VENDOR') | Q(destination_type='EMPLOYEE'),
+            source_type='EMPLOYEE',
+            source__value=expense_group.description.get('employee_email'),
+            workspace_id=expense_group.workspace_id
+        )
+    except Mapping.DoesNotExist:
+        employee_mapping_setting = MappingSetting.objects.filter(
+            Q(destination_field='VENDOR') | Q(destination_field='EMPLOYEE'),
+            source_field='EMPLOYEE',
+            workspace_id=expense_group.workspace_id
+        ).first().destination_field
+
+        source_employee = ExpenseAttribute.objects.get(
+            workspace_id=expense_group.workspace_id,
+            attribute_type='EMPLOYEE',
+            value=expense_group.description.get('employee_email')
+        )
+
+        try:
+            if employee_mapping_setting == 'EMPLOYEE':
+                created_entity: DestinationAttribute = netsuite_connection.post_employee(
+                    source_employee, auto_map_employees_preference, expense_group)
+            else:
+                created_entity: DestinationAttribute = netsuite_connection.post_vendor(
+                    source_employee, auto_map_employees_preference, expense_group)
+
+            mapping = Mapping.create_or_update_mapping(
+                source_type='EMPLOYEE',
+                source_value=expense_group.description.get('employee_email'),
+                destination_type=employee_mapping_setting,
+                destination_id=created_entity.destination_id,
+                destination_value=created_entity.value,
+                workspace_id=int(expense_group.workspace_id)
+            )
+
+            mapping.source.auto_mapped = True
+            mapping.source.save(update_fields=['auto_mapped'])
+
+            mapping.destination.auto_created = True
+            mapping.destination.save(update_fields=['auto_created'])
+
+        except NetSuiteRequestError as exception:
+            logger.exception({'error': exception})
+
+        except Exception:
+            error = traceback.format_exc()
+            detail = {
+                'error': error
+            }
+            logger.exception('Something unexpected happened workspace_id: %s %s', expense_group.workspace_id, detail)
+
+
+def create_bill(expense_group, task_log):
+    general_settings = WorkspaceGeneralSettings.objects.get(workspace_id=expense_group.workspace_id)
+
+    try:
+        netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
+
+        netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
+
+        if expense_group.fund_source == 'PERSONAL' and general_settings.auto_map_employees \
+                and general_settings.auto_create_destination_entity:
+            create_or_update_employee_mapping(expense_group, netsuite_connection, general_settings.auto_map_employees)
+
         with transaction.atomic():
-            __validate_expense_group(expense_group)
+            __validate_expense_group(expense_group, general_settings)
 
             bill_object = Bill.create_bill(expense_group)
 
             bill_lineitems_objects = BillLineitem.create_bill_lineitems(expense_group)
-
-            netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
-
-            netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
             attachment_links = {}
 
@@ -153,17 +215,22 @@ def create_bill(expense_group, task_log):
 
 
 def create_expense_report(expense_group, task_log):
+    general_settings = WorkspaceGeneralSettings.objects.get(workspace_id=expense_group.workspace_id)
+
     try:
+        netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
+
+        netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
+
+        if general_settings.auto_map_employees and general_settings.auto_create_destination_entity:
+            create_or_update_employee_mapping(expense_group, netsuite_connection, general_settings.auto_map_employees)
+
         with transaction.atomic():
-            __validate_expense_group(expense_group)
+            __validate_expense_group(expense_group, general_settings)
 
             expense_report_object = ExpenseReport.create_expense_report(expense_group)
 
             expense_report_lineitems_objects = ExpenseReportLineItem.create_expense_report_lineitems(expense_group)
-
-            netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
-
-            netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
             attachment_links = {}
 
@@ -237,17 +304,22 @@ def create_expense_report(expense_group, task_log):
 
 
 def create_journal_entry(expense_group, task_log):
+    general_settings = WorkspaceGeneralSettings.objects.get(workspace_id=expense_group.workspace_id)
+
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
+
+    netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
+
+    if general_settings.auto_map_employees and general_settings.auto_create_destination_entity:
+        create_or_update_employee_mapping(expense_group, netsuite_connection, general_settings.auto_map_employees)
+
     try:
         with transaction.atomic():
-            __validate_expense_group(expense_group)
+            __validate_expense_group(expense_group, general_settings)
 
             journal_entry_object = JournalEntry.create_journal_entry(expense_group)
 
             journal_entry_lineitems_objects = JournalEntryLineItem.create_journal_entry_lineitems(expense_group)
-
-            netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
-
-            netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
             attachment_links = {}
 
@@ -320,7 +392,7 @@ def create_journal_entry(expense_group, task_log):
         logger.exception('Something unexpected happened workspace_id: %s %s', task_log.workspace_id, task_log.detail)
 
 
-def __validate_expense_group(expense_group: ExpenseGroup):
+def __validate_expense_group(expense_group: ExpenseGroup, general_settings: WorkspaceGeneralSettings):
     bulk_errors = []
     row = 0
 
@@ -346,9 +418,6 @@ def __validate_expense_group(expense_group: ExpenseGroup):
             'type': 'Subsidiary Mappings',
             'message': 'Subsidiary mapping not found'
         })
-
-    general_settings: WorkspaceGeneralSettings = WorkspaceGeneralSettings.objects.get(
-        workspace_id=expense_group.workspace_id)
 
     if general_settings.corporate_credit_card_expenses_object and \
             general_settings.corporate_credit_card_expenses_object == 'BILL' and \
@@ -428,30 +497,26 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str]):
     """
     if expense_group_ids:
         expense_groups = ExpenseGroup.objects.filter(
-            workspace_id=workspace_id, id__in=expense_group_ids, bill__id__isnull=True
-        ).all()
-    else:
-        expense_groups = ExpenseGroup.objects.filter(
-            workspace_id=workspace_id, bill__id__isnull=True
+            workspace_id=workspace_id, id__in=expense_group_ids, bill__id__isnull=True, exported_at__isnull=True
         ).all()
 
-    chain = Chain(cached=True)
+        chain = Chain(cached=True)
 
-    for expense_group in expense_groups:
-        task_log, _ = TaskLog.objects.update_or_create(
-            workspace_id=expense_group.workspace_id,
-            expense_group=expense_group,
-            defaults={
-                'status': 'IN_PROGRESS',
-                'type': 'CREATING_BILL'
-            }
-        )
+        for expense_group in expense_groups:
+            task_log, _ = TaskLog.objects.update_or_create(
+                workspace_id=expense_group.workspace_id,
+                expense_group=expense_group,
+                defaults={
+                    'status': 'IN_PROGRESS',
+                    'type': 'CREATING_BILL'
+                }
+            )
 
-        chain.append('apps.netsuite.tasks.create_bill', expense_group, task_log)
+            chain.append('apps.netsuite.tasks.create_bill', expense_group, task_log)
 
-        task_log.save()
-    if chain.length():
-        chain.run()
+            task_log.save()
+        if chain.length():
+            chain.run()
 
 
 def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List[str]):
@@ -464,25 +529,25 @@ def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List
     """
     if expense_group_ids:
         expense_groups = ExpenseGroup.objects.filter(
-            workspace_id=workspace_id, id__in=expense_group_ids, expensereport__id__isnull=True
+            workspace_id=workspace_id, id__in=expense_group_ids, expensereport__id__isnull=True, exported_at__isnull=True
         ).all()
 
-    chain = Chain(cached=True)
+        chain = Chain(cached=True)
 
-    for expense_group in expense_groups:
-        task_log, _ = TaskLog.objects.update_or_create(
-            workspace_id=expense_group.workspace_id,
-            expense_group=expense_group,
-            defaults={
-                'status': 'IN_PROGRESS',
-                'type': 'CREATING_EXPENSE_REPORT'
-            }
-        )
+        for expense_group in expense_groups:
+            task_log, _ = TaskLog.objects.update_or_create(
+                workspace_id=expense_group.workspace_id,
+                expense_group=expense_group,
+                defaults={
+                    'status': 'IN_PROGRESS',
+                    'type': 'CREATING_EXPENSE_REPORT'
+                }
+            )
 
-        chain.append('apps.netsuite.tasks.create_expense_report', expense_group, task_log)
-        task_log.save()
-    if chain.length():
-        chain.run()
+            chain.append('apps.netsuite.tasks.create_expense_report', expense_group, task_log)
+            task_log.save()
+        if chain.length():
+            chain.run()
 
 
 def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[str]):
@@ -495,25 +560,25 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
     """
     if expense_group_ids:
         expense_groups = ExpenseGroup.objects.filter(
-            workspace_id=workspace_id, id__in=expense_group_ids, journalentry__id__isnull=True
+            workspace_id=workspace_id, id__in=expense_group_ids, journalentry__id__isnull=True, exported_at__isnull=True
         ).all()
 
-    chain = Chain(cached=True)
+        chain = Chain(cached=True)
 
-    for expense_group in expense_groups:
-        task_log, _ = TaskLog.objects.update_or_create(
-            workspace_id=expense_group.workspace_id,
-            expense_group=expense_group,
-            defaults={
-                'status': 'IN_PROGRESS',
-                'type': 'CREATING_JOURNAL_ENTRY'
-            }
-        )
+        for expense_group in expense_groups:
+            task_log, _ = TaskLog.objects.update_or_create(
+                workspace_id=expense_group.workspace_id,
+                expense_group=expense_group,
+                defaults={
+                    'status': 'IN_PROGRESS',
+                    'type': 'CREATING_JOURNAL_ENTRY'
+                }
+            )
 
-        chain.append('apps.netsuite.tasks.create_journal_entry', expense_group, task_log)
-        task_log.save()
-    if chain.length():
-        chain.run()
+            chain.append('apps.netsuite.tasks.create_journal_entry', expense_group, task_log)
+            task_log.save()
+        if chain.length():
+            chain.run()
 
 
 def check_expenses_reimbursement_status(expenses):
@@ -607,8 +672,14 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
                 entity_object['line'], vendor_payment_object
             )
 
+            first_object_id = vendor_payment_lineitems[0].doc_id
+            if object_type == 'Bill':
+                first_object = netsuite_connection.get_bill(first_object_id)
+            else:
+                first_object = netsuite_connection.get_expense_report(first_object_id)
+
             created_vendor_payment = netsuite_connection.post_vendor_payment(
-                vendor_payment_object, vendor_payment_lineitems
+                vendor_payment_object, vendor_payment_lineitems, first_object
             )
 
             lines = entity_object['line']

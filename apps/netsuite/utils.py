@@ -4,9 +4,9 @@ from netsuitesdk import NetSuiteConnection
 
 import unidecode
 
-from fyle_accounting_mappings.models import DestinationAttribute
+from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute
 
-from apps.fyle.models import Expense
+from apps.fyle.models import Expense, ExpenseGroup
 from apps.fyle.utils import FyleConnector
 
 from apps.mappings.models import SubsidiaryMapping
@@ -78,14 +78,14 @@ class NetSuiteConnector:
                 account_attributes.append({
                     'attribute_type': 'ACCOUNT',
                     'display_name': 'Account',
-                    'value': account['acctName'],
+                    'value': unidecode.unidecode(u'{0}'.format(account['acctName'])).replace('/', '-'),
                     'destination_id': account['internalId']
                 })
 
                 account_attributes.append({
                     'attribute_type': 'CCC_ACCOUNT',
                     'display_name': 'Credit Card Account',
-                    'value': account['acctName'],
+                    'value': unidecode.unidecode(u'{0}'.format(account['acctName'])).replace('/', '-'),
                     'destination_id': account['internalId']
                 })
 
@@ -110,12 +110,18 @@ class NetSuiteConnector:
         category_attributes = []
 
         for category in categories:
+            detail = {
+                'account_name': category['expenseAcct']['name'],
+                'account_internal_id': category['expenseAcct']['internalId']
+            }
+
             category_attributes.append(
                 {
                     'attribute_type': 'EXPENSE_CATEGORY',
                     'display_name': 'Expense Category',
-                    'value': 'Expense Category - {}'.format(category['name']),
-                    'destination_id': category['internalId']
+                    'value': unidecode.unidecode(u'{0}'.format(category['name'])).replace('/', '-'),
+                    'destination_id': category['internalId'],
+                    'detail': detail
                 }
             )
 
@@ -123,8 +129,9 @@ class NetSuiteConnector:
                 {
                     'attribute_type': 'CCC_EXPENSE_CATEGORY',
                     'display_name': 'Credit Card Expense Category',
-                    'value': 'Expense Category - {}'.format(category['name']),
-                    'destination_id': category['internalId']
+                    'value': unidecode.unidecode(u'{0}'.format(category['name'])).replace('/', '-'),
+                    'destination_id': category['internalId'],
+                    'detail': detail
                 }
             )
 
@@ -305,6 +312,73 @@ class NetSuiteConnector:
             vendor_attributes, self.workspace_id)
         return vendor_attributes
 
+    def post_vendor(self, vendor: ExpenseAttribute, auto_map_employee_preference: str, expense_group: ExpenseGroup):
+        """
+        Create an Vendor on NetSuite
+        :param expense_group: expense group
+        :param auto_map_employee_preference: Preference while doing automap of employees
+        :param vendor: vendor attribute to be created
+        :return: Vendor Destination Attribute
+        """
+        subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
+
+        expense = expense_group.expenses.first()
+
+        currency = DestinationAttribute.objects.filter(value=expense.currency,
+                                                       workspace_id=expense_group.workspace_id,
+                                                       attribute_type='CURRENCY').first()
+
+        netsuite_entity_id = vendor.detail['employee_code'] if (
+                auto_map_employee_preference == 'EMPLOYEE_CODE' and vendor.detail['employee_code']
+        ) else vendor.detail['full_name']
+
+        vendor = {
+            'firstName': vendor.detail['full_name'].split(' ')[0],
+            'lastName': vendor.detail['full_name'].split(' ')[-1]
+            if len(vendor.detail['full_name'].split(' ')) > 1 else vendor.detail['full_name'],
+            'isPerson': True,
+            'entityId': netsuite_entity_id,
+            'email': vendor.value,
+            'currency': {
+                "name": None,
+                "internalId": currency.destination_id if currency else '1',
+                "externalId": None,
+                "type": "currency"
+            },
+            'representingSubsidiary': {
+                "name": None,
+                "internalId": subsidiary_mapping.internal_id,
+                "externalId": None,
+                "type": None
+            },
+            'subsidiary': {
+                'name': None,
+                'internalId': subsidiary_mapping.internal_id,
+                'externalId': None,
+                'type': None
+            },
+            'workCalendar': {
+                "name": None,
+                "internalId": None,
+                "externalId": None,
+                "type": None
+            },
+            'externalId': vendor.detail['user_id']
+        }
+        created_vendor = self.connection.vendors.post(vendor)
+
+        created_vendor = DestinationAttribute.bulk_upsert_destination_attributes([{
+            'attribute_type': 'VENDOR',
+            'display_name': 'vendor',
+            'value': netsuite_entity_id,
+            'destination_id': created_vendor['internalId'],
+            'detail': {
+                'email': vendor['email']
+            }
+        }], self.workspace_id)[0]
+
+        return created_vendor
+
     def sync_employees(self):
         """
         Sync employees
@@ -317,7 +391,8 @@ class NetSuiteConnector:
 
         for employee in employees:
             detail = {
-                'email': employee['email'] if employee['email'] else None
+                'email': employee['email'] if employee['email'] else None,
+                'department_id': employee['department']['internalId'] if employee['department'] else None
             }
             if 'subsidiary' in employee and employee['subsidiary']:
                 if employee['subsidiary']['internalId'] == subsidiary_mapping.internal_id:
@@ -340,6 +415,87 @@ class NetSuiteConnector:
         employee_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
             employee_attributes, self.workspace_id)
         return employee_attributes
+
+    def post_employee(self, employee: ExpenseAttribute, auto_map_employee_preference: str, expense_group: ExpenseGroup):
+        """
+        Create an Employee on NetSuite
+        :param expense_group: expense group
+        :param auto_map_employee_preference: Auto map employee preference chosen
+        :param employee: employee attribute to be created
+        :return: Employee Destination Attribute
+        """
+        department = DestinationAttribute.objects.filter(
+            workspace_id=self.workspace_id, attribute_type='DEPARTMENT',
+            value__iexact=employee.detail['department']).first()
+
+        location = DestinationAttribute.objects.filter(
+            workspace_id=self.workspace_id, attribute_type='LOCATION',
+            value__iexact=employee.detail['location']).first()
+
+        subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
+
+        expense = expense_group.expenses.first()
+
+        currency = DestinationAttribute.objects.filter(value=expense.currency,
+                                                       workspace_id=self.workspace_id,
+                                                       attribute_type='CURRENCY').first()
+
+        employee_entity_id = employee.detail['employee_code'] if (
+                auto_map_employee_preference == 'EMPLOYEE_CODE' and employee.detail['employee_code']
+        ) else employee.detail['full_name']
+
+        employee = {
+            'location': {
+                'name': None,
+                'internalId': location.destination_id if location else None,
+                'externalId': None,
+                'type': None
+            },
+            'department': {
+                'name': None,
+                'internalId': department.destination_id if department else None,
+                'externalId': None,
+                'type': None
+            },
+            'entityId': employee_entity_id,
+            'email': employee.value,
+            'firstName': employee.detail['full_name'].split(' ')[0],
+            'lastName': employee.detail['full_name'].split(' ')[-1]
+            if len(employee.detail['full_name'].split(' ')) > 1 else '',
+            'inheritIPRules': True,
+            'payFrequency': None,
+            'subsidiary': {
+                'name': None,
+                'internalId': subsidiary_mapping.internal_id,
+                'externalId': None,
+                'type': None
+            },
+            'workCalendar': {
+                "name": None,
+                "internalId": None,
+                "externalId": None,
+                "type": None
+            },
+            'defaultExpenseReportCurrency': {
+                "internalId": currency.destination_id if currency else '1',
+                "externalId": None,
+                "type": "currency"
+            },
+            'externalId': employee.detail['user_id']
+        }
+        created_employee = self.connection.employees.post(employee)
+
+        created_employee = DestinationAttribute.bulk_upsert_destination_attributes([{
+            'attribute_type': 'EMPLOYEE',
+            'display_name': 'employee',
+            'value': employee_entity_id,
+            'destination_id': created_employee['internalId'],
+            'detail': {
+                'email': employee['email']
+            }
+        }], self.workspace_id)[0]
+
+        return created_employee
 
     def sync_subsidiaries(self):
         """
@@ -679,7 +835,7 @@ class NetSuiteConnector:
                 'exchangeRate': None,
                 'expenseDate': line.transaction_date,
                 'expMediaItem': None,
-                'foreignAmount': None,
+                'foreignAmount': expense.foreign_amount if expense.foreign_amount else None,
                 'grossAmt': None,
                 'isBillable': line.billable,
                 'isNonReimbursable': None,
@@ -954,7 +1110,7 @@ class NetSuiteConnector:
             },
             'department': {
                 'name': None,
-                'internalId': None,
+                'internalId': journal_entry.department_id,
                 'externalId': None,
                 'type': 'department'
             },
@@ -1031,7 +1187,8 @@ class NetSuiteConnector:
         return lines
 
     def __construct_vendor_payment(self, vendor_payment: VendorPayment,
-                                   vendor_payment_lineitems: List[VendorPaymentLineitem]) -> Dict:
+                                   vendor_payment_lineitems: List[VendorPaymentLineitem],
+                                   department) -> Dict:
         """
         Create a vendor payment
         :return: constructed vendor payment
@@ -1048,7 +1205,12 @@ class NetSuiteConnector:
                 'type': None
             },
             'balance': None,
-            'apAcct': None,
+            'apAcct': {
+                'name': None,
+                'internalId': vendor_payment.accounts_payable_id,
+                'externalId': None,
+                'type': None
+            },
             'entity': {
                 'name': None,
                 'internalId': vendor_payment.entity_id,
@@ -1074,7 +1236,7 @@ class NetSuiteConnector:
             },
             'department': {
                 'name': None,
-                'internalId': vendor_payment.department_id,
+                'internalId': department['internalId'] if (department and 'internalId' in department) else None,
                 'externalId': None,
                 'type': 'department'
             },
@@ -1119,10 +1281,15 @@ class NetSuiteConnector:
         return vendor_payment_payload
 
     def post_vendor_payment(self, vendor_payment: VendorPayment,
-                            vendor_payment_lineitems: List[VendorPaymentLineitem]):
+                            vendor_payment_lineitems: List[VendorPaymentLineitem],
+                            first_object):
         """
         Post vendor payments to NetSuite
         """
-        vendor_payment_payload = self.__construct_vendor_payment(vendor_payment, vendor_payment_lineitems)
+        department = first_object['department']
+
+        vendor_payment_payload = self.__construct_vendor_payment(
+            vendor_payment, vendor_payment_lineitems, department
+        )
         created_vendor_payment = self.connection.vendor_payments.post(vendor_payment_payload)
         return created_vendor_payment

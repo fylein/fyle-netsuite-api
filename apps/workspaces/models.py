@@ -71,6 +71,7 @@ class WorkspaceSchedule(models.Model):
     class Meta:
         db_table = 'workspace_schedules'
 
+
 class WorkspaceGeneralSettings(models.Model):
     """
     Workspace General Settings
@@ -80,13 +81,15 @@ class WorkspaceGeneralSettings(models.Model):
     reimbursable_expenses_object = models.CharField(max_length=50, help_text='Reimbursable Expenses type')
     corporate_credit_card_expenses_object = models.CharField(max_length=50,
                                                              help_text='Non Reimbursable Expenses type', null=True)
+    import_categories = models.BooleanField(default=False, help_text='Auto import categories to Fyle')
     import_projects = models.BooleanField(default=False, help_text='Auto import projects to Fyle')
     sync_fyle_to_netsuite_payments = models.BooleanField(default=False,
                                                          help_text='Auto Sync Payments from Fyle to Netsuite')
     sync_netsuite_to_fyle_payments = models.BooleanField(default=False,
                                                          help_text='Auto Sync Payments from NetSuite to Fyle')
     auto_map_employees = models.CharField(max_length=50,
-                                            help_text='Auto Map Employees type from NetSuite to Fyle', null=True)
+                                          help_text='Auto Map Employees type from NetSuite to Fyle', null=True)
+    auto_create_destination_entity = models.BooleanField(default=False, help_text='Auto create vendor / employee')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
