@@ -105,18 +105,18 @@ def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_conn
                     'attribute_type': employee_mapping_setting
                 }
 
-            entity = DestinationAttribute.objects.filter(
+            created_entity = DestinationAttribute.objects.filter(
                     workspace_id=expense_group.workspace_id,
                     **filters
                 ).first()
 
             if employee_mapping_setting == 'EMPLOYEE':
-                if entity is None:
+                if created_entity is None:
                     created_entity: DestinationAttribute = netsuite_connection.post_employee(
                         source_employee, auto_map_employees_preference, expense_group)
 
             else:
-                if entity is None:
+                if created_entity is None:
                     created_entity: DestinationAttribute = netsuite_connection.post_vendor(
                         source_employee, auto_map_employees_preference, expense_group)
 
