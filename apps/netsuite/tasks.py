@@ -93,12 +93,37 @@ def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_conn
         )
 
         try:
+            if auto_map_employees_preference == 'EMAIL':
+                filters = {
+                    'detail__email__iexact': source_employee.value
+                }
+
+            elif auto_map_employees_preference == 'NAME':
+                filters = {
+                    'value__iexact': source_employee.detail['full_name']
+                }
+
             if employee_mapping_setting == 'EMPLOYEE':
-                created_entity: DestinationAttribute = netsuite_connection.post_employee(
-                    source_employee, auto_map_employees_preference, expense_group)
+                employee = DestinationAttribute.objects.filter(
+                    attribute_type='EMPLOYEE',
+                    workspace_id=expense_group.workspace_id,
+                    **filters
+                ).first()
+
+                if employee is None:
+                    created_entity: DestinationAttribute = netsuite_connection.post_employee(
+                        source_employee, auto_map_employees_preference, expense_group)
+
             else:
-                created_entity: DestinationAttribute = netsuite_connection.post_vendor(
-                    source_employee, auto_map_employees_preference, expense_group)
+                vendor = DestinationAttribute.objects.filter(
+                    attribute_type='VENDOR',
+                    workspace_id=expense_group.workspace_id,
+                    **filters
+                ).first()
+
+                if vendor is None:
+                    created_entity: DestinationAttribute = netsuite_connection.post_vendor(
+                        source_employee, auto_map_employees_preference, expense_group)
 
             mapping = Mapping.create_or_update_mapping(
                 source_type='EMPLOYEE',

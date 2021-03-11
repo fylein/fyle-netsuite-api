@@ -1,6 +1,6 @@
 import logging
 import traceback
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from typing import List, Dict
 
@@ -456,7 +456,6 @@ def async_auto_map_employees(workspace_id: int):
 
 def schedule_auto_map_employees(employee_mapping_preference: str, workspace_id: int):
     if employee_mapping_preference:
-        start_datetime = datetime.now()
 
         schedule, _ = Schedule.objects.update_or_create(
             func='apps.mappings.tasks.async_auto_map_employees',
@@ -464,7 +463,7 @@ def schedule_auto_map_employees(employee_mapping_preference: str, workspace_id: 
             defaults={
                 'schedule_type': Schedule.MINUTES,
                 'minutes': 24 * 60,
-                'next_run': start_datetime + timedelta(minutes=5)
+                'next_run': datetime.now()
             }
         )
     else:
