@@ -1,6 +1,6 @@
 import logging
 import traceback
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from typing import List, Dict
 
@@ -11,6 +11,7 @@ from fylesdk.exceptions import WrongParamsError
 from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttribute, DestinationAttribute
 
 from apps.fyle.utils import FyleConnector
+from apps.mappings.models import GeneralMapping
 from apps.netsuite.utils import NetSuiteConnector
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential, WorkspaceGeneralSettings
 
@@ -360,7 +361,7 @@ def schedule_projects_creation(import_projects, workspace_id):
             schedule.delete()
 
 
-def filter_expense_attributes(workspace_id: str, **filters):
+def filter_expense_attributes(workspace_id: int, **filters):
     return ExpenseAttribute.objects.filter(attribute_type='EMPLOYEE', workspace_id=workspace_id, **filters).all()
 
 
@@ -409,15 +410,30 @@ def construct_filters_employee_mappings(employee: DestinationAttribute, employee
     return filters
 
 
-def async_auto_map_employees(employee_mapping_preference: str, workspace_id: str):
+def async_auto_map_employees(workspace_id: int):
+    general_settings = WorkspaceGeneralSettings.objects.get(workspace_id=workspace_id)
+
+    employee_mapping_preference = general_settings.auto_map_employees
+
     mapping_setting = MappingSetting.objects.filter(
         ~Q(destination_field='CREDIT_CARD_ACCOUNT'),
         source_field='EMPLOYEE', workspace_id=workspace_id
     ).first()
 
-    destination_type = None
-    if mapping_setting:
-        destination_type = mapping_setting.destination_field
+    destination_type = mapping_setting.destination_field
+
+    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+    fyle_connection = FyleConnector(refresh_token=fyle_credentials.refresh_token, workspace_id=workspace_id)
+
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
+
+    fyle_connection.sync_employees()
+
+    if destination_type == 'EMPLOYEE':
+        netsuite_connection.sync_employees()
+    else:
+        netsuite_connection.sync_vendors()
 
     source_attributes = []
     employee_attributes = DestinationAttribute.objects.filter(attribute_type=destination_type,
@@ -440,17 +456,37 @@ def async_auto_map_employees(employee_mapping_preference: str, workspace_id: str
         auto_create_employee_mappings(source_attributes, mapping_attributes)
 
 
-def schedule_auto_map_employees(employee_mapping_preference: str, workspace_id: str):
-    Schedule.objects.create(
-        func='apps.mappings.tasks.async_auto_map_employees',
-        args='"{0}", {1}'.format(employee_mapping_preference, workspace_id),
-        schedule_type=Schedule.ONCE,
-        next_run=datetime.now() + timedelta(minutes=5)
-    )
+def schedule_auto_map_employees(employee_mapping_preference: str, workspace_id: int):
+    if employee_mapping_preference:
+
+        schedule, _ = Schedule.objects.update_or_create(
+            func='apps.mappings.tasks.async_auto_map_employees',
+            args='{0}'.format(workspace_id),
+            defaults={
+                'schedule_type': Schedule.MINUTES,
+                'minutes': 24 * 60,
+                'next_run': datetime.now()
+            }
+        )
+    else:
+        schedule: Schedule = Schedule.objects.filter(
+            func='apps.mappings.tasks.async_auto_map_employees',
+            args='{}'.format(workspace_id)
+        ).first()
+
+        if schedule:
+            schedule.delete()
 
 
-def async_auto_map_ccc_account(default_ccc_account_name: str, default_ccc_account_id: str, workspace_id: str):
-    source_attributes = filter_expense_attributes(workspace_id)
+def async_auto_map_ccc_account(workspace_id: int):
+    general_mappings = GeneralMapping.objects.get(workspace_id=workspace_id)
+    default_ccc_account_id = general_mappings.default_ccc_account_id
+    default_ccc_account_name = general_mappings.default_ccc_account_name
+    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+
+    fyle_connection = FyleConnector(refresh_token=fyle_credentials.refresh_token, workspace_id=workspace_id)
+
+    source_attributes = fyle_connection.sync_employees()
 
     mapping_attributes = {
         'destination_type': 'CREDIT_CARD_ACCOUNT',
@@ -462,10 +498,25 @@ def async_auto_map_ccc_account(default_ccc_account_name: str, default_ccc_accoun
     auto_create_employee_mappings(source_attributes, mapping_attributes)
 
 
-def schedule_auto_map_ccc_employees(default_ccc_account_name: str, default_ccc_account_id: str, workspace_id: str):
-    Schedule.objects.create(
-        func='apps.mappings.tasks.async_auto_map_ccc_account',
-        args='"{0}", "{1}", {2}'.format(default_ccc_account_name, default_ccc_account_id, workspace_id),
-        schedule_type=Schedule.ONCE,
-        next_run=datetime.now() + timedelta(minutes=5)
-    )
+def schedule_auto_map_ccc_employees(workspace_id: int):
+    general_settings = WorkspaceGeneralSettings.objects.get(workspace_id=workspace_id)
+
+    if general_settings.auto_map_employees:
+
+        schedule, _ = Schedule.objects.update_or_create(
+            func='apps.mappings.tasks.async_auto_map_ccc_account',
+            args='{0}'.format(workspace_id),
+            defaults={
+                'schedule_type': Schedule.MINUTES,
+                'minutes': 24 * 60,
+                'next_run': datetime.now()
+            }
+        )
+    else:
+        schedule: Schedule = Schedule.objects.filter(
+            func='apps.mappings.tasks.async_auto_map_ccc_account',
+            args='{}'.format(workspace_id)
+        ).first()
+
+        if schedule:
+            schedule.delete()

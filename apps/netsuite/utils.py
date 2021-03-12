@@ -4,9 +4,9 @@ from netsuitesdk import NetSuiteConnection
 
 import unidecode
 
-from fyle_accounting_mappings.models import DestinationAttribute
+from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute
 
-from apps.fyle.models import Expense
+from apps.fyle.models import Expense, ExpenseGroup
 from apps.fyle.utils import FyleConnector
 
 from apps.mappings.models import SubsidiaryMapping
@@ -312,6 +312,71 @@ class NetSuiteConnector:
             vendor_attributes, self.workspace_id)
         return vendor_attributes
 
+    def post_vendor(self, vendor: ExpenseAttribute, auto_map_employee_preference: str, expense_group: ExpenseGroup):
+        """
+        Create an Vendor on NetSuite
+        :param expense_group: expense group
+        :param auto_map_employee_preference: Preference while doing automap of employees
+        :param vendor: vendor attribute to be created
+        :return: Vendor Destination Attribute
+        """
+        subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
+
+        expense = expense_group.expenses.first()
+
+        currency = DestinationAttribute.objects.filter(value=expense.currency,
+                                                       workspace_id=expense_group.workspace_id,
+                                                       attribute_type='CURRENCY').first()
+
+        netsuite_entity_id = vendor.detail['full_name']
+
+        vendor = {
+            'firstName': netsuite_entity_id.split(' ')[0],
+            'lastName': netsuite_entity_id.split(' ')[-1]
+            if len(netsuite_entity_id.split(' ')) > 1 else netsuite_entity_id,
+            'isPerson': True,
+            'entityId': netsuite_entity_id,
+            'email': vendor.value,
+            'currency': {
+                "name": None,
+                "internalId": currency.destination_id if currency else '1',
+                "externalId": None,
+                "type": "currency"
+            },
+            'representingSubsidiary': {
+                "name": None,
+                "internalId": subsidiary_mapping.internal_id,
+                "externalId": None,
+                "type": None
+            },
+            'subsidiary': {
+                'name': None,
+                'internalId': subsidiary_mapping.internal_id,
+                'externalId': None,
+                'type': None
+            },
+            'workCalendar': {
+                "name": None,
+                "internalId": None,
+                "externalId": None,
+                "type": None
+            },
+            'externalId': vendor.detail['user_id']
+        }
+        created_vendor = self.connection.vendors.post(vendor)
+
+        created_vendor = DestinationAttribute.bulk_upsert_destination_attributes([{
+            'attribute_type': 'VENDOR',
+            'display_name': 'vendor',
+            'value': netsuite_entity_id,
+            'destination_id': created_vendor['internalId'],
+            'detail': {
+                'email': vendor['email']
+            }
+        }], self.workspace_id)[0]
+
+        return created_vendor
+
     def sync_employees(self):
         """
         Sync employees
@@ -324,7 +389,8 @@ class NetSuiteConnector:
 
         for employee in employees:
             detail = {
-                'email': employee['email'] if employee['email'] else None
+                'email': employee['email'] if employee['email'] else None,
+                'department_id': employee['department']['internalId'] if employee['department'] else None
             }
             if 'subsidiary' in employee and employee['subsidiary']:
                 if employee['subsidiary']['internalId'] == subsidiary_mapping.internal_id:
@@ -347,6 +413,85 @@ class NetSuiteConnector:
         employee_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
             employee_attributes, self.workspace_id)
         return employee_attributes
+
+    def post_employee(self, employee: ExpenseAttribute, auto_map_employee_preference: str, expense_group: ExpenseGroup):
+        """
+        Create an Employee on NetSuite
+        :param expense_group: expense group
+        :param auto_map_employee_preference: Auto map employee preference chosen
+        :param employee: employee attribute to be created
+        :return: Employee Destination Attribute
+        """
+        department = DestinationAttribute.objects.filter(
+            workspace_id=self.workspace_id, attribute_type='DEPARTMENT',
+            value__iexact=employee.detail['department']).first()
+
+        location = DestinationAttribute.objects.filter(
+            workspace_id=self.workspace_id, attribute_type='LOCATION',
+            value__iexact=employee.detail['location']).first()
+
+        subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
+
+        expense = expense_group.expenses.first()
+
+        currency = DestinationAttribute.objects.filter(value=expense.currency,
+                                                       workspace_id=self.workspace_id,
+                                                       attribute_type='CURRENCY').first()
+
+        employee_entity_id = employee.detail['full_name']
+
+        employee = {
+            'location': {
+                'name': None,
+                'internalId': location.destination_id if location else None,
+                'externalId': None,
+                'type': None
+            },
+            'department': {
+                'name': None,
+                'internalId': department.destination_id if department else None,
+                'externalId': None,
+                'type': None
+            },
+            'entityId': employee_entity_id,
+            'email': employee.value,
+            'firstName': employee_entity_id.split(' ')[0],
+            'lastName': employee_entity_id.split(' ')[-1]
+            if len(employee_entity_id.split(' ')) > 1 else '',
+            'inheritIPRules': True,
+            'payFrequency': None,
+            'subsidiary': {
+                'name': None,
+                'internalId': subsidiary_mapping.internal_id,
+                'externalId': None,
+                'type': None
+            },
+            'workCalendar': {
+                "name": None,
+                "internalId": None,
+                "externalId": None,
+                "type": None
+            },
+            'defaultExpenseReportCurrency': {
+                "internalId": currency.destination_id if currency else '1',
+                "externalId": None,
+                "type": "currency"
+            },
+            'externalId': employee.detail['user_id']
+        }
+        created_employee = self.connection.employees.post(employee)
+
+        created_employee = DestinationAttribute.bulk_upsert_destination_attributes([{
+            'attribute_type': 'EMPLOYEE',
+            'display_name': 'employee',
+            'value': employee_entity_id,
+            'destination_id': created_employee['internalId'],
+            'detail': {
+                'email': employee['email']
+            }
+        }], self.workspace_id)[0]
+
+        return created_employee
 
     def sync_subsidiaries(self):
         """
@@ -961,7 +1106,7 @@ class NetSuiteConnector:
             },
             'department': {
                 'name': None,
-                'internalId': None,
+                'internalId': journal_entry.department_id,
                 'externalId': None,
                 'type': 'department'
             },
