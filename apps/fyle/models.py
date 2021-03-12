@@ -3,6 +3,7 @@ Fyle Models
 """
 import dateutil.parser
 from typing import List, Dict
+from datetime import datetime
 
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.contrib.postgres.fields import JSONField, ArrayField
@@ -299,7 +300,10 @@ class ExpenseGroup(models.Model):
 
             for key in expense_group:
                 if key in ALLOWED_FORM_INPUT['export_date_type']:
-                    expense_group[key] = expense_group[key].strftime('%Y-%m-%dT%H:%M:%S')
+                    if expense_group[key]:
+                        expense_group[key] = expense_group[key].strftime('%Y-%m-%dT%H:%M:%S')
+                    else:
+                        expense_group[key] = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
 
             expense_group_object = ExpenseGroup.objects.create(
                 workspace_id=workspace_id,
