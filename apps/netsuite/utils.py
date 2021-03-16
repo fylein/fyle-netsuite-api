@@ -328,14 +328,12 @@ class NetSuiteConnector:
                                                        workspace_id=expense_group.workspace_id,
                                                        attribute_type='CURRENCY').first()
 
-        netsuite_entity_id = vendor.detail['employee_code'] if (
-                auto_map_employee_preference == 'EMPLOYEE_CODE' and vendor.detail['employee_code']
-        ) else vendor.detail['full_name']
+        netsuite_entity_id = vendor.detail['full_name']
 
         vendor = {
-            'firstName': vendor.detail['full_name'].split(' ')[0],
-            'lastName': vendor.detail['full_name'].split(' ')[-1]
-            if len(vendor.detail['full_name'].split(' ')) > 1 else vendor.detail['full_name'],
+            'firstName': netsuite_entity_id.split(' ')[0],
+            'lastName': netsuite_entity_id.split(' ')[-1]
+            if len(netsuite_entity_id.split(' ')) > 1 else netsuite_entity_id,
             'isPerson': True,
             'entityId': netsuite_entity_id,
             'email': vendor.value,
@@ -440,9 +438,7 @@ class NetSuiteConnector:
                                                        workspace_id=self.workspace_id,
                                                        attribute_type='CURRENCY').first()
 
-        employee_entity_id = employee.detail['employee_code'] if (
-                auto_map_employee_preference == 'EMPLOYEE_CODE' and employee.detail['employee_code']
-        ) else employee.detail['full_name']
+        employee_entity_id = employee.detail['full_name']
 
         employee = {
             'location': {
@@ -459,9 +455,9 @@ class NetSuiteConnector:
             },
             'entityId': employee_entity_id,
             'email': employee.value,
-            'firstName': employee.detail['full_name'].split(' ')[0],
-            'lastName': employee.detail['full_name'].split(' ')[-1]
-            if len(employee.detail['full_name'].split(' ')) > 1 else '',
+            'firstName': employee_entity_id.split(' ')[0],
+            'lastName': employee_entity_id.split(' ')[-1]
+            if len(employee_entity_id.split(' ')) > 1 else '',
             'inheritIPRules': True,
             'payFrequency': None,
             'subsidiary': {
