@@ -194,8 +194,8 @@ def auto_create_category_mappings(workspace_id):
                 )
                 raise ExpenseAttribute.DoesNotExist
 
-            create_credit_card_category_mappings(
-                reimbursable_expenses_object, corporate_credit_card_expenses_object, workspace_id)
+        create_credit_card_category_mappings(
+            reimbursable_expenses_object, corporate_credit_card_expenses_object, workspace_id)
 
         return category_mappings
     except WrongParamsError as exception:
