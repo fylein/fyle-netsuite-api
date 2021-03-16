@@ -157,12 +157,10 @@ LOGGING = {
     }
 }
 
-print('assadsad', os.environ.get('MEMCACHED_HOST'), os.environ.get('MEMCACHED_PORT'))
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-        'LOCATION':  os.environ.get('MEMCACHED_HOST', '127.0.0.1')+':'+os.environ.get('MEMCACHED_PORT', '11211'),
-        # 127.0.0.1:11211
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'auth_cache',
     }
 }
 
