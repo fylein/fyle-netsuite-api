@@ -193,12 +193,13 @@ else:
             'PASSWORD': os.environ.get('DB_PASSWORD'),
             'HOST': os.environ.get('DB_HOST'),
             'PORT': os.environ.get('DB_PORT'),
-        },
-        'cache_db': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': 'cache.db'
         }
     }
+
+DATABASES['cache_db'] = {
+    'ENGINE': 'django.db.backends.sqlite3',
+    'NAME': 'cache.db'
+}
 
 DATABASE_ROUTERS = ['fyle_netsuite_api.cache_router.CacheRouter']
 
