@@ -13,3 +13,7 @@ class CacheRouter:
     def allow_syncdb(self, db, model):
         _db = app_to_database.get(model._meta.app_label, None)
         return db == _db if _db else None
+
+    def allow_migrate(self, db, app_label, model_name=None, **hints):
+        _db = app_to_database.get(app_label, None)
+        return db == _db if _db else None
