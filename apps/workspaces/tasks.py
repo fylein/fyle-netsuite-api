@@ -76,7 +76,7 @@ def run_sync_schedule(workspace_id):
             expense_group_ids = ExpenseGroup.objects.filter(fund_source='PERSONAL',
                                                             workspace_id=workspace_id).values_list('id', flat=True)
 
-            if general_settings.reimbursable_expenses_object == 'VENDOR BILL':
+            if general_settings.reimbursable_expenses_object == 'BILL':
                 schedule_bills_creation(
                     workspace_id=workspace_id, expense_group_ids=expense_group_ids
                 )
@@ -100,7 +100,7 @@ def run_sync_schedule(workspace_id):
                     workspace_id=workspace_id, expense_group_ids=expense_group_ids
                 )
 
-            elif general_settings.corporate_credit_card_expenses_object == 'VENDOR BILL':
+            elif general_settings.corporate_credit_card_expenses_object == 'BILL':
                 schedule_bills_creation(
                     workspace_id=workspace_id, expense_group_ids=expense_group_ids
                 )
