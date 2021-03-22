@@ -3,5 +3,5 @@
 # Creating the cache table
 python manage.py createcachetable --database cache_db
 
-# Running development server
+# Running qcluster
 python manage.py qcluster
