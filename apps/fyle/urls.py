@@ -2,7 +2,7 @@ from django.urls import path
 
 from .views import ExpenseGroupView, ExpenseGroupByIdView, ExpenseGroupScheduleView, ExpenseView, EmployeeView, \
     CategoryView, CostCenterView, ProjectView, ExpenseFieldsView, ExpenseCustomFieldsView, \
-    ExpenseGroupSettingsView
+    ExpenseGroupSettingsView, SyncFyleDimensionView, RefreshFyleDimensionView
 urlpatterns = [
     path('expense_groups/', ExpenseGroupView.as_view()),
     path('expense_groups/trigger/', ExpenseGroupScheduleView.as_view()),
@@ -14,5 +14,7 @@ urlpatterns = [
     path('projects/', ProjectView.as_view()),
     path('expense_custom_fields/', ExpenseCustomFieldsView.as_view()),
     path('expense_fields/', ExpenseFieldsView.as_view()),
-    path('expense_group_settings/', ExpenseGroupSettingsView.as_view())
+    path('expense_group_settings/', ExpenseGroupSettingsView.as_view()),
+    path('sync_dimensions/', SyncFyleDimensionView.as_view()),
+    path('refresh/', RefreshFyleDimensionView.as_view())
 ]
