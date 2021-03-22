@@ -1,52 +1,20 @@
-import os
-from datetime import datetime
-
 from django.urls import reverse
-from django.utils import timezone
-from fyle_rest_auth.models import AuthToken, User
-from fylesdk import FyleSDK
+
 from rest_framework.test import APITestCase, APIClient
 
-from apps.workspaces.models import Workspace
-from fyle_netsuite_api import settings
+from test_utils import TestUtils
 
 
 class FyleTests(APITestCase):
 
     def setUp(self):
-        client_id = os.environ.get('FYLE_TEST_CLIENT_ID')
-        client_secret = os.environ.get('FYLE_TEST_CLIENT_SECRET')
-        base_url = settings.FYLE_BASE_URL
-        refresh_token = os.environ.get('FYLE_TEST_REFRESH_TOKEN')
-
-        self.connection = FyleSDK(
-            base_url=base_url,
-            client_id=client_id,
-            client_secret=client_secret,
-            refresh_token=refresh_token,
-        )
-
+        self.connection = TestUtils.test_connection(self)
         self.access_token = self.connection.access_token
 
-        self.user = User(password='', last_login=datetime.now(tz=timezone.utc), id=1, email='user_email',
-                         user_id='user_id', full_name='', active='t', staff='f', admin='t')
-        self.user.save()
-
-        self.auth_token = AuthToken(
-            id=1,
-            refresh_token=refresh_token,
-            user=self.user
-        )
-        self.auth_token.save()
-
         self.client = APIClient()
-        self.api_authentication()
+        auth = TestUtils.api_authentication(self)
 
-    def api_authentication(self):
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.access_token)
-        self.client.post('{0}/workspaces/'.format(settings.API_URL),
-                         headers={'Authorization': 'Bearer {}'.format(self.access_token)})
-        self.workspace = Workspace.objects.first()
+        self.workspace = auth
 
     def test_get_fyle_expense_groups(self):
         response = self.client.get(reverse('expense-groups', kwargs={'workspace_id': self.workspace.id}),
