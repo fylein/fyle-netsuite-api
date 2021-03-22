@@ -1,6 +1,6 @@
 import logging
 import traceback
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from typing import List, Dict
 
@@ -194,8 +194,8 @@ def auto_create_category_mappings(workspace_id):
                 )
                 raise ExpenseAttribute.DoesNotExist
 
-            create_credit_card_category_mappings(
-                reimbursable_expenses_object, corporate_credit_card_expenses_object, workspace_id)
+        create_credit_card_category_mappings(
+            reimbursable_expenses_object, corporate_credit_card_expenses_object, workspace_id)
 
         return category_mappings
     except WrongParamsError as exception:
@@ -456,7 +456,6 @@ def async_auto_map_employees(workspace_id: int):
 
 def schedule_auto_map_employees(employee_mapping_preference: str, workspace_id: int):
     if employee_mapping_preference:
-        start_datetime = datetime.now()
 
         schedule, _ = Schedule.objects.update_or_create(
             func='apps.mappings.tasks.async_auto_map_employees',
@@ -464,7 +463,7 @@ def schedule_auto_map_employees(employee_mapping_preference: str, workspace_id: 
             defaults={
                 'schedule_type': Schedule.MINUTES,
                 'minutes': 24 * 60,
-                'next_run': start_datetime + timedelta(minutes=5)
+                'next_run': datetime.now()
             }
         )
     else:
@@ -500,8 +499,7 @@ def async_auto_map_ccc_account(workspace_id: int):
 def schedule_auto_map_ccc_employees(workspace_id: int):
     general_settings = WorkspaceGeneralSettings.objects.get(workspace_id=workspace_id)
 
-    if general_settings.auto_map_employees:
-        start_datetime = datetime.now()
+    if general_settings.auto_map_employees and general_settings.corporate_credit_card_expenses_object:
 
         schedule, _ = Schedule.objects.update_or_create(
             func='apps.mappings.tasks.async_auto_map_ccc_account',
@@ -509,7 +507,7 @@ def schedule_auto_map_ccc_employees(workspace_id: int):
             defaults={
                 'schedule_type': Schedule.MINUTES,
                 'minutes': 24 * 60,
-                'next_run': start_datetime + timedelta(minutes=5)
+                'next_run': datetime.now()
             }
         )
     else:
