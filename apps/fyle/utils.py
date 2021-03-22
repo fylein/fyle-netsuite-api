@@ -318,33 +318,26 @@ class FyleConnector:
 
     def sync_dimensions(self):
         try:
-            print('emp')
             self.sync_employees()
         except Exception:
             pass
 
         try:
-            print('cat')
             self.sync_categories(active_only=False)
         except Exception:
             pass
 
         try:
-            print('cc')
             self.sync_cost_centers(active_only=False)
         except Exception:
             pass
 
         try:
-            print('pro')
             self.sync_projects()
         except Exception:
             pass
 
         try:
-            print('cf')
             self.sync_expense_custom_fields(active_only=True)
         except Exception:
             pass
-
-        print('done')

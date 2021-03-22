@@ -948,11 +948,8 @@ class SyncNetSuiteDimensionView(generics.ListCreateAPIView):
         """
         try:
             workspace = Workspace.objects.get(id=kwargs['workspace_id'])
-            # TODO: timezone.utc is added to make it work on local
-            print('datetime.now()',datetime.now(timezone.utc))
             if workspace.destination_synced_at:
                 time_interval = datetime.now(timezone.utc) - workspace.destination_synced_at
-                print('time_interval',time_interval)
 
             if workspace.destination_synced_at is None or time_interval.days > 0:
                 ns_credentials = NetSuiteCredentials.objects.get(workspace_id=kwargs['workspace_id'])
@@ -962,11 +959,10 @@ class SyncNetSuiteDimensionView(generics.ListCreateAPIView):
 
                 workspace.destination_synced_at = datetime.now()
                 workspace.save(update_fields=['destination_synced_at'])
-            else:
-                print('synced b/w 24 hours')
+                workspace = Workspace.objects.get(id=kwargs['workspace_id'])
 
             return Response(
-                data=WorkspaceSerializer(Workspace.objects.get(id=kwargs['workspace_id'])).data,
+                data=WorkspaceSerializer(workspace).data,
                 status=status.HTTP_200_OK
             )
         except NetSuiteCredentials.DoesNotExist:
@@ -975,17 +971,6 @@ class SyncNetSuiteDimensionView(generics.ListCreateAPIView):
                     'message': 'NetSuite credentials not found in workspace'
                 },
                 status=status.HTTP_400_BAD_REQUEST
-            )
-        except NetSuiteRequestError as exception:
-            logger.exception({'error': exception})
-            detail = json.dumps(exception.__dict__)
-            detail = json.loads(detail)
-
-            return Response(
-                data={
-                    'message': '{0} - {1}'.format(detail['code'], detail['message'])
-                },
-                status=status.HTTP_401_UNAUTHORIZED
             )
 
 
@@ -1008,7 +993,7 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
             workspace.save(update_fields=['destination_synced_at'])
 
             return Response(
-                data=WorkspaceSerializer(Workspace.objects.get(id=kwargs['workspace_id'])).data,
+                data=WorkspaceSerializer(workspace).data,
                 status=status.HTTP_200_OK
             )
         except NetSuiteCredentials.DoesNotExist:
@@ -1017,15 +1002,4 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
                     'message': 'NetSuite credentials not found in workspace'
                 },
                 status=status.HTTP_400_BAD_REQUEST
-            )
-        except NetSuiteRequestError as exception:
-            logger.exception({'error': exception})
-            detail = json.dumps(exception.__dict__)
-            detail = json.loads(detail)
-
-            return Response(
-                data={
-                    'message': '{0} - {1}'.format(detail['code'], detail['message'])
-                },
-                status=status.HTTP_401_UNAUTHORIZED
             )

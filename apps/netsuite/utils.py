@@ -416,74 +416,60 @@ class NetSuiteConnector:
 
     def sync_dimensions(self, workspace_id: str):
         try:
-            print('sync_expense_categories')
             self.sync_expense_categories()
         except Exception:
             pass
 
         try:
-            print('sync_locations')
             self.sync_locations()
         except Exception:
             pass
 
         try:
-            print('sync_vendors')
             self.sync_vendors()
         except Exception:
             pass
 
         try:
-            print('sync_currencies')
             self.sync_currencies()
         except Exception:
             pass
 
         try:
-            print('sync_classifications')
             self.sync_classifications()
         except Exception:
             pass
 
         try:
-            print('sync_departments')
             self.sync_departments()
         except Exception:
             pass
 
         try:
-            print('sync_employees')
             self.sync_employees()
         except Exception:
             pass
 
         try:
-            print('sync_accounts')
             self.sync_accounts()
         except Exception:
             pass
 
         try:
-            print('sync_custom_segments')
             all_custom_list = CustomSegment.objects.filter(workspace_id=workspace_id).all()
             self.sync_custom_segments(all_custom_list)
         except Exception:
             pass
 
-
         try:
-            print('sync_projects')
             self.sync_projects()
         except Exception:
             pass
 
         try:
-            print('sync_customers')
             self.sync_customers()
         except Exception:
             pass
-
-        print('done')
 
     def post_employee(self, employee: ExpenseAttribute, auto_map_employee_preference: str, expense_group: ExpenseGroup):
         """

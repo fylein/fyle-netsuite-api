@@ -347,7 +347,6 @@ class ProjectView(generics.ListCreateAPIView):
         Get categories from Fyle
         """
         try:
-            active_only = request.GET.get('active_only', False)
             fyle_credentials = FyleCredential.objects.get(
                 workspace_id=kwargs['workspace_id'])
 
@@ -422,7 +421,7 @@ class RefreshFyleDimensionView(generics.ListCreateAPIView):
             workspace.save(update_fields=['source_synced_at'])
 
             return Response(
-                data=WorkspaceSerializer(Workspace.objects.get(id=kwargs['workspace_id'])).data,
+                data=WorkspaceSerializer(workspace).data,
                 status=status.HTTP_200_OK
             )
         except FyleCredential.DoesNotExist:
