@@ -6,7 +6,7 @@ from fyle_rest_auth.models import AuthToken, User
 from fylesdk import FyleSDK
 
 from apps.workspaces.models import Workspace
-from fyle_netsuite_api import settings
+from fyle_netsuite_api import test_settings
 
 
 class TestUtils:
@@ -21,7 +21,7 @@ class TestUtils:
     def test_connection(self):
         client_id = os.environ.get('FYLE_TEST_CLIENT_ID')
         client_secret = os.environ.get('FYLE_TEST_CLIENT_SECRET')
-        base_url = settings.FYLE_BASE_URL
+        base_url = test_settings.FYLE_BASE_URL
         refresh_token = os.environ.get('FYLE_TEST_REFRESH_TOKEN')
 
         fyle_connection = FyleSDK(
@@ -55,7 +55,7 @@ class TestUtils:
 
     def api_authentication(self):
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.access_token)
-        self.client.post('{0}/workspaces/'.format(settings.API_URL),
+        self.client.post('{0}/workspaces/'.format(test_settings.API_URL),
                          headers={'Authorization': 'Bearer {}'.format(self.access_token)})
         self.workspace = Workspace.objects.first()
         return self.workspace

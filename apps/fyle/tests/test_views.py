@@ -6,7 +6,6 @@ from fyle_netsuite_api.test_utils import TestUtils
 
 
 class FyleTests(APITestCase):
-    databases = '__all__'
 
     def setUp(self):
         self.connection = TestUtils.test_connection(self)
