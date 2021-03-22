@@ -6,10 +6,11 @@ from django_q.models import Schedule
 from rest_framework.test import APITestCase, APIClient
 
 from apps.workspaces.models import WorkspaceGeneralSettings, WorkspaceSchedule, NetSuiteCredentials
-from test_utils import TestUtils
+from fyle_netsuite_api.test_utils import TestUtils
 
 
 class WorkspaceTests(APITestCase):
+    databases = '__all__'
 
     def setUp(self):
         self.connection = TestUtils.test_connection(self)
