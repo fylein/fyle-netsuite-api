@@ -16,22 +16,22 @@ class FyleTests(APITestCase):
 
         self.workspace = auth
 
-    def test_get_fyle_expense_groups(self):
+    def test_get_fyle_expense_groups_view(self):
         response = self.client.get(reverse('expense-groups', kwargs={'workspace_id': self.workspace.id}),
                                    headers={'Authorization': 'Bearer {}'.format(self.access_token)})
         self.assertEqual(response.status_code, 200, msg='GET Expense Groups Failed')
 
-    def test_get_employees(self):
+    def test_get_employees_view(self):
         response = self.client.get(reverse('employees', kwargs={'workspace_id': self.workspace.id}),
                                    headers={'Authorization': 'Bearer {}'.format(self.access_token)})
         self.assertEqual(response.status_code, 200, msg='GET Employees Failed')
 
-    def test_get_categories(self):
+    def test_get_categories_view(self):
         response = self.client.get(reverse('categories', kwargs={'workspace_id': self.workspace.id}),
                                    headers={'Authorization': 'Bearer {}'.format(self.access_token)})
         self.assertEqual(response.status_code, 200, msg='GET Categories Failed')
 
-    def test_get_cost_centers(self):
+    def test_get_cost_centers_view(self):
         response = self.client.get(reverse('cost-centers', kwargs={'workspace_id': self.workspace.id}),
                                    headers={'Authorization': 'Bearer {}'.format(self.access_token)})
         self.assertEqual(response.status_code, 200, msg='GET Cost Centers Failed')
@@ -51,7 +51,7 @@ class FyleTests(APITestCase):
                                    headers={'Authorization': 'Bearer {}'.format(self.access_token)})
         self.assertEqual(response.status_code, 200, msg='GET Expense Fields Failed')
 
-    def test_get_expense_group_settings(self):
+    def test_get_expense_group_settings_view(self):
         response = self.client.get(reverse('expense-group-settings', kwargs={'workspace_id': self.workspace.id}),
                                    headers={'Authorization': 'Bearer {}'.format(self.access_token)})
         self.assertEqual(response.status_code, 200, msg='GET Expense Group Settings Failed')
@@ -80,8 +80,3 @@ class FyleTests(APITestCase):
         response = self.client.post(reverse('expense-custom-fields', kwargs={'workspace_id': self.workspace.id}),
                                     headers={'Authorization': 'Bearer {}'.format(self.access_token)})
         self.assertEqual(response.status_code, 200, msg='POST Expense Custom Fields Failed')
-
-    def test_post_expense_fields_view(self):
-        response = self.client.post(reverse('projects', kwargs={'workspace_id': self.workspace.id}),
-                                    headers={'Authorization': 'Bearer {}'.format(self.access_token)})
-        self.assertEqual(response.status_code, 200, msg='POST Expense Fields Failed')

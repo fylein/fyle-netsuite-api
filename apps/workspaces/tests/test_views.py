@@ -10,7 +10,7 @@ from apps.workspaces.models import WorkspaceGeneralSettings, WorkspaceSchedule, 
 from fyle_netsuite_api.test_utils import TestUtils
 
 
-class WorkspaceTests(APITestCase):
+class WorkspaceTestViews(APITestCase):
 
     def setUp(self):
         self.connection = TestUtils.test_connection(self)
@@ -67,19 +67,29 @@ class WorkspaceTests(APITestCase):
             'auto_create_destination_entity': False
         }
 
-        self.valid_netsuite_credentials_payload = {
+        self.netsuite_credentials_payload = {
             'workspace': self.workspace,
             'ns_account_id': os.environ.get('ACCOUNT_ID'),
             'ns_token_id': os.environ.get('TOKEN_ID'),
             'ns_token_secret': os.environ.get('TOKEN_SECRET')
         }
 
-        self.invalid_netsuite_credentials_payload = {
-            'workspace': self.workspace,
-            'ns_account_id': 'NSACC_ID',
-            'ns_token_id': 'NSTKN_ID',
-            'ns_token_secret': 'NSTKN_SEC'
-        }
+    def test_post_workspace_general_settings(self):
+        response = self.client.post(
+            reverse('workspace-general-settings', kwargs={'workspace_id': self.workspace.id}),
+            headers={'Authorization': 'Bearer {}'.format(self.access_token)},
+            data=self.workspace_general_settings_payload,
+            format='json'
+        )
+        self.assertEqual(response.status_code, 200, msg='GET Workspace General Settings Failed')
+
+    def test_post_netsuite_connection(self):
+        response = self.client.post(
+            reverse('netsuite-connection', kwargs={'workspace_id': self.workspace.id}),
+            headers={'Authorization': 'Bearer {}'.format(self.access_token)},
+            data=self.netsuite_credentials_payload
+        )
+        self.assertEqual(response.status_code, 200, msg='POST NetSuite Credentials Failed')
 
     def test_get_workspace_detail(self):
         response = self.client.get(reverse('workspace-by-id', kwargs={'workspace_id': self.workspace.id}),
@@ -105,29 +115,3 @@ class WorkspaceTests(APITestCase):
         response = self.client.get(reverse('netsuite-credentials', kwargs={'workspace_id': self.workspace.id}),
                                    headers={'Authorization': 'Bearer {}'.format(self.access_token)})
         self.assertEqual(response.status_code, 200, msg='GET NetSuite Credentials Failed')
-
-    def test_create_workspace_general_settings(self):
-        response = self.client.post(
-            reverse('workspace-general-settings', kwargs={'workspace_id': self.workspace.id}),
-            headers={'Authorization': 'Bearer {}'.format(self.access_token)},
-            data=self.workspace_general_settings_payload,
-            format='json'
-        )
-        self.assertEqual(response.status_code, 200, msg='GET Workspace General Settings Failed')
-
-    def test_create_valid_netsuite_connection(self):
-        response = self.client.post(
-            reverse('netsuite-connection', kwargs={'workspace_id': self.workspace.id}),
-            headers={'Authorization': 'Bearer {}'.format(self.access_token)},
-            data=self.valid_netsuite_credentials_payload
-        )
-        self.assertEqual(response.status_code, 200, msg='POST NetSuite Credentials Failed')
-
-    def test_create_invalid_netsuite_connection(self):
-        response = self.client.post(
-            reverse('netsuite-connection', kwargs={'workspace_id': self.workspace.id}),
-            headers={'Authorization': 'Bearer {}'.format(self.access_token)},
-            data=self.invalid_netsuite_credentials_payload
-        )
-        self.assertEqual(response.status_code, 400, msg='POST NetSuite Credentials Failed')
-
