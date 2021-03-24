@@ -81,7 +81,7 @@ class WorkspaceTestViews(APITestCase):
             data=self.workspace_general_settings_payload,
             format='json'
         )
-        self.assertEqual(response.status_code, 200, msg='GET Workspace General Settings Failed')
+        self.assertEqual(response.status_code, 200, msg='POST Workspace General Settings Failed')
 
     def test_post_netsuite_connection(self):
         response = self.client.post(
