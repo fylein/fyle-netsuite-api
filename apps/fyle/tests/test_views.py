@@ -5,7 +5,7 @@ from rest_framework.test import APITestCase, APIClient
 from fyle_netsuite_api.test_utils import TestUtils
 
 
-class FyleTests(APITestCase):
+class TestViews(APITestCase):
 
     def setUp(self):
         self.connection = TestUtils.test_connection(self)

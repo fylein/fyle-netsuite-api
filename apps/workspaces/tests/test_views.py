@@ -10,7 +10,7 @@ from apps.workspaces.models import WorkspaceGeneralSettings, WorkspaceSchedule, 
 from fyle_netsuite_api.test_utils import TestUtils
 
 
-class WorkspaceTestViews(APITestCase):
+class TestViews(APITestCase):
 
     def setUp(self):
         self.connection = TestUtils.test_connection(self)

@@ -4,7 +4,7 @@ from apps.mappings.models import SubsidiaryMapping, GeneralMapping
 from fyle_netsuite_api.test_utils import TestUtils
 
 
-class MappingsTestModels(APITestCase):
+class TestModels(APITestCase):
 
     def setUp(self):
         self.connection = TestUtils.test_connection(self)
