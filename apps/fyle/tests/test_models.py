@@ -61,4 +61,4 @@ class TestModels(APITestCase):
     def test_reimbursement_creation(self):
         reimbursement = self.reimbursement
         self.assertEqual(reimbursement.state, 'COMPLETE', msg='Create Reimbursements Failed')
-        self.assertEqual(reimbursement.reimbursement_id, 'reim1234', msg='Create Workspace General Settings Failed')
+        self.assertEqual(reimbursement.reimbursement_id, 'reim1234', msg='Create Reimbursements Failed')
