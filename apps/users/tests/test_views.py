@@ -22,8 +22,8 @@ class TestViews(APITestCase):
 
     def test_get_domain_view(self):
         response = self.client.get(reverse('domain'), headers={'Authorization': 'Bearer {}'.format(self.access_token)})
-        self.assertEqual(response.status_code, 200, msg='GET Profile Failed')
+        self.assertEqual(response.status_code, 200, msg='GET Domain Failed')
 
     def test_get_orgs_view(self):
         response = self.client.get(reverse('orgs'), headers={'Authorization': 'Bearer {}'.format(self.access_token)})
-        self.assertEqual(response.status_code, 200, msg='GET Profile Failed')
+        self.assertEqual(response.status_code, 200, msg='GET Orgs Failed')
