@@ -3,7 +3,6 @@ from django.urls import reverse
 from rest_framework.test import APITestCase, APIClient
 
 from apps.mappings.models import SubsidiaryMapping, GeneralMapping
-from apps.workspaces.tests.test_views import WorkspaceGeneralSettings
 from fyle_netsuite_api.test_utils import TestUtils
 
 
