@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 
 from django.utils import timezone
@@ -20,11 +21,11 @@ class TestModels(APITestCase):
         self.workspace = auth
 
         self.netsuite_credentials = NetSuiteCredentials.objects.create(
-            ns_account_id='ACCOUNT_ID',
-            ns_consumer_key='CONSUMER_KEY',
-            ns_consumer_secret='CONSUMER_SECRET',
-            ns_token_id='TOKEN_KEY',
-            ns_token_secret='TOKEN_SECRET',
+            ns_account_id=os.environ.get('NS_ACCOUNT_ID'),
+            ns_consumer_key=os.environ.get('NS_CONSUMER_KEY'),
+            ns_consumer_secret=os.environ.get('NS_CONSUMER_SECRET'),
+            ns_token_id=os.environ.get('NS_TOKEN_ID'),
+            ns_token_secret=os.environ.get('NS_TOKEN_SECRET'),
             workspace_id=self.workspace.id
         )
 

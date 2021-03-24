@@ -1,5 +1,11 @@
+from datetime import datetime
+
+from django.utils import timezone
+
 from rest_framework.test import APITestCase, APIClient
 
+from apps.fyle.models import ExpenseGroup
+from apps.netsuite.models import Bill
 from apps.tasks.models import TaskLog
 from fyle_netsuite_api.test_utils import TestUtils
 
@@ -15,16 +21,39 @@ class TestModels(APITestCase):
 
         self.workspace = auth
 
+        self.expense_group = ExpenseGroup.objects.create(
+            id=1,
+            description={"report_id": "rpf5vQ3xnoYI", "fund_source": "PERSONAL", "employee_email": "blob@blob.in"},
+            fund_source='PERSONAL',
+            exported_at=datetime.now(tz=timezone.utc),
+            workspace_id=self.workspace.id
+        )
+
+        self.bill = Bill.objects.create(
+            id=1,
+            entity_id=2380,
+            accounts_payable_id=25,
+            subsidiary_id=1,
+            location_id=7,
+            currency=1,
+            memo='Reimbursable expense by Blob',
+            external_id='bill1, - blob@blob.in',
+            expense_group_id=1,
+            transaction_date=datetime.now(tz=timezone.utc),
+            payment_synced=False,
+            paid_on_netsuite=False,
+        )
+
         self.task_log = TaskLog.objects.create(
             type='CREATING_BILL',
             task_id=1,
             status='COMPLETE',
             detail='',
-            bill_id=1,
+            bill_id=self.bill.id,
             expense_report_id='',
             journal_entry_id='',
             vendor_payment_id='',
-            expense_group_id=1,
+            expense_group_id=self.expense_group.id,
             workspace_id=self.workspace.id,
         )
 
