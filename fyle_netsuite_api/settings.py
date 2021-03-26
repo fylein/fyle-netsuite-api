@@ -172,7 +172,9 @@ Q_CLUSTER = {
     'queue_limit': 30,
     'orm': 'default',
     'ack_failures': True,
-    'poll': 1
+    'poll': 1,
+    'max_attempts': 1,
+    'attempt_count': 1
 }
 
 # Database
