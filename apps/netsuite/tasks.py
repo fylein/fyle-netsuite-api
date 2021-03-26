@@ -146,7 +146,15 @@ def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_conn
             logger.exception('Something unexpected happened workspace_id: %s %s', expense_group.workspace_id, detail)
 
 
-def create_bill(expense_group, task_log):
+def create_bill(expense_group, task_log_id):
+    task_log = TaskLog.objects.get(id=task_log_id)
+
+    if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
+        task_log.status = 'IN_PROGRESS'
+        task_log.save(update_fields=['status'])
+    else:
+        return
+
     general_settings = WorkspaceGeneralSettings.objects.get(workspace_id=expense_group.workspace_id)
 
     try:
@@ -234,7 +242,15 @@ def create_bill(expense_group, task_log):
         logger.exception('Something unexpected happened workspace_id: %s %s', task_log.workspace_id, task_log.detail)
 
 
-def create_expense_report(expense_group, task_log):
+def create_expense_report(expense_group, task_log_id):
+    task_log = TaskLog.objects.get(id=task_log_id)
+
+    if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
+        task_log.status = 'IN_PROGRESS'
+        task_log.save(update_fields=['status'])
+    else:
+        return
+
     general_settings = WorkspaceGeneralSettings.objects.get(workspace_id=expense_group.workspace_id)
 
     try:
@@ -323,7 +339,15 @@ def create_expense_report(expense_group, task_log):
         logger.exception('Something unexpected happened workspace_id: %s %s', task_log.workspace_id, task_log.detail)
 
 
-def create_journal_entry(expense_group, task_log):
+def create_journal_entry(expense_group, task_log_id):
+    task_log = TaskLog.objects.get(id=task_log_id)
+
+    if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
+        task_log.status = 'IN_PROGRESS'
+        task_log.save(update_fields=['status'])
+    else:
+        return
+
     general_settings = WorkspaceGeneralSettings.objects.get(workspace_id=expense_group.workspace_id)
 
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
@@ -517,22 +541,27 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str]):
     """
     if expense_group_ids:
         expense_groups = ExpenseGroup.objects.filter(
+            Q(tasklog__id__isnull=True) | ~Q(tasklog__status__in=['IN_PROGRESS', 'COMPLETE']),
             workspace_id=workspace_id, id__in=expense_group_ids, bill__id__isnull=True, exported_at__isnull=True
         ).all()
 
         chain = Chain(cached=True)
 
         for expense_group in expense_groups:
-            task_log, _ = TaskLog.objects.update_or_create(
+            task_log, _ = TaskLog.objects.get_or_create(
                 workspace_id=expense_group.workspace_id,
                 expense_group=expense_group,
                 defaults={
-                    'status': 'IN_PROGRESS',
+                    'status': 'ENQUEUED',
                     'type': 'CREATING_BILL'
                 }
             )
 
-            chain.append('apps.netsuite.tasks.create_bill', expense_group, task_log)
+            if task_log.status not in ['IN_PROGRESS', 'ENQUEUED']:
+                task_log.status = 'ENQUEUED'
+                task_log.save(update_fields=['status'])
+
+            chain.append('apps.netsuite.tasks.create_bill', expense_group, task_log.id)
 
             task_log.save()
         if chain.length():
@@ -549,22 +578,27 @@ def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List
     """
     if expense_group_ids:
         expense_groups = ExpenseGroup.objects.filter(
+            Q(tasklog__id__isnull=True) | ~Q(tasklog__status__in=['IN_PROGRESS', 'COMPLETE']),
             workspace_id=workspace_id, id__in=expense_group_ids, expensereport__id__isnull=True, exported_at__isnull=True
         ).all()
 
         chain = Chain(cached=True)
 
         for expense_group in expense_groups:
-            task_log, _ = TaskLog.objects.update_or_create(
+            task_log, _ = TaskLog.objects.get_or_create(
                 workspace_id=expense_group.workspace_id,
                 expense_group=expense_group,
                 defaults={
-                    'status': 'IN_PROGRESS',
+                    'status': 'ENQUEUED',
                     'type': 'CREATING_EXPENSE_REPORT'
                 }
             )
 
-            chain.append('apps.netsuite.tasks.create_expense_report', expense_group, task_log)
+            if task_log.status not in ['IN_PROGRESS', 'ENQUEUED']:
+                task_log.status = 'ENQUEUED'
+                task_log.save(update_fields=['status'])
+
+            chain.append('apps.netsuite.tasks.create_expense_report', expense_group, task_log.id)
             task_log.save()
         if chain.length():
             chain.run()
@@ -580,22 +614,27 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
     """
     if expense_group_ids:
         expense_groups = ExpenseGroup.objects.filter(
+            Q(tasklog__id__isnull=True) | ~Q(tasklog__status__in=['IN_PROGRESS', 'COMPLETE']),
             workspace_id=workspace_id, id__in=expense_group_ids, journalentry__id__isnull=True, exported_at__isnull=True
         ).all()
 
         chain = Chain(cached=True)
 
         for expense_group in expense_groups:
-            task_log, _ = TaskLog.objects.update_or_create(
+            task_log, _ = TaskLog.objects.get_or_create(
                 workspace_id=expense_group.workspace_id,
                 expense_group=expense_group,
                 defaults={
-                    'status': 'IN_PROGRESS',
+                    'status': 'ENQUEUED',
                     'type': 'CREATING_JOURNAL_ENTRY'
                 }
             )
 
-            chain.append('apps.netsuite.tasks.create_journal_entry', expense_group, task_log)
+            if task_log.status not in ['IN_PROGRESS', 'ENQUEUED']:
+                task_log.status = 'ENQUEUED'
+                task_log.save(update_fields=['status'])
+
+            chain.append('apps.netsuite.tasks.create_journal_entry', expense_group, task_log.id)
             task_log.save()
         if chain.length():
             chain.run()
