@@ -130,10 +130,10 @@ def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_conn
             )
 
             mapping.source.auto_mapped = True
-            mapping.source.save(update_fields=['auto_mapped'])
+            mapping.source.save()
 
             mapping.destination.auto_created = True
-            mapping.destination.save(update_fields=['auto_created'])
+            mapping.destination.save()
 
         except NetSuiteRequestError as exception:
             logger.exception({'error': exception})
@@ -151,7 +151,7 @@ def create_bill(expense_group, task_log_id):
 
     if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
         task_log.status = 'IN_PROGRESS'
-        task_log.save(update_fields=['status'])
+        task_log.save()
     else:
         return
 
@@ -187,7 +187,7 @@ def create_bill(expense_group, task_log_id):
             task_log.bill = bill_object
             task_log.status = 'COMPLETE'
 
-            task_log.save(update_fields=['detail', 'bill', 'status'])
+            task_log.save()
 
             expense_group.exported_at = datetime.now()
             expense_group.save()
@@ -205,7 +205,7 @@ def create_bill(expense_group, task_log_id):
         task_log.status = 'FAILED'
         task_log.detail = detail
 
-        task_log.save(update_fields=['detail', 'status'])
+        task_log.save()
 
     except NetSuiteRequestError as exception:
         all_details = []
@@ -222,7 +222,7 @@ def create_bill(expense_group, task_log_id):
         })
         task_log.detail = all_details
 
-        task_log.save(update_fields=['detail', 'status'])
+        task_log.save()
 
     except BulkError as exception:
         logger.error(exception.response)
@@ -230,7 +230,7 @@ def create_bill(expense_group, task_log_id):
         task_log.status = 'FAILED'
         task_log.detail = detail
 
-        task_log.save(update_fields=['detail', 'status'])
+        task_log.save()
 
     except Exception:
         error = traceback.format_exc()
@@ -238,7 +238,7 @@ def create_bill(expense_group, task_log_id):
             'error': error
         }
         task_log.status = 'FATAL'
-        task_log.save(update_fields=['detail', 'status'])
+        task_log.save()
         logger.exception('Something unexpected happened workspace_id: %s %s', task_log.workspace_id, task_log.detail)
 
 
@@ -247,7 +247,7 @@ def create_expense_report(expense_group, task_log_id):
 
     if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
         task_log.status = 'IN_PROGRESS'
-        task_log.save(update_fields=['status'])
+        task_log.save()
     else:
         return
 
@@ -284,7 +284,7 @@ def create_expense_report(expense_group, task_log_id):
             task_log.expense_report = expense_report_object
             task_log.status = 'COMPLETE'
 
-            task_log.save(update_fields=['detail', 'expense_report', 'status'])
+            task_log.save()
 
             expense_group.exported_at = datetime.now()
             expense_group.save()
@@ -302,7 +302,7 @@ def create_expense_report(expense_group, task_log_id):
         task_log.status = 'FAILED'
         task_log.detail = detail
 
-        task_log.save(update_fields=['detail', 'status'])
+        task_log.save()
 
     except NetSuiteRequestError as exception:
         all_details = []
@@ -319,7 +319,7 @@ def create_expense_report(expense_group, task_log_id):
         })
         task_log.detail = all_details
 
-        task_log.save(update_fields=['detail', 'status'])
+        task_log.save()
 
     except BulkError as exception:
         logger.error(exception.response)
@@ -327,7 +327,7 @@ def create_expense_report(expense_group, task_log_id):
         task_log.status = 'FAILED'
         task_log.detail = detail
 
-        task_log.save(update_fields=['detail', 'status'])
+        task_log.save()
 
     except Exception:
         error = traceback.format_exc()
@@ -335,7 +335,7 @@ def create_expense_report(expense_group, task_log_id):
             'error': error
         }
         task_log.status = 'FATAL'
-        task_log.save(update_fields=['detail', 'status'])
+        task_log.save()
         logger.exception('Something unexpected happened workspace_id: %s %s', task_log.workspace_id, task_log.detail)
 
 
@@ -344,7 +344,7 @@ def create_journal_entry(expense_group, task_log_id):
 
     if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
         task_log.status = 'IN_PROGRESS'
-        task_log.save(update_fields=['status'])
+        task_log.save()
     else:
         return
 
@@ -381,7 +381,7 @@ def create_journal_entry(expense_group, task_log_id):
             task_log.journal_entry = journal_entry_object
             task_log.status = 'COMPLETE'
 
-            task_log.save(update_fields=['detail', 'journal_entry', 'status'])
+            task_log.save()
 
             expense_group.exported_at = datetime.now()
             expense_group.save()
@@ -399,7 +399,7 @@ def create_journal_entry(expense_group, task_log_id):
         task_log.status = 'FAILED'
         task_log.detail = detail
 
-        task_log.save(update_fields=['detail', 'status'])
+        task_log.save()
 
     except NetSuiteRequestError as exception:
         all_details = []
@@ -416,7 +416,7 @@ def create_journal_entry(expense_group, task_log_id):
         })
         task_log.detail = all_details
 
-        task_log.save(update_fields=['detail', 'status'])
+        task_log.save()
 
     except BulkError as exception:
         logger.error(exception.response)
@@ -424,7 +424,7 @@ def create_journal_entry(expense_group, task_log_id):
         task_log.status = 'FAILED'
         task_log.detail = detail
 
-        task_log.save(update_fields=['detail', 'status'])
+        task_log.save()
 
     except Exception:
         error = traceback.format_exc()
@@ -432,7 +432,7 @@ def create_journal_entry(expense_group, task_log_id):
             'error': error
         }
         task_log.status = 'FATAL'
-        task_log.save(update_fields=['detail', 'status'])
+        task_log.save()
         logger.exception('Something unexpected happened workspace_id: %s %s', task_log.workspace_id, task_log.detail)
 
 
@@ -559,7 +559,7 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str]):
 
             if task_log.status not in ['IN_PROGRESS', 'ENQUEUED']:
                 task_log.status = 'ENQUEUED'
-                task_log.save(update_fields=['status'])
+                task_log.save()
 
             chain.append('apps.netsuite.tasks.create_bill', expense_group, task_log.id)
 
@@ -596,7 +596,7 @@ def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List
 
             if task_log.status not in ['IN_PROGRESS', 'ENQUEUED']:
                 task_log.status = 'ENQUEUED'
-                task_log.save(update_fields=['status'])
+                task_log.save()
 
             chain.append('apps.netsuite.tasks.create_expense_report', expense_group, task_log.id)
             task_log.save()
@@ -632,7 +632,7 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
 
             if task_log.status not in ['IN_PROGRESS', 'ENQUEUED']:
                 task_log.status = 'ENQUEUED'
-                task_log.save(update_fields=['status'])
+                task_log.save()
 
             chain.append('apps.netsuite.tasks.create_journal_entry', expense_group, task_log.id)
             task_log.save()
@@ -702,7 +702,7 @@ def create_netsuite_payment_objects(netsuite_objects, object_type, workspace_id)
         else:
             netsuite_object.payment_synced = True
             netsuite_object.paid_on_netsuite = True
-            netsuite_object.save(update_fields=['payment_synced', 'paid_on_netsuite'])
+            netsuite_object.save()
 
     return netsuite_payment_objects
 
@@ -753,13 +753,13 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
             for paid_object in paid_objects:
                 paid_object.payment_synced = True
                 paid_object.paid_on_netsuite = True
-                paid_object.save(update_fields=['payment_synced', 'paid_on_netsuite'])
+                paid_object.save()
 
             task_log.detail = created_vendor_payment
             task_log.vendor_payment = vendor_payment_object
             task_log.status = 'COMPLETE'
 
-            task_log.save(update_fields=['detail', 'vendor_payment', 'status'])
+            task_log.save()
     except NetSuiteCredentials.DoesNotExist:
         logger.error(
             'NetSuite Credentials not found for workspace_id %s',
@@ -771,7 +771,7 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
         task_log.status = 'FAILED'
         task_log.detail = detail
 
-        task_log.save(update_fields=['detail', 'status'])
+        task_log.save()
 
     except NetSuiteRequestError as exception:
         all_details = []
@@ -787,7 +787,7 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
         })
         task_log.detail = all_details
 
-        task_log.save(update_fields=['detail', 'status'])
+        task_log.save()
 
     except BulkError as exception:
         logger.error(exception.response)
@@ -795,7 +795,7 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
         task_log.status = 'FAILED'
         task_log.detail = detail
 
-        task_log.save(update_fields=['detail', 'status'])
+        task_log.save()
 
 
 def create_vendor_payment(workspace_id):
@@ -900,11 +900,11 @@ def check_netsuite_object_status(workspace_id):
                 for line_item in line_items:
                     expense = line_item.expense
                     expense.paid_on_netsuite = True
-                    expense.save(update_fields=['paid_on_netsuite'])
+                    expense.save()
 
                 bill.paid_on_netsuite = True
                 bill.payment_synced = True
-                bill.save(update_fields=['paid_on_netsuite', 'payment_synced'])
+                bill.save()
 
     if expense_reports:
         internal_ids = get_all_internal_ids(expense_reports)
@@ -918,11 +918,11 @@ def check_netsuite_object_status(workspace_id):
                 for line_item in line_items:
                     expense = line_item.expense
                     expense.paid_on_netsuite = True
-                    expense.save(update_fields=['paid_on_netsuite'])
+                    expense.save()
 
                 expense_report.paid_on_netsuite = True
                 expense_report.payment_synced = True
-                expense_report.save(update_fields=['paid_on_netsuite', 'payment_synced'])
+                expense_report.save()
 
 
 def schedule_netsuite_objects_status_sync(sync_netsuite_to_fyle_payments, workspace_id):
