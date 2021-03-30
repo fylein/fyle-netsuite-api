@@ -109,7 +109,7 @@ class AutoMapEmployeeView(generics.CreateAPIView):
             workspace_id = kwargs['workspace_id']
             general_settings = WorkspaceGeneralSettings.objects.get(workspace_id=workspace_id)
 
-            chain = Chain(cached=True)
+            chain = Chain()
 
             if not general_settings.auto_map_employees:
                 return Response(
