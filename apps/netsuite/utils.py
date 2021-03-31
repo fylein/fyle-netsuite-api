@@ -965,9 +965,9 @@ class NetSuiteConnector:
         return expense_report
 
     @staticmethod
-    def __construct_journal_entry_lineitems(journal_entry_lineitems: List[JournalEntryLineItem],
+    def __construct_journal_entry_lineitems(journal_entry_lineitems: List[JournalEntryLineItem], org_id: str,
                                             credit=None, debit=None, attachment_links: Dict = None,
-                                            cluster_domain: str = None, org_id: str) -> List[Dict]:
+                                            cluster_domain: str = None) -> List[Dict]:
         """
         Create journal entry line items
         :return: constructed line items
@@ -1079,12 +1079,13 @@ class NetSuiteConnector:
         fyle_connector = FyleConnector(fyle_credentials.refresh_token, journal_entry.expense_group.workspace_id)
 
         cluster_domain = fyle_connector.get_cluster_domain()
-        org_id = Workspace.objects.get(id=workspace_id).fyle_org_id
+        org_id = Workspace.objects.get(id=journal_entry.expense_group.workspace_id).fyle_org_id
 
         credit_line = self.__construct_journal_entry_lineitems(journal_entry_lineitems, credit='Credit', org_id=org_id)
         debit_line = self.__construct_journal_entry_lineitems(
             journal_entry_lineitems,
-            debit='Debit', attachment_links=attachment_links, cluster_domain=cluster_domain['cluster_domain'], org_id=org_id
+            debit='Debit', attachment_links=attachment_links,
+            cluster_domain=cluster_domain['cluster_domain'], org_id=org_id
         )
         lines = []
         lines.extend(credit_line)

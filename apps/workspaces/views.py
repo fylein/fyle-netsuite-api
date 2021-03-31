@@ -160,7 +160,7 @@ class ConnectNetSuiteView(viewsets.ViewSet):
 
                 )
                 workspace.ns_account_id = ns_account_id
-                workspace.save(update_fields=['ns_account_id'])
+                workspace.save()
 
             else:
                 assert_valid(ns_account_id == netsuite_credentials.ns_account_id,
@@ -243,7 +243,7 @@ class ConnectFyleView(viewsets.ViewSet):
 
             workspace.name = org_name
             workspace.fyle_org_id = org_id
-            workspace.save(update_fields=['name', 'fyle_org_id'])
+            workspace.save()
 
             fyle_credentials, _ = FyleCredential.objects.update_or_create(
                 workspace_id=kwargs['workspace_id'],
