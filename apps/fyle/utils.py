@@ -302,16 +302,19 @@ class FyleConnector:
         """
         Get attachments against expense_ids
         """
+        attachments = []
+        attachment_file_names = []
         attachment = self.connection.Expenses.get_attachments(expense_id)
 
         if attachment['data']:
-            attachment = attachment['data'][0]
-            attachment_format = attachment['filename'].split('.')[-1]
-            if attachment_format != 'html':
-                attachment['expense_id'] = expense_id
-                return attachment
+            for attachment in attachment['data']:
+                attachment_format = attachment['filename'].split('.')[-1]
+                if attachment_format != 'html' and attachment['filename'] not in attachment_file_names:
+                    attachment['expense_id'] = expense_id
+                    attachments.append(attachment)
+                    attachment_file_names.append(attachment['filename'])
 
-        return []
+        return attachments
 
     def post_reimbursement(self, reimbursement_ids: list):
         """
