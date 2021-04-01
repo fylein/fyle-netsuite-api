@@ -12,7 +12,7 @@ from apps.fyle.utils import FyleConnector
 from apps.mappings.models import SubsidiaryMapping
 from apps.netsuite.models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, \
     JournalEntryLineItem, CustomSegment, VendorPayment, VendorPaymentLineitem
-from apps.workspaces.models import NetSuiteCredentials, FyleCredential
+from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Workspace
 
 
 def _decode_project_or_customer_name(name):
@@ -616,7 +616,7 @@ class NetSuiteConnector:
 
     @staticmethod
     def __construct_bill_lineitems(bill_lineitems: List[BillLineitem],
-                                   attachment_links: Dict, cluster_domain: str) -> List[Dict]:
+                                   attachment_links: Dict, cluster_domain: str, org_id: str) -> List[Dict]:
         """
         Create bill line items
         :return: constructed line items
@@ -641,9 +641,10 @@ class NetSuiteConnector:
                 {
                     'scriptId': 'custcolfyle_expense_url',
                     'type': 'String',
-                    'value': '{}/app/main/#/enterprise/view_expense/{}'.format(
+                    'value': '{}/app/main/#/enterprise/view_expense/{}?org_id={}'.format(
                         cluster_domain,
-                        expense.expense_id
+                        expense.expense_id,
+                        org_id
                     )
                 }
             )
@@ -714,6 +715,7 @@ class NetSuiteConnector:
         fyle_connector = FyleConnector(fyle_credentials.refresh_token, bill.expense_group.workspace_id)
 
         cluster_domain = fyle_connector.get_cluster_domain()
+        org_id = Workspace.objects.get(id=bill.expense_group.workspace_id).fyle_org_id
 
         bill_payload = {
             'nullFieldList': None,
@@ -782,7 +784,7 @@ class NetSuiteConnector:
             'landedCostPerLine': None,
             'transactionNumber': None,
             'expenseList': self.__construct_bill_lineitems(
-                bill_lineitems, attachment_links, cluster_domain['cluster_domain']
+                bill_lineitems, attachment_links, cluster_domain['cluster_domain'], org_id
             ),
             'accountingBookDetailList': None,
             'itemList': None,
@@ -813,7 +815,7 @@ class NetSuiteConnector:
 
     @staticmethod
     def __construct_expense_report_lineitems(
-            expense_report_lineitems: List[ExpenseReportLineItem], attachment_links: Dict, cluster_domain: str
+            expense_report_lineitems: List[ExpenseReportLineItem], attachment_links: Dict, cluster_domain: str, org_id: str
     ) -> List[Dict]:
         """
         Create expense report line items
@@ -838,9 +840,10 @@ class NetSuiteConnector:
                 {
                     'scriptId': 'custcolfyle_expense_url',
                     'type': 'String',
-                    'value': '{}/app/main/#/enterprise/view_expense/{}'.format(
+                    'value': '{}/app/main/#/enterprise/view_expense/{}?org_id={}'.format(
                         cluster_domain,
-                        expense.expense_id
+                        expense.expense_id,
+                        org_id
                     )
                 }
             )
@@ -920,6 +923,7 @@ class NetSuiteConnector:
         fyle_connector = FyleConnector(fyle_credentials.refresh_token, expense_report.expense_group.workspace_id)
 
         cluster_domain = fyle_connector.get_cluster_domain()
+        org_id = Workspace.objects.get(id=expense_report.expense_group.workspace_id).fyle_org_id
 
         expense_report_payload = {
             'nullFieldList': None,
@@ -989,7 +993,7 @@ class NetSuiteConnector:
                 'type': 'location'
             },
             'expenseList': self.__construct_expense_report_lineitems(
-                expense_report_lineitems, attachment_links, cluster_domain['cluster_domain']
+                expense_report_lineitems, attachment_links, cluster_domain['cluster_domain'], org_id
             ),
             'accountingBookDetailList': None,
             'customFieldList': None,
@@ -1018,7 +1022,7 @@ class NetSuiteConnector:
         return expense_report
 
     @staticmethod
-    def __construct_journal_entry_lineitems(journal_entry_lineitems: List[JournalEntryLineItem],
+    def __construct_journal_entry_lineitems(journal_entry_lineitems: List[JournalEntryLineItem], org_id: str,
                                             credit=None, debit=None, attachment_links: Dict = None,
                                             cluster_domain: str = None) -> List[Dict]:
         """
@@ -1052,9 +1056,10 @@ class NetSuiteConnector:
                     {
                         'scriptId': 'custcolfyle_expense_url',
                         'type': 'String',
-                        'value': '{}/app/main/#/enterprise/view_expense/{}'.format(
+                        'value': '{}/app/main/#/enterprise/view_expense/{}?org_id={}'.format(
                             cluster_domain,
-                            expense.expense_id
+                            expense.expense_id,
+                            org_id
                         )
                     }
                 )
@@ -1131,11 +1136,13 @@ class NetSuiteConnector:
         fyle_connector = FyleConnector(fyle_credentials.refresh_token, journal_entry.expense_group.workspace_id)
 
         cluster_domain = fyle_connector.get_cluster_domain()
+        org_id = Workspace.objects.get(id=journal_entry.expense_group.workspace_id).fyle_org_id
 
-        credit_line = self.__construct_journal_entry_lineitems(journal_entry_lineitems, credit='Credit')
+        credit_line = self.__construct_journal_entry_lineitems(journal_entry_lineitems, credit='Credit', org_id=org_id)
         debit_line = self.__construct_journal_entry_lineitems(
             journal_entry_lineitems,
-            debit='Debit', attachment_links=attachment_links, cluster_domain=cluster_domain['cluster_domain']
+            debit='Debit', attachment_links=attachment_links,
+            cluster_domain=cluster_domain['cluster_domain'], org_id=org_id
         )
         lines = []
         lines.extend(credit_line)

@@ -160,7 +160,7 @@ class ConnectNetSuiteView(viewsets.ViewSet):
 
                 )
                 workspace.ns_account_id = ns_account_id
-                workspace.save(update_fields=['ns_account_id'])
+                workspace.save()
 
             else:
                 assert_valid(ns_account_id == netsuite_credentials.ns_account_id,
@@ -243,7 +243,7 @@ class ConnectFyleView(viewsets.ViewSet):
 
             workspace.name = org_name
             workspace.fyle_org_id = org_id
-            workspace.save(update_fields=['name', 'fyle_org_id'])
+            workspace.save()
 
             fyle_credentials, _ = FyleCredential.objects.update_or_create(
                 workspace_id=kwargs['workspace_id'],
@@ -345,14 +345,10 @@ class ScheduleView(viewsets.ViewSet):
         hours = request.data.get('hours')
         assert_valid(hours is not None, 'Hours cannot be left empty')
 
-        next_run = request.data.get('next_run')
-        assert_valid(next_run is not None, 'next_run value cannot be empty')
-
         workspace_schedule_settings = schedule_sync(
             workspace_id=kwargs['workspace_id'],
             schedule_enabled=schedule_enabled,
-            hours=hours,
-            next_run=next_run
+            hours=hours
         )
 
         return Response(

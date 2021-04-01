@@ -166,13 +166,15 @@ CACHES = {
 
 Q_CLUSTER = {
     'name': 'fyle_netsuite_api',
-    'compress': True,
     'save_limit': 0,
     'workers': 4,
     'queue_limit': 30,
+    'cached': False,
     'orm': 'default',
     'ack_failures': True,
-    'poll': 1
+    'poll': 1,
+    'max_attempts': 1,
+    'attempt_count': 1
 }
 
 # Database

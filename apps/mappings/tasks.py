@@ -180,7 +180,7 @@ def auto_create_category_mappings(workspace_id):
                 category_mappings.append(mapping)
 
                 mapping.source.auto_mapped = True
-                mapping.source.save(update_fields=['auto_mapped'])
+                mapping.source.save()
 
             except ExpenseAttribute.DoesNotExist:
                 detail = {
@@ -319,6 +319,8 @@ def auto_create_project_mappings(workspace_id):
                 workspace_id=workspace_id
             )
             project_mappings.append(mapping)
+            mapping.source.auto_mapped = True
+            mapping.source.save()
 
         return project_mappings
     except WrongParamsError as exception:
@@ -384,7 +386,7 @@ def auto_create_employee_mappings(source_attributes: List[ExpenseAttribute], map
 
             if mapping_attributes['destination_type'] != 'CREDIT_CARD_ACCOUNT':
                 source.auto_mapped = True
-                source.save(update_fields=['auto_mapped'])
+                source.save()
 
 
 def construct_filters_employee_mappings(employee: DestinationAttribute, employee_mapping_preference: str):

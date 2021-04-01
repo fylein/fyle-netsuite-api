@@ -10,15 +10,14 @@ from apps.tasks.models import TaskLog
 from apps.workspaces.models import WorkspaceSchedule, WorkspaceGeneralSettings
 
 
-def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int, next_run: str):
+def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int):
     ws_schedule, _ = WorkspaceSchedule.objects.get_or_create(
         workspace_id=workspace_id
     )
-    start_datetime = datetime.strptime(next_run, '%Y-%m-%dT%H:%M:%S.%fZ')
 
     if schedule_enabled:
         ws_schedule.enabled = schedule_enabled
-        ws_schedule.start_datetime = start_datetime
+        ws_schedule.start_datetime = datetime.now()
         ws_schedule.interval_hours = hours
 
         schedule, _ = Schedule.objects.update_or_create(
@@ -27,13 +26,13 @@ def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int, next_ru
             defaults={
                 'schedule_type': Schedule.MINUTES,
                 'minutes': hours * 60,
-                'next_run': start_datetime
+                'next_run': datetime.now()
             }
         )
 
         ws_schedule.schedule = schedule
 
-        ws_schedule.save(update_fields=['enabled', 'start_datetime', 'interval_hours', 'schedule'])
+        ws_schedule.save()
 
     elif not schedule_enabled:
         schedule = ws_schedule.schedule

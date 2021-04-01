@@ -23,7 +23,7 @@ class TasksView(generics.ListAPIView):
         task_status = self.request.query_params.getlist('status')
 
         if len(task_status) == 1 and task_status[0] == 'ALL':
-            task_status = ['IN_PROGRESS', 'FAILED', 'COMPLETE']
+            task_status = ['ENQUEUED', 'IN_PROGRESS', 'FAILED', 'COMPLETE']
 
         task_logs = TaskLog.objects.filter(
             ~Q(type='CREATING_VENDOR_PAYMENT'),
