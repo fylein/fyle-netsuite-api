@@ -988,7 +988,7 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
 
             workspace = Workspace.objects.get(id=kwargs['workspace_id'])
             workspace.destination_synced_at = datetime.now()
-            workspace.save(update_fields=['destination_synced_at'])
+            workspace.save()
 
             return Response(
                 status=status.HTTP_200_OK

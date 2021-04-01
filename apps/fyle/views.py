@@ -416,7 +416,7 @@ class RefreshFyleDimensionView(generics.ListCreateAPIView):
 
             workspace = Workspace.objects.get(id=kwargs['workspace_id'])
             workspace.source_synced_at = datetime.now()
-            workspace.save(update_fields=['source_synced_at'])
+            workspace.save()
 
             return Response(
                 status=status.HTTP_200_OK
