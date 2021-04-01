@@ -386,11 +386,9 @@ class SyncFyleDimensionView(generics.ListCreateAPIView):
                 fyle_connector.sync_dimensions()
 
                 workspace.source_synced_at = datetime.now()
-                workspace.save(update_fields=['source_synced_at'])
-                workspace = Workspace.objects.get(id=kwargs['workspace_id'])
+                workspace.save()
 
             return Response(
-                data=WorkspaceSerializer(workspace).data,
                 status=status.HTTP_200_OK
             )
         except FyleCredential.DoesNotExist:
@@ -421,7 +419,6 @@ class RefreshFyleDimensionView(generics.ListCreateAPIView):
             workspace.save(update_fields=['source_synced_at'])
 
             return Response(
-                data=WorkspaceSerializer(workspace).data,
                 status=status.HTTP_200_OK
             )
         except FyleCredential.DoesNotExist:
