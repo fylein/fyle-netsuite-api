@@ -176,11 +176,14 @@ class ExpenseGroupSettings(models.Model):
         reimbursable_grouped_by = []
         corporate_credit_card_expenses_grouped_by = []
 
-        for field in current_reimbursable_settings:
+        immutable_reimbursable_list = tuple(current_reimbursable_settings)
+        immutable_ccc_list = tuple(current_ccc_settings)
+
+        for field in immutable_reimbursable_list:
             if field in ALLOWED_FORM_INPUT['group_expenses_by']:
                 current_reimbursable_settings.remove(field)
 
-        for field in current_ccc_settings:
+        for field in immutable_ccc_list:
             if field in ALLOWED_FORM_INPUT['group_expenses_by']:
                 current_ccc_settings.remove(field)
 
