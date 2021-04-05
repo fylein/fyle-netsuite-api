@@ -531,14 +531,15 @@ class NetSuiteConnector:
             projects = self.connection.projects.get_all()
 
             for project in projects:
-                value = _decode_project_or_customer_name(project['entityId'])
-                project_attributes.append({
-                    'attribute_type': 'PROJECT',
-                    'display_name': 'Project',
-                    'value': value,
-                    'destination_id': project['internalId'],
-                    'active': not project['isInactive']
-                })
+                if not project['isInactive']:
+                    value = _decode_project_or_customer_name(project['entityId'])
+                    project_attributes.append({
+                        'attribute_type': 'PROJECT',
+                        'display_name': 'Project',
+                        'value': value,
+                        'destination_id': project['internalId'],
+                        'active': True
+                    })
 
             project_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
                 project_attributes, self.workspace_id)
@@ -557,14 +558,15 @@ class NetSuiteConnector:
             customers = self.connection.customers.get_all()
 
             for customer in customers:
-                value = _decode_project_or_customer_name(customer['entityId'])
-                customers_attributes.append({
-                    'attribute_type': 'PROJECT',
-                    'display_name': 'Customer',
-                    'value': value,
-                    'destination_id': customer['internalId'],
-                    'active': not customer['isInactive']
-                })
+                if not customer['isInactive']:
+                    value = _decode_project_or_customer_name(customer['entityId'])
+                    customers_attributes.append({
+                        'attribute_type': 'PROJECT',
+                        'display_name': 'Customer',
+                        'value': value,
+                        'destination_id': customer['internalId'],
+                        'active': True
+                    })
 
             customers_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
                 customers_attributes, self.workspace_id)
