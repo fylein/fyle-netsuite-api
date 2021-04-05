@@ -15,6 +15,12 @@ from apps.netsuite.models import Bill, BillLineitem, ExpenseReport, ExpenseRepor
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Workspace
 
 
+SYNC_UPPER_LIMIT = {
+    'projects': 2000,
+    'customers': 2000
+}
+
+
 def _decode_project_or_customer_name(name):
     value = name.replace(u'\xa0', ' ')
     value = value.replace('/', '-')
@@ -517,44 +523,52 @@ class NetSuiteConnector:
         """
         Sync projects
         """
-        projects = self.connection.projects.get_all()
-
         project_attributes = []
 
-        for project in projects:
-            value = _decode_project_or_customer_name(project['entityId'])
-            project_attributes.append({
-                'attribute_type': 'PROJECT',
-                'display_name': 'Project',
-                'value': value,
-                'destination_id': project['internalId'],
-                'active': not project['isInactive']
-            })
+        projects_count = self.connection.projects.count()
 
-        project_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
-            project_attributes, self.workspace_id)
+        if projects_count < SYNC_UPPER_LIMIT['projects']:
+            projects = self.connection.projects.get_all()
+
+            for project in projects:
+                value = _decode_project_or_customer_name(project['entityId'])
+                project_attributes.append({
+                    'attribute_type': 'PROJECT',
+                    'display_name': 'Project',
+                    'value': value,
+                    'destination_id': project['internalId'],
+                    'active': not project['isInactive']
+                })
+
+            project_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
+                project_attributes, self.workspace_id)
+
         return project_attributes
 
     def sync_customers(self):
         """
         Sync customers
         """
-        customers = self.connection.customers.get_all()
-
         customers_attributes = []
 
-        for customer in customers:
-            value = _decode_project_or_customer_name(customer['entityId'])
-            customers_attributes.append({
-                'attribute_type': 'PROJECT',
-                'display_name': 'Customer',
-                'value': value,
-                'destination_id': customer['internalId'],
-                'active': not customer['isInactive']
-            })
+        customers_count = self.connection.customers.count()
 
-        customers_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
-            customers_attributes, self.workspace_id)
+        if customers_count < SYNC_UPPER_LIMIT['customers']:
+            customers = self.connection.customers.get_all()
+
+            for customer in customers:
+                value = _decode_project_or_customer_name(customer['entityId'])
+                customers_attributes.append({
+                    'attribute_type': 'PROJECT',
+                    'display_name': 'Customer',
+                    'value': value,
+                    'destination_id': customer['internalId'],
+                    'active': not customer['isInactive']
+                })
+
+            customers_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
+                customers_attributes, self.workspace_id)
+
         return customers_attributes
 
     @staticmethod
