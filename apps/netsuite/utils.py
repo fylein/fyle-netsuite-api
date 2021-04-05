@@ -414,6 +414,63 @@ class NetSuiteConnector:
             employee_attributes, self.workspace_id)
         return employee_attributes
 
+    def sync_dimensions(self, workspace_id: str):
+        try:
+            self.sync_expense_categories()
+        except Exception:
+            pass
+
+        try:
+            self.sync_locations()
+        except Exception:
+            pass
+
+        try:
+            self.sync_vendors()
+        except Exception:
+            pass
+
+        try:
+            self.sync_currencies()
+        except Exception:
+            pass
+
+        try:
+            self.sync_classifications()
+        except Exception:
+            pass
+
+        try:
+            self.sync_departments()
+        except Exception:
+            pass
+
+        try:
+            self.sync_employees()
+        except Exception:
+            pass
+
+        try:
+            self.sync_accounts()
+        except Exception:
+            pass
+
+        try:
+            all_custom_list = CustomSegment.objects.filter(workspace_id=workspace_id).all()
+            self.sync_custom_segments(all_custom_list)
+        except Exception:
+            pass
+
+        try:
+            self.sync_projects()
+        except Exception:
+            pass
+
+        try:
+            self.sync_customers()
+        except Exception:
+            pass
+
     def post_employee(self, employee: ExpenseAttribute, auto_map_employee_preference: str, expense_group: ExpenseGroup):
         """
         Create an Employee on NetSuite
