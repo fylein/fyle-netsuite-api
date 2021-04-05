@@ -386,7 +386,7 @@ class SyncFyleDimensionView(generics.ListCreateAPIView):
                 fyle_connector.sync_dimensions()
 
                 workspace.source_synced_at = datetime.now()
-                workspace.save()
+                workspace.save(update_fields=['source_synced_at'])
 
             return Response(
                 status=status.HTTP_200_OK
@@ -416,7 +416,7 @@ class RefreshFyleDimensionView(generics.ListCreateAPIView):
 
             workspace = Workspace.objects.get(id=kwargs['workspace_id'])
             workspace.source_synced_at = datetime.now()
-            workspace.save()
+            workspace.save(update_fields=['source_synced_at'])
 
             return Response(
                 status=status.HTTP_200_OK

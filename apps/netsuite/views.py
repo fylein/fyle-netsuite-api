@@ -958,7 +958,7 @@ class SyncNetSuiteDimensionView(generics.ListCreateAPIView):
                 ns_connector.sync_dimensions(kwargs['workspace_id'])
 
                 workspace.destination_synced_at = datetime.now()
-                workspace.save()
+                workspace.save(update_fields=['destination_synced_at'])
 
             return Response(
                 status=status.HTTP_200_OK
@@ -988,7 +988,7 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
 
             workspace = Workspace.objects.get(id=kwargs['workspace_id'])
             workspace.destination_synced_at = datetime.now()
-            workspace.save()
+            workspace.save(update_fields=['destination_synced_at'])
 
             return Response(
                 status=status.HTTP_200_OK
