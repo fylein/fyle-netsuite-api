@@ -16,8 +16,8 @@ from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Workspac
 
 
 SYNC_UPPER_LIMIT = {
-    'projects': 2000,
-    'customers': 2000
+    'projects': 5000,
+    'customers': 5000
 }
 
 
