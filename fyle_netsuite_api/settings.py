@@ -177,7 +177,10 @@ Q_CLUSTER = {
     'ack_failures': True,
     'poll': 1,
     'max_attempts': 1,
-    'attempt_count': 1
+    'attempt_count': 1,
+    'retry': 14400,
+    'timeout': 3600,
+    'catch_up': False
 }
 
 # Database
