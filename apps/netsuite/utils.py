@@ -579,7 +579,7 @@ class NetSuiteConnector:
         """
         projects_count = self.connection.projects.count()
 
-        if projects_count < SYNC_UPPER_LIMIT['projects']:
+        if projects_count <= SYNC_UPPER_LIMIT['projects']:
             projects_generator = self.connection.projects.get_all_generator()
 
             for projects in projects_generator:
