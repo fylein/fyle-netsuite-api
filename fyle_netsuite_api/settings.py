@@ -56,7 +56,6 @@ INSTALLED_APPS = [
     'django_q'
 ]
 
-
 MIDDLEWARE = [
     'fyle_netsuite_api.logging_middleware.ErrorHandlerMiddleware',
     'corsheaders.middleware.CorsMiddleware',
