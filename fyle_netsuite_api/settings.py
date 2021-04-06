@@ -53,18 +53,11 @@ INSTALLED_APPS = [
     'apps.tasks',
     'apps.mappings',
     'apps.netsuite',
-    'django_q',
-    'debug_toolbar',
-    'pympler'
+    'django_q'
 ]
 
-DEBUG_TOOLBAR_PANELS = (
-    # 'debug_toolbar.panels.timer.TimerDebugPanel',
-    'pympler.panels.MemoryPanel',
-)
 
 MIDDLEWARE = [
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'fyle_netsuite_api.logging_middleware.ErrorHandlerMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
