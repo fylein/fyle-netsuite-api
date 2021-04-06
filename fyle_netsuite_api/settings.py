@@ -167,6 +167,9 @@ CACHES = {
 Q_CLUSTER = {
     'name': 'fyle_netsuite_api',
     'save_limit': 0,
+    'retry': 14400,
+    'timeout': 3600,
+    'catch_up': False,
     'workers': 4,
     'queue_limit': 30,
     'cached': False,

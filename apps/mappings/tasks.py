@@ -262,7 +262,27 @@ def create_fyle_projects_payload(projects: List[DestinationAttribute], workspace
     return payload
 
 
-def upload_projects_to_fyle(workspace_id):
+def post_projects_in_chunks(fyle_connection: FyleConnector, workspace_id: int):
+    ns_attributes = []
+
+    ns_attributes_count = DestinationAttribute.objects.filter(attribute_type='PROJECT', workspace_id=workspace_id).count()
+    page_size = 200
+
+    for offset in range(0, ns_attributes_count, page_size):
+        paginated_ns_attributes = DestinationAttribute.objects.filter(
+            attribute_type='PROJECT', workspace_id=workspace_id).order_by('value', 'id')[offset:offset+page_size]
+
+        ns_attributes.extend(paginated_ns_attributes)
+        paginated_ns_attributes = remove_duplicates(paginated_ns_attributes)
+
+        fyle_payload: List[Dict] = create_fyle_projects_payload(paginated_ns_attributes, workspace_id)
+        if fyle_payload:
+            fyle_connection.connection.Projects.post(fyle_payload)
+            fyle_connection.sync_projects()
+
+    return ns_attributes
+
+def sync_project_dimensions(workspace_id):
     """
     Upload projects to Fyle
     """
@@ -285,17 +305,7 @@ def upload_projects_to_fyle(workspace_id):
 
     ns_connection.sync_customers()
 
-    ns_attributes = DestinationAttribute.objects.filter(attribute_type='PROJECT', workspace_id=workspace_id).all()
-
-    ns_attributes = remove_duplicates(ns_attributes)
-
-    fyle_payload: List[Dict] = create_fyle_projects_payload(ns_attributes, workspace_id)
-
-    if fyle_payload:
-        fyle_connection.connection.Projects.post(fyle_payload)
-        fyle_connection.sync_projects()
-
-    return ns_attributes
+    return post_projects_in_chunks(fyle_connection, workspace_id)
 
 
 def auto_create_project_mappings(workspace_id):
@@ -307,7 +317,7 @@ def auto_create_project_mappings(workspace_id):
     project_mappings = []
 
     try:
-        ns_attributes = upload_projects_to_fyle(workspace_id=workspace_id)
+        ns_attributes = sync_project_dimensions(workspace_id=workspace_id)
 
         for project in ns_attributes:
             mapping = Mapping.create_or_update_mapping(
