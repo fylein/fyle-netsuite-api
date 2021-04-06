@@ -25,7 +25,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True if os.environ.get('DEBUG') == 'True' else False
+DEBUG = True
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS').split(',')
 
@@ -53,10 +53,18 @@ INSTALLED_APPS = [
     'apps.tasks',
     'apps.mappings',
     'apps.netsuite',
-    'django_q'
+    'django_q',
+    'debug_toolbar',
+    'pympler'
 ]
 
+DEBUG_TOOLBAR_PANELS = (
+    # 'debug_toolbar.panels.timer.TimerDebugPanel',
+    'pympler.panels.MemoryPanel',
+)
+
 MIDDLEWARE = [
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'fyle_netsuite_api.logging_middleware.ErrorHandlerMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',

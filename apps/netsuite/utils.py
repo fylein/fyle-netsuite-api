@@ -34,7 +34,7 @@ class NetSuiteConnector:
     """
 
     def __init__(self, netsuite_credentials: NetSuiteCredentials, workspace_id: int,
-                 search_body_fields_only: bool = True, page_size: int = 1000):
+                 search_body_fields_only: bool = True, page_size: int = 300):
         self.connection = NetSuiteConnection(
             account=netsuite_credentials.ns_account_id,
             consumer_key=netsuite_credentials.ns_consumer_key,
@@ -51,100 +51,99 @@ class NetSuiteConnector:
         """
         Sync accounts
         """
-        accounts = self.connection.accounts.get_all()
+        accounts_generator = self.connection.accounts.get_all_generator()
+        for accounts in accounts_generator:
+            attributes = []
 
-        account_attributes = []
+            for account in list(accounts):
+                if account['acctType'] != '_expense':
+                    attributes.append({
+                        'attribute_type': 'BANK_ACCOUNT',
+                        'display_name': 'Bank Account',
+                        'value': account['acctName'],
+                        'destination_id': account['internalId']
+                    })
 
-        for account in accounts:
-            if account['acctType'] != '_expense':
-                account_attributes.append({
-                    'attribute_type': 'BANK_ACCOUNT',
-                    'display_name': 'Bank Account',
-                    'value': account['acctName'],
-                    'destination_id': account['internalId']
-                })
+                    attributes.append({
+                        'attribute_type': 'CREDIT_CARD_ACCOUNT',
+                        'display_name': 'Credit Card Account',
+                        'value': account['acctName'],
+                        'destination_id': account['internalId']
+                    })
 
-                account_attributes.append({
-                    'attribute_type': 'CREDIT_CARD_ACCOUNT',
-                    'display_name': 'Credit Card Account',
-                    'value': account['acctName'],
-                    'destination_id': account['internalId']
-                })
+                if account['acctType'] == '_accountsPayable':
+                    attributes.append({
+                        'attribute_type': 'ACCOUNTS_PAYABLE',
+                        'display_name': 'Accounts Payable',
+                        'value': account['acctName'],
+                        'destination_id': account['internalId']
+                    })
 
-            if account['acctType'] == '_accountsPayable':
-                account_attributes.append({
-                    'attribute_type': 'ACCOUNTS_PAYABLE',
-                    'display_name': 'Accounts Payable',
-                    'value': account['acctName'],
-                    'destination_id': account['internalId']
-                })
+                if account['acctType'] == '_expense' or account['acctType'] == '_costOfGoodsSold' or\
+                        account['acctType'] == '_otherCurrentAsset' or account['acctType'] == '_otherExpense':
+                    attributes.append({
+                        'attribute_type': 'ACCOUNT',
+                        'display_name': 'Account',
+                        'value': unidecode.unidecode(u'{0}'.format(account['acctName'])).replace('/', '-'),
+                        'destination_id': account['internalId']
+                    })
 
-            if account['acctType'] == '_expense' or account['acctType'] == '_costOfGoodsSold' or\
-                    account['acctType'] == '_otherCurrentAsset' or account['acctType'] == '_otherExpense':
-                account_attributes.append({
-                    'attribute_type': 'ACCOUNT',
-                    'display_name': 'Account',
-                    'value': unidecode.unidecode(u'{0}'.format(account['acctName'])).replace('/', '-'),
-                    'destination_id': account['internalId']
-                })
+                    attributes.append({
+                        'attribute_type': 'CCC_ACCOUNT',
+                        'display_name': 'Credit Card Account',
+                        'value': unidecode.unidecode(u'{0}'.format(account['acctName'])).replace('/', '-'),
+                        'destination_id': account['internalId']
+                    })
 
-                account_attributes.append({
-                    'attribute_type': 'CCC_ACCOUNT',
-                    'display_name': 'Credit Card Account',
-                    'value': unidecode.unidecode(u'{0}'.format(account['acctName'])).replace('/', '-'),
-                    'destination_id': account['internalId']
-                })
+                if account['acctType'] == '_bank' or account['acctType'] == '_creditCard':
+                    attributes.append({
+                        'attribute_type': 'VENDOR_PAYMENT_ACCOUNT',
+                        'display_name': 'Vendor Payment Account',
+                        'value': account['acctName'],
+                        'destination_id': account['internalId']
+                    })
 
-            if account['acctType'] == '_bank' or account['acctType'] == '_creditCard':
-                account_attributes.append({
-                    'attribute_type': 'VENDOR_PAYMENT_ACCOUNT',
-                    'display_name': 'Vendor Payment Account',
-                    'value': account['acctName'],
-                    'destination_id': account['internalId']
-                })
+            DestinationAttribute.bulk_upsert_destination_attributes(attributes, self.workspace_id)
 
-        account_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
-            account_attributes, self.workspace_id)
-        return account_attributes
+        return []
 
     def sync_expense_categories(self):
         """
         Sync Expense Categories
         """
-        categories = self.connection.expense_categories.get_all()
+        categories_generator = self.connection.expense_categories.get_all_generator()
 
-        category_attributes = []
-
-        for category in categories:
-            detail = {
-                'account_name': category['expenseAcct']['name'],
-                'account_internal_id': category['expenseAcct']['internalId']
-            }
-
-            category_attributes.append(
-                {
-                    'attribute_type': 'EXPENSE_CATEGORY',
-                    'display_name': 'Expense Category',
-                    'value': unidecode.unidecode(u'{0}'.format(category['name'])).replace('/', '-'),
-                    'destination_id': category['internalId'],
-                    'detail': detail
+        for categories in categories_generator:
+            attributes = []
+            for category in categories:
+                detail = {
+                    'account_name': category['expenseAcct']['name'],
+                    'account_internal_id': category['expenseAcct']['internalId']
                 }
-            )
 
-            category_attributes.append(
-                {
-                    'attribute_type': 'CCC_EXPENSE_CATEGORY',
-                    'display_name': 'Credit Card Expense Category',
-                    'value': unidecode.unidecode(u'{0}'.format(category['name'])).replace('/', '-'),
-                    'destination_id': category['internalId'],
-                    'detail': detail
-                }
-            )
+                attributes.append(
+                    {
+                        'attribute_type': 'EXPENSE_CATEGORY',
+                        'display_name': 'Expense Category',
+                        'value': unidecode.unidecode(u'{0}'.format(category['name'])).replace('/', '-'),
+                        'destination_id': category['internalId'],
+                        'detail': detail
+                    }
+                )
 
-        category_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
-            category_attributes, self.workspace_id)
+                attributes.append(
+                    {
+                        'attribute_type': 'CCC_EXPENSE_CATEGORY',
+                        'display_name': 'Credit Card Expense Category',
+                        'value': unidecode.unidecode(u'{0}'.format(category['name'])).replace('/', '-'),
+                        'destination_id': category['internalId'],
+                        'detail': detail
+                    }
+                )
 
-        return category_attributes
+            DestinationAttribute.bulk_upsert_destination_attributes(attributes, self.workspace_id)
+
+        return []
 
     def sync_custom_segments(self, all_custom_list: List[CustomSegment]):
         """
@@ -288,41 +287,40 @@ class NetSuiteConnector:
         """
         subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
 
-        vendors = self.connection.vendors.get_all()
+        vendors_generator = self.connection.vendors.get_all_generator()
 
-        vendor_attributes = []
-
-        for vendor in vendors:
-            detail = {
-                'email': vendor['email'] if vendor['email'] else None
-            }
-            if 'subsidiary' in vendor and vendor['subsidiary']:
-                if vendor['subsidiary']['internalId'] == subsidiary_mapping.internal_id:
-                    vendor_attributes.append({
+        for vendors in vendors_generator:
+            attributes = []
+            for vendor in vendors:
+                detail = {
+                    'email': vendor['email'] if vendor['email'] else None
+                }
+                if 'subsidiary' in vendor and vendor['subsidiary']:
+                    if vendor['subsidiary']['internalId'] == subsidiary_mapping.internal_id:
+                        attributes.append({
+                            'attribute_type': 'VENDOR',
+                            'display_name': 'Vendor',
+                            'value': unidecode.unidecode(u'{0}'.format(vendor['entityId'])),
+                            'destination_id': vendor['internalId'],
+                            'detail': detail
+                        })
+                else:
+                    attributes.append({
                         'attribute_type': 'VENDOR',
                         'display_name': 'Vendor',
                         'value': unidecode.unidecode(u'{0}'.format(vendor['entityId'])),
                         'destination_id': vendor['internalId'],
                         'detail': detail
                     })
-            else:
-                vendor_attributes.append({
-                    'attribute_type': 'VENDOR',
-                    'display_name': 'Vendor',
-                    'value': unidecode.unidecode(u'{0}'.format(vendor['entityId'])),
-                    'destination_id': vendor['internalId'],
-                    'detail': detail
-                })
 
-        vendor_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
-            vendor_attributes, self.workspace_id)
-        return vendor_attributes
+            DestinationAttribute.bulk_upsert_destination_attributes(attributes, self.workspace_id)
 
-    def post_vendor(self, vendor: ExpenseAttribute, auto_map_employee_preference: str, expense_group: ExpenseGroup):
+        return []
+
+    def post_vendor(self, vendor: ExpenseAttribute, expense_group: ExpenseGroup):
         """
         Create an Vendor on NetSuite
         :param expense_group: expense group
-        :param auto_map_employee_preference: Preference while doing automap of employees
         :param vendor: vendor attribute to be created
         :return: Vendor Destination Attribute
         """
@@ -389,36 +387,36 @@ class NetSuiteConnector:
         """
         subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
 
-        employees = self.connection.employees.get_all()
+        employees_generator = self.connection.employees.get_all_generator()
 
-        employee_attributes = []
-
-        for employee in employees:
-            detail = {
-                'email': employee['email'] if employee['email'] else None,
-                'department_id': employee['department']['internalId'] if employee['department'] else None
-            }
-            if 'subsidiary' in employee and employee['subsidiary']:
-                if employee['subsidiary']['internalId'] == subsidiary_mapping.internal_id:
-                    employee_attributes.append({
+        for employees in employees_generator:
+            attributes = []
+            for employee in employees:
+                detail = {
+                    'email': employee['email'] if employee['email'] else None,
+                    'department_id': employee['department']['internalId'] if employee['department'] else None
+                }
+                if 'subsidiary' in employee and employee['subsidiary']:
+                    if employee['subsidiary']['internalId'] == subsidiary_mapping.internal_id:
+                        attributes.append({
+                            'attribute_type': 'EMPLOYEE',
+                            'display_name': 'Employee',
+                            'value': employee['entityId'],
+                            'destination_id': employee['internalId'],
+                            'detail': detail
+                        })
+                else:
+                    attributes.append({
                         'attribute_type': 'EMPLOYEE',
                         'display_name': 'Employee',
                         'value': employee['entityId'],
                         'destination_id': employee['internalId'],
                         'detail': detail
                     })
-            else:
-                employee_attributes.append({
-                    'attribute_type': 'EMPLOYEE',
-                    'display_name': 'Employee',
-                    'value': employee['entityId'],
-                    'destination_id': employee['internalId'],
-                    'detail': detail
-                })
 
-        employee_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
-            employee_attributes, self.workspace_id)
-        return employee_attributes
+            DestinationAttribute.bulk_upsert_destination_attributes(attributes, self.workspace_id)
+
+        return []
 
     def sync_dimensions(self, workspace_id: str):
         try:
@@ -477,11 +475,10 @@ class NetSuiteConnector:
         except Exception:
             pass
 
-    def post_employee(self, employee: ExpenseAttribute, auto_map_employee_preference: str, expense_group: ExpenseGroup):
+    def post_employee(self, employee: ExpenseAttribute, expense_group: ExpenseGroup):
         """
         Create an Employee on NetSuite
         :param expense_group: expense group
-        :param auto_map_employee_preference: Auto map employee preference chosen
         :param employee: employee attribute to be created
         :return: Employee Destination Attribute
         """
@@ -580,55 +577,52 @@ class NetSuiteConnector:
         """
         Sync projects
         """
-        project_attributes = []
-
         projects_count = self.connection.projects.count()
 
         if projects_count < SYNC_UPPER_LIMIT['projects']:
-            projects = self.connection.projects.get_all()
+            projects_generator = self.connection.projects.get_all_generator()
 
-            for project in projects:
-                if not project['isInactive']:
-                    value = _decode_project_or_customer_name(project['entityId'])
-                    project_attributes.append({
-                        'attribute_type': 'PROJECT',
-                        'display_name': 'Project',
-                        'value': value,
-                        'destination_id': project['internalId'],
-                        'active': True
-                    })
+            for projects in projects_generator:
+                attributes = []
+                for project in projects:
+                    if not project['isInactive']:
+                        value = _decode_project_or_customer_name(project['entityId'])
+                        attributes.append({
+                            'attribute_type': 'PROJECT',
+                            'display_name': 'Project',
+                            'value': value,
+                            'destination_id': project['internalId'],
+                            'active': True
+                        })
+                DestinationAttribute.bulk_upsert_destination_attributes(attributes, self.workspace_id)
 
-            project_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
-                project_attributes, self.workspace_id)
-
-        return project_attributes
+        return []
 
     def sync_customers(self):
         """
         Sync customers
         """
-        customers_attributes = []
-
         customers_count = self.connection.customers.count()
 
-        if customers_count < SYNC_UPPER_LIMIT['customers']:
-            customers = self.connection.customers.get_all()
+        if customers_count <= SYNC_UPPER_LIMIT['customers']:
+            customers_generator = self.connection.customers.get_all_generator()
 
-            for customer in customers:
-                if not customer['isInactive']:
-                    value = _decode_project_or_customer_name(customer['entityId'])
-                    customers_attributes.append({
-                        'attribute_type': 'PROJECT',
-                        'display_name': 'Customer',
-                        'value': value,
-                        'destination_id': customer['internalId'],
-                        'active': True
-                    })
+            for customers in customers_generator:
+                attributes = []
+                for customer in customers:
+                    if not customer['isInactive']:
+                        value = _decode_project_or_customer_name(customer['entityId'])
+                        attributes.append({
+                            'attribute_type': 'PROJECT',
+                            'display_name': 'Customer',
+                            'value': value,
+                            'destination_id': customer['internalId'],
+                            'active': True
+                        })
 
-            customers_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
-                customers_attributes, self.workspace_id)
+                DestinationAttribute.bulk_upsert_destination_attributes(attributes, self.workspace_id)
 
-        return customers_attributes
+        return []
 
     @staticmethod
     def __construct_bill_lineitems(bill_lineitems: List[BillLineitem],
