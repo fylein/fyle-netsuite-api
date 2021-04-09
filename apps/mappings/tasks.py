@@ -276,7 +276,7 @@ def auto_map_projects(ns_attributes: list, workspace_id: int):
         mapping.source.save()
 
 
-def post_projects_in_chunks(fyle_connection: FyleConnector, workspace_id: int):
+def post_projects_in_batches(fyle_connection: FyleConnector, workspace_id: int):
     ns_attributes_count = DestinationAttribute.objects.filter(attribute_type='PROJECT', workspace_id=workspace_id).count()
     page_size = 200
 
