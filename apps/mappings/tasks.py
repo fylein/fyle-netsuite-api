@@ -316,7 +316,7 @@ def auto_create_project_mappings(workspace_id):
         ns_connection.sync_projects()
         ns_connection.sync_customers()
 
-        post_projects_in_chunks(fyle_connection, workspace_id)
+        post_projects_in_batches(fyle_connection, workspace_id)
 
     except WrongParamsError as exception:
         logger.error(
