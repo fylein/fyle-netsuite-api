@@ -265,72 +265,68 @@ def create_fyle_projects_payload(projects: List[DestinationAttribute], workspace
     return payload
 
 
-def upload_projects_to_fyle(workspace_id):
-    """
-    Upload projects to Fyle
-    """
-    fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
-    ns_credentials: NetSuiteCredentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+def auto_map_projects(ns_attributes: list, workspace_id: int):
+    for project in ns_attributes:
+        mapping = Mapping.create_or_update_mapping(
+            source_type='PROJECT',
+            destination_type='PROJECT',
+            source_value=project.value,
+            destination_value=project.value,
+            destination_id=project.destination_id,
+            workspace_id=workspace_id
+        )
+        mapping.source.auto_mapped = True
+        mapping.source.save()
 
-    fyle_connection = FyleConnector(
-        refresh_token=fyle_credentials.refresh_token,
-        workspace_id=workspace_id
-    )
 
-    ns_connection = NetSuiteConnector(
-        netsuite_credentials=ns_credentials,
-        workspace_id=workspace_id
-    )
+def post_projects_in_batches(fyle_connection: FyleConnector, workspace_id: int):
+    ns_attributes_count = DestinationAttribute.objects.filter(attribute_type='PROJECT', workspace_id=workspace_id).count()
+    page_size = 200
 
-    fyle_connection.sync_projects()
+    for offset in range(0, ns_attributes_count, page_size):
+        paginated_ns_attributes = DestinationAttribute.objects.filter(
+            attribute_type='PROJECT', workspace_id=workspace_id).order_by('value', 'id')[offset:offset+page_size]
 
-    ns_connection.sync_projects()
+        paginated_ns_attributes = remove_duplicates(paginated_ns_attributes)
 
-    ns_connection.sync_customers()
+        fyle_payload: List[Dict] = create_fyle_projects_payload(paginated_ns_attributes, workspace_id)
+        if fyle_payload:
+            fyle_connection.connection.Projects.post(fyle_payload)
+            fyle_connection.sync_projects()
 
-    ns_attributes = DestinationAttribute.objects.filter(attribute_type='PROJECT', workspace_id=workspace_id).all()
-
-    ns_attributes = remove_duplicates(ns_attributes)
-
-    fyle_payload: List[Dict] = create_fyle_projects_payload(ns_attributes, workspace_id)
-
-    if fyle_payload:
-        fyle_connection.connection.Projects.post(fyle_payload)
-        fyle_connection.sync_projects()
-
-    return ns_attributes
+        auto_map_projects(paginated_ns_attributes, workspace_id)
 
 
 def auto_create_project_mappings(workspace_id):
     """
     Create Project Mappings
-    :return: mappings
     """
-
-    project_mappings = []
-
     try:
-        ns_attributes = upload_projects_to_fyle(workspace_id=workspace_id)
+        fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
+        ns_credentials: NetSuiteCredentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
 
-        for project in ns_attributes:
-            mapping = Mapping.create_or_update_mapping(
-                source_type='PROJECT',
-                destination_type='PROJECT',
-                source_value=project.value,
-                destination_value=project.value,
-                destination_id=project.destination_id,
-                workspace_id=workspace_id
-            )
-            project_mappings.append(mapping)
-            mapping.source.auto_mapped = True
-            mapping.source.save()
+        fyle_connection = FyleConnector(
+            refresh_token=fyle_credentials.refresh_token,
+            workspace_id=workspace_id
+        )
 
-        return project_mappings
+        ns_connection = NetSuiteConnector(
+            netsuite_credentials=ns_credentials,
+            workspace_id=workspace_id
+        )
+
+        fyle_connection.sync_projects()
+        ns_connection.sync_projects()
+        ns_connection.sync_customers()
+
+        post_projects_in_batches(fyle_connection, workspace_id)
+
     except WrongParamsError as exception:
         logger.error(
             'Error while creating projects workspace_id - %s in Fyle %s %s',
             workspace_id, exception.message, {'error': exception.response}
         )
+
     except Exception:
         error = traceback.format_exc()
         error = {
