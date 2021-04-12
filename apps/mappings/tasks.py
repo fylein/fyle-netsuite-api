@@ -159,8 +159,6 @@ def auto_create_category_mappings(workspace_id):
     reimbursable_expenses_object = general_settings.reimbursable_expenses_object
     corporate_credit_card_expenses_object = general_settings.corporate_credit_card_expenses_object
 
-    category_mappings = []
-
     if reimbursable_expenses_object == 'EXPENSE REPORT':
         reimbursable_destination_type = 'EXPENSE_CATEGORY'
     else:
@@ -170,37 +168,13 @@ def auto_create_category_mappings(workspace_id):
         fyle_categories = upload_categories_to_fyle(
             workspace_id=workspace_id, reimbursable_expenses_object=reimbursable_expenses_object)
 
-        for category in fyle_categories:
-            try:
-                mapping = Mapping.create_or_update_mapping(
-                    source_type='CATEGORY',
-                    destination_type=reimbursable_destination_type,
-                    source_value=category.value,
-                    destination_value=category.value,
-                    destination_id=category.destination_id,
-                    workspace_id=workspace_id
-                )
-                category_mappings.append(mapping)
-
-                mapping.source.auto_mapped = True
-                mapping.source.save()
-
-            except ExpenseAttribute.DoesNotExist:
-                detail = {
-                    'source_value': category.value,
-                    'destination_value': category.value,
-                    'destiantion_type': reimbursable_destination_type
-                }
-                logger.error(
-                    'Error while creating categories auto mapping workspace_id - %s %s',
-                    workspace_id, {'payload': detail}
-                )
-                raise ExpenseAttribute.DoesNotExist
+        # TODO: replace this function with a generic function present in mapping infra in v0.15.0+
+        bulk_create_mappings(fyle_categories, 'CATEGORY', reimbursable_destination_type, workspace_id)
 
         create_credit_card_category_mappings(
             reimbursable_expenses_object, corporate_credit_card_expenses_object, workspace_id)
 
-        return category_mappings
+        return []
     except WrongParamsError as exception:
         logger.error(
             'Error while creating categories workspace_id - %s in Fyle %s %s',
@@ -264,73 +238,108 @@ def create_fyle_projects_payload(projects: List[DestinationAttribute], workspace
 
     return payload
 
+def bulk_create_mappings(destination_attributes: List[DestinationAttribute], source_type: str,
+                             destination_type: str, workspace_id: int):
+        """
+        Bulk create mappings
+        :param destination_attributes: Destination Attributes List
+        :param source_type: Source Type
+        :param destination_type: Destination Type
+        :param workspace_id: workspace_id
+        """
+        attribute_value_list = []
 
-def upload_projects_to_fyle(workspace_id):
-    """
-    Upload projects to Fyle
-    """
-    fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
-    ns_credentials: NetSuiteCredentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+        for destination_attribute in destination_attributes:
+            attribute_value_list.append(destination_attribute.value)
 
-    fyle_connection = FyleConnector(
-        refresh_token=fyle_credentials.refresh_token,
-        workspace_id=workspace_id
-    )
+        source_attributes: List[ExpenseAttribute] = ExpenseAttribute.objects.filter(
+            value__in=attribute_value_list, workspace_id=workspace_id, mapping__source_id__isnull=True).all()
 
-    ns_connection = NetSuiteConnector(
-        netsuite_credentials=ns_credentials,
-        workspace_id=workspace_id
-    )
+        source_value_id_map = {}
 
-    fyle_connection.sync_projects()
+        for source_attribute in source_attributes:
+            source_value_id_map[source_attribute.value.lower()] = source_attribute.id
 
-    ns_connection.sync_projects()
+        mapping_batch = []
 
-    ns_connection.sync_customers()
+        for destination_attribute in destination_attributes:
+            if destination_attribute.value.lower() in source_value_id_map:
+                mapping_batch.append(
+                    Mapping(
+                        source_type=source_type,
+                        destination_type=destination_type,
+                        source_id=source_value_id_map[destination_attribute.value.lower()],
+                        destination_id=destination_attribute.id,
+                        workspace_id=workspace_id
+                    )
+                )
 
-    ns_attributes = DestinationAttribute.objects.filter(attribute_type='PROJECT', workspace_id=workspace_id).all()
+        mappings = Mapping.objects.bulk_create(mapping_batch, batch_size=50)
 
-    ns_attributes = remove_duplicates(ns_attributes)
+        expense_attributes_to_be_updated = []
+        for mapping in mappings:
+            expense_attributes_to_be_updated.append(
+                ExpenseAttribute(
+                    id=mapping.source.id,
+                    auto_mapped=True
+                )
+            )
 
-    fyle_payload: List[Dict] = create_fyle_projects_payload(ns_attributes, workspace_id)
+        if expense_attributes_to_be_updated:
+            ExpenseAttribute.objects.bulk_update(
+                expense_attributes_to_be_updated, fields=['auto_mapped'], batch_size=50)
 
-    if fyle_payload:
-        fyle_connection.connection.Projects.post(fyle_payload)
-        fyle_connection.sync_projects()
 
-    return ns_attributes
+def post_projects_in_batches(fyle_connection: FyleConnector, workspace_id: int):
+    ns_attributes_count = DestinationAttribute.objects.filter(attribute_type='PROJECT', workspace_id=workspace_id).count()
+    page_size = 200
+
+    for offset in range(0, ns_attributes_count, page_size):
+        limit = offset + page_size
+        paginated_ns_attributes = DestinationAttribute.objects.filter(
+            attribute_type='PROJECT', workspace_id=workspace_id).order_by('value', 'id')[offset:limit]
+
+        paginated_ns_attributes = remove_duplicates(paginated_ns_attributes)
+
+        fyle_payload: List[Dict] = create_fyle_projects_payload(paginated_ns_attributes, workspace_id)
+        if fyle_payload:
+            fyle_connection.connection.Projects.post(fyle_payload)
+            fyle_connection.sync_projects()
+
+        # TODO: replace this function with a generic function present in mapping infra in v0.15.0+
+        bulk_create_mappings(paginated_ns_attributes, 'PROJECT', 'PROJECT', workspace_id)
 
 
 def auto_create_project_mappings(workspace_id):
     """
     Create Project Mappings
-    :return: mappings
     """
-
-    project_mappings = []
-
     try:
-        ns_attributes = upload_projects_to_fyle(workspace_id=workspace_id)
+        fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
+        ns_credentials: NetSuiteCredentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
 
-        for project in ns_attributes:
-            mapping = Mapping.create_or_update_mapping(
-                source_type='PROJECT',
-                destination_type='PROJECT',
-                source_value=project.value,
-                destination_value=project.value,
-                destination_id=project.destination_id,
-                workspace_id=workspace_id
-            )
-            project_mappings.append(mapping)
-            mapping.source.auto_mapped = True
-            mapping.source.save()
+        fyle_connection = FyleConnector(
+            refresh_token=fyle_credentials.refresh_token,
+            workspace_id=workspace_id
+        )
 
-        return project_mappings
+        ns_connection = NetSuiteConnector(
+            netsuite_credentials=ns_credentials,
+            workspace_id=workspace_id
+        )
+
+        fyle_connection.sync_projects()
+        ns_connection.sync_projects()
+        ns_connection.sync_customers()
+
+        post_projects_in_batches(fyle_connection, workspace_id)
+
     except WrongParamsError as exception:
         logger.error(
             'Error while creating projects workspace_id - %s in Fyle %s %s',
             workspace_id, exception.message, {'error': exception.response}
         )
+
     except Exception:
         error = traceback.format_exc()
         error = {
