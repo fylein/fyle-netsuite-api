@@ -274,7 +274,21 @@ def bulk_create_mappings(destination_attributes: List[DestinationAttribute], sou
                     )
                 )
 
-        Mapping.objects.bulk_create(mapping_batch, batch_size=50)
+        mappings = Mapping.objects.bulk_create(mapping_batch, batch_size=50)
+
+        expense_attributes_to_be_updated = []
+        for mapping in mappings:
+            expense_attributes_to_be_updated.append(
+                ExpenseAttribute(
+                    id=mapping.source.id,
+                    auto_mapped=True
+                )
+            )
+
+        if expense_attributes_to_be_updated:
+            ExpenseAttribute.objects.bulk_update(
+                expense_attributes_to_be_updated, fields=['auto_mapped'], batch_size=50)
+
 
 def post_projects_in_batches(fyle_connection: FyleConnector, workspace_id: int):
     ns_attributes_count = DestinationAttribute.objects.filter(attribute_type='PROJECT', workspace_id=workspace_id).count()
