@@ -138,13 +138,6 @@ def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_conn
         except NetSuiteRequestError as exception:
             logger.exception({'error': exception})
 
-        except Exception:
-            error = traceback.format_exc()
-            detail = {
-                'error': error
-            }
-            logger.exception('Something unexpected happened workspace_id: %s %s', expense_group.workspace_id, detail)
-
 
 def create_bill(expense_group, task_log_id):
     task_log = TaskLog.objects.get(id=task_log_id)
