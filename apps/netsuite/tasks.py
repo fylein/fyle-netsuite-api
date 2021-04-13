@@ -106,9 +106,9 @@ def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_conn
                 }
 
             created_entity = DestinationAttribute.objects.filter(
-                    workspace_id=expense_group.workspace_id,
-                    **filters
-                ).first()
+                workspace_id=expense_group.workspace_id,
+                **filters
+            ).first()
 
             if employee_mapping_setting == 'EMPLOYEE':
                 if created_entity is None:
