@@ -53,18 +53,25 @@ class NetSuiteConnector:
         """
         accounts_generator = self.connection.accounts.get_all_generator()
         for accounts in accounts_generator:
-            attributes = []
+            attributes = {
+                'bank_account': [],
+                'credit_card_account': [],
+                'accounts_payable': [],
+                'account': [],
+                'ccc_account': [],
+                'vendor_payment_account': []
+            }
 
             for account in list(accounts):
                 if account['acctType'] != '_expense':
-                    attributes.append({
+                    attributes['bank_account'].append({
                         'attribute_type': 'BANK_ACCOUNT',
                         'display_name': 'Bank Account',
                         'value': account['acctName'],
                         'destination_id': account['internalId']
                     })
 
-                    attributes.append({
+                    attributes['credit_card_account'].append({
                         'attribute_type': 'CREDIT_CARD_ACCOUNT',
                         'display_name': 'Credit Card Account',
                         'value': account['acctName'],
@@ -72,7 +79,7 @@ class NetSuiteConnector:
                     })
 
                 if account['acctType'] == '_accountsPayable':
-                    attributes.append({
+                    attributes['accounts_payable'].append({
                         'attribute_type': 'ACCOUNTS_PAYABLE',
                         'display_name': 'Accounts Payable',
                         'value': account['acctName'],
@@ -81,14 +88,14 @@ class NetSuiteConnector:
 
                 if account['acctType'] == '_expense' or account['acctType'] == '_costOfGoodsSold' or\
                         account['acctType'] == '_otherCurrentAsset' or account['acctType'] == '_otherExpense':
-                    attributes.append({
+                    attributes['account'].append({
                         'attribute_type': 'ACCOUNT',
                         'display_name': 'Account',
                         'value': unidecode.unidecode(u'{0}'.format(account['acctName'])).replace('/', '-'),
                         'destination_id': account['internalId']
                     })
 
-                    attributes.append({
+                    attributes['ccc_account'].append({
                         'attribute_type': 'CCC_ACCOUNT',
                         'display_name': 'Credit Card Account',
                         'value': unidecode.unidecode(u'{0}'.format(account['acctName'])).replace('/', '-'),
@@ -96,14 +103,17 @@ class NetSuiteConnector:
                     })
 
                 if account['acctType'] == '_bank' or account['acctType'] == '_creditCard':
-                    attributes.append({
+                    attributes['vendor_payment_account'].append({
                         'attribute_type': 'VENDOR_PAYMENT_ACCOUNT',
                         'display_name': 'Vendor Payment Account',
                         'value': account['acctName'],
                         'destination_id': account['internalId']
                     })
 
-            DestinationAttribute.bulk_upsert_destination_attributes(attributes, self.workspace_id)
+            for attribute_type, attribute in attributes.items():
+                if attribute:
+                    DestinationAttribute.bulk_create_or_update_destination_attributes(
+                        attribute, attribute_type.upper(), self.workspace_id)
 
         return []
 
@@ -114,14 +124,17 @@ class NetSuiteConnector:
         categories_generator = self.connection.expense_categories.get_all_generator()
 
         for categories in categories_generator:
-            attributes = []
+            attributes = {
+                'expense_category': [],
+                'ccc_expense_category': []
+            }
             for category in categories:
                 detail = {
                     'account_name': category['expenseAcct']['name'],
                     'account_internal_id': category['expenseAcct']['internalId']
                 }
 
-                attributes.append(
+                attributes['expense_category'].append(
                     {
                         'attribute_type': 'EXPENSE_CATEGORY',
                         'display_name': 'Expense Category',
@@ -131,7 +144,7 @@ class NetSuiteConnector:
                     }
                 )
 
-                attributes.append(
+                attributes['ccc_expense_category'].append(
                     {
                         'attribute_type': 'CCC_EXPENSE_CATEGORY',
                         'display_name': 'Credit Card Expense Category',
@@ -141,7 +154,9 @@ class NetSuiteConnector:
                     }
                 )
 
-            DestinationAttribute.bulk_upsert_destination_attributes(attributes, self.workspace_id)
+            for attribute_type, attribute in attributes.items():
+                DestinationAttribute.bulk_create_or_update_destination_attributes(
+                    attribute, attribute_type.upper(), self.workspace_id)
 
         return []
 
@@ -149,9 +164,9 @@ class NetSuiteConnector:
         """
         Sync Custom Segments
         """
-        custom_segment_attributes = []
-
         for custom_list_values in all_custom_list:
+            custom_segment_attributes = []
+
             if custom_list_values.segment_type == 'CUSTOM_LIST':
                 custom_lists = self.connection.custom_lists.get(custom_list_values.internal_id)
 
@@ -178,11 +193,10 @@ class NetSuiteConnector:
                         }
                     )
 
-        if custom_segment_attributes:
-            custom_segment_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
-                custom_segment_attributes, self.workspace_id)
+            DestinationAttribute.bulk_create_or_update_destination_attributes(custom_segment_attributes,
+                custom_list_values.name.upper().replace(' ', '_'), self.workspace_id)
 
-        return custom_segment_attributes
+        return []
 
     def sync_currencies(self):
         """
@@ -202,10 +216,10 @@ class NetSuiteConnector:
                 }
             )
 
-        currency_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
-            currency_attributes, self.workspace_id)
+        DestinationAttribute.bulk_create_or_update_destination_attributes(
+            currency_attributes, 'CURRENCY', self.workspace_id)
 
-        return currency_attributes
+        return []
 
     def sync_locations(self):
         """
@@ -237,9 +251,10 @@ class NetSuiteConnector:
                     'destination_id': location['internalId']
                 })
 
-        account_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
-            location_attributes, self.workspace_id)
-        return account_attributes
+        DestinationAttribute.bulk_create_or_update_destination_attributes(location_attributes,
+            'LOCATION', self.workspace_id)
+
+        return []
 
     def sync_classifications(self):
         """
@@ -257,9 +272,10 @@ class NetSuiteConnector:
                 'destination_id': classification['internalId']
             })
 
-        account_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
-            classification_attributes, self.workspace_id)
-        return account_attributes
+        DestinationAttribute.bulk_create_or_update_destination_attributes(classification_attributes,
+            'CLASS', self.workspace_id)
+
+        return []
 
     def sync_departments(self):
         """
@@ -277,9 +293,10 @@ class NetSuiteConnector:
                 'destination_id': department['internalId']
             })
 
-        account_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
-            department_attributes, self.workspace_id)
-        return account_attributes
+        DestinationAttribute.bulk_create_or_update_destination_attributes(department_attributes,
+            'DEPARTMENT', self.workspace_id)
+
+        return []
 
     def sync_vendors(self):
         """
@@ -313,7 +330,8 @@ class NetSuiteConnector:
                         'detail': detail
                     })
 
-            DestinationAttribute.bulk_upsert_destination_attributes(attributes, self.workspace_id)
+            DestinationAttribute.bulk_create_or_update_destination_attributes(attributes,
+                'VENDOR', self.workspace_id)
 
         return []
 
@@ -369,7 +387,7 @@ class NetSuiteConnector:
         }
         created_vendor = self.connection.vendors.post(vendor)
 
-        created_vendor = DestinationAttribute.bulk_upsert_destination_attributes([{
+        created_vendor = DestinationAttribute.create_or_update_destination_attribute({
             'attribute_type': 'VENDOR',
             'display_name': 'vendor',
             'value': netsuite_entity_id,
@@ -377,7 +395,7 @@ class NetSuiteConnector:
             'detail': {
                 'email': vendor['email']
             }
-        }], self.workspace_id)[0]
+        }, self.workspace_id)
 
         return created_vendor
 
@@ -414,7 +432,8 @@ class NetSuiteConnector:
                         'detail': detail
                     })
 
-            DestinationAttribute.bulk_upsert_destination_attributes(attributes, self.workspace_id)
+            DestinationAttribute.bulk_create_or_update_destination_attributes(attributes,
+                'EMPLOYEE', self.workspace_id)
 
         return []
 
@@ -541,7 +560,7 @@ class NetSuiteConnector:
         }
         created_employee = self.connection.employees.post(employee)
 
-        created_employee = DestinationAttribute.bulk_upsert_destination_attributes([{
+        created_employee = DestinationAttribute.create_or_update_destination_attribute({
             'attribute_type': 'EMPLOYEE',
             'display_name': 'employee',
             'value': employee_entity_id,
@@ -549,7 +568,7 @@ class NetSuiteConnector:
             'detail': {
                 'email': employee['email']
             }
-        }], self.workspace_id)[0]
+        }, self.workspace_id)
 
         return created_employee
 
@@ -569,9 +588,10 @@ class NetSuiteConnector:
                 'destination_id': subsidiary['internalId']
             })
 
-        subsidiary_attributes = DestinationAttribute.bulk_upsert_destination_attributes(
-            subsidiary_attributes, self.workspace_id)
-        return subsidiary_attributes
+        DestinationAttribute.bulk_create_or_update_destination_attributes(subsidiary_attributes,
+            'SUBSIDIARY', self.workspace_id)
+
+        return []
 
     def sync_projects(self):
         """
@@ -594,7 +614,8 @@ class NetSuiteConnector:
                             'destination_id': project['internalId'],
                             'active': True
                         })
-                DestinationAttribute.bulk_upsert_destination_attributes(attributes, self.workspace_id)
+                DestinationAttribute.bulk_create_or_update_destination_attributes(
+                    attributes, 'PROJECT', self.workspace_id)
 
         return []
 
@@ -620,7 +641,8 @@ class NetSuiteConnector:
                             'active': True
                         })
 
-                DestinationAttribute.bulk_upsert_destination_attributes(attributes, self.workspace_id)
+                DestinationAttribute.bulk_create_or_update_destination_attributes(
+                    attributes, 'PROJECT', self.workspace_id)
 
         return []
 

@@ -172,9 +172,9 @@ class FyleConnector:
                 }
             })
 
-        employee_attributes = ExpenseAttribute.bulk_upsert_expense_attributes(employee_attributes, self.workspace_id)
+        ExpenseAttribute.bulk_create_or_update_expense_attributes(employee_attributes, 'EMPLOYEE', self.workspace_id)
 
-        return employee_attributes
+        return []
 
     def sync_categories(self, active_only: bool):
         """
@@ -195,9 +195,9 @@ class FyleConnector:
                 'source_id': category['id']
             })
 
-        category_attributes = ExpenseAttribute.bulk_upsert_expense_attributes(category_attributes, self.workspace_id)
+        ExpenseAttribute.bulk_create_or_update_expense_attributes(category_attributes, 'CATEGORY', self.workspace_id)
 
-        return category_attributes
+        return []
 
     def sync_cost_centers(self, active_only: bool):
         """
@@ -215,10 +215,9 @@ class FyleConnector:
                 'source_id': cost_center['id']
             })
 
-        cost_center_attributes = ExpenseAttribute.bulk_upsert_expense_attributes(
-            cost_center_attributes, self.workspace_id)
+        ExpenseAttribute.bulk_create_or_update_expense_attributes(cost_center_attributes, 'COST_CENTER', self.workspace_id)
 
-        return cost_center_attributes
+        return []
 
     def sync_projects(self):
         """
@@ -247,9 +246,9 @@ class FyleConnector:
                 'source_id': project['id']
             })
 
-        project_attributes = ExpenseAttribute.bulk_upsert_expense_attributes(project_attributes, self.workspace_id)
+        ExpenseAttribute.bulk_create_or_update_expense_attributes(project_attributes, 'PROJECT', self.workspace_id)
 
-        return project_attributes
+        return []
 
     def sync_expense_custom_fields(self, active_only: bool):
         """
@@ -259,10 +258,10 @@ class FyleConnector:
 
         expense_custom_fields = filter(lambda field: field['type'] == 'SELECT', expense_custom_fields)
 
-        expense_custom_field_attributes = []
-
         for custom_field in expense_custom_fields:
+            expense_custom_field_attributes = []
             count = 1
+
             for option in custom_field['options']:
                 expense_custom_field_attributes.append({
                     'attribute_type': custom_field['name'].upper().replace(' ', '_'),
@@ -272,10 +271,10 @@ class FyleConnector:
                 })
                 count = count + 1
 
-        expense_custom_field_attributes = ExpenseAttribute.bulk_upsert_expense_attributes(
-            expense_custom_field_attributes, self.workspace_id)
+            ExpenseAttribute.bulk_create_or_update_expense_attributes(expense_custom_field_attributes,
+                custom_field['name'].upper().replace(' ', '_'), self.workspace_id)
 
-        return expense_custom_field_attributes
+        return []
 
     def sync_reimbursements(self):
         """
