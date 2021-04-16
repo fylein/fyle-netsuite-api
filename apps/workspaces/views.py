@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.conf import settings
+from django.core.cache import cache
 
 from rest_framework.response import Response
 from rest_framework.views import status
@@ -82,6 +83,8 @@ class WorkspaceView(viewsets.ViewSet):
                 refresh_token=auth_tokens.refresh_token,
                 workspace_id=workspace.id
             )
+        print('deleting cacheeee because new user is added to workspace user mapping')
+        cache.delete(str(workspace.id))
 
         return Response(
             data=WorkspaceSerializer(workspace).data,
