@@ -15,20 +15,20 @@ class WorkspacePermissions(permissions.BasePermission):
     def has_permission(self, request, view):
         workspace_id = view.kwargs.get('workspace_id')
         user = request.user
-        users = cache.get(str(workspace_id))
-        if users:
-            print('cache foundddddd', users)
-            if user.id in users:
+        workspace_users = cache.get(str(workspace_id))
+        if workspace_users:
+            print('cache foundddddd', workspace_users)
+            if user.id in workspace_users:
                 print('allowed user')
                 return True
             print('forbidden because user not found in cache')
             return False
         else:
-            users = Workspace.objects.filter(pk=workspace_id).values_list('user', flat=True)
+            workspace_users = Workspace.objects.filter(pk=workspace_id).values_list('user', flat=True)
             print('cache not exist for this workspace')
-            if user.id in users:
+            if user.id in workspace_users:
                 print('cache set successfully')
-                cache.set(str(workspace_id), users)
+                cache.set(str(workspace_id), workspace_users)
                 return True
 
             print('forbidden because user not found in workspace user mapping')
