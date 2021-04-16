@@ -72,6 +72,8 @@ class WorkspaceView(viewsets.ViewSet):
 
         if workspace:
             workspace.user.add(User.objects.get(user_id=request.user))
+            print('deleting cacheeee because new user is added to workspace user mapping')
+            cache.delete(str(workspace.id))
         else:
             workspace = Workspace.objects.create(name=org_name, fyle_org_id=org_id)
 
@@ -83,8 +85,6 @@ class WorkspaceView(viewsets.ViewSet):
                 refresh_token=auth_tokens.refresh_token,
                 workspace_id=workspace.id
             )
-        print('deleting cacheeee because new user is added to workspace user mapping')
-        cache.delete(str(workspace.id))
 
         return Response(
             data=WorkspaceSerializer(workspace).data,
