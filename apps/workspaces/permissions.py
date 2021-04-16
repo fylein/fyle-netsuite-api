@@ -23,12 +23,12 @@ class WorkspacePermissions(permissions.BasePermission):
         return False
 
     def has_permission(self, request, view):
-        workspace_id = view.kwargs.get('workspace_id')
+        workspace_id = str(view.kwargs.get('workspace_id'))
         user = request.user
-        workspace_users = cache.get(str(workspace_id))
+        workspace_users = cache.get(workspace_id)
         if workspace_users:
             print('cache found', workspace_users)
-            return self.validate_and_cache(workspace_users, user, str(workspace_id))
+            return self.validate_and_cache(workspace_users, user, workspace_id)
         else:
             workspace_users = Workspace.objects.filter(pk=workspace_id).values_list('user', flat=True)
-            return self.validate_and_cache(workspace_users, user, str(workspace_id), True)
+            return self.validate_and_cache(workspace_users, user, workspace_id, True)
