@@ -18,7 +18,7 @@ class WorkspacePermissions(permissions.BasePermission):
         users = cache.get(str(workspace_id))
         if users:
             print('cache foundddddd', users)
-            if request.user.id in users:
+            if user.id in users:
                 print('allowed user')
                 return True
             print('forbidden because user not found in cache')
