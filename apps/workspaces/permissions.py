@@ -1,3 +1,4 @@
+from time import time
 from django.contrib.auth import get_user_model
 from rest_framework import permissions
 
@@ -12,10 +13,13 @@ class WorkspacePermissions(permissions.BasePermission):
     """
 
     def has_permission(self, request, view):
+        start = time()
         workspace_id = view.kwargs.get('workspace_id')
         user_id = request.user
         user = User.objects.get(user_id=user_id)
         workspaces = Workspace.objects.filter(user__in=[user], pk=workspace_id).all()
         if not workspaces:
             return False
+        end = time()
+        print('Old implementation took ', end - start, ' to complete')
         return True
