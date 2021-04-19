@@ -341,19 +341,44 @@ class Reimbursement(models.Model):
         db_table = 'reimbursements'
 
     @staticmethod
-    def create_reimbursement_objects(attributes: List[Dict], workspace_id):
+    def create_or_update_reimbursement_objects(reimbursements: List[Dict], workspace_id):
         """
-        Get or create reimbursement attributes
+        Create or Update reimbursement attributes
         """
-        reimbursement_attributes = []
+        reimbursement_id_list = [reimbursement['id'] for reimbursement in reimbursements]
+        existing_reimbursements = Reimbursement.objects.filter(
+            reimbursement_id__in=reimbursement_id_list, workspace_id=workspace_id).all()
 
-        for attribute in attributes:
-            reimbursement_attribute, _ = Reimbursement.objects.update_or_create(
-                workspace_id=workspace_id,
-                settlement_id=attribute['settlement_id'],
-                defaults={
-                    'reimbursement_id': attribute['reimbursement_id'],
-                    'state': attribute['state']
-                })
-            reimbursement_attributes.append(reimbursement_attribute)
-        return reimbursement_attributes
+        existing_reimbursement_ids = []
+        primary_key_map = {}
+
+        for existing_reimbursement in existing_reimbursements:
+            existing_reimbursement_ids.append(existing_reimbursement.reimbursement_id)
+            primary_key_map[existing_reimbursement.reimbursement_id] = existing_reimbursement.id
+
+        attributes_to_be_created = []
+        attributes_to_be_updated = []
+
+        for reimbursement in reimbursements:
+            if reimbursement['id'] not in existing_reimbursement_ids:
+                attributes_to_be_created.append(
+                    Reimbursement(
+                        settlement_id=reimbursement['settlement_id'],
+                        reimbursement_id=reimbursement['id'],
+                        state=reimbursement['state'],
+                        workspace_id=workspace_id
+                    )
+                )
+            else:
+                attributes_to_be_updated.append(
+                    Reimbursement(
+                        id=primary_key_map[reimbursement['id']],
+                        state=reimbursement['state']
+                    )
+                )
+
+        if attributes_to_be_created:
+            Reimbursement.objects.bulk_create(attributes_to_be_created, batch_size=50)
+
+        if attributes_to_be_updated:
+            Reimbursement.objects.bulk_update(attributes_to_be_updated, fields=['state'], batch_size=50)
