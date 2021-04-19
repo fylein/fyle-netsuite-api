@@ -8,8 +8,7 @@ start = time()
 workspace_id = 1
 source_attribute_type = 'EMPLOYEE'
 destination_attribute_type = 'CREDIT_CARD_ACCOUNT'
-default_ccc_account_id = '25'
-default_ccc_account_name = 'Accounts Payable'
+default_ccc_account = '25' # We would get this from general mappings for all apps
 # config end
 
 employee_source_attributes = ExpenseAttribute.objects.filter(
@@ -18,7 +17,7 @@ employee_source_attributes = ExpenseAttribute.objects.filter(
 ).all()
 
 default_destination_attribute = DestinationAttribute.objects.filter(
-    destination_id=default_ccc_account_id
+    destination_id=default_ccc_account
 ).first()
 
 mapping_batch = []
