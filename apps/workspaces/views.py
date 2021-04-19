@@ -72,7 +72,6 @@ class WorkspaceView(viewsets.ViewSet):
 
         if workspace:
             workspace.user.add(User.objects.get(user_id=request.user))
-            print('deleting cacheeee because new user is added to workspace user mapping')
             cache.delete(str(workspace.id))
         else:
             workspace = Workspace.objects.create(name=org_name, fyle_org_id=org_id)
