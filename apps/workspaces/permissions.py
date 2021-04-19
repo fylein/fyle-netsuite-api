@@ -16,7 +16,8 @@ class WorkspacePermissions(permissions.BasePermission):
     def validate_and_cache(self, workspace_users, user: User, workspace_id: str, cache_users: bool = False):
         if user.id in workspace_users:
             if cache_users:
-                cache.set(workspace_id, workspace_users)
+                # Setting cache to expire after 2 days
+                cache.set(workspace_id, workspace_users, 172800)
             print('allowed user', 'cache set successfully' if cache_users else '')
             return True
 
