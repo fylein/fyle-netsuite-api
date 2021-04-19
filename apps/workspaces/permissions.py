@@ -1,4 +1,3 @@
-from time import time
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from rest_framework import permissions
@@ -18,26 +17,17 @@ class WorkspacePermissions(permissions.BasePermission):
             if cache_users:
                 # Setting cache to expire after 2 days
                 cache.set(workspace_id, workspace_users, 172800)
-            print('allowed user', 'cache set successfully' if cache_users else '')
             return True
 
-        print('forbidden because user not found in ', 'workspace user mapping' if cache_users else 'cache')
         return False
 
     def has_permission(self, request, view):
-        start = time()
         workspace_id = str(view.kwargs.get('workspace_id'))
         user = request.user
         workspace_users = cache.get(workspace_id)
+
         if workspace_users:
-            print('cache found', workspace_users)
-            valid_request = self.validate_and_cache(workspace_users, user, workspace_id)
-            end = time()
-            print('New implementation with cached workspace took ', end - start, ' to complete')
-            return valid_request
+            return self.validate_and_cache(workspace_users, user, workspace_id)
         else:
             workspace_users = Workspace.objects.filter(pk=workspace_id).values_list('user', flat=True)
-            valid_request = self.validate_and_cache(workspace_users, user, workspace_id, True)
-            end = time()
-            print('New implementation without cached workspace took ', end - start, ' to complete')
-            return valid_request
+            return self.validate_and_cache(workspace_users, user, workspace_id, True)
