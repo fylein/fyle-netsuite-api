@@ -37,5 +37,5 @@ urlpatterns = [
     path('vendor_payments/', VendorPaymentView.as_view()),
     path('reimburse_payments/', ReimburseNetSuitePaymentsView.as_view()),
     path('sync_dimensions/', SyncNetSuiteDimensionView.as_view()),
-    path('refresh/', RefreshNetSuiteDimensionView.as_view())
+    path('refresh_dimensions/', RefreshNetSuiteDimensionView.as_view())
 ]
