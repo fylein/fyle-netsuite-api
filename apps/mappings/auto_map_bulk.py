@@ -5,8 +5,8 @@ start = time()
 
 # config
 workspace_id = 1
-destination_attribute_type = 'EMPLOYEE'
-employee_mapping_preference = 'EMAIL'
+destination_attribute_type = 'VENDOR'
+employee_mapping_preference = 'EMPLOYEE_CODE'
 
 employee_destination_attributes = DestinationAttribute.objects.filter(
     attribute_type=destination_attribute_type, workspace_id=workspace_id, mapping__destination_id__isnull=True).all()
@@ -44,16 +44,24 @@ employee_source_attributes = ExpenseAttribute.objects.filter(
 ).all()
 
 for source_emp in employee_source_attributes:
-    destination_id = destination_id_value_map[source_emp.value.lower()]
-    mapping_batch.append(
-        Mapping(
-            source_type='EMPLOYEE',
-            destination_type=destination_attribute_type,
-            source_id=source_emp.id,
-            destination_id=destination_id,
-            workspace_id=workspace_id
+    if employee_mapping_preference == 'EMAIL':
+        source_value = source_emp.value
+    elif employee_mapping_preference == 'NAME':
+        source_value = source_emp.detail['full_name']
+    elif employee_mapping_preference == 'EMPLOYEE_CODE':
+        source_value = source_emp.detail['employee_code']
+    # EXTRA LINE
+    if source_value.lower() in destination_id_value_map:
+        destination_id = destination_id_value_map[source_value.lower()]
+        mapping_batch.append(
+            Mapping(
+                source_type='EMPLOYEE',
+                destination_type=destination_attribute_type,
+                source_id=source_emp.id,
+                destination_id=destination_id,
+                workspace_id=workspace_id
+            )
         )
-    )
 
 created_mappings = Mapping.objects.bulk_create(mapping_batch, batch_size=50)
 

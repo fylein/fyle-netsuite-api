@@ -1,6 +1,7 @@
 import logging
 import traceback
 from datetime import datetime
+from time import time
 
 from typing import List, Dict
 
@@ -391,6 +392,7 @@ def async_auto_map_employees(workspace_id: int):
     else:
         netsuite_connection.sync_vendors()
 
+    start = time()
     source_attributes = []
     employee_attributes = DestinationAttribute.objects.filter(attribute_type=destination_type,
                                                               workspace_id=workspace_id)
@@ -410,6 +412,8 @@ def async_auto_map_employees(workspace_id: int):
         }
 
         auto_create_employee_mappings(source_attributes, mapping_attributes)
+    end = time()
+    print('Total time taken is', end - start)
 
 
 def schedule_auto_map_employees(employee_mapping_preference: str, workspace_id: int):
@@ -443,6 +447,7 @@ def async_auto_map_ccc_account(workspace_id: int):
     fyle_connection = FyleConnector(refresh_token=fyle_credentials.refresh_token, workspace_id=workspace_id)
 
     fyle_connection.sync_employees()
+    start = time()
     source_attributes = ExpenseAttribute.objects.filter(attribute_type='EMPLOYEE', workspace_id=workspace_id).all()
 
     mapping_attributes = {
@@ -453,6 +458,8 @@ def async_auto_map_ccc_account(workspace_id: int):
     }
 
     auto_create_employee_mappings(source_attributes, mapping_attributes)
+    end = time()
+    print('Total time taken is', end - start)
 
 
 def schedule_auto_map_ccc_employees(workspace_id: int):
