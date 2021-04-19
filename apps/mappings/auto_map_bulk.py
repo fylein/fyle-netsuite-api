@@ -3,10 +3,12 @@ from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttr
 
 start = time()
 
-# config
+# config start
 workspace_id = 1
+source_attribute_type = 'EMPLOYEE'
 destination_attribute_type = 'VENDOR'
-employee_mapping_preference = 'EMPLOYEE_CODE'
+employee_mapping_preference = 'NAME'
+# config end
 
 employee_destination_attributes = DestinationAttribute.objects.filter(
     attribute_type=destination_attribute_type, workspace_id=workspace_id, mapping__destination_id__isnull=True).all()
@@ -34,12 +36,11 @@ elif employee_mapping_preference == 'EMPLOYEE_CODE':
     filter_on = 'detail__employee_code__iregex'
 
 auto_map_filter = {
-    # check withour r''
-    filter_on: r'({})'.format(attribute_values[1:])
+    filter_on: '({})'.format(attribute_values[1:])
 }
 
 employee_source_attributes = ExpenseAttribute.objects.filter(
-    attribute_type='EMPLOYEE', workspace_id=workspace_id, auto_mapped=False,
+    attribute_type=source_attribute_type, workspace_id=workspace_id, auto_mapped=False,
     **auto_map_filter
 ).all()
 
@@ -55,7 +56,7 @@ for source_emp in employee_source_attributes:
         destination_id = destination_id_value_map[source_value.lower()]
         mapping_batch.append(
             Mapping(
-                source_type='EMPLOYEE',
+                source_type=source_attribute_type,
                 destination_type=destination_attribute_type,
                 source_id=source_emp.id,
                 destination_id=destination_id,

@@ -4,15 +4,17 @@ from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttr
 
 start = time()
 
-# config
+# config start
 workspace_id = 1
+source_attribute_type = 'EMPLOYEE'
 destination_attribute_type = 'CREDIT_CARD_ACCOUNT'
 default_ccc_account_id = '25'
 default_ccc_account_name = 'Accounts Payable'
+# config end
 
 employee_source_attributes = ExpenseAttribute.objects.filter(
     ~Q(mapping__destination_type=destination_attribute_type),
-    attribute_type='EMPLOYEE', workspace_id=workspace_id
+    attribute_type=source_attribute_type, workspace_id=workspace_id
 ).all()
 
 default_destination_attribute = DestinationAttribute.objects.filter(
@@ -23,7 +25,7 @@ mapping_batch = []
 for source_emp in employee_source_attributes:
     mapping_batch.append(
         Mapping(
-            source_type='EMPLOYEE',
+            source_type=source_attribute_type,
             destination_type=destination_attribute_type,
             source_id=source_emp.id,
             destination_id=default_destination_attribute.id,
