@@ -172,7 +172,7 @@ class FyleConnector:
                 }
             })
 
-        ExpenseAttribute.bulk_create_or_update_expense_attributes(employee_attributes, 'EMPLOYEE', self.workspace_id)
+        ExpenseAttribute.bulk_create_or_update_expense_attributes(employee_attributes, 'EMPLOYEE', self.workspace_id, True)
 
         return []
 

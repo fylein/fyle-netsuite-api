@@ -159,7 +159,6 @@ class ConnectNetSuiteView(viewsets.ViewSet):
                     ns_token_id=ns_token_key,
                     ns_token_secret=ns_token_secret,
                     workspace=workspace
-
                 )
                 workspace.ns_account_id = ns_account_id
                 workspace.save()
