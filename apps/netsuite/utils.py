@@ -113,7 +113,7 @@ class NetSuiteConnector:
             for attribute_type, attribute in attributes.items():
                 if attribute:
                     DestinationAttribute.bulk_create_or_update_destination_attributes(
-                        attribute, attribute_type.upper(), self.workspace_id)
+                        attribute, attribute_type.upper(), self.workspace_id, True)
 
         return []
 
@@ -156,7 +156,7 @@ class NetSuiteConnector:
 
             for attribute_type, attribute in attributes.items():
                 DestinationAttribute.bulk_create_or_update_destination_attributes(
-                    attribute, attribute_type.upper(), self.workspace_id)
+                    attribute, attribute_type.upper(), self.workspace_id, True)
 
         return []
 
@@ -194,7 +194,7 @@ class NetSuiteConnector:
                     )
 
             DestinationAttribute.bulk_create_or_update_destination_attributes(custom_segment_attributes,
-                custom_list_values.name.upper().replace(' ', '_'), self.workspace_id)
+                custom_list_values.name.upper().replace(' ', '_'), self.workspace_id, True)
 
         return []
 
@@ -217,7 +217,7 @@ class NetSuiteConnector:
             )
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(
-            currency_attributes, 'CURRENCY', self.workspace_id)
+            currency_attributes, 'CURRENCY', self.workspace_id, True)
 
         return []
 
@@ -252,7 +252,7 @@ class NetSuiteConnector:
                 })
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(location_attributes,
-            'LOCATION', self.workspace_id)
+            'LOCATION', self.workspace_id, True)
 
         return []
 
@@ -273,7 +273,7 @@ class NetSuiteConnector:
             })
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(classification_attributes,
-            'CLASS', self.workspace_id)
+            'CLASS', self.workspace_id, True)
 
         return []
 
@@ -294,7 +294,7 @@ class NetSuiteConnector:
             })
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(department_attributes,
-            'DEPARTMENT', self.workspace_id)
+            'DEPARTMENT', self.workspace_id, True)
 
         return []
 
@@ -331,7 +331,7 @@ class NetSuiteConnector:
                     })
 
             DestinationAttribute.bulk_create_or_update_destination_attributes(attributes,
-                'VENDOR', self.workspace_id)
+                'VENDOR', self.workspace_id, True)
 
         return []
 
@@ -433,7 +433,7 @@ class NetSuiteConnector:
                     })
 
             DestinationAttribute.bulk_create_or_update_destination_attributes(attributes,
-                'EMPLOYEE', self.workspace_id)
+                'EMPLOYEE', self.workspace_id, True)
 
         return []
 
@@ -589,7 +589,7 @@ class NetSuiteConnector:
             })
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(subsidiary_attributes,
-            'SUBSIDIARY', self.workspace_id)
+            'SUBSIDIARY', self.workspace_id, True)
 
         return []
 
@@ -615,7 +615,7 @@ class NetSuiteConnector:
                             'active': True
                         })
                 DestinationAttribute.bulk_create_or_update_destination_attributes(
-                    attributes, 'PROJECT', self.workspace_id)
+                    attributes, 'PROJECT', self.workspace_id, True)
 
         return []
 
@@ -642,7 +642,7 @@ class NetSuiteConnector:
                         })
 
                 DestinationAttribute.bulk_create_or_update_destination_attributes(
-                    attributes, 'PROJECT', self.workspace_id)
+                    attributes, 'PROJECT', self.workspace_id, True)
 
         return []
 
