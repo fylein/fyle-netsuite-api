@@ -1,5 +1,6 @@
 from typing import List
 import json
+import logging
 
 from django.conf import settings
 
@@ -11,6 +12,7 @@ import requests
 
 from apps.fyle.models import Reimbursement
 
+logger = logging.getLogger(__name__)
 
 class FyleConnector:
     """
@@ -318,25 +320,25 @@ class FyleConnector:
     def sync_dimensions(self):
         try:
             self.sync_employees()
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             self.sync_categories(active_only=False)
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             self.sync_cost_centers(active_only=False)
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             self.sync_projects()
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             self.sync_expense_custom_fields(active_only=True)
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)

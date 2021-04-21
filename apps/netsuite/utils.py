@@ -1,4 +1,5 @@
 from typing import List, Dict
+import logging
 
 from netsuitesdk import NetSuiteConnection
 
@@ -14,6 +15,7 @@ from apps.netsuite.models import Bill, BillLineitem, ExpenseReport, ExpenseRepor
     JournalEntryLineItem, CustomSegment, VendorPayment, VendorPaymentLineitem
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Workspace
 
+logger = logging.getLogger(__name__)
 
 SYNC_UPPER_LIMIT = {
     'projects': 5000,
@@ -440,59 +442,59 @@ class NetSuiteConnector:
     def sync_dimensions(self, workspace_id: str):
         try:
             self.sync_expense_categories()
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             self.sync_locations()
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             self.sync_vendors()
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             self.sync_currencies()
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             self.sync_classifications()
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             self.sync_departments()
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             self.sync_employees()
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             self.sync_accounts()
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             all_custom_list = CustomSegment.objects.filter(workspace_id=workspace_id).all()
             self.sync_custom_segments(all_custom_list)
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             self.sync_projects()
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             self.sync_customers()
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
     def post_employee(self, employee: ExpenseAttribute, expense_group: ExpenseGroup):
         """
