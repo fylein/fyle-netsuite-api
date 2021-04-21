@@ -106,19 +106,19 @@ def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_conn
                 }
 
             created_entity = DestinationAttribute.objects.filter(
-                    workspace_id=expense_group.workspace_id,
-                    **filters
-                ).first()
+                workspace_id=expense_group.workspace_id,
+                **filters
+            ).first()
 
             if employee_mapping_setting == 'EMPLOYEE':
                 if created_entity is None:
                     created_entity: DestinationAttribute = netsuite_connection.post_employee(
-                        source_employee, auto_map_employees_preference, expense_group)
+                        source_employee, expense_group)
 
             else:
                 if created_entity is None:
                     created_entity: DestinationAttribute = netsuite_connection.post_vendor(
-                        source_employee, auto_map_employees_preference, expense_group)
+                        source_employee, expense_group)
 
             mapping = Mapping.create_or_update_mapping(
                 source_type='EMPLOYEE',
@@ -137,13 +137,6 @@ def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_conn
 
         except NetSuiteRequestError as exception:
             logger.exception({'error': exception})
-
-        except Exception:
-            error = traceback.format_exc()
-            detail = {
-                'error': error
-            }
-            logger.exception('Something unexpected happened workspace_id: %s %s', expense_group.workspace_id, detail)
 
 
 def create_bill(expense_group, task_log_id):
