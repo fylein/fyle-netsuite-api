@@ -307,8 +307,12 @@ class FyleConnector:
 
         if attachment['data']:
             attachment = attachment['data'][0]
-            attachment['expense_id'] = expense_id
-            return attachment
+            attachment_format = attachment['filename'].split('.')[-1]
+            if attachment_format != 'html':
+                attachment['expense_id'] = expense_id
+                return attachment
+            else:
+                return []
 
     def post_reimbursement(self, reimbursement_ids: list):
         """
