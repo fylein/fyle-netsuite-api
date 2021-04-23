@@ -1,7 +1,6 @@
 import logging
 import traceback
 from datetime import datetime
-from time import time
 
 from typing import List, Dict
 
@@ -340,10 +339,7 @@ def async_auto_map_employees(workspace_id: int):
     else:
         netsuite_connection.sync_vendors()
 
-    start = time()
-    Mapping.auto_map_employees('EMPLOYEE', destination_type, employee_mapping_preference, workspace_id)
-    end = time()
-    print('Total time taken is', end - start)
+    Mapping.auto_map_employees(destination_type, employee_mapping_preference, workspace_id)
 
 
 def schedule_auto_map_employees(employee_mapping_preference: str, workspace_id: int):
@@ -375,10 +371,7 @@ def async_auto_map_ccc_account(workspace_id: int):
     fyle_connection = FyleConnector(refresh_token=fyle_credentials.refresh_token, workspace_id=workspace_id)
     fyle_connection.sync_employees()
 
-    start = time()
-    Mapping.auto_map_ccc_employees('EMPLOYEE', 'CREDIT_CARD_ACCOUNT', default_ccc_account_id, workspace_id)
-    end = time()
-    print('Total time taken for CCC mapping is', end - start)
+    Mapping.auto_map_ccc_employees('CREDIT_CARD_ACCOUNT', default_ccc_account_id, workspace_id)
 
 
 def schedule_auto_map_ccc_employees(workspace_id: int):
