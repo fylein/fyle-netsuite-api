@@ -354,7 +354,10 @@ class Reimbursement(models.Model):
 
         for existing_reimbursement in existing_reimbursements:
             existing_reimbursement_ids.append(existing_reimbursement.reimbursement_id)
-            primary_key_map[existing_reimbursement.reimbursement_id] = existing_reimbursement.id
+            primary_key_map[existing_reimbursement.reimbursement_id] = {
+                'id': existing_reimbursement.id,
+                'state': existing_reimbursement.state
+            }
 
         attributes_to_be_created = []
         attributes_to_be_updated = []
@@ -370,12 +373,13 @@ class Reimbursement(models.Model):
                     )
                 )
             else:
-                attributes_to_be_updated.append(
-                    Reimbursement(
-                        id=primary_key_map[reimbursement['id']],
-                        state=reimbursement['state']
+                if reimbursement['state'] != primary_key_map[reimbursement['id']]['state']:
+                    attributes_to_be_updated.append(
+                        Reimbursement(
+                            id=primary_key_map[reimbursement['id']]['id'],
+                            state=reimbursement['state']
+                        )
                     )
-                )
 
         if attributes_to_be_created:
             Reimbursement.objects.bulk_create(attributes_to_be_created, batch_size=50)
