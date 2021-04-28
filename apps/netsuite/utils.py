@@ -1,4 +1,5 @@
 from typing import List, Dict
+import logging
 
 from netsuitesdk import NetSuiteConnection
 
@@ -14,6 +15,7 @@ from apps.netsuite.models import Bill, BillLineitem, ExpenseReport, ExpenseRepor
     JournalEntryLineItem, CustomSegment, VendorPayment, VendorPaymentLineitem
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Workspace
 
+logger = logging.getLogger(__name__)
 
 SYNC_UPPER_LIMIT = {
     'projects': 5000,
@@ -113,7 +115,7 @@ class NetSuiteConnector:
             for attribute_type, attribute in attributes.items():
                 if attribute:
                     DestinationAttribute.bulk_create_or_update_destination_attributes(
-                        attribute, attribute_type.upper(), self.workspace_id)
+                        attribute, attribute_type.upper(), self.workspace_id, True)
 
         return []
 
@@ -156,7 +158,7 @@ class NetSuiteConnector:
 
             for attribute_type, attribute in attributes.items():
                 DestinationAttribute.bulk_create_or_update_destination_attributes(
-                    attribute, attribute_type.upper(), self.workspace_id)
+                    attribute, attribute_type.upper(), self.workspace_id, True)
 
         return []
 
@@ -194,7 +196,7 @@ class NetSuiteConnector:
                     )
 
             DestinationAttribute.bulk_create_or_update_destination_attributes(custom_segment_attributes,
-                custom_list_values.name.upper().replace(' ', '_'), self.workspace_id)
+                custom_list_values.name.upper().replace(' ', '_'), self.workspace_id, True)
 
         return []
 
@@ -217,7 +219,7 @@ class NetSuiteConnector:
             )
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(
-            currency_attributes, 'CURRENCY', self.workspace_id)
+            currency_attributes, 'CURRENCY', self.workspace_id, True)
 
         return []
 
@@ -252,7 +254,7 @@ class NetSuiteConnector:
                 })
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(location_attributes,
-            'LOCATION', self.workspace_id)
+            'LOCATION', self.workspace_id, True)
 
         return []
 
@@ -273,7 +275,7 @@ class NetSuiteConnector:
             })
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(classification_attributes,
-            'CLASS', self.workspace_id)
+            'CLASS', self.workspace_id, True)
 
         return []
 
@@ -294,7 +296,7 @@ class NetSuiteConnector:
             })
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(department_attributes,
-            'DEPARTMENT', self.workspace_id)
+            'DEPARTMENT', self.workspace_id, True)
 
         return []
 
@@ -331,7 +333,7 @@ class NetSuiteConnector:
                     })
 
             DestinationAttribute.bulk_create_or_update_destination_attributes(attributes,
-                'VENDOR', self.workspace_id)
+                'VENDOR', self.workspace_id, True)
 
         return []
 
@@ -433,66 +435,66 @@ class NetSuiteConnector:
                     })
 
             DestinationAttribute.bulk_create_or_update_destination_attributes(attributes,
-                'EMPLOYEE', self.workspace_id)
+                'EMPLOYEE', self.workspace_id, True)
 
         return []
 
     def sync_dimensions(self, workspace_id: str):
         try:
             self.sync_expense_categories()
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             self.sync_locations()
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             self.sync_vendors()
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             self.sync_currencies()
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             self.sync_classifications()
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             self.sync_departments()
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             self.sync_employees()
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             self.sync_accounts()
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             all_custom_list = CustomSegment.objects.filter(workspace_id=workspace_id).all()
             self.sync_custom_segments(all_custom_list)
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             self.sync_projects()
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             self.sync_customers()
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
     def post_employee(self, employee: ExpenseAttribute, expense_group: ExpenseGroup):
         """
@@ -589,7 +591,7 @@ class NetSuiteConnector:
             })
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(subsidiary_attributes,
-            'SUBSIDIARY', self.workspace_id)
+            'SUBSIDIARY', self.workspace_id, True)
 
         return []
 
@@ -615,7 +617,7 @@ class NetSuiteConnector:
                             'active': True
                         })
                 DestinationAttribute.bulk_create_or_update_destination_attributes(
-                    attributes, 'PROJECT', self.workspace_id)
+                    attributes, 'PROJECT', self.workspace_id, True)
 
         return []
 
@@ -642,7 +644,7 @@ class NetSuiteConnector:
                         })
 
                 DestinationAttribute.bulk_create_or_update_destination_attributes(
-                    attributes, 'PROJECT', self.workspace_id)
+                    attributes, 'PROJECT', self.workspace_id, True)
 
         return []
 

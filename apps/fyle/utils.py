@@ -1,5 +1,6 @@
 from typing import List
 import json
+import logging
 
 from django.conf import settings
 
@@ -11,6 +12,7 @@ import requests
 
 from apps.fyle.models import Reimbursement
 
+logger = logging.getLogger(__name__)
 
 class FyleConnector:
     """
@@ -172,7 +174,7 @@ class FyleConnector:
                 }
             })
 
-        ExpenseAttribute.bulk_create_or_update_expense_attributes(employee_attributes, 'EMPLOYEE', self.workspace_id)
+        ExpenseAttribute.bulk_create_or_update_expense_attributes(employee_attributes, 'EMPLOYEE', self.workspace_id, True)
 
         return []
 
@@ -294,8 +296,12 @@ class FyleConnector:
 
         if attachment['data']:
             attachment = attachment['data'][0]
-            attachment['expense_id'] = expense_id
-            return attachment
+            attachment_format = attachment['filename'].split('.')[-1]
+            if attachment_format != 'html':
+                attachment['expense_id'] = expense_id
+                return attachment
+            else:
+                return []
 
     def post_reimbursement(self, reimbursement_ids: list):
         """
@@ -307,25 +313,25 @@ class FyleConnector:
     def sync_dimensions(self):
         try:
             self.sync_employees()
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             self.sync_categories(active_only=False)
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             self.sync_cost_centers(active_only=False)
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             self.sync_projects()
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)
 
         try:
             self.sync_expense_custom_fields(active_only=True)
-        except Exception:
-            pass
+        except Exception as exception:
+            logger.exception(exception)

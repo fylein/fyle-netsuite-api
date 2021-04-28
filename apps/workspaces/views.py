@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.conf import settings
+from django.core.cache import cache
 
 from rest_framework.response import Response
 from rest_framework.views import status
@@ -71,6 +72,7 @@ class WorkspaceView(viewsets.ViewSet):
 
         if workspace:
             workspace.user.add(User.objects.get(user_id=request.user))
+            cache.delete(str(workspace.id))
         else:
             workspace = Workspace.objects.create(name=org_name, fyle_org_id=org_id)
 
@@ -157,7 +159,6 @@ class ConnectNetSuiteView(viewsets.ViewSet):
                     ns_token_id=ns_token_key,
                     ns_token_secret=ns_token_secret,
                     workspace=workspace
-
                 )
                 workspace.ns_account_id = ns_account_id
                 workspace.save()

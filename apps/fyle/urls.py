@@ -16,5 +16,5 @@ urlpatterns = [
     path('expense_fields/', ExpenseFieldsView.as_view()),
     path('expense_group_settings/', ExpenseGroupSettingsView.as_view()),
     path('sync_dimensions/', SyncFyleDimensionView.as_view()),
-    path('refresh/', RefreshFyleDimensionView.as_view())
+    path('refresh_dimensions/', RefreshFyleDimensionView.as_view())
 ]

@@ -485,6 +485,16 @@ def __validate_expense_group(expense_group: ExpenseGroup, general_settings: Work
                 'message': 'Employee mapping not found'
             })
 
+    if general_settings.corporate_credit_card_expenses_object != 'BILL' and expense_group.fund_source == 'CCC':
+        if not (general_mapping.default_ccc_account_id or general_mapping.default_ccc_account_name):
+            bulk_errors.append({
+                'row': None,
+                'expense_group_id': expense_group.id,
+                'value': 'Default Credit Card Account',
+                'type': 'General Mapping',
+                'message': 'Default Credit Card Account not found'
+            })
+
     expenses = expense_group.expenses.all()
 
     for lineitem in expenses:
