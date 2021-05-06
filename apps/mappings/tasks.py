@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import List, Dict
 
 from django_q.models import Schedule
-from django.db.models import Q
+from django.db.models import Q, Count
 
 from fylesdk.exceptions import WrongParamsError
 from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttribute, DestinationAttribute
@@ -99,52 +99,48 @@ def create_credit_card_category_mappings(reimbursable_expenses_object,
     """
     Create credit card mappings
     """
-    if reimbursable_expenses_object == 'EXPENSE REPORT':
-        category_mappings: List[Mapping] = Mapping.objects.filter(
-            workspace_id=workspace_id, destination_type='EXPENSE_CATEGORY')
+    category_mappings = Mapping.objects.filter(
+        source_id__in=Mapping.objects.filter(
+            workspace_id=workspace_id, source_type='CATEGORY'
+        ).values('source_id').annotate(
+            count=Count('source_id')
+        ).filter(count=1).values_list('source_id')
+    )
 
-        if corporate_credit_card_expenses_object == 'EXPENSE REPORT':
-            for mapping in category_mappings:
-                Mapping.create_or_update_mapping(
+    for mapping in category_mappings:
+        if reimbursable_expenses_object == 'EXPENSE REPORT':
+            if corporate_credit_card_expenses_object == 'EXPENSE REPORT':
+                Mapping.objects.create(
                     source_type='CATEGORY',
                     destination_type='CCC_EXPENSE_CATEGORY',
-                    source_value=mapping.source.value,
-                    destination_value=mapping.destination.value,
-                    destination_id=mapping.destination.destination_id,
+                    source_id=mapping.source.id,
+                    destination_id=mapping.destination.id,
                     workspace_id=workspace_id
                 )
 
-        elif corporate_credit_card_expenses_object in ('BILL', 'JOURNAL ENTRY'):
-            for mapping in category_mappings:
-                destination_attribute = DestinationAttribute.create_or_update_destination_attribute({
-                    'attribute_type': 'CCC_ACCOUNT',
-                    'display_name': 'Credit Card Account',
-                    'value': mapping.destination.detail['account_name'],
-                    'destination_id': mapping.destination.detail['account_internal_id']
-                }, workspace_id)
+            elif corporate_credit_card_expenses_object in ('BILL', 'JOURNAL ENTRY'):
+                destination_attribute = DestinationAttribute.objects.filter(
+                    attribute_type='CCC_ACCOUNT',
+                    destination_id=mapping.destination.detail['account_internal_id'],
+                    workspace_id=workspace_id
+                ).first()
 
-                Mapping.create_or_update_mapping(
+                Mapping.objects.create(
                     source_type='CATEGORY',
                     destination_type='CCC_ACCOUNT',
-                    source_value=mapping.source.value,
-                    destination_value=destination_attribute.value,
-                    destination_id=destination_attribute.destination_id,
+                    source_id=mapping.source.id,
+                    destination_id=destination_attribute.id,
                     workspace_id=workspace_id
                 )
 
-    elif reimbursable_expenses_object in ('BILL', 'JOURNAL ENTRY'):
-        category_mappings: List[Mapping] = Mapping.objects.filter(workspace_id=workspace_id, destination_type='ACCOUNT')
-
-        if corporate_credit_card_expenses_object:
-            for mapping in category_mappings:
-                Mapping.create_or_update_mapping(
-                    source_type='CATEGORY',
-                    destination_type='CCC_ACCOUNT',
-                    source_value=mapping.source.value,
-                    destination_value=mapping.destination.value,
-                    destination_id=mapping.destination.destination_id,
-                    workspace_id=workspace_id
-                )
+        elif reimbursable_expenses_object in ('BILL', 'JOURNAL ENTRY'):
+            Mapping.objects.create(
+                source_type='CATEGORY',
+                destination_type='CCC_ACCOUNT',
+                source_id=mapping.source.id,
+                destination_id=mapping.destination.id,
+                workspace_id=workspace_id
+            )
 
 
 def auto_create_category_mappings(workspace_id):
@@ -168,8 +164,9 @@ def auto_create_category_mappings(workspace_id):
 
         Mapping.bulk_create_mappings(fyle_categories, 'CATEGORY', reimbursable_destination_type, workspace_id)
 
-        create_credit_card_category_mappings(
-            reimbursable_expenses_object, corporate_credit_card_expenses_object, workspace_id)
+        if corporate_credit_card_expenses_object:
+            create_credit_card_category_mappings(
+                reimbursable_expenses_object, corporate_credit_card_expenses_object, workspace_id)
 
         return []
     except WrongParamsError as exception:
@@ -210,7 +207,7 @@ def schedule_categories_creation(import_categories, workspace_id):
             schedule.delete()
 
 
-def create_fyle_projects_payload(projects: List[DestinationAttribute], workspace_id: int):
+def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_project_names: list, workspace_id: int):
     """
     Create Fyle Projects Payload from NetSuite Projects
     :param projects: NetSuite Projects
@@ -218,8 +215,6 @@ def create_fyle_projects_payload(projects: List[DestinationAttribute], workspace
     :return: Fyle Projects Payload
     """
     payload = []
-    existing_project_names = ExpenseAttribute.objects.filter(
-        attribute_type='PROJECT', workspace_id=workspace_id).values_list('value', flat=True)
 
     for project in projects:
         if project.value not in existing_project_names:
@@ -236,7 +231,10 @@ def create_fyle_projects_payload(projects: List[DestinationAttribute], workspace
     return payload
 
 def post_projects_in_batches(fyle_connection: FyleConnector, workspace_id: int):
-    ns_attributes_count = DestinationAttribute.objects.filter(attribute_type='PROJECT', workspace_id=workspace_id).count()
+    existing_project_names = ExpenseAttribute.objects.filter(
+        attribute_type='PROJECT', workspace_id=workspace_id).values_list('value', flat=True)
+    ns_attributes_count = DestinationAttribute.objects.filter(
+        attribute_type='PROJECT', workspace_id=workspace_id).count()
     page_size = 200
 
     for offset in range(0, ns_attributes_count, page_size):
@@ -246,7 +244,8 @@ def post_projects_in_batches(fyle_connection: FyleConnector, workspace_id: int):
 
         paginated_ns_attributes = remove_duplicates(paginated_ns_attributes)
 
-        fyle_payload: List[Dict] = create_fyle_projects_payload(paginated_ns_attributes, workspace_id)
+        fyle_payload: List[Dict] = create_fyle_projects_payload(
+            paginated_ns_attributes, existing_project_names, workspace_id)
         if fyle_payload:
             fyle_connection.connection.Projects.post(fyle_payload)
             fyle_connection.sync_projects()
