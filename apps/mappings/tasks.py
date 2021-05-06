@@ -99,6 +99,7 @@ def create_credit_card_category_mappings(reimbursable_expenses_object,
     """
     Create credit card mappings
     """
+    mapping_batch = []
     category_mappings = Mapping.objects.filter(
         source_id__in=Mapping.objects.filter(
             workspace_id=workspace_id, source_type='CATEGORY'
@@ -110,12 +111,14 @@ def create_credit_card_category_mappings(reimbursable_expenses_object,
     for mapping in category_mappings:
         if reimbursable_expenses_object == 'EXPENSE REPORT':
             if corporate_credit_card_expenses_object == 'EXPENSE REPORT':
-                Mapping.objects.create(
-                    source_type='CATEGORY',
-                    destination_type='CCC_EXPENSE_CATEGORY',
-                    source_id=mapping.source.id,
-                    destination_id=mapping.destination.id,
-                    workspace_id=workspace_id
+                mapping_batch.append(
+                    Mapping(
+                        source_type='CATEGORY',
+                        destination_type='CCC_EXPENSE_CATEGORY',
+                        source_id=mapping.source.id,
+                        destination_id=mapping.destination.id,
+                        workspace_id=workspace_id
+                    )
                 )
 
             elif corporate_credit_card_expenses_object in ('BILL', 'JOURNAL ENTRY'):
@@ -125,22 +128,29 @@ def create_credit_card_category_mappings(reimbursable_expenses_object,
                     workspace_id=workspace_id
                 ).first()
 
+                mapping_batch.append(
+                    Mapping(
+                        source_type='CATEGORY',
+                        destination_type='CCC_ACCOUNT',
+                        source_id=mapping.source.id,
+                        destination_id=destination_attribute.id,
+                        workspace_id=workspace_id
+                    )
+                )
+
+        elif reimbursable_expenses_object in ('BILL', 'JOURNAL ENTRY'):
+            mapping_batch.append(
                 Mapping.objects.create(
                     source_type='CATEGORY',
                     destination_type='CCC_ACCOUNT',
                     source_id=mapping.source.id,
-                    destination_id=destination_attribute.id,
+                    destination_id=mapping.destination.id,
                     workspace_id=workspace_id
                 )
-
-        elif reimbursable_expenses_object in ('BILL', 'JOURNAL ENTRY'):
-            Mapping.objects.create(
-                source_type='CATEGORY',
-                destination_type='CCC_ACCOUNT',
-                source_id=mapping.source.id,
-                destination_id=mapping.destination.id,
-                workspace_id=workspace_id
             )
+
+    if mapping_batch:
+        Mapping.objects.bulk_create(mapping_batch, batch_size=50)
 
 
 def auto_create_category_mappings(workspace_id):
