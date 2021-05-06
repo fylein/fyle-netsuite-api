@@ -140,7 +140,7 @@ def create_credit_card_category_mappings(reimbursable_expenses_object,
 
         elif reimbursable_expenses_object in ('BILL', 'JOURNAL ENTRY'):
             mapping_batch.append(
-                Mapping.objects.create(
+                Mapping(
                     source_type='CATEGORY',
                     destination_type='CCC_ACCOUNT',
                     source_id=mapping.source.id,
