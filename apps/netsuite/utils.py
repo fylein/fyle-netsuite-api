@@ -387,6 +387,9 @@ class NetSuiteConnector:
             },
             'externalId': vendor.detail['user_id']
         }
+
+        print(vendor)
+
         created_vendor = self.connection.vendors.post(vendor)
 
         created_vendor = DestinationAttribute.create_or_update_destination_attribute({
@@ -438,6 +441,41 @@ class NetSuiteConnector:
                 'EMPLOYEE', self.workspace_id, True)
 
         return []
+
+    def create_vendor_destination_attribute(self, vendor_name: str, vendor_id: str, vendor_email: str = None):
+        vendor_attribute = DestinationAttribute.create_or_update_destination_attribute({
+            'attribute_type': 'VENDOR',
+            'display_name': 'vendor',
+            'value': vendor_name,
+            'destination_id': vendor_id,
+            'detail': {
+                'email': vendor_email
+            }
+        }, self.workspace_id)
+
+        return vendor_attribute
+
+    def get_or_create_vendor(self, expense_attribute: ExpenseAttribute, expense_group: ExpenseGroup, create: bool = False):
+        vendor = self.connection.vendors.search(
+            attribute='entityId', value=expense_attribute.detail['full_name'], operator='is')
+        if vendor:
+            vendor = vendor[0]
+        else:
+            vendor = None
+
+        if not vendor:
+            if create:
+                created_vendor = self.post_vendor(expense_attribute, expense_group)
+                print(created_vendor['entityId'])
+                return self.create_vendor_destination_attribute(
+                    created_vendor['entityId'], created_vendor['internalId'], expense_attribute['email'])
+            else:
+                return
+
+        else:
+            return self.create_vendor_destination_attribute(
+                vendor['entityId'], vendor['internalId'], vendor['email']
+            )
 
     def sync_dimensions(self, workspace_id: str):
         try:

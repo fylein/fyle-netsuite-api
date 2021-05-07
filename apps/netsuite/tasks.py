@@ -117,8 +117,8 @@ def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_conn
 
             else:
                 if created_entity is None:
-                    created_entity: DestinationAttribute = netsuite_connection.post_vendor(
-                        source_employee, expense_group)
+                    created_entity: DestinationAttribute = netsuite_connection.get_or_create_vendor(
+                        source_employee, expense_group, create=True)
 
             mapping = Mapping.create_or_update_mapping(
                 source_type='EMPLOYEE',
