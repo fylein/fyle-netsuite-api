@@ -442,40 +442,47 @@ class NetSuiteConnector:
 
         return []
 
-    def create_vendor_destination_attribute(self, vendor_name: str, vendor_id: str, vendor_email: str = None):
-        vendor_attribute = DestinationAttribute.create_or_update_destination_attribute({
-            'attribute_type': 'VENDOR',
-            'display_name': 'vendor',
-            'value': vendor_name,
-            'destination_id': vendor_id,
+    def create_destination_attribute(self,attribute: str, name: str, entity_id: str, email: str = None):
+        create_attribute = DestinationAttribute.create_or_update_destination_attribute({
+            'attribute_type': attribute.upper(),
+            'display_name': attribute,
+            'value': name,
+            'destination_id': entity_id,
             'detail': {
-                'email': vendor_email
+                'email': email
             }
         }, self.workspace_id)
 
-        return vendor_attribute
+        return created_attribute
 
-    def get_or_create_vendor(self, expense_attribute: ExpenseAttribute, expense_group: ExpenseGroup, create: bool = False):
+    def get_or_create_vendor(self, expense_attribute: ExpenseAttribute, expense_group: ExpenseGroup):
         vendor = self.connection.vendors.search(
             attribute='entityId', value=expense_attribute.detail['full_name'], operator='is')
-        if vendor:
-            vendor = vendor[0]
+
+        if not vendor:   
+            created_vendor = self.post_vendor(expense_attribute, expense_group)
+            return self.create_destination_attribute(
+                'vendor', expense_attribute.detail['full_name'], created_vendor['internalId'], expense_attribute['email'])
         else:
-            vendor = None
+            return self.create_destination_attribute(
+                'vendor', vendor['entityId'], vendor['internalId'], vendor['email']
+            )
 
-        if not vendor:
-            if create:
-                created_vendor = self.post_vendor(expense_attribute, expense_group)
-                print(created_vendor['entityId'])
-                return self.create_vendor_destination_attribute(
-                    created_vendor['entityId'], created_vendor['internalId'], expense_attribute['email'])
-            else:
-                return
+    def get_or_create_employee(self, expense_attribute: ExpenseAttribute, expense_group: ExpenseGroup, create: bool = False):
+        employee = self.connection.employees.search(
+            attribute='entityId', value=expense_attribute.detail['full_name'], operator='is')
+        )
 
+        if not employee:
+            created_employee = self.post_employee(expense_attribute, expense_group)
+            return self.create_destination_attribute(
+                'employee', expense_attribute.detail['full_name'], created_employee['internalId'], expense_attribute['email']
+            )
         else:
             return self.create_vendor_destination_attribute(
-                vendor['entityId'], vendor['internalId'], vendor['email']
+               'vendor', employee['entityId'], employee['internalId'], vendor['email']
             )
+
 
     def sync_dimensions(self, workspace_id: str):
         try:
