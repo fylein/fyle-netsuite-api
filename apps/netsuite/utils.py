@@ -430,7 +430,7 @@ class NetSuiteConnector:
 
         return []
 
-    def create_destination_attribute(self,attribute: str, name: str, destination_id, email: str = None):
+    def create_destination_attribute(self,attribute: str, name: str, destination_id: str, email: str = None):
         created_attribute = DestinationAttribute.create_or_update_destination_attribute({
             'attribute_type': attribute.upper(),
             'display_name': attribute,
@@ -447,7 +447,7 @@ class NetSuiteConnector:
         vendor = self.connection.vendors.search(
             attribute='entityId', value=expense_attribute.detail['full_name'], operator='is')
 
-        if not vendor:   
+        if not vendor:
             created_vendor = self.post_vendor(expense_attribute, expense_group)
             return self.create_destination_attribute(
                 'vendor', expense_attribute.detail['full_name'], created_vendor['internalId'], expense_attribute.value)
