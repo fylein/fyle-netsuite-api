@@ -388,9 +388,7 @@ class NetSuiteConnector:
             'externalId': vendor.detail['user_id']
         }
 
-        created_vendor = self.connection.vendors.post(vendor)
-
-        return created_vendor
+        return self.connection.vendors.post(vendor)
 
     def sync_employees(self):
         """
@@ -430,7 +428,7 @@ class NetSuiteConnector:
 
         return []
 
-    def create_destination_attribute(self,attribute: str, name: str, destination_id: str, email: str = None):
+    def create_destination_attribute(self, attribute: str, name: str, destination_id: str, email: str = None):
         created_attribute = DestinationAttribute.create_or_update_destination_attribute({
             'attribute_type': attribute.upper(),
             'display_name': attribute,
@@ -594,9 +592,8 @@ class NetSuiteConnector:
             },
             'externalId': employee.detail['user_id']
         }
-        created_employee = self.connection.employees.post(employee)
-
-        return created_employee
+        
+        return self.connection.employees.post(employee)
 
     def sync_subsidiaries(self):
         """
