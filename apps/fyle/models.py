@@ -9,7 +9,7 @@ from django.contrib.postgres.aggregates import ArrayAgg
 from django.contrib.postgres.fields import JSONField, ArrayField
 from django.contrib.postgres.fields.jsonb import KeyTextTransform
 from django.db import models
-from django.db.models import Count
+from django.db.models import Count, Q
 
 from fyle_accounting_mappings.models import ExpenseAttribute
 
@@ -76,16 +76,21 @@ class Expense(models.Model):
         db_table = 'expenses'
 
     @staticmethod
-    def create_expense_objects(expenses: List[Dict], custom_properties: List[ExpenseAttribute]):
+    def create_expense_objects(expenses: List[Dict], workspace_id: int):
         """
         Bulk create expense objects
         """
         expense_objects = []
 
-        custom_property_keys = list(set([prop.display_name.lower() for prop in custom_properties]))
+        custom_properties = ExpenseAttribute.objects.filter(
+            ~Q(attribute_type='EMPLOYEE') & ~Q(attribute_type='CATEGORY'),
+            ~Q(attribute_type='PROJECT') & ~Q(attribute_type='COST_CENTER'),
+            workspace_id=workspace_id
+        ).values('display_name').distinct()
+
+        custom_property_keys = list(set([prop['display_name'].lower() for prop in custom_properties]))
 
         for expense in expenses:
-
             expense_custom_properties = {}
 
             if custom_property_keys and expense['custom_properties']:
