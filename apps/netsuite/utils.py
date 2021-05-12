@@ -387,19 +387,8 @@ class NetSuiteConnector:
             },
             'externalId': vendor.detail['user_id']
         }
-        created_vendor = self.connection.vendors.post(vendor)
 
-        created_vendor = DestinationAttribute.create_or_update_destination_attribute({
-            'attribute_type': 'VENDOR',
-            'display_name': 'vendor',
-            'value': netsuite_entity_id,
-            'destination_id': created_vendor['internalId'],
-            'detail': {
-                'email': vendor['email']
-            }
-        }, self.workspace_id)
-
-        return created_vendor
+        return self.connection.vendors.post(vendor)
 
     def sync_employees(self):
         """
@@ -438,6 +427,49 @@ class NetSuiteConnector:
                 'EMPLOYEE', self.workspace_id, True)
 
         return []
+
+    def create_destination_attribute(self, attribute: str, name: str, destination_id: str, email: str = None):
+        created_attribute = DestinationAttribute.create_or_update_destination_attribute({
+            'attribute_type': attribute.upper(),
+            'display_name': attribute,
+            'value': name,
+            'destination_id': destination_id,
+            'detail': {
+                'email': email
+            }
+        }, self.workspace_id)
+
+        return created_attribute
+
+    def get_or_create_vendor(self, expense_attribute: ExpenseAttribute, expense_group: ExpenseGroup):
+        vendor = self.connection.vendors.search(
+            attribute='entityId', value=expense_attribute.detail['full_name'], operator='is')
+
+        if not vendor:
+            created_vendor = self.post_vendor(expense_attribute, expense_group)
+            return self.create_destination_attribute(
+                'vendor', expense_attribute.detail['full_name'], created_vendor['internalId'], expense_attribute.value)
+        else:
+            vendor = vendor[0]
+            return self.create_destination_attribute(
+                'vendor', vendor['entityId'], vendor['internalId'], vendor['email'])
+
+    def get_or_create_employee(self, expense_attribute: ExpenseAttribute, expense_group: ExpenseGroup):
+        employee = self.connection.employees.search(
+            attribute='entityId', value=expense_attribute.detail['full_name'], operator='is'
+        )
+
+        if not employee:
+            created_employee = self.post_employee(expense_attribute, expense_group)
+            return self.create_destination_attribute(
+                'employee', expense_attribute.detail['full_name'], created_employee['internalId'], expense_attribute.value
+            )
+        else:
+            employee = employee[0]
+            return self.create_destination_attribute(
+               'employee', employee['entityId'], employee['internalId'], employee['email']
+            )
+
 
     def sync_dimensions(self, workspace_id: str):
         try:
@@ -560,19 +592,8 @@ class NetSuiteConnector:
             },
             'externalId': employee.detail['user_id']
         }
-        created_employee = self.connection.employees.post(employee)
-
-        created_employee = DestinationAttribute.create_or_update_destination_attribute({
-            'attribute_type': 'EMPLOYEE',
-            'display_name': 'employee',
-            'value': employee_entity_id,
-            'destination_id': created_employee['internalId'],
-            'detail': {
-                'email': employee['email']
-            }
-        }, self.workspace_id)
-
-        return created_employee
+        
+        return self.connection.employees.post(employee)
 
     def sync_subsidiaries(self):
         """
