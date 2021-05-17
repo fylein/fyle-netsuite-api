@@ -406,9 +406,9 @@ class CreditCardCharge(models.Model):
         db_table = 'credit_card_charges'
 
     @staticmethod
-    def create_charge_card_transaction(expense_group: ExpenseGroup):
+    def create_credit_card_charge(expense_group: ExpenseGroup):
         """
-        Create Charge Card Transaction
+        Create Credit Card Charge
         :param expense_group: expense group
         :return: charge card tranasaction object
         """

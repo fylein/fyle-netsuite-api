@@ -282,7 +282,7 @@ def create_credit_card_charge(expense_group, task_log_id):
         with transaction.atomic():
             __validate_expense_group(expense_group, general_settings)
 
-            credit_card_charge_object = CreditCardCharge.create_charge_card_transaction(expense_group)
+            credit_card_charge_object = CreditCardCharge.create_credit_card_charge(expense_group)
 
             credit_card_charge_lineitems_objects = CreditCardChargeLineItem.create_credit_card_charge_lineitems(
                 expense_group
@@ -661,7 +661,6 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str]):
     Schedule bills creation
     :param expense_group_ids: List of expense group ids
     :param workspace_id: workspace id
-    :param user: user email
     :return: None
     """
     if expense_group_ids:
@@ -693,12 +692,48 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str]):
             chain.run()
 
 
+def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: List[str]):
+    """
+    Schedule Credit Card Charge creation
+    :param expense_group_ids: List of expense group ids
+    :param workspace_id: workspace id
+    :return: None
+    """
+    if expense_group_ids:
+        expense_groups = ExpenseGroup.objects.filter(
+            Q(tasklog__id__isnull=True) | ~Q(tasklog__status__in=['IN_PROGRESS', 'COMPLETE']),
+            workspace_id=workspace_id, id__in=expense_group_ids,
+            credit_card_charge__id__isnull=True, exported_at__isnull=True
+        ).all()
+
+        chain = Chain(cached=False)
+
+        for expense_group in expense_groups:
+            task_log, _ = TaskLog.objects.get_or_create(
+                workspace_id=expense_group.workspace_id,
+                expense_group=expense_group,
+                defaults={
+                    'status': 'ENQUEUED',
+                    'type': 'CREATING_CREDIT_CARD_CHARGE'
+                }
+            )
+
+            if task_log.status not in ['IN_PROGRESS', 'ENQUEUED']:
+                task_log.status = 'ENQUEUED'
+                task_log.save()
+
+            chain.append('apps.netsuite.tasks.create_credit_card_charge', expense_group, task_log.id)
+
+            task_log.save()
+        if chain.length():
+            chain.run()
+
+
 def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List[str]):
     """
     Schedule expense reports creation
     :param expense_group_ids: List of expense group ids
     :param workspace_id: workspace id
-    :param user: user email
     :return: None
     """
     if expense_group_ids:
@@ -734,7 +769,6 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
     Schedule journal entries creation
     :param expense_group_ids: List of expense group ids
     :param workspace_id: workspace id
-    :param user: user email
     :return: None
     """
     if expense_group_ids:
