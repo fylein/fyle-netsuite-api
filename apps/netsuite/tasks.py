@@ -284,19 +284,19 @@ def create_credit_card_charge(expense_group, task_log_id):
 
             credit_card_charge_object = CreditCardCharge.create_credit_card_charge(expense_group)
 
-            credit_card_charge_lineitems_objects = CreditCardChargeLineItem.create_credit_card_charge_lineitems(
+            credit_card_charge_lineitems_object = CreditCardChargeLineItem.create_credit_card_charge_lineitem(
                 expense_group
             )
             attachment_links = {}
 
-            for expense_id in expense_group.expenses.values_list('expense_id', flat=True):
-                attachment_link = load_attachments(netsuite_connection, expense_id, expense_group)
+            expense = expense_group.expenses.first()
+            attachment_link = load_attachments(netsuite_connection, expense.expense_id, expense_group)
 
-                if attachment_link:
-                    attachment_links[expense_id] = attachment_link
+            if attachment_link:
+                attachment_links[expense.expense_id] = attachment_link
 
             created_credit_card_charge = netsuite_connection.post_credit_card_charge(
-                credit_card_charge_object, credit_card_charge_lineitems_objects, attachment_links)
+                credit_card_charge_object, credit_card_charge_lineitems_object, attachment_links)
 
             task_log.detail = created_credit_card_charge
             task_log.credit_card_purchase = credit_card_charge_object
