@@ -83,7 +83,10 @@ class NetSuiteConnector:
                         'attribute_type': 'CREDIT_CARD_ACCOUNT',
                         'display_name': 'Credit Card Account',
                         'value': account['acctName'],
-                        'destination_id': account['internalId']
+                        'destination_id': account['internalId'],
+                        'detail': {
+                            'account_type': account['accType']
+                        }
                     })
 
                 if account['acctType'] == '_accountsPayable':
