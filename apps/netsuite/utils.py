@@ -1,7 +1,10 @@
+import json
 from typing import List, Dict
 import logging
 
-from netsuitesdk import NetSuiteConnection
+from requests_oauthlib import OAuth1Session
+
+from netsuitesdk import NetSuiteConnection, NetSuiteRequestError
 
 import unidecode
 
@@ -12,7 +15,8 @@ from apps.fyle.utils import FyleConnector
 
 from apps.mappings.models import SubsidiaryMapping
 from apps.netsuite.models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, \
-    JournalEntryLineItem, CustomSegment, VendorPayment, VendorPaymentLineitem
+    JournalEntryLineItem, CustomSegment, VendorPayment, VendorPaymentLineitem, CreditCardChargeLineItem, \
+    CreditCardCharge
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Workspace
 
 logger = logging.getLogger(__name__)
@@ -46,6 +50,8 @@ class NetSuiteConnector:
             search_body_fields_only=search_body_fields_only,
             page_size=page_size
         )
+
+        self.__netsuite_credentials = netsuite_credentials
 
         self.workspace_id = workspace_id
 
@@ -88,7 +94,7 @@ class NetSuiteConnector:
                         'destination_id': account['internalId']
                     })
 
-                if account['acctType'] == '_expense' or account['acctType'] == '_costOfGoodsSold' or\
+                if account['acctType'] == '_expense' or account['acctType'] == '_costOfGoodsSold' or \
                         account['acctType'] == '_otherCurrentAsset' or account['acctType'] == '_otherExpense':
                     attributes['account'].append({
                         'attribute_type': 'ACCOUNT',
@@ -196,7 +202,8 @@ class NetSuiteConnector:
                     )
 
             DestinationAttribute.bulk_create_or_update_destination_attributes(custom_segment_attributes,
-                custom_list_values.name.upper().replace(' ', '_'), self.workspace_id, True)
+                                                                              custom_list_values.name.upper().replace(
+                                                                                  ' ', '_'), self.workspace_id, True)
 
         return []
 
@@ -254,7 +261,7 @@ class NetSuiteConnector:
                 })
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(location_attributes,
-            'LOCATION', self.workspace_id, True)
+                                                                          'LOCATION', self.workspace_id, True)
 
         return []
 
@@ -275,7 +282,7 @@ class NetSuiteConnector:
             })
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(classification_attributes,
-            'CLASS', self.workspace_id, True)
+                                                                          'CLASS', self.workspace_id, True)
 
         return []
 
@@ -296,7 +303,7 @@ class NetSuiteConnector:
             })
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(department_attributes,
-            'DEPARTMENT', self.workspace_id, True)
+                                                                          'DEPARTMENT', self.workspace_id, True)
 
         return []
 
@@ -332,16 +339,17 @@ class NetSuiteConnector:
                         'detail': detail
                     })
 
-            DestinationAttribute.bulk_create_or_update_destination_attributes(attributes,
-                'VENDOR', self.workspace_id, True)
+            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                attributes, 'VENDOR', self.workspace_id, True)
 
         return []
 
-    def post_vendor(self, vendor: ExpenseAttribute, expense_group: ExpenseGroup):
+    def post_vendor(self, expense_group: ExpenseGroup, vendor: ExpenseAttribute = None, merchant: str = None):
         """
         Create an Vendor on NetSuite
         :param expense_group: expense group
         :param vendor: vendor attribute to be created
+        :param merchant: merchant to be created
         :return: Vendor Destination Attribute
         """
         subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
@@ -352,15 +360,16 @@ class NetSuiteConnector:
                                                        workspace_id=expense_group.workspace_id,
                                                        attribute_type='CURRENCY').first()
 
-        netsuite_entity_id = vendor.detail['full_name']
+        netsuite_entity_id = vendor.detail['full_name'] if vendor else merchant
 
         vendor = {
-            'firstName': netsuite_entity_id.split(' ')[0],
-            'lastName': netsuite_entity_id.split(' ')[-1]
-            if len(netsuite_entity_id.split(' ')) > 1 else netsuite_entity_id,
-            'isPerson': True,
+            'firstName': netsuite_entity_id.split(' ')[0] if vendor else None,
+            'lastName': (
+                netsuite_entity_id.split(' ')[-1] if len(netsuite_entity_id.split(' ')) > 1 else netsuite_entity_id)
+            if vendor else None,
+            'isPerson': True if vendor else False,
             'entityId': netsuite_entity_id,
-            'email': vendor.value,
+            'email': vendor.value if vendor else None,
             'currency': {
                 "name": None,
                 "internalId": currency.destination_id if currency else '1',
@@ -385,7 +394,7 @@ class NetSuiteConnector:
                 "externalId": None,
                 "type": None
             },
-            'externalId': vendor.detail['user_id']
+            'externalId': vendor.detail['user_id'] if vendor else merchant
         }
 
         return self.connection.vendors.post(vendor)
@@ -424,7 +433,7 @@ class NetSuiteConnector:
                     })
 
             DestinationAttribute.bulk_create_or_update_destination_attributes(attributes,
-                'EMPLOYEE', self.workspace_id, True)
+                                                                              'EMPLOYEE', self.workspace_id, True)
 
         return []
 
@@ -446,7 +455,7 @@ class NetSuiteConnector:
             attribute='entityId', value=expense_attribute.detail['full_name'], operator='is')
 
         if not vendor:
-            created_vendor = self.post_vendor(expense_attribute, expense_group)
+            created_vendor = self.post_vendor(expense_group, expense_attribute)
             return self.create_destination_attribute(
                 'vendor', expense_attribute.detail['full_name'], created_vendor['internalId'], expense_attribute.value)
         else:
@@ -462,14 +471,14 @@ class NetSuiteConnector:
         if not employee:
             created_employee = self.post_employee(expense_attribute, expense_group)
             return self.create_destination_attribute(
-                'employee', expense_attribute.detail['full_name'], created_employee['internalId'], expense_attribute.value
+                'employee', expense_attribute.detail['full_name'], created_employee['internalId'],
+                expense_attribute.value
             )
         else:
             employee = employee[0]
             return self.create_destination_attribute(
-               'employee', employee['entityId'], employee['internalId'], employee['email']
+                'employee', employee['entityId'], employee['internalId'], employee['email']
             )
-
 
     def sync_dimensions(self, workspace_id: str):
         try:
@@ -592,7 +601,7 @@ class NetSuiteConnector:
             },
             'externalId': employee.detail['user_id']
         }
-        
+
         return self.connection.employees.post(employee)
 
     def sync_subsidiaries(self):
@@ -612,7 +621,7 @@ class NetSuiteConnector:
             })
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(subsidiary_attributes,
-            'SUBSIDIARY', self.workspace_id, True)
+                                                                          'SUBSIDIARY', self.workspace_id, True)
 
         return []
 
@@ -869,8 +878,146 @@ class NetSuiteConnector:
         return bill
 
     @staticmethod
+    def __construct_credit_card_charge_lineitems(
+            credit_card_charge_lineitems: List[CreditCardChargeLineItem],
+            attachment_links: Dict, cluster_domain: str, org_id: str) -> List[Dict]:
+        """
+        Create credit_card_charge line items
+        :return: constructed line items
+        """
+        lines = []
+
+        for line in credit_card_charge_lineitems:
+            expense = Expense.objects.get(pk=line.expense_id)
+
+            netsuite_custom_segments = line.netsuite_custom_segments
+
+            if attachment_links and expense.expense_id in attachment_links:
+                netsuite_custom_segments.append(
+                    {
+                        'scriptId': 'custcolfyle_receipt_link',
+                        'value': attachment_links[expense.expense_id]
+                    }
+                )
+
+            netsuite_custom_segments.append(
+                {
+                    'scriptId': 'custcolfyle_expense_url',
+                    'value': '{}/app/main/#/enterprise/view_expense/{}?org_id={}'.format(
+                        cluster_domain,
+                        expense.expense_id,
+                        org_id
+                    )
+                }
+            )
+
+            line = {
+                'account': {
+                    'internalId': line.account_id
+                },
+                'amount': line.amount,
+                'memo': line.memo,
+                'department': {
+                    'internalId': line.department_id
+                },
+                'class': {
+                    'internalId': line.class_id
+                },
+                'location': {
+                    'internalId': line.location_id
+                },
+                'customer': {
+                    'internalId': line.customer_id
+                },
+                'customFieldList': netsuite_custom_segments,
+                'isBillable': line.billable,
+            }
+            lines.append(line)
+
+        return lines
+
+    def __construct_credit_card_charge(
+            self, credit_card_charge: CreditCardCharge,
+            credit_card_charge_lineitems: List[CreditCardChargeLineItem], attachment_links: Dict) -> Dict:
+        """
+        Create a credit_card_charge
+        :return: constructed credit_card_charge
+        """
+
+        fyle_credentials = FyleCredential.objects.get(workspace_id=credit_card_charge.expense_group.workspace_id)
+        fyle_connector = FyleConnector(fyle_credentials.refresh_token, credit_card_charge.expense_group.workspace_id)
+
+        cluster_domain = fyle_connector.get_cluster_domain()
+        org_id = Workspace.objects.get(id=credit_card_charge.expense_group.workspace_id).fyle_org_id
+
+        credit_card_charge_payload = {
+            'account': {
+                'internalId': credit_card_charge.credit_card_account_id
+            },
+            'entity': {
+                'internalId': credit_card_charge.entity_id
+            },
+            'subsidiary': {
+                'internalId': credit_card_charge.subsidiary_id
+            },
+            'location': {
+                'internalId': credit_card_charge.location_id
+            },
+            'currency': {
+                'internalId': credit_card_charge.currency
+            },
+            'tranDate': credit_card_charge.transaction_date,
+            'memo': credit_card_charge.memo,
+            'expenseList': self.__construct_credit_card_charge_lineitems(
+                credit_card_charge_lineitems, attachment_links, cluster_domain['cluster_domain'], org_id
+            ),
+            'externalId': credit_card_charge.external_id
+        }
+
+        return credit_card_charge_payload
+
+    def post_credit_card_charge(self, credit_card_charge: CreditCardCharge,
+                                credit_card_charge_lineitems: List[CreditCardChargeLineItem], attachment_links: Dict):
+        """
+        Post vendor credit_card_charges to NetSuite
+        """
+        credit_card_charges_payload = self.__construct_credit_card_charge(
+            credit_card_charge, credit_card_charge_lineitems, attachment_links)
+
+        account = self.__netsuite_credentials.ns_account_id.replace('_', '-')
+        consumer_key = self.__netsuite_credentials.ns_consumer_key
+        consumer_secret = self.__netsuite_credentials.ns_consumer_secret
+        token_key = self.__netsuite_credentials.ns_token_id
+        token_secret = self.__netsuite_credentials.ns_token_secret
+
+        url = f"https://{account.lower()}.restlets.api.netsuite.com/app/site/hosting/restlet.nl?" \
+              f"script=customscript_cc_charge_fyle&deploy=customdeploy_cc_charge_fyle"
+
+        oauth = OAuth1Session(
+            client_key=consumer_key,
+            client_secret=consumer_secret,
+            resource_owner_key=token_key,
+            resource_owner_secret=token_secret,
+            realm=account,
+            signature_method='HMAC-SHA256'
+        )
+
+        raw_response = oauth.post(
+            url, headers={'Content-Type': 'application/json'}, data=json.dumps(credit_card_charges_payload))
+
+        status_code = raw_response.status_code
+        response = json.loads(raw_response.text)
+
+        if status_code == 200 and 'success' in response and response['success']:
+            return response
+
+        raise NetSuiteRequestError(code=response['name'], message=response['message'])
+
+    
+    @staticmethod
     def __construct_expense_report_lineitems(
-            expense_report_lineitems: List[ExpenseReportLineItem], attachment_links: Dict, cluster_domain: str, org_id: str
+            expense_report_lineitems: List[ExpenseReportLineItem], attachment_links: Dict, cluster_domain: str,
+            org_id: str
     ) -> List[Dict]:
         """
         Create expense report line items
@@ -1379,7 +1526,7 @@ class NetSuiteConnector:
             'applyList': {
                 'apply':
                     self.__construct_vendor_payment_lineitems(vendor_payment_lineitems),
-                    'replaceAll': 'true'
+                'replaceAll': 'true'
             },
             'creditList': None,
             'billPay': None,

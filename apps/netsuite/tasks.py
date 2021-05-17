@@ -23,7 +23,7 @@ from apps.tasks.models import TaskLog
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential, WorkspaceGeneralSettings
 
 from .models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, JournalEntryLineItem, \
-    VendorPayment, VendorPaymentLineitem
+    VendorPayment, VendorPaymentLineitem, CreditCardCharge, CreditCardChargeLineItem
 from .utils import NetSuiteConnector
 
 logger = logging.getLogger(__name__)
@@ -70,6 +70,29 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense_id: str, ex
         )
 
 
+def get_or_create_credit_card_vendor(expense_group: ExpenseGroup, merchant: str):
+    """
+    Get or create car default vendor
+    :param expense_group: Expense Group
+    :param merchant: Fyle Expense Merchant
+    :return:
+    """
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
+    netsuite_connection = NetSuiteConnector(
+        netsuite_credentials=netsuite_credentials, workspace_id=int(expense_group.workspace_id))
+
+    vendor = netsuite_connection.connection.vendors.search(attribute='entityId', value=merchant, operator='is')
+
+    if not vendor:
+        created_vendor = netsuite_connection.post_vendor(expense_group=expense_group, merchant=merchant)
+        return netsuite_connection.create_destination_attribute(
+            'vendor', created_vendor['entityId'], created_vendor['internalId'])
+    else:
+        vendor = vendor[0]
+        return netsuite_connection.create_destination_attribute(
+            'vendor', vendor['entityId'], vendor['internalId'])
+
+
 def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_connection: NetSuiteConnector,
                                       auto_map_employees_preference: str):
     try:
@@ -93,6 +116,8 @@ def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_conn
         )
 
         try:
+            filters = {}
+
             if auto_map_employees_preference == 'EMAIL':
                 filters = {
                     'detail__email__iexact': source_employee.value,
@@ -178,6 +203,103 @@ def create_bill(expense_group, task_log_id):
 
             task_log.detail = created_bill
             task_log.bill = bill_object
+            task_log.status = 'COMPLETE'
+
+            task_log.save()
+
+            expense_group.exported_at = datetime.now()
+            expense_group.save()
+
+    except NetSuiteCredentials.DoesNotExist:
+        logger.exception(
+            'NetSuite Credentials not found for workspace_id %s / expense group %s',
+            expense_group.id,
+            expense_group.workspace_id
+        )
+        detail = {
+            'expense_group_id': expense_group.id,
+            'message': 'NetSuite Account not connected'
+        }
+        task_log.status = 'FAILED'
+        task_log.detail = detail
+
+        task_log.save()
+
+    except NetSuiteRequestError as exception:
+        all_details = []
+        logger.exception({'error': exception})
+        detail = json.dumps(exception.__dict__)
+        detail = json.loads(detail)
+        task_log.status = 'FAILED'
+
+        all_details.append({
+            'expense_group_id': expense_group.id,
+            'value': 'NetSuite System Error',
+            'type': detail['code'],
+            'message': detail['message']
+        })
+        task_log.detail = all_details
+
+        task_log.save()
+
+    except BulkError as exception:
+        logger.error(exception.response)
+        detail = exception.response
+        task_log.status = 'FAILED'
+        task_log.detail = detail
+
+        task_log.save()
+
+    except Exception:
+        error = traceback.format_exc()
+        task_log.detail = {
+            'error': error
+        }
+        task_log.status = 'FATAL'
+        task_log.save()
+        logger.exception('Something unexpected happened workspace_id: %s %s', task_log.workspace_id, task_log.detail)
+
+
+def create_credit_card_charge(expense_group, task_log_id):
+    task_log = TaskLog.objects.get(id=task_log_id)
+
+    if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
+        task_log.status = 'IN_PROGRESS'
+        task_log.save()
+    else:
+        return
+
+    general_settings = WorkspaceGeneralSettings.objects.get(workspace_id=expense_group.workspace_id)
+
+    try:
+        netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
+
+        netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
+
+        merchant = expense_group.expenses.first().vendor
+        get_or_create_credit_card_vendor(expense_group, merchant)
+
+        with transaction.atomic():
+            __validate_expense_group(expense_group, general_settings)
+
+            credit_card_charge_object = CreditCardCharge.create_charge_card_transaction(expense_group)
+
+            credit_card_charge_lineitems_objects = CreditCardChargeLineItem.create_credit_card_charge_lineitems(
+                expense_group
+            )
+            attachment_links = {}
+
+            for expense_id in expense_group.expenses.values_list('expense_id', flat=True):
+                attachment_link = load_attachments(netsuite_connection, expense_id, expense_group)
+
+                if attachment_link:
+                    attachment_links[expense_id] = attachment_link
+
+            created_credit_card_charge = netsuite_connection.post_credit_card_charge(
+                credit_card_charge_object, credit_card_charge_lineitems_objects, attachment_links)
+
+            task_log.detail = created_credit_card_charge
+            task_log.credit_card_purchase = credit_card_charge_object
             task_log.status = 'COMPLETE'
 
             task_log.save()
