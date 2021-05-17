@@ -1,11 +1,11 @@
 from django.urls import path
 
 from .views import VendorView, AccountView, DepartmentView, SubsidiaryView, BillView, BillScheduleView, \
-    ClassificationView, LocationView, EmployeeView, ExpenseReportView, ExpenseReportScheduleView, JournalEntryView,\
+    ClassificationView, LocationView, EmployeeView, ExpenseReportView, ExpenseReportScheduleView, JournalEntryView, \
     JournalEntryScheduleView, BankAccountView, CreditCardAccountView, AccountsPayableView, ExpenseCategoryView, \
-    CurrencyView, NetSuiteFieldsView, SyncCustomFieldsView, CustomSegmentView, VendorPaymentAccountView,\
-    ReimburseNetSuitePaymentsView, VendorPaymentView, CustomerView, ProjectView, CCCExpenseCategoryView, CCCAccountView,\
-    SyncNetSuiteDimensionView, RefreshNetSuiteDimensionView
+    CurrencyView, NetSuiteFieldsView, SyncCustomFieldsView, CustomSegmentView, VendorPaymentAccountView, \
+    ReimburseNetSuitePaymentsView, VendorPaymentView, CustomerView, ProjectView, CCCExpenseCategoryView, CCCAccountView, \
+    SyncNetSuiteDimensionView, RefreshNetSuiteDimensionView, CreditCardChargeScheduleView
 
 urlpatterns = [
     path('vendors/', VendorView.as_view()),
@@ -31,6 +31,7 @@ urlpatterns = [
     path('expense_reports/trigger/', ExpenseReportScheduleView.as_view()),
     path('journal_entries/', JournalEntryView.as_view()),
     path('journal_entries/trigger/', JournalEntryScheduleView.as_view()),
+    path('credit_card_charges/trigger/', CreditCardChargeScheduleView.as_view()),
     path('netsuite_fields/', NetSuiteFieldsView.as_view()),
     path('custom_fields/', SyncCustomFieldsView.as_view()),
     path('custom_segments/', CustomSegmentView.as_view()),

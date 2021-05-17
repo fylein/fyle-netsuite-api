@@ -23,7 +23,7 @@ from .serializers import BillSerializer, ExpenseReportSerializer, JournalEntrySe
     CustomSegmentSerializer
 from .tasks import schedule_bills_creation, create_bill, schedule_expense_reports_creation, create_expense_report, \
     create_journal_entry, schedule_journal_entry_creation, create_vendor_payment, check_netsuite_object_status, \
-    process_reimbursements
+    process_reimbursements, schedule_credit_card_charge_creation
 from .models import Bill, ExpenseReport, JournalEntry, CustomSegment
 from .utils import NetSuiteConnector
 
@@ -648,6 +648,22 @@ class BillScheduleView(generics.CreateAPIView):
         expense_group_ids = request.data.get('expense_group_ids', [])
 
         schedule_bills_creation(
+            kwargs['workspace_id'], expense_group_ids)
+
+        return Response(
+            status=status.HTTP_200_OK
+        )
+
+
+class CreditCardChargeScheduleView(generics.CreateAPIView):
+    """
+    Schedule Credit Card Charge creation
+    """
+
+    def post(self, request, *args, **kwargs):
+        expense_group_ids = request.data.get('expense_group_ids', [])
+
+        schedule_credit_card_charge_creation(
             kwargs['workspace_id'], expense_group_ids)
 
         return Response(
