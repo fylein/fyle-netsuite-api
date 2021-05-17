@@ -373,6 +373,7 @@ class NetSuiteConnector:
             'isPerson': True if vendor else False,
             'entityId': netsuite_entity_id,
             'email': vendor.value if vendor else None,
+            'companyName': merchant if merchant else None,
             'currency': {
                 "name": None,
                 "internalId": currency.destination_id if currency else '1',
