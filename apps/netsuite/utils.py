@@ -85,7 +85,7 @@ class NetSuiteConnector:
                         'value': account['acctName'],
                         'destination_id': account['internalId'],
                         'detail': {
-                            'account_type': account['accType']
+                            'account_type': account['acctType']
                         }
                     })
 

@@ -44,8 +44,7 @@ def create_or_update_general_settings(general_settings_payload: Dict, workspace_
         }
     )
 
-    if general_settings.map_merchant_to_vendor and \
-            general_settings.corporate_credit_card_expenses_object == 'CREDIT CARD CHARGE':
+    if general_settings.corporate_credit_card_expenses_object == 'CREDIT CARD CHARGE':
         expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=workspace_id)
 
         ccc_expense_group_fields = expense_group_settings.corporate_credit_card_expense_group_fields
