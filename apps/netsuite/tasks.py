@@ -703,7 +703,7 @@ def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: L
         expense_groups = ExpenseGroup.objects.filter(
             Q(tasklog__id__isnull=True) | ~Q(tasklog__status__in=['IN_PROGRESS', 'COMPLETE']),
             workspace_id=workspace_id, id__in=expense_group_ids,
-            creditcardcharge__id=True, exported_at__isnull=True
+            creditcardcharge__id__isnull=True, exported_at__isnull=True
         ).all()
 
         chain = Chain(cached=False)
