@@ -108,22 +108,41 @@ def create_credit_card_category_mappings(reimbursable_expenses_object,
         ).filter(count=1).values_list('source_id')
     )
 
+    if reimbursable_expenses_object == 'EXPENSE REPORT' and corporate_credit_card_expenses_object == 'EXPENSE REPORT':
+        destination_type = 'CCC_EXPENSE_CATEGORY'
+    else:
+        destination_type = 'CCC_ACCOUNT'
+
+    destination_values = []
+    for mapping in category_mappings:
+        destination_values.append(mapping.destination.value)
+
+    destination_attributes = DestinationAttribute.objects.filter(
+        workspace_id=workspace_id,
+        attribute_type=destination_type,
+        value__in=destination_values
+    )
+
+    destination_id_map = {}
+    for attribute in destination_attributes:
+        destination_id_map[attribute.value] = attribute.id
+
     for mapping in category_mappings:
         if reimbursable_expenses_object == 'EXPENSE REPORT':
             if corporate_credit_card_expenses_object == 'EXPENSE REPORT':
                 mapping_batch.append(
                     Mapping(
                         source_type='CATEGORY',
-                        destination_type='CCC_EXPENSE_CATEGORY',
+                        destination_type=destination_type,
                         source_id=mapping.source.id,
-                        destination_id=mapping.destination.id,
+                        destination_id=destination_id_map[mapping.destination.value],
                         workspace_id=workspace_id
                     )
                 )
 
             elif corporate_credit_card_expenses_object in ('BILL', 'JOURNAL ENTRY'):
                 destination_attribute = DestinationAttribute.objects.filter(
-                    attribute_type='CCC_ACCOUNT',
+                    attribute_type=destination_type,
                     destination_id=mapping.destination.detail['account_internal_id'],
                     workspace_id=workspace_id
                 ).first()
@@ -131,7 +150,7 @@ def create_credit_card_category_mappings(reimbursable_expenses_object,
                 mapping_batch.append(
                     Mapping(
                         source_type='CATEGORY',
-                        destination_type='CCC_ACCOUNT',
+                        destination_type=destination_type,
                         source_id=mapping.source.id,
                         destination_id=destination_attribute.id,
                         workspace_id=workspace_id
@@ -142,9 +161,9 @@ def create_credit_card_category_mappings(reimbursable_expenses_object,
             mapping_batch.append(
                 Mapping(
                     source_type='CATEGORY',
-                    destination_type='CCC_ACCOUNT',
+                    destination_type=destination_type,
                     source_id=mapping.source.id,
-                    destination_id=mapping.destination.id,
+                    destination_id=destination_id_map[mapping.destination.value],
                     workspace_id=workspace_id
                 )
             )
