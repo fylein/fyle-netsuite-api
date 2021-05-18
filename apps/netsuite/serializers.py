@@ -1,62 +1,7 @@
 from rest_framework import serializers
 
 from fyle_accounting_mappings.models import DestinationAttribute
-from .models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, JournalEntryLineItem, \
-    CustomSegment, VendorPayment, VendorPaymentLineitem
-
-
-class BillSerializer(serializers.ModelSerializer):
-    """
-    NetSuite Bill serializer
-    """
-    class Meta:
-        model = Bill
-        fields = '__all__'
-
-
-class BillLineItemSerializer(serializers.ModelSerializer):
-    """
-    NetSuite Bill Lineitem serializer
-    """
-    class Meta:
-        model = BillLineitem
-        fields = '__all__'
-
-
-class ExpenseReportSerializer(serializers.ModelSerializer):
-    """
-    NetSuite Expense Report serializer
-    """
-    class Meta:
-        model = ExpenseReport
-        fields = '__all__'
-
-
-class ExpenseReportLineItemSerializer(serializers.ModelSerializer):
-    """
-    NetSuite ExpenseReport Lineitem serializer
-    """
-    class Meta:
-        model = ExpenseReportLineItem
-        fields = '__all__'
-
-
-class JournalEntrySerializer(serializers.ModelSerializer):
-    """
-    NetSuite Journal Entry serializer
-    """
-    class Meta:
-        model = JournalEntry
-        fields = '__all__'
-
-
-class JournalEntryLineItemSerializer(serializers.ModelSerializer):
-    """
-    NetSuite JournalEntry Lineitem serializer
-    """
-    class Meta:
-        model = JournalEntryLineItem
-        fields = '__all__'
+from .models import CustomSegment
 
 
 class NetSuiteFieldSerializer(serializers.ModelSerializer):
@@ -74,22 +19,4 @@ class CustomSegmentSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = CustomSegment
-        fields = '__all__'
-
-
-class VendorPaymentSerializer(serializers.ModelSerializer):
-    """
-    NetSuite Vendor Payment serializer
-    """
-    class Meta:
-        model = VendorPayment
-        fields = '__all__'
-
-
-class VendorPaymentLineItemSerializer(serializers.ModelSerializer):
-    """
-    NetSuite Vendor Payment Lineitem serializer
-    """
-    class Meta:
-        model = VendorPaymentLineitem
         fields = '__all__'
