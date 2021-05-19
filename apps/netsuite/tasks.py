@@ -579,7 +579,7 @@ def __validate_expense_group(expense_group: ExpenseGroup, general_settings: Work
         })
 
     if general_settings.corporate_credit_card_expenses_object and \
-            general_settings.corporate_credit_card_expenses_object == 'BILL' and \
+            general_settings.corporate_credit_card_expenses_object in ('BILL', 'CREDIT CARD CHARGE') and \
             expense_group.fund_source == 'CCC':
         if general_mapping:
             if not (general_mapping.default_ccc_vendor_id or general_mapping.default_ccc_vendor_name):
