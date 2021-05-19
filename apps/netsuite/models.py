@@ -523,7 +523,7 @@ class CreditCardChargeLineItem(models.Model):
             if not billable:
                 billable = False
         else:
-            billable = None
+            billable = False
 
         credit_card_charge_lineitem_object, _ = CreditCardChargeLineItem.objects.update_or_create(
             credit_card_charge=credit_card_charge,

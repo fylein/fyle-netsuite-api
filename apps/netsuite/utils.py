@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from typing import List, Dict
 import logging
 
@@ -955,6 +956,8 @@ class NetSuiteConnector:
         cluster_domain = fyle_connector.get_cluster_domain()
         org_id = Workspace.objects.get(id=credit_card_charge.expense_group.workspace_id).fyle_org_id
 
+        transaction_date = datetime.strptime(credit_card_charge.transaction_date, '%Y-%m-%d').strftime('%d/%m/%Y')
+
         credit_card_charge_payload = {
             'account': {
                 'internalId': credit_card_charge.credit_card_account_id
@@ -971,9 +974,9 @@ class NetSuiteConnector:
             'currency': {
                 'internalId': credit_card_charge.currency
             },
-            'tranDate': credit_card_charge.transaction_date,
+            'tranDate': transaction_date,
             'memo': credit_card_charge.memo,
-            'expenseList': self.__construct_credit_card_charge_lineitems(
+            'expenses': self.__construct_credit_card_charge_lineitems(
                 credit_card_charge_lineitem, attachment_links, cluster_domain['cluster_domain'], org_id
             ),
             'externalId': credit_card_charge.external_id
@@ -1008,17 +1011,24 @@ class NetSuiteConnector:
         )
 
         raw_response = oauth.post(
-            url, headers={'Content-Type': 'application/json'}, data=json.dumps(credit_card_charges_payload))
+            url, headers={
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }, data=json.dumps(credit_card_charges_payload))
 
         status_code = raw_response.status_code
-        response = json.loads(raw_response.text)
 
-        if status_code == 200 and 'success' in response and response['success']:
-            return response
+        if status_code == 200 and 'success' in json.loads(raw_response.text) \
+                and json.loads(raw_response.text)['success']:
+            return json.loads(raw_response.text)
 
-        raise NetSuiteRequestError(code=response['name'], message=response['message'])
+        response = eval(raw_response.text)
 
-    
+        code = response['error']['code']
+        message = json.loads(response['error']['message'])['message']
+
+        raise NetSuiteRequestError(code=code, message=message)
+
     @staticmethod
     def __construct_expense_report_lineitems(
             expense_report_lineitems: List[ExpenseReportLineItem], attachment_links: Dict, cluster_domain: str,
