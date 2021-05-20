@@ -738,7 +738,8 @@ def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List
     if expense_group_ids:
         expense_groups = ExpenseGroup.objects.filter(
             Q(tasklog__id__isnull=True) | ~Q(tasklog__status__in=['IN_PROGRESS', 'COMPLETE']),
-            workspace_id=workspace_id, id__in=expense_group_ids, expensereport__id__isnull=True, exported_at__isnull=True
+            workspace_id=workspace_id, id__in=expense_group_ids,
+            expensereport__id__isnull=True, exported_at__isnull=True
         ).all()
 
         chain = Chain(cached=False)
