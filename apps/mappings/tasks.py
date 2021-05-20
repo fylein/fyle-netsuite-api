@@ -120,8 +120,8 @@ def create_credit_card_category_mappings(reimbursable_expenses_object,
         if mapping.destination.detail and 'account_internal_id' in mapping.destination.detail:
             account_internal_ids.append(mapping.destination.detail['account_internal_id'])
 
-    if reimbursable_expenses_object == 'EXPENSE REPORT' and \
-        corporate_credit_card_expenses_object in ('BILL', 'JOURNAL ENTRY'):
+    if reimbursable_expenses_object == 'EXPENSE REPORT' and corporate_credit_card_expenses_object in (
+            'BILL', 'JOURNAL ENTRY', 'CREDIT CARD CHARGE'):
         destination_attributes = DestinationAttribute.objects.filter(
             workspace_id=workspace_id,
             attribute_type=destination_type,
