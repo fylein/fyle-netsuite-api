@@ -419,6 +419,19 @@ class CreditCardCharge(models.Model):
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
         subsidiary_mappings = SubsidiaryMapping.objects.get(workspace_id=expense_group.workspace_id)
 
+        account = Mapping.objects.filter(
+            source_type='EMPLOYEE',
+            destination_type='CREDIT_CARD_ACCOUNT',
+            source__value=description.get('employee_email'),
+            workspace_id=expense_group.workspace_id
+        ).first()
+
+        print(account)
+
+        account_id = account.destination.destination_id if account else general_mappings.default_ccc_account_id
+
+        print(account_id)
+
         currency = DestinationAttribute.objects.filter(value=expense.currency,
                                                        workspace_id=expense_group.workspace_id,
                                                        attribute_type='CURRENCY').first()
@@ -441,7 +454,7 @@ class CreditCardCharge(models.Model):
             expense_group=expense_group,
             defaults={
                 'subsidiary_id': subsidiary_mappings.internal_id,
-                'credit_card_account_id': general_mappings.default_ccc_account_id,
+                'credit_card_account_id': account_id,
                 'entity_id': vendor_id,
                 'location_id': general_mappings.location_id if general_mappings.location_level in [
                     'TRANSACTION_BODY', 'ALL'] else None,
