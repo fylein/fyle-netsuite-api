@@ -153,8 +153,7 @@ def create_credit_card_category_mappings(reimbursable_expenses_object,
                         workspace_id=workspace_id
                     )
                 )
-
-            elif corporate_credit_card_expenses_object in ('BILL', 'JOURNAL ENTRY'):
+            elif corporate_credit_card_expenses_object in ('BILL', 'JOURNAL ENTRY', 'CREDIT CARD CHARGE'):
                 for value in destination_id_map:
                     if destination_id_map[value]['destination_id'] == mapping.destination.detail['account_internal_id']:
                         mapping_batch.append(
@@ -269,6 +268,7 @@ def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_
             })
 
     return payload
+
 
 def post_projects_in_batches(fyle_connection: FyleConnector, workspace_id: int):
     existing_project_names = ExpenseAttribute.objects.filter(

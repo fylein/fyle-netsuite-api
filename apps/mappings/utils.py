@@ -104,7 +104,8 @@ class MappingUtils:
             params['default_ccc_account_name'] = general_mapping.get('default_ccc_account_name')
             params['default_ccc_account_id'] = general_mapping.get('default_ccc_account_id')
 
-        if general_settings.corporate_credit_card_expenses_object == 'BILL':
+        if general_settings.corporate_credit_card_expenses_object == 'BILL' or \
+                general_settings.corporate_credit_card_expenses_object == 'CREDIT CARD CHARGE':
             assert_valid('default_ccc_vendor_name' in general_mapping and general_mapping['default_ccc_vendor_name'],
                          'default ccc vendor name field is blank')
             assert_valid('default_ccc_vendor_id' in general_mapping and general_mapping['default_ccc_vendor_id'],

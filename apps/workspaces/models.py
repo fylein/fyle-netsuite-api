@@ -89,6 +89,7 @@ class WorkspaceGeneralSettings(models.Model):
                                                          help_text='Auto Sync Payments from Fyle to Netsuite')
     sync_netsuite_to_fyle_payments = models.BooleanField(default=False,
                                                          help_text='Auto Sync Payments from NetSuite to Fyle')
+    auto_create_merchants = models.BooleanField(default=False, help_text='Auto Create Merchants for CC Charges')
     auto_map_employees = models.CharField(max_length=50,
                                           help_text='Auto Map Employees type from NetSuite to Fyle', null=True)
     auto_create_destination_entity = models.BooleanField(default=False, help_text='Auto create vendor / employee')

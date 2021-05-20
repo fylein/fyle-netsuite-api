@@ -17,9 +17,12 @@ from fyle_netsuite_api.utils import assert_valid
 from apps.workspaces.models import NetSuiteCredentials, Workspace
 
 from .serializers import NetSuiteFieldSerializer, CustomSegmentSerializer
+
 from .tasks import schedule_bills_creation, schedule_expense_reports_creation, schedule_journal_entry_creation,\
-    create_vendor_payment, check_netsuite_object_status, process_reimbursements
+    create_vendor_payment, check_netsuite_object_status, process_reimbursements, schedule_credit_card_charge_creation
+
 from .models import CustomSegment
+
 from .utils import NetSuiteConnector
 
 logger = logging.getLogger(__name__)
@@ -74,6 +77,22 @@ class BillScheduleView(generics.CreateAPIView):
         expense_group_ids = request.data.get('expense_group_ids', [])
 
         schedule_bills_creation(
+            kwargs['workspace_id'], expense_group_ids)
+
+        return Response(
+            status=status.HTTP_200_OK
+        )
+
+
+class CreditCardChargeScheduleView(generics.CreateAPIView):
+    """
+    Schedule Credit Card Charge creation
+    """
+
+    def post(self, request, *args, **kwargs):
+        expense_group_ids = request.data.get('expense_group_ids', [])
+
+        schedule_credit_card_charge_creation(
             kwargs['workspace_id'], expense_group_ids)
 
         return Response(
@@ -309,10 +328,13 @@ class SyncNetSuiteDimensionView(generics.ListCreateAPIView):
         """
         try:
             workspace = Workspace.objects.get(id=kwargs['workspace_id'])
+
+            time_interval = 0
+
             if workspace.destination_synced_at:
                 time_interval = datetime.now(timezone.utc) - workspace.destination_synced_at
 
-            if workspace.destination_synced_at is None or time_interval.days > 0:
+            if not workspace.destination_synced_at or time_interval.days > 0:
                 ns_credentials = NetSuiteCredentials.objects.get(workspace_id=kwargs['workspace_id'])
                 ns_connector = NetSuiteConnector(ns_credentials, workspace_id=kwargs['workspace_id'])
 

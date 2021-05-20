@@ -77,6 +77,7 @@ def get_class_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
             class_id = mapping.destination.destination_id
     return class_id
 
+
 def get_customer_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
     project_setting: MappingSetting = MappingSetting.objects.filter(
         workspace_id=expense_group.workspace_id,
@@ -100,6 +101,7 @@ def get_customer_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
         if mapping:
             customer_id = mapping.destination.destination_id
     return customer_id
+
 
 def get_location_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
     location_setting: MappingSetting = MappingSetting.objects.filter(
@@ -381,6 +383,177 @@ class BillLineitem(models.Model):
             bill_lineitem_objects.append(bill_lineitem_object)
 
         return bill_lineitem_objects
+
+
+class CreditCardCharge(models.Model):
+    """
+    NetSuite Credit Card Charge
+    """
+    id = models.AutoField(primary_key=True)
+    expense_group = models.OneToOneField(ExpenseGroup, on_delete=models.PROTECT, help_text='Expense group reference')
+    credit_card_account_id = models.CharField(max_length=255, help_text='NetSuite Accounts Payable Account id')
+    entity_id = models.CharField(max_length=255, help_text='NetSuite vendor id')
+    subsidiary_id = models.CharField(max_length=255, help_text='NetSuite subsidiary id')
+    location_id = models.CharField(max_length=255, help_text='NetSuite Location id', null=True)
+    currency = models.CharField(max_length=255, help_text='CC Charge Currency')
+    memo = models.TextField(help_text='CC Charge Description')
+    external_id = models.CharField(max_length=255, unique=True, help_text='Fyle reimbursement id')
+    transaction_date = models.DateTimeField(help_text='CC Charge transaction date')
+    created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
+    updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
+
+    class Meta:
+        db_table = 'credit_card_charges'
+
+    @staticmethod
+    def create_credit_card_charge(expense_group: ExpenseGroup):
+        """
+        Create Credit Card Charge
+        :param expense_group: expense group
+        :return: charge card tranasaction object
+        """
+        description = expense_group.description
+
+        expense = expense_group.expenses.first()
+
+        general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
+        subsidiary_mappings = SubsidiaryMapping.objects.get(workspace_id=expense_group.workspace_id)
+
+        account = Mapping.objects.filter(
+            source_type='EMPLOYEE',
+            destination_type='CREDIT_CARD_ACCOUNT',
+            source__value=description.get('employee_email'),
+            workspace_id=expense_group.workspace_id
+        ).first()
+
+        account_id = account.destination.destination_id if account else general_mappings.default_ccc_account_id
+
+        currency = DestinationAttribute.objects.filter(value=expense.currency,
+                                                       workspace_id=expense_group.workspace_id,
+                                                       attribute_type='CURRENCY').first()
+
+        merchant = expense.vendor if expense.vendor else ''
+
+        vendor = DestinationAttribute.objects.filter(
+            value__iexact=merchant, attribute_type='VENDOR', workspace_id=expense_group.workspace_id
+        ).first()
+
+        expense_group.description['spent_at'] = expense.spent_at.strftime("%Y-%m-%d")
+        expense_group.save()
+
+        if not vendor:
+            vendor_id = general_mappings.default_ccc_vendor_id
+        else:
+            vendor_id = vendor.destination_id
+
+        credit_charge_object, _ = CreditCardCharge.objects.update_or_create(
+            expense_group=expense_group,
+            defaults={
+                'subsidiary_id': subsidiary_mappings.internal_id,
+                'credit_card_account_id': account_id,
+                'entity_id': vendor_id,
+                'location_id': general_mappings.location_id if general_mappings.location_level in [
+                    'TRANSACTION_BODY', 'ALL'] else None,
+                'memo': 'Credit card expenses by {0}'.format(description.get('employee_email')),
+                'currency': currency.destination_id if currency else '1',
+                'transaction_date': get_transaction_date(expense_group),
+                'external_id': 'cc-charge {} - {}'.format(expense_group.id, description.get('employee_email'))
+            }
+        )
+        return credit_charge_object
+
+
+class CreditCardChargeLineItem(models.Model):
+    """
+    NetSuite Credit Card Charge Lineitem
+    """
+    id = models.AutoField(primary_key=True)
+    credit_card_charge = models.ForeignKey(
+        CreditCardCharge, on_delete=models.PROTECT, help_text='Reference to credit card charge')
+    expense = models.OneToOneField(Expense, on_delete=models.PROTECT, help_text='Reference to Expense')
+    account_id = models.CharField(max_length=255, help_text='NetSuite account id')
+    location_id = models.CharField(max_length=255, help_text='NetSuite location id', null=True)
+    department_id = models.CharField(max_length=255, help_text='NetSuite department id', null=True)
+    class_id = models.CharField(max_length=255, help_text='NetSuite Class id', null=True)
+    customer_id = models.CharField(max_length=255, help_text='NetSuite customer id', null=True)
+    amount = models.FloatField(help_text='CC Charge line amount')
+    billable = models.BooleanField(null=True, help_text='Expense Billable or not')
+    memo = models.TextField(help_text='NetSuite cc charge lineitem memo', null=True)
+    netsuite_custom_segments = JSONField(null=True, help_text='NetSuite Custom Segments')
+    created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
+    updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
+
+    class Meta:
+        db_table = 'credit_card_charge_lineitems'
+
+    @staticmethod
+    def create_credit_card_charge_lineitem(expense_group: ExpenseGroup):
+        """
+        Create credit card charge lineitems
+        :param expense_group: expense group
+        :return: credit card charge lineitems objects
+        """
+        lineitem = expense_group.expenses.first()
+        credit_card_charge = CreditCardCharge.objects.get(expense_group=expense_group)
+        general_settings: WorkspaceGeneralSettings = WorkspaceGeneralSettings.objects.get(
+            workspace_id=expense_group.workspace_id)
+        general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
+
+        credit_card_charge_lineitem_objects = []
+
+        category = lineitem.category if lineitem.category == lineitem.sub_category else '{0} / {1}'.format(
+            lineitem.category, lineitem.sub_category)
+
+        account = Mapping.objects.filter(
+            source_type='CATEGORY',
+            source__value=category,
+            destination_type='CCC_ACCOUNT',
+            workspace_id=expense_group.workspace_id
+        ).first()
+
+        class_id = get_class_id_or_none(expense_group, lineitem)
+
+        department_id = get_department_id_or_none(expense_group, lineitem)
+
+        location_id = get_location_id_or_none(expense_group, lineitem)
+
+        if not location_id:
+            if general_mappings.location_id:
+                location_id = general_mappings.location_id
+
+        custom_segments = get_custom_segments(expense_group, lineitem)
+
+        customer_id = None
+        if general_settings.import_projects:
+            customer_id = get_customer_id_or_none(expense_group, lineitem)
+
+        billable = lineitem.billable
+        if customer_id:
+            if not billable:
+                billable = False
+        else:
+            billable = False
+
+        credit_card_charge_lineitem_object, _ = CreditCardChargeLineItem.objects.update_or_create(
+            credit_card_charge=credit_card_charge,
+            expense_id=lineitem.id,
+            defaults={
+                'account_id': account.destination.destination_id if account else None,
+                'location_id': location_id if general_mappings.location_level in [
+                    'TRANSACTION_LINE', 'ALL'] else None,
+                'class_id': class_id,
+                'department_id': department_id,
+                'customer_id': customer_id,
+                'amount': lineitem.amount,
+                'billable': billable,
+                'memo': get_expense_purpose(lineitem, category),
+                'netsuite_custom_segments': custom_segments
+            }
+        )
+
+        credit_card_charge_lineitem_objects.append(credit_card_charge_lineitem_object)
+
+        return credit_card_charge_lineitem_object
 
 
 class ExpenseReport(models.Model):

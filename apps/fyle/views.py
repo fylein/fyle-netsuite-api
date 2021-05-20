@@ -43,7 +43,8 @@ class ExpenseGroupView(generics.ListCreateAPIView):
                 workspace_id=self.kwargs['workspace_id'],
                 bill__id__isnull=True,
                 expensereport__id__isnull=True,
-                journalentry__id__isnull=True
+                journalentry__id__isnull=True,
+                creditcardcharge__id__isnull=True
             ).order_by('-updated_at')
 
 
