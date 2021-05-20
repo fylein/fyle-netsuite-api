@@ -70,11 +70,12 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense_id: str, ex
         )
 
 
-def get_or_create_credit_card_vendor(expense_group: ExpenseGroup, merchant: str):
+def get_or_create_credit_card_vendor(expense_group: ExpenseGroup, merchant: str, auto_create_merchants: bool):
     """
     Get or create car default vendor
     :param expense_group: Expense Group
     :param merchant: Fyle Expense Merchant
+    :param auto_create_merchants: Create merchant if doesn't exist
     :return:
     """
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
@@ -84,8 +85,9 @@ def get_or_create_credit_card_vendor(expense_group: ExpenseGroup, merchant: str)
     vendor = netsuite_connection.connection.vendors.search(attribute='entityId', value=merchant, operator='is')
 
     if not vendor:
-        created_vendor = netsuite_connection.post_vendor(expense_group=expense_group, merchant=merchant)
-        return netsuite_connection.create_destination_attribute('vendor', merchant, created_vendor['internalId'])
+        if auto_create_merchants:
+            created_vendor = netsuite_connection.post_vendor(expense_group=expense_group, merchant=merchant)
+            return netsuite_connection.create_destination_attribute('vendor', merchant, created_vendor['internalId'])
     else:
         vendor = vendor[0]
         return netsuite_connection.create_destination_attribute(
@@ -276,7 +278,8 @@ def create_credit_card_charge(expense_group, task_log_id):
         netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
         merchant = expense_group.expenses.first().vendor
-        get_or_create_credit_card_vendor(expense_group, merchant)
+        auto_create_merchants = general_settings.auto_create_merchants
+        get_or_create_credit_card_vendor(expense_group, merchant, auto_create_merchants)
 
         with transaction.atomic():
             __validate_expense_group(expense_group, general_settings)
