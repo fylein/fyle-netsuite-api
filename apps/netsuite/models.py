@@ -426,11 +426,7 @@ class CreditCardCharge(models.Model):
             workspace_id=expense_group.workspace_id
         ).first()
 
-        print(account)
-
         account_id = account.destination.destination_id if account else general_mappings.default_ccc_account_id
-
-        print(account_id)
 
         currency = DestinationAttribute.objects.filter(value=expense.currency,
                                                        workspace_id=expense_group.workspace_id,

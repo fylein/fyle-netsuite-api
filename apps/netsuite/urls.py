@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import SubsidiaryView, BillScheduleView,  ExpenseReportScheduleView, JournalEntryScheduleView,\
+from .views import SubsidiaryView, BillScheduleView, ExpenseReportScheduleView, JournalEntryScheduleView,\
     NetSuiteFieldsView, SyncCustomFieldsView, CustomSegmentView, ReimburseNetSuitePaymentsView, \
     VendorPaymentView, SyncNetSuiteDimensionView, RefreshNetSuiteDimensionView, CreditCardChargeScheduleView
 
