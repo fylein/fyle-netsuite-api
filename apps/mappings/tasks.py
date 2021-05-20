@@ -108,43 +108,72 @@ def create_credit_card_category_mappings(reimbursable_expenses_object,
         ).filter(count=1).values_list('source_id')
     )
 
+    if reimbursable_expenses_object == 'EXPENSE REPORT' and corporate_credit_card_expenses_object == 'EXPENSE REPORT':
+        destination_type = 'CCC_EXPENSE_CATEGORY'
+    else:
+        destination_type = 'CCC_ACCOUNT'
+
+    destination_values = []
+    account_internal_ids = []
+    for mapping in category_mappings:
+        destination_values.append(mapping.destination.value)
+        if mapping.destination.detail and 'account_internal_id' in mapping.destination.detail:
+            account_internal_ids.append(mapping.destination.detail['account_internal_id'])
+
+    if reimbursable_expenses_object == 'EXPENSE REPORT' and \
+        corporate_credit_card_expenses_object in ('BILL', 'JOURNAL ENTRY'):
+        destination_attributes = DestinationAttribute.objects.filter(
+            workspace_id=workspace_id,
+            attribute_type=destination_type,
+            destination_id__in=account_internal_ids
+        ).all()
+    else:
+        destination_attributes = DestinationAttribute.objects.filter(
+            workspace_id=workspace_id,
+            attribute_type=destination_type,
+            value__in=destination_values
+        ).all()
+
+    destination_id_map = {}
+    for attribute in destination_attributes:
+        destination_id_map[attribute.value] = {
+            'id': attribute.id,
+            'destination_id': attribute.destination_id
+        }
+
     for mapping in category_mappings:
         if reimbursable_expenses_object == 'EXPENSE REPORT':
             if corporate_credit_card_expenses_object == 'EXPENSE REPORT':
                 mapping_batch.append(
                     Mapping(
                         source_type='CATEGORY',
-                        destination_type='CCC_EXPENSE_CATEGORY',
+                        destination_type=destination_type,
                         source_id=mapping.source.id,
-                        destination_id=mapping.destination.id,
+                        destination_id=destination_id_map[mapping.destination.value]['id'],
                         workspace_id=workspace_id
                     )
                 )
-
             elif corporate_credit_card_expenses_object in ('BILL', 'JOURNAL ENTRY', 'CREDIT CARD CHARGE'):
-                destination_attribute = DestinationAttribute.objects.filter(
-                    attribute_type='CCC_ACCOUNT',
-                    destination_id=mapping.destination.detail['account_internal_id'],
-                    workspace_id=workspace_id
-                ).first()
-
-                mapping_batch.append(
-                    Mapping(
-                        source_type='CATEGORY',
-                        destination_type='CCC_ACCOUNT',
-                        source_id=mapping.source.id,
-                        destination_id=destination_attribute.id,
-                        workspace_id=workspace_id
-                    )
-                )
+                for value in destination_id_map:
+                    if destination_id_map[value]['destination_id'] == mapping.destination.detail['account_internal_id']:
+                        mapping_batch.append(
+                            Mapping(
+                                source_type='CATEGORY',
+                                destination_type=destination_type,
+                                source_id=mapping.source.id,
+                                destination_id=destination_id_map[value]['id'],
+                                workspace_id=workspace_id
+                            )
+                        )
+                        break
 
         elif reimbursable_expenses_object in ('BILL', 'JOURNAL ENTRY'):
             mapping_batch.append(
                 Mapping(
                     source_type='CATEGORY',
-                    destination_type='CCC_ACCOUNT',
+                    destination_type=destination_type,
                     source_id=mapping.source.id,
-                    destination_id=mapping.destination.id,
+                    destination_id=destination_id_map[mapping.destination.value]['id'],
                     workspace_id=workspace_id
                 )
             )
