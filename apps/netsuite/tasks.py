@@ -830,12 +830,16 @@ def create_netsuite_payment_objects(netsuite_objects, object_type, workspace_id)
         netsuite_object_task_log = TaskLog.objects.get(
             expense_group=netsuite_object.expense_group, status='COMPLETE')
 
-        if object_type == 'BILL':
-            netsuite_entry = netsuite_connection.get_bill(netsuite_object_task_log.detail['internalId'])
-        else:
-            netsuite_entry = netsuite_connection.get_expense_report(netsuite_object_task_log.detail['internalId'])
+        # When the record is deleted, netsuite sdk would throw an exception RCRD_DSNT_EXIST
+        try:
+            if object_type == 'BILL':
+                netsuite_entry = netsuite_connection.get_bill(netsuite_object_task_log.detail['internalId'])
+            else:
+                netsuite_entry = netsuite_connection.get_expense_report(netsuite_object_task_log.detail['internalId'])
+        except Exception:
+            netsuite_entry = None
 
-        if netsuite_entry['status'] != 'Paid In Full':
+        if netsuite_entry and netsuite_entry['status'] != 'Paid In Full':
             if expense_group_reimbursement_status:
                 if entity_id not in netsuite_payment_objects:
                     netsuite_payment_objects[entity_id] = {
