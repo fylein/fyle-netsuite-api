@@ -956,7 +956,7 @@ class NetSuiteConnector:
         cluster_domain = fyle_connector.get_cluster_domain()
         org_id = Workspace.objects.get(id=credit_card_charge.expense_group.workspace_id).fyle_org_id
 
-        transaction_date = datetime.strptime(credit_card_charge.transaction_date, '%Y-%m-%d').strftime('%d/%m/%Y')
+        transaction_date = datetime.strptime(credit_card_charge.transaction_date, '%Y-%m-%d').strftime('%m/%d/%Y')
 
         credit_card_charge_payload = {
             'account': {
