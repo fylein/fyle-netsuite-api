@@ -70,7 +70,7 @@ def upload_categories_to_fyle(workspace_id, reimbursable_expenses_object):
         netsuite_credentials=netsuite_credentials,
         workspace_id=workspace_id
     )
-    fyle_connection.sync_categories(False)
+    fyle_connection.sync_categories()
 
     if reimbursable_expenses_object == 'EXPENSE REPORT':
         netsuite_connection.sync_expense_categories()
@@ -89,7 +89,7 @@ def upload_categories_to_fyle(workspace_id, reimbursable_expenses_object):
 
     if fyle_payload:
         fyle_connection.connection.Categories.post(fyle_payload)
-        fyle_connection.sync_categories(False)
+        fyle_connection.sync_categories()
 
     return netsuite_attributes
 

@@ -174,15 +174,28 @@ class FyleConnector:
                 }
             })
 
-        ExpenseAttribute.bulk_create_or_update_expense_attributes(employee_attributes, 'EMPLOYEE', self.workspace_id, True)
+        ExpenseAttribute.bulk_create_or_update_expense_attributes(
+            employee_attributes, 'EMPLOYEE', self.workspace_id, True)
 
         return []
 
-    def sync_categories(self, active_only: bool):
+    def existing_db_count(self, attribute_type: str):
+        return ExpenseAttribute.objects.filter(
+            workspace_id=self.workspace_id,
+            attribute_type=attribute_type
+        ).count()
+
+    def sync_categories(self):
         """
         Get categories from fyle
         """
-        categories = self.connection.Categories.get(active_only=active_only)['data']
+        existing_db_count = self.existing_db_count('CATEGORY')
+        existing_category_count = self.connection.Categories.count()['count']
+
+        if existing_db_count == existing_category_count:
+            return
+
+        categories = self.connection.Categories.get()['data']
 
         category_attributes = []
 
@@ -201,11 +214,17 @@ class FyleConnector:
 
         return []
 
-    def sync_cost_centers(self, active_only: bool):
+    def sync_cost_centers(self):
         """
         Get cost centers from fyle
         """
-        cost_centers = self.connection.CostCenters.get(active_only=active_only)['data']
+        existing_db_count = self.existing_db_count('COST_CENTER')
+        existing_category_count = self.connection.CostCenters.count()['count']
+
+        if existing_db_count == existing_category_count:
+            return
+
+        cost_centers = self.connection.CostCenters.get()['data']
 
         cost_center_attributes = []
 
@@ -226,6 +245,12 @@ class FyleConnector:
         """
         Get projects from fyle
         """
+        existing_db_count = self.existing_db_count('PROJECT')
+        existing_category_count = self.connection.Projects.count()['count']
+
+        if existing_db_count == existing_category_count:
+            return
+
         projects = self.connection.Projects.get_all()
 
         project_attributes = []
@@ -307,12 +332,12 @@ class FyleConnector:
             logger.exception(exception)
 
         try:
-            self.sync_categories(active_only=False)
+            self.sync_categories()
         except Exception as exception:
             logger.exception(exception)
 
         try:
-            self.sync_cost_centers(active_only=False)
+            self.sync_cost_centers()
         except Exception as exception:
             logger.exception(exception)
 
