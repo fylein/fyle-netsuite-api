@@ -95,7 +95,7 @@ class MappingUtils:
             params['reimbursable_account_id'] = general_mapping.get('reimbursable_account_id')
 
         if general_settings.corporate_credit_card_expenses_object and\
-                general_settings.corporate_credit_card_expenses_object not in ['BILL', 'EXPENSE REPORT']:
+                general_settings.corporate_credit_card_expenses_object != 'BILL':
             assert_valid('default_ccc_account_name' in general_mapping and general_mapping['default_ccc_account_name'],
                          'default ccc account name field is blank')
             assert_valid('default_ccc_account_id' in general_mapping and general_mapping['default_ccc_account_id'],
