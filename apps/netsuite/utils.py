@@ -1175,7 +1175,12 @@ class NetSuiteConnector:
             'expenseReportExchangeRate': None,
             'taxPointDate': None,
             'tranId': None,
-            'acctCorpCardExp': None,
+            'acctCorpCardExp': {
+                'name': None,
+                'internalId': expense_report.credit_card_account_id,
+                'externalId': None,
+                'type': 'account'
+            },
             'postingPeriod': None,
             'tranDate': expense_report.transaction_date,
             'dueDate': None,
