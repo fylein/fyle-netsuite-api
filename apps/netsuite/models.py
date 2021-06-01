@@ -595,8 +595,6 @@ class ExpenseReport(models.Model):
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
         subsidiary_mappings = SubsidiaryMapping.objects.get(workspace_id=expense_group.workspace_id)
 
-        debit_account_id = None
-
         entity = Mapping.objects.get(
             destination_type='EMPLOYEE',
             source_type='EMPLOYEE',
@@ -608,16 +606,7 @@ class ExpenseReport(models.Model):
                                                        workspace_id=expense_group.workspace_id,
                                                        attribute_type='CURRENCY').first()
 
-        if expense_group.fund_source == 'PERSONAL':
-            debit_account_id = GeneralMapping.objects.get(
-                workspace_id=expense_group.workspace_id).reimbursable_account_id
-        elif expense_group.fund_source == 'CCC':
-            debit_account_id = Mapping.objects.get(
-                source_type='EMPLOYEE',
-                destination_type='CREDIT_CARD_ACCOUNT',
-                source__value=description.get('employee_email'),
-                workspace_id=expense_group.workspace_id
-            ).destination.destination_id
+        debit_account_id = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id).reimbursable_account_id
 
         expense_report_object, _ = ExpenseReport.objects.update_or_create(
             expense_group=expense_group,
