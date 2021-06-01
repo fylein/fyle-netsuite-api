@@ -564,6 +564,7 @@ class ExpenseReport(models.Model):
     id = models.AutoField(primary_key=True)
     expense_group = models.OneToOneField(ExpenseGroup, on_delete=models.PROTECT, help_text='Expense group reference')
     account_id = models.CharField(max_length=255, help_text='NetSuite Account id')
+    credit_card_account_id = models.CharField(max_length=255, help_text='NetSuite Credit Card Account id', null=True)
     entity_id = models.CharField(max_length=255, help_text='NetSuite Entity id (Employee / Vendor)')
     currency = models.CharField(max_length=255, help_text='Expense Report Currency')
     department_id = models.CharField(max_length=255, help_text='NetSuite Department id', null=True)
@@ -595,8 +596,6 @@ class ExpenseReport(models.Model):
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
         subsidiary_mappings = SubsidiaryMapping.objects.get(workspace_id=expense_group.workspace_id)
 
-        debit_account_id = None
-
         entity = Mapping.objects.get(
             destination_type='EMPLOYEE',
             source_type='EMPLOYEE',
@@ -608,21 +607,19 @@ class ExpenseReport(models.Model):
                                                        workspace_id=expense_group.workspace_id,
                                                        attribute_type='CURRENCY').first()
 
-        if expense_group.fund_source == 'PERSONAL':
-            debit_account_id = GeneralMapping.objects.get(
-                workspace_id=expense_group.workspace_id).reimbursable_account_id
-        elif expense_group.fund_source == 'CCC':
-            debit_account_id = Mapping.objects.get(
-                source_type='EMPLOYEE',
-                destination_type='CREDIT_CARD_ACCOUNT',
-                source__value=description.get('employee_email'),
-                workspace_id=expense_group.workspace_id
-            ).destination.destination_id
+        debit_account_id = GeneralMapping.objects.get(
+            workspace_id=expense_group.workspace_id).reimbursable_account_id
 
         expense_report_object, _ = ExpenseReport.objects.update_or_create(
             expense_group=expense_group,
             defaults={
                 'account_id': debit_account_id,
+                'credit_card_account_id': Mapping.objects.get(
+                    source_type='EMPLOYEE',
+                    destination_type='CREDIT_CARD_ACCOUNT',
+                    source__value=description.get('employee_email'),
+                    workspace_id=expense_group.workspace_id
+                ).destination.destination_id if expense_group.fund_source == 'CCC' else None,
                 'entity_id': entity.destination.destination_id,
                 'currency': currency.destination_id if currency else '1',
                 'department_id': None,

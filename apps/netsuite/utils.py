@@ -1150,8 +1150,7 @@ class NetSuiteConnector:
             'customForm': None,
             'account': {
                 'name': None,
-                'internalId': expense_report.account_id
-                if expense_report.expense_group.fund_source == 'PERSONAL' else '',
+                'internalId': expense_report.account_id,
                 'externalId': None,
                 'type': 'account'
             },
@@ -1178,7 +1177,7 @@ class NetSuiteConnector:
             'tranId': None,
             'acctCorpCardExp': {
                 'name': None,
-                'internalId': expense_report.account_id if expense_report.expense_group.fund_source == 'CCC' else '',
+                'internalId': expense_report.credit_card_account_id,
                 'externalId': None,
                 'type': 'account'
             },
