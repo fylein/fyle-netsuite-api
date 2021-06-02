@@ -1148,29 +1148,29 @@ class NetSuiteConnector:
             'lastModifiedDate': None,
             'status': None,
             'customForm': None,
-            'account': {
-                'name': None,
-                'internalId': expense_report.account_id,
-                'externalId': None,
-                'type': 'account'
-            },
             'entity': {
                 'name': None,
                 'internalId': expense_report.entity_id,
                 'externalId': None,
                 'type': 'vendor'
             },
-            'expenseReportCurrency': {
-                'name': None,
-                'internalId': expense_report.currency,
-                'externalId': None,
-                'type': 'currency'
-            },
             'subsidiary': {
                 'name': None,
                 'internalId': expense_report.subsidiary_id,
                 'externalId': None,
                 'type': 'subsidiary'
+            },
+            'account': {
+                'name': None,
+                'internalId': expense_report.account_id,
+                'externalId': None,
+                'type': 'account'
+            },
+            'expenseReportCurrency': {
+                'name': None,
+                'internalId': expense_report.currency,
+                'externalId': None,
+                'type': 'currency'
             },
             'expenseReportExchangeRate': None,
             'taxPointDate': None,
@@ -1222,6 +1222,8 @@ class NetSuiteConnector:
             'internalId': None,
             'externalId': expense_report.external_id
         }
+
+        logger.info('Expense Report Payload', expense_report_payload)
 
         return expense_report_payload
 
