@@ -372,7 +372,7 @@ class BillLineitem(models.Model):
                     'location_id': location_id if general_mappings.location_level in [
                         'TRANSACTION_LINE', 'ALL'] else None,
                     'class_id': class_id,
-                    'department_id': department_id,
+                    'department_id': department_id if department_id else general_mappings.department_id,
                     'customer_id': customer_id,
                     'amount': lineitem.amount,
                     'billable': billable,

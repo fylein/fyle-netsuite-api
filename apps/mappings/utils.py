@@ -58,6 +58,8 @@ class MappingUtils:
             'location_name': general_mapping['location_name'],
             'location_id': general_mapping['location_id'],
             'location_level': general_mapping['location_level'],
+            'department_id': None,
+            'department_name': None,
             'accounts_payable_name': None,
             'accounts_payable_id': None,
             'reimbursable_account_name': None,
@@ -72,6 +74,18 @@ class MappingUtils:
             Q(destination_field='VENDOR') | Q(destination_field='EMPLOYEE'),
             source_field='EMPLOYEE', workspace_id=self.__workspace_id
         ).first()
+
+        if general_settings.corporate_credit_card_expenses_object == 'BILL':
+            assert_valid(
+                'department_name' in general_mapping and general_mapping['department_name'],
+                'department name field is blank'
+            )
+            assert_valid('department_id' in general_mapping and general_mapping['department_id'],
+                         'department id field is blank')
+
+            params['department_id'] = general_mapping.get('department_id')
+            params['department_name'] = general_mapping.get('department_name')
+
 
         if mapping_setting.destination_field == 'VENDOR' or\
                 general_settings.corporate_credit_card_expenses_object == 'BILL':

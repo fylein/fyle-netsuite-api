@@ -29,6 +29,8 @@ class GeneralMapping(models.Model):
     id = models.AutoField(primary_key=True)
     location_name = models.CharField(max_length=255, help_text='NetSuite Location name', null=True)
     location_id = models.CharField(max_length=255, help_text='NetSuite Location id', null=True)
+    department_name = models.CharField(max_length=255, help_text='Netsuite Department Name', null=True)
+    department_id = models.CharField(max_length=255, help_text='Netsuite Department id', null=True)
     location_level = models.CharField(max_length=255, help_text='Transaction Body, Line, Both', null=True)
     accounts_payable_name = models.CharField(max_length=255, help_text='NetSuite Accounts Payable Account name',
                                              null=True)
