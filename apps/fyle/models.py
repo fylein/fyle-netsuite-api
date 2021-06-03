@@ -108,7 +108,7 @@ class Expense(models.Model):
                     'project': expense['project_name'],
                     'expense_number': expense['expense_number'],
                     'claim_number': expense['claim_number'],
-                    'amount': expense['amount'],
+                    'amount': round(expense['amount'], 2),
                     'currency': expense['currency'],
                     'foreign_amount': expense['foreign_amount'],
                     'foreign_currency': expense['foreign_currency'],
