@@ -345,6 +345,18 @@ class BillLineitem(models.Model):
 
             department_id = get_department_id_or_none(expense_group, lineitem)
 
+            if expense_group.fund_source == 'CCC':
+                entity = Mapping.objects.filter(
+                    destination_type='EMPLOYEE',
+                    source_type='EMPLOYEE',
+                    source__value=expense_group.description.get('employee_email'),
+                    workspace_id=expense_group.workspace_id
+                ).first()
+
+                if general_mappings.use_employee_department and entity:
+                    if general_mappings.department_level in ('ALL', 'TRANSACTION_LINE'):
+                        department_id = entity.destination.detail.get('department_id')
+
             location_id = get_location_id_or_none(expense_group, lineitem)
 
             if not location_id:
