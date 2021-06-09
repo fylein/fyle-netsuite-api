@@ -10,6 +10,7 @@ from .models import WorkspaceGeneralSettings
 from ..fyle.models import ExpenseGroupSettings
 
 
+# This should be in the model
 def create_or_update_general_settings(general_settings_payload: Dict, workspace_id):
     """
     Create or update general settings
@@ -17,6 +18,7 @@ def create_or_update_general_settings(general_settings_payload: Dict, workspace_
     :param general_settings_payload: general settings payload
     :return:
     """
+    # Validations
     assert_valid(
         'reimbursable_expenses_object' in general_settings_payload and general_settings_payload[
             'reimbursable_expenses_object'], 'reimbursable_expenses_object field is blank')
@@ -27,6 +29,7 @@ def create_or_update_general_settings(general_settings_payload: Dict, workspace_
         assert_valid(general_settings_payload['auto_map_employees'] in ['EMAIL', 'NAME', 'EMPLOYEE_CODE'],
                      'auto_map_employees can have only EMAIL / NAME / EMPLOYEE_CODE')
 
+    # Actual update or create
     general_settings, _ = WorkspaceGeneralSettings.objects.update_or_create(
         workspace_id=workspace_id,
         defaults={
@@ -45,6 +48,7 @@ def create_or_update_general_settings(general_settings_payload: Dict, workspace_
         }
     )
 
+    # Updating expense group settings for Credit Card Charge --> Move to Fyle.utils
     if general_settings.corporate_credit_card_expenses_object == 'CREDIT CARD CHARGE':
         expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=workspace_id)
 
@@ -54,9 +58,14 @@ def create_or_update_general_settings(general_settings_payload: Dict, workspace_
 
         expense_group_settings.save()
 
+    # Schedule Import and Mapping Jobs -> Move to mappings.utils
     schedule_projects_creation(import_projects=general_settings.import_projects, workspace_id=workspace_id)
     schedule_categories_creation(import_categories=general_settings.import_categories, workspace_id=workspace_id)
+    schedule_auto_map_employees(general_settings_payload['auto_map_employees'], workspace_id)
+    if general_settings_payload['auto_map_employees'] is None:
+        schedule_auto_map_ccc_employees(workspace_id=workspace_id)
 
+    # Schedule Payments --> netsuite.utils
     schedule_vendor_payment_creation(
         sync_fyle_to_netsuite_payments=general_settings.sync_fyle_to_netsuite_payments,
         workspace_id=workspace_id
@@ -71,10 +80,5 @@ def create_or_update_general_settings(general_settings_payload: Dict, workspace_
         sync_netsuite_to_fyle_payments=general_settings.sync_netsuite_to_fyle_payments,
         workspace_id=workspace_id
     )
-
-    schedule_auto_map_employees(general_settings_payload['auto_map_employees'], workspace_id)
-
-    if general_settings_payload['auto_map_employees'] is None:
-        schedule_auto_map_ccc_employees(workspace_id=workspace_id)
 
     return general_settings

@@ -1,3 +1,5 @@
+# Remane to netsuite_connection.py
+
 import json
 from datetime import datetime
 from typing import List, Dict
@@ -55,6 +57,12 @@ class NetSuiteConnector:
         self.__netsuite_credentials = netsuite_credentials
 
         self.workspace_id = workspace_id
+
+    @staticmethod
+    def __decode_project_or_customer_name(name):
+        value = name.replace(u'\xa0', ' ')
+        value = value.replace('/', '-')
+        return value
 
     def sync_accounts(self):
         """

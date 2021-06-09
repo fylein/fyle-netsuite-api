@@ -4,6 +4,7 @@ from django.core.cache import cache
 
 from rest_framework.response import Response
 from rest_framework.views import status
+from rest_framework import generics
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
@@ -318,20 +319,6 @@ class ConnectFyleView(viewsets.ViewSet):
             )
 
 
-class ScheduledSyncView(viewsets.ViewSet):
-    """
-    Scheduled Sync
-    """
-    def post(self, request, **kwargs):
-        """
-        Scheduled sync
-        """
-        run_sync_schedule(kwargs['workspace_id'])
-        return Response(
-            status=status.HTTP_200_OK
-        )
-
-
 class ScheduleView(viewsets.ViewSet):
     """
     Schedule View
@@ -374,12 +361,19 @@ class ScheduleView(viewsets.ViewSet):
             )
 
 
-class GeneralSettingsView(viewsets.ViewSet):
+class GeneralSettingsView(generics.ListCreateAPIView):
     """
     General Settings
     """
     serializer_class = WorkSpaceGeneralSettingsSerializer
     queryset = WorkspaceGeneralSettings.objects.all()
+
+    def get_queryset(self):
+        """
+        Limit query set to Workspace General Settings
+        """
+        workspace_id = self.kwargs['workspace_id']
+        return self.queryset.get(workspace_id=workspace_id)
 
     def post(self, request, *args, **kwargs):
         """
@@ -397,20 +391,3 @@ class GeneralSettingsView(viewsets.ViewSet):
             status=status.HTTP_200_OK
         )
 
-    def get(self, request, *args, **kwargs):
-        """
-        Get workspace general settings
-        """
-        try:
-            general_settings = self.queryset.get(workspace_id=kwargs['workspace_id'])
-            return Response(
-                data=self.serializer_class(general_settings).data,
-                status=status.HTTP_200_OK
-            )
-        except WorkspaceGeneralSettings.DoesNotExist:
-            return Response(
-                {
-                    'message': 'General Settings does not exist in workspace'
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )

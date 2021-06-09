@@ -47,7 +47,6 @@ def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int):
 def run_sync_schedule(workspace_id):
     """
     Run schedule
-    :param user: user email
     :param workspace_id: workspace id
     :return: None
     """
@@ -113,4 +112,3 @@ def run_sync_schedule(workspace_id):
                 schedule_credit_card_charge_creation(
                     workspace_id=workspace_id, expense_group_ids=expense_group_ids
                 )
-

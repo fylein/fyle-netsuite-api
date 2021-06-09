@@ -1,3 +1,5 @@
+# Rename this file to fyle_connector.py
+
 from typing import List
 import json
 import logging
@@ -13,6 +15,7 @@ import requests
 from apps.fyle.models import Reimbursement
 
 logger = logging.getLogger(__name__)
+
 
 class FyleConnector:
     """
@@ -324,8 +327,13 @@ class FyleConnector:
         """
         return self.connection.Reimbursements.post(reimbursement_ids)
 
-
     def sync_dimensions(self):
+
+        # functions_to_call = ['employees', 'categories']
+
+        # for function in functions to call
+        #     call_api('apps.fyle.sync_{}'.format(function))
+
         try:
             self.sync_employees()
         except Exception as exception:
@@ -350,3 +358,9 @@ class FyleConnector:
             self.sync_expense_custom_fields(active_only=True)
         except Exception as exception:
             logger.exception(exception)
+
+    # def call_api(self, function_name: str):
+    #     try:
+    #         call(funtion_name)
+    #     except Exception as exception:
+    #         logger.exception(exception)
