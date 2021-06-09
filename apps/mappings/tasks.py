@@ -13,7 +13,7 @@ from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttr
 from apps.fyle.utils import FyleConnector
 from apps.mappings.models import GeneralMapping
 from apps.netsuite.utils import NetSuiteConnector
-from apps.workspaces.models import NetSuiteCredentials, FyleCredential, WorkspaceGeneralSettings
+from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configuration
 
 logger = logging.getLogger(__name__)
 
@@ -187,10 +187,10 @@ def auto_create_category_mappings(workspace_id):
     Create Category Mappings
     :return: mappings
     """
-    general_settings: WorkspaceGeneralSettings = WorkspaceGeneralSettings.objects.get(workspace_id=workspace_id)
+    configurations: Configuration = Configuration.objects.get(workspace_id=workspace_id)
 
-    reimbursable_expenses_object = general_settings.reimbursable_expenses_object
-    corporate_credit_card_expenses_object = general_settings.corporate_credit_card_expenses_object
+    reimbursable_expenses_object = configurations.reimbursable_expenses_object
+    corporate_credit_card_expenses_object = configurations.corporate_credit_card_expenses_object
 
     if reimbursable_expenses_object == 'EXPENSE REPORT':
         reimbursable_destination_type = 'EXPENSE_CATEGORY'
@@ -357,8 +357,8 @@ def schedule_projects_creation(import_projects, workspace_id):
 
 
 def async_auto_map_employees(workspace_id: int):
-    general_settings = WorkspaceGeneralSettings.objects.get(workspace_id=workspace_id)
-    employee_mapping_preference = general_settings.auto_map_employees
+    configurations = Configuration.objects.get(workspace_id=workspace_id)
+    employee_mapping_preference = configurations.auto_map_employees
 
     mapping_setting = MappingSetting.objects.filter(
         ~Q(destination_field='CREDIT_CARD_ACCOUNT'),
@@ -414,9 +414,9 @@ def async_auto_map_ccc_account(workspace_id: int):
 
 
 def schedule_auto_map_ccc_employees(workspace_id: int):
-    general_settings = WorkspaceGeneralSettings.objects.get(workspace_id=workspace_id)
+    configurations = Configuration.objects.get(workspace_id=workspace_id)
 
-    if general_settings.auto_map_employees and general_settings.corporate_credit_card_expenses_object:
+    if configurations.auto_map_employees and configurations.corporate_credit_card_expenses_object:
         schedule, _ = Schedule.objects.update_or_create(
             func='apps.mappings.tasks.async_auto_map_ccc_account',
             args='{0}'.format(workspace_id),

@@ -18,12 +18,12 @@ from fyle_netsuite_api.utils import assert_valid
 from apps.netsuite.utils import NetSuiteConnection
 from apps.fyle.models import ExpenseGroupSettings
 
-from .models import Workspace, FyleCredential, NetSuiteCredentials, WorkspaceGeneralSettings, \
+from .models import Workspace, FyleCredential, NetSuiteCredentials, Configuration, \
     WorkspaceSchedule
-from .utils import create_or_update_general_settings
+from .utils import create_or_update_configurations
 from .tasks import schedule_sync, run_sync_schedule
 from .serializers import WorkspaceSerializer, FyleCredentialSerializer, NetSuiteCredentialSerializer, \
-    WorkSpaceGeneralSettingsSerializer, WorkspaceScheduleSerializer
+    ConfigurationSerializer, WorkspaceScheduleSerializer
 
 
 User = get_user_model()
@@ -361,12 +361,12 @@ class ScheduleView(viewsets.ViewSet):
             )
 
 
-class GeneralSettingsView(generics.ListCreateAPIView):
+class ConfigurationsView(generics.ListCreateAPIView):
     """
     General Settings
     """
-    serializer_class = WorkSpaceGeneralSettingsSerializer
-    queryset = WorkspaceGeneralSettings.objects.all()
+    serializer_class = ConfigurationSerializer
+    queryset = Configuration.objects.all()
 
     authentication_classes = []
     permission_classes = []
@@ -376,12 +376,12 @@ class GeneralSettingsView(generics.ListCreateAPIView):
         Get workspace general settings
         """
         try:
-            general_settings = self.queryset.get(workspace_id=kwargs['workspace_id'])
+            configurations = self.queryset.get(workspace_id=kwargs['workspace_id'])
             return Response(
-                data=self.serializer_class(general_settings).data,
+                data=self.serializer_class(configurations).data,
                 status=status.HTTP_200_OK
             )
-        except WorkspaceGeneralSettings.DoesNotExist:
+        except Configuration.DoesNotExist:
             return Response(
                 {
                     'message': 'General Settings does not exist in workspace'

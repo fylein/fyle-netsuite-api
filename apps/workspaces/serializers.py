@@ -3,7 +3,7 @@ Workspace Serializers
 """
 from rest_framework import serializers
 
-from .models import Workspace, FyleCredential, NetSuiteCredentials, WorkspaceSchedule, WorkspaceGeneralSettings
+from .models import Workspace, FyleCredential, NetSuiteCredentials, WorkspaceSchedule, Configuration
 
 
 class WorkspaceSerializer(serializers.ModelSerializer):
@@ -45,7 +45,7 @@ class WorkspaceScheduleSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class WorkSpaceGeneralSettingsSerializer(serializers.ModelSerializer):
+class ConfigurationSerializer(serializers.ModelSerializer):
     """
     General settings serializer
     """
@@ -57,7 +57,7 @@ class WorkSpaceGeneralSettingsSerializer(serializers.ModelSerializer):
         """
         workspace = validated_data['workspace']
 
-        general_settings, _ = WorkspaceGeneralSettings.objects.update_or_create(
+        configurations, _ = Configuration.objects.update_or_create(
             workspace=workspace,
             defaults={
                 'reimbursable_expenses_object': validated_data['reimbursable_expenses_object'],
@@ -72,7 +72,7 @@ class WorkSpaceGeneralSettingsSerializer(serializers.ModelSerializer):
             }
         )
 
-        return general_settings
+        return configurations
 
     def validate(self, data):
         """
@@ -93,5 +93,5 @@ class WorkSpaceGeneralSettingsSerializer(serializers.ModelSerializer):
         return data
 
     class Meta:
-        model = WorkspaceGeneralSettings
+        model = Configuration
         fields = '__all__'

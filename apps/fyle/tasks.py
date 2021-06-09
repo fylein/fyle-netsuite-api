@@ -6,7 +6,7 @@ from datetime import datetime
 from django.db import transaction
 from django_q.tasks import async_task
 
-from apps.workspaces.models import FyleCredential, Workspace, WorkspaceGeneralSettings
+from apps.workspaces.models import FyleCredential, Workspace, Configuration
 from apps.tasks.models import TaskLog
 
 from .models import Expense, ExpenseGroup, ExpenseGroupSettings
@@ -31,10 +31,10 @@ def schedule_expense_group_creation(workspace_id: int):
         }
     )
 
-    general_settings = WorkspaceGeneralSettings.objects.get(workspace_id=workspace_id)
+    configurations = Configuration.objects.get(workspace_id=workspace_id)
 
     fund_source = ['PERSONAL']
-    if general_settings.corporate_credit_card_expenses_object is not None:
+    if configurations.corporate_credit_card_expenses_object is not None:
         fund_source.append('CCC')
 
     async_task('apps.fyle.tasks.create_expense_groups', workspace_id, fund_source, task_log)
