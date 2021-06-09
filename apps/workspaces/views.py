@@ -368,26 +368,23 @@ class GeneralSettingsView(generics.ListCreateAPIView):
     serializer_class = WorkSpaceGeneralSettingsSerializer
     queryset = WorkspaceGeneralSettings.objects.all()
 
-    def get_queryset(self):
+    authentication_classes = []
+    permission_classes = []
+
+    def get(self, request, *args, **kwargs):
         """
-        Limit query set to Workspace General Settings
+        Get workspace general settings
         """
-        workspace_id = self.kwargs['workspace_id']
-        return self.queryset.get(workspace_id=workspace_id)
-
-    def post(self, request, *args, **kwargs):
-        """
-        Post workspace general settings
-        """
-        general_settings_payload = request.data
-
-        assert_valid(general_settings_payload is not None, 'Request body is empty')
-
-        workspace_id = kwargs['workspace_id']
-
-        general_settings = create_or_update_general_settings(general_settings_payload, workspace_id)
-        return Response(
-            data=self.serializer_class(general_settings).data,
-            status=status.HTTP_200_OK
-        )
-
+        try:
+            general_settings = self.queryset.get(workspace_id=kwargs['workspace_id'])
+            return Response(
+                data=self.serializer_class(general_settings).data,
+                status=status.HTTP_200_OK
+            )
+        except WorkspaceGeneralSettings.DoesNotExist:
+            return Response(
+                {
+                    'message': 'General Settings does not exist in workspace'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
