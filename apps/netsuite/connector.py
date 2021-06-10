@@ -28,13 +28,6 @@ SYNC_UPPER_LIMIT = {
 }
 
 
-def _decode_project_or_customer_name(name):
-    value = name.replace(u'\xa0', ' ')
-    value = value.replace('/', '-')
-
-    return value
-
-
 class NetSuiteConnector:
     """
     NetSuite utility functions
@@ -649,7 +642,7 @@ class NetSuiteConnector:
                 attributes = []
                 for project in projects:
                     if not project['isInactive']:
-                        value = _decode_project_or_customer_name(project['entityId'])
+                        value = self.__decode_project_or_customer_name(project['entityId'])
                         attributes.append({
                             'attribute_type': 'PROJECT',
                             'display_name': 'Project',
