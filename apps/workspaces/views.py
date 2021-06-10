@@ -367,10 +367,6 @@ class ConfigurationsView(generics.ListCreateAPIView):
     serializer_class = ConfigurationSerializer
     queryset = Configuration.objects.all()
 
-    # To do: Authentication
-    authentication_classes = []
-    permission_classes = []
-
     def get(self, request, *args, **kwargs):
         """
         Get workspace general settings
