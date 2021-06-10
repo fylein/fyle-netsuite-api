@@ -20,7 +20,7 @@ from apps.fyle.models import ExpenseGroupSettings
 
 from .models import Workspace, FyleCredential, NetSuiteCredentials, Configuration, \
     WorkspaceSchedule
-from .utils import create_or_update_configurations
+from .utils import create_or_update_configuration
 from .tasks import schedule_sync, run_sync_schedule
 from .serializers import WorkspaceSerializer, FyleCredentialSerializer, NetSuiteCredentialSerializer, \
     ConfigurationSerializer, WorkspaceScheduleSerializer
@@ -376,9 +376,9 @@ class ConfigurationsView(generics.ListCreateAPIView):
         Get workspace general settings
         """
         try:
-            configurations = self.queryset.get(workspace_id=kwargs['workspace_id'])
+            configuration = self.queryset.get(workspace_id=kwargs['workspace_id'])
             return Response(
-                data=self.serializer_class(configurations).data,
+                data=self.serializer_class(configuration).data,
                 status=status.HTTP_200_OK
             )
         except Configuration.DoesNotExist:

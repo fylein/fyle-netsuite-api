@@ -31,10 +31,10 @@ def schedule_expense_group_creation(workspace_id: int):
         }
     )
 
-    configurations = Configuration.objects.get(workspace_id=workspace_id)
+    configuration = Configuration.objects.get(workspace_id=workspace_id)
 
     fund_source = ['PERSONAL']
-    if configurations.corporate_credit_card_expenses_object is not None:
+    if configuration.corporate_credit_card_expenses_object is not None:
         fund_source.append('CCC')
 
     async_task('apps.fyle.tasks.create_expense_groups', workspace_id, fund_source, task_log)

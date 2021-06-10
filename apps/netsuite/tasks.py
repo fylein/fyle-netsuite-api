@@ -174,19 +174,19 @@ def create_bill(expense_group, task_log_id):
     else:
         return
 
-    configurations = Configuration.objects.get(workspace_id=expense_group.workspace_id)
+    configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
 
     try:
         netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
 
         netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
-        if expense_group.fund_source == 'PERSONAL' and configurations.auto_map_employees \
-                and configurations.auto_create_destination_entity:
-            create_or_update_employee_mapping(expense_group, netsuite_connection, configurations.auto_map_employees)
+        if expense_group.fund_source == 'PERSONAL' and configuration.auto_map_employees \
+                and configuration.auto_create_destination_entity:
+            create_or_update_employee_mapping(expense_group, netsuite_connection, configuration.auto_map_employees)
 
         with transaction.atomic():
-            __validate_expense_group(expense_group, configurations)
+            __validate_expense_group(expense_group, configuration)
 
             bill_object = Bill.create_bill(expense_group)
 
@@ -270,7 +270,7 @@ def create_credit_card_charge(expense_group, task_log_id):
     else:
         return
 
-    configurations = Configuration.objects.get(workspace_id=expense_group.workspace_id)
+    configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
 
     try:
         netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
@@ -278,11 +278,11 @@ def create_credit_card_charge(expense_group, task_log_id):
         netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
         merchant = expense_group.expenses.first().vendor
-        auto_create_merchants = configurations.auto_create_merchants
+        auto_create_merchants = configuration.auto_create_merchants
         get_or_create_credit_card_vendor(expense_group, merchant, auto_create_merchants)
 
         with transaction.atomic():
-            __validate_expense_group(expense_group, configurations)
+            __validate_expense_group(expense_group, configuration)
 
             credit_card_charge_object = CreditCardCharge.create_credit_card_charge(expense_group)
 
@@ -368,18 +368,18 @@ def create_expense_report(expense_group, task_log_id):
     else:
         return
 
-    configurations = Configuration.objects.get(workspace_id=expense_group.workspace_id)
+    configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
 
     try:
         netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
 
         netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
-        if configurations.auto_map_employees and configurations.auto_create_destination_entity:
-            create_or_update_employee_mapping(expense_group, netsuite_connection, configurations.auto_map_employees)
+        if configuration.auto_map_employees and configuration.auto_create_destination_entity:
+            create_or_update_employee_mapping(expense_group, netsuite_connection, configuration.auto_map_employees)
 
         with transaction.atomic():
-            __validate_expense_group(expense_group, configurations)
+            __validate_expense_group(expense_group, configuration)
 
             expense_report_object = ExpenseReport.create_expense_report(expense_group)
 
@@ -465,18 +465,18 @@ def create_journal_entry(expense_group, task_log_id):
     else:
         return
 
-    configurations = Configuration.objects.get(workspace_id=expense_group.workspace_id)
+    configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
 
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
 
     netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
-    if configurations.auto_map_employees and configurations.auto_create_destination_entity:
-        create_or_update_employee_mapping(expense_group, netsuite_connection, configurations.auto_map_employees)
+    if configuration.auto_map_employees and configuration.auto_create_destination_entity:
+        create_or_update_employee_mapping(expense_group, netsuite_connection, configuration.auto_map_employees)
 
     try:
         with transaction.atomic():
-            __validate_expense_group(expense_group, configurations)
+            __validate_expense_group(expense_group, configuration)
 
             journal_entry_object = JournalEntry.create_journal_entry(expense_group)
 
@@ -553,7 +553,7 @@ def create_journal_entry(expense_group, task_log_id):
         logger.exception('Something unexpected happened workspace_id: %s %s', task_log.workspace_id, task_log.detail)
 
 
-def __validate_expense_group(expense_group: ExpenseGroup, configurations: Configuration):
+def __validate_expense_group(expense_group: ExpenseGroup, configuration: Configuration):
     bulk_errors = []
     row = 0
 
@@ -580,8 +580,8 @@ def __validate_expense_group(expense_group: ExpenseGroup, configurations: Config
             'message': 'Subsidiary mapping not found'
         })
 
-    if configurations.corporate_credit_card_expenses_object and \
-            configurations.corporate_credit_card_expenses_object in ('BILL', 'CREDIT CARD CHARGE') and \
+    if configuration.corporate_credit_card_expenses_object and \
+            configuration.corporate_credit_card_expenses_object in ('BILL', 'CREDIT CARD CHARGE') and \
             expense_group.fund_source == 'CCC':
         if general_mapping:
             if not (general_mapping.default_ccc_vendor_id or general_mapping.default_ccc_vendor_name):
@@ -609,7 +609,7 @@ def __validate_expense_group(expense_group: ExpenseGroup, configurations: Config
                 'message': 'Employee mapping not found'
             })
 
-    if configurations.corporate_credit_card_expenses_object != 'BILL' and expense_group.fund_source == 'CCC':
+    if configuration.corporate_credit_card_expenses_object != 'BILL' and expense_group.fund_source == 'CCC':
         if not (general_mapping.default_ccc_account_id or general_mapping.default_ccc_account_name):
             bulk_errors.append({
                 'row': None,

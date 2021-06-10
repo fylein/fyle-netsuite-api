@@ -57,7 +57,7 @@ class ConfigurationSerializer(serializers.ModelSerializer):
         """
         workspace = validated_data['workspace']
 
-        configurations, _ = Configuration.objects.update_or_create(
+        configuration, _ = Configuration.objects.update_or_create(
             workspace=workspace,
             defaults={
                 'reimbursable_expenses_object': validated_data['reimbursable_expenses_object'],
@@ -72,7 +72,7 @@ class ConfigurationSerializer(serializers.ModelSerializer):
             }
         )
 
-        return configurations
+        return configuration
 
     def validate(self, data):
         """

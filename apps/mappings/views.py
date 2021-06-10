@@ -107,11 +107,11 @@ class AutoMapEmployeeView(generics.CreateAPIView):
         """
         try:
             workspace_id = kwargs['workspace_id']
-            configurations = Configuration.objects.get(workspace_id=workspace_id)
+            configuration = Configuration.objects.get(workspace_id=workspace_id)
 
             chain = Chain(cached=False)
 
-            if not configurations.auto_map_employees:
+            if not configuration.auto_map_employees:
                 return Response(
                     data={
                         'message': 'Employee mapping preference not found for this workspace'
