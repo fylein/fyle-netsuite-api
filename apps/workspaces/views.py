@@ -15,13 +15,12 @@ from fyle_rest_auth.models import AuthToken
 
 from fyle_netsuite_api.utils import assert_valid
 
-from apps.netsuite.utils import NetSuiteConnection
+from apps.netsuite.connector import NetSuiteConnection
 from apps.fyle.models import ExpenseGroupSettings
 
 from .models import Workspace, FyleCredential, NetSuiteCredentials, Configuration, \
     WorkspaceSchedule
-from .utils import create_or_update_configuration
-from .tasks import schedule_sync, run_sync_schedule
+from .tasks import schedule_sync
 from .serializers import WorkspaceSerializer, FyleCredentialSerializer, NetSuiteCredentialSerializer, \
     ConfigurationSerializer, WorkspaceScheduleSerializer
 
@@ -368,6 +367,7 @@ class ConfigurationsView(generics.ListCreateAPIView):
     serializer_class = ConfigurationSerializer
     queryset = Configuration.objects.all()
 
+    # To do: Authentication
     authentication_classes = []
     permission_classes = []
 

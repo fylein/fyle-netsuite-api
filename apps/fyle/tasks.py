@@ -10,7 +10,7 @@ from apps.workspaces.models import FyleCredential, Workspace, Configuration
 from apps.tasks.models import TaskLog
 
 from .models import Expense, ExpenseGroup, ExpenseGroupSettings
-from .utils import FyleConnector
+from .connector import FyleConnector
 from .serializers import ExpenseGroupSerializer
 
 logger = logging.getLogger(__name__)

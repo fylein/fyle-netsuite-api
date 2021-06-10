@@ -8,11 +8,10 @@ from rest_framework.response import Response
 from fyle_accounting_mappings.models import ExpenseAttribute
 from fyle_accounting_mappings.serializers import ExpenseAttributeSerializer
 
-from apps.tasks.models import TaskLog
 from apps.workspaces.models import FyleCredential, Workspace
 
 from .tasks import schedule_expense_group_creation
-from .utils import FyleConnector
+from .connector import FyleConnector
 from .models import Expense, ExpenseGroup, ExpenseGroupSettings
 from .serializers import ExpenseGroupSerializer, ExpenseSerializer, ExpenseFieldSerializer, \
     ExpenseGroupSettingsSerializer

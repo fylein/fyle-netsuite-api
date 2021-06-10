@@ -16,7 +16,7 @@ from fyle_accounting_mappings.models import Mapping, ExpenseAttribute, MappingSe
 
 from fyle_netsuite_api.exceptions import BulkError
 
-from apps.fyle.utils import FyleConnector
+from apps.fyle.connector import FyleConnector
 from apps.fyle.models import ExpenseGroup, Expense, Reimbursement
 from apps.mappings.models import GeneralMapping, SubsidiaryMapping
 from apps.tasks.models import TaskLog
@@ -24,7 +24,7 @@ from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configur
 
 from .models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, JournalEntryLineItem, \
     VendorPayment, VendorPaymentLineitem, CreditCardCharge, CreditCardChargeLineItem
-from .utils import NetSuiteConnector
+from .connector import NetSuiteConnector
 
 logger = logging.getLogger(__name__)
 

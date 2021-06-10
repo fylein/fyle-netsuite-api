@@ -23,7 +23,7 @@ from .tasks import schedule_bills_creation, schedule_expense_reports_creation, s
 
 from .models import CustomSegment
 
-from .utils import NetSuiteConnector
+from .connector import NetSuiteConnector
 
 logger = logging.getLogger(__name__)
 

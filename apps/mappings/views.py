@@ -60,6 +60,10 @@ class GeneralMappingView(generics.ListCreateAPIView):
     """
     serializer_class = GeneralMappingSerializer
 
+    # To do: Authentication
+    authentication_classes = []
+    permission_classes = []
+
     def post(self, request, *args, **kwargs):
         """
         Post General mapping view

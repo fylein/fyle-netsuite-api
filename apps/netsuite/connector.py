@@ -14,7 +14,7 @@ import unidecode
 from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute
 
 from apps.fyle.models import Expense, ExpenseGroup
-from apps.fyle.utils import FyleConnector
+from apps.fyle.connector import FyleConnector
 
 from apps.mappings.models import SubsidiaryMapping
 from apps.netsuite.models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, \

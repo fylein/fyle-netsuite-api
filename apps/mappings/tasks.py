@@ -10,9 +10,9 @@ from django.db.models import Q, Count
 from fylesdk.exceptions import WrongParamsError
 from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttribute, DestinationAttribute
 
-from apps.fyle.utils import FyleConnector
+from apps.fyle.connector import FyleConnector
 from apps.mappings.models import GeneralMapping
-from apps.netsuite.utils import NetSuiteConnector
+from apps.netsuite.connector import NetSuiteConnector
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configuration
 
 logger = logging.getLogger(__name__)

@@ -4,7 +4,7 @@ from rest_framework.response import Response
 
 from fyle_rest_auth.models import AuthToken
 
-from apps.fyle.utils import FyleConnector
+from apps.fyle.connector import FyleConnector
 
 from apps.workspaces.models import FyleCredential
 
