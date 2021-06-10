@@ -49,6 +49,8 @@ class ConfigurationSerializer(serializers.ModelSerializer):
     """
     General settings serializer
     """
+    workspace = serializers.CharField()
+
     def create(self, validated_data):
         """
         Create Workspace General Settings
