@@ -151,6 +151,16 @@ class NetSuiteFieldsView(generics.ListAPIView):
         return attributes
 
 
+class NetSuiteAttributesCountView(generics.ListCreateAPIView):
+    serializer_class = NetSuiteFieldSerializer
+
+    def get_queryset(self):
+        attribute_type = self.request.query_params.get('attribute_type')
+
+        return DestinationAttribute.objects.filter(
+            attribute_type=attribute_type, workspace_id=self.kwargs['workspace_id'])
+
+
 class SyncCustomFieldsView(generics.ListCreateAPIView):
     """
     SyncCustomFields view

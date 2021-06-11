@@ -14,6 +14,7 @@ from apps.fyle.models import Reimbursement
 
 logger = logging.getLogger(__name__)
 
+
 class FyleConnector:
     """
     Fyle utility functions
@@ -29,8 +30,7 @@ class FyleConnector:
             base_url=base_url,
             client_id=client_id,
             client_secret=client_secret,
-            refresh_token=refresh_token,
-            jobs_url=settings.FYLE_JOBS_URL
+            refresh_token=refresh_token
         )
 
     def _post_request(self, url, body):
@@ -289,7 +289,8 @@ class FyleConnector:
                 count = count + 1
 
             ExpenseAttribute.bulk_create_or_update_expense_attributes(expense_custom_field_attributes,
-                custom_field['name'].upper().replace(' ', '_'), self.workspace_id)
+                                                                      custom_field['name'].upper().replace(' ', '_'),
+                                                                      self.workspace_id)
 
         return []
 
@@ -323,7 +324,6 @@ class FyleConnector:
         Process Reimbursements in bulk.
         """
         return self.connection.Reimbursements.post(reimbursement_ids)
-
 
     def sync_dimensions(self):
         try:
