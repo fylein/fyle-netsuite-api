@@ -1,10 +1,12 @@
 from django.urls import path
 
 from .views import ExpenseGroupView, ExpenseGroupByIdView, ExpenseGroupScheduleView, ExpenseFieldsView, ExpenseView,\
-    ExpenseCustomFieldsView, ExpenseGroupSettingsView, SyncFyleDimensionView, RefreshFyleDimensionView
+    ExpenseCustomFieldsView, ExpenseGroupSettingsView, SyncFyleDimensionView, RefreshFyleDimensionView,\
+    ExpenseGroupCountView
 
 urlpatterns = [
     path('expense_groups/', ExpenseGroupView.as_view()),
+    path('expense_groups/count/', ExpenseGroupCountView.as_view()),
     path('expense_groups/trigger/', ExpenseGroupScheduleView.as_view()),
     path('expense_groups/<int:pk>/', ExpenseGroupByIdView.as_view()),
     path('expense_groups/<int:expense_group_id>/expenses/', ExpenseView.as_view()),
