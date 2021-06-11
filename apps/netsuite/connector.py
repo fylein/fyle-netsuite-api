@@ -668,7 +668,7 @@ class NetSuiteConnector:
                 attributes = []
                 for customer in customers:
                     if not customer['isInactive']:
-                        value = _decode_project_or_customer_name(customer['entityId'])
+                        value = self.__decode_project_or_customer_name(customer['entityId'])
                         attributes.append({
                             'attribute_type': 'PROJECT',
                             'display_name': 'Customer',
