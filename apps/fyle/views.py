@@ -24,18 +24,15 @@ class ExpenseGroupView(generics.ListCreateAPIView):
     serializer_class = ExpenseGroupSerializer
 
     def get_queryset(self):
-        state = self.request.query_params.get('state', 'ALL')
-
-        if state == 'ALL':
-            return ExpenseGroup.objects.filter(workspace_id=self.kwargs['workspace_id']).order_by('-updated_at')
+        state = self.request.query_params.get('state')
 
         if state == 'FAILED':
-            return ExpenseGroup.objects.filter(tasklog__status='FAILED',
-                                               workspace_id=self.kwargs['workspace_id']).order_by('-updated_at')
+            return ExpenseGroup.objects.filter(
+                tasklog__status='FAILED', workspace_id=self.kwargs['workspace_id']).order_by('-updated_at')
 
         elif state == 'COMPLETE':
-            return ExpenseGroup.objects.filter(tasklog__status='COMPLETE',
-                                               workspace_id=self.kwargs['workspace_id']).order_by('-exported_at')
+            return ExpenseGroup.objects.filter(
+                tasklog__status='COMPLETE', workspace_id=self.kwargs['workspace_id']).order_by('-exported_at')
 
         elif state == 'READY':
             return ExpenseGroup.objects.filter(
@@ -72,7 +69,7 @@ class ExpenseGroupSettingsView(generics.ListCreateAPIView):
 
 class ExpenseCustomFieldsView(generics.ListCreateAPIView):
     """
-    Project view
+    Expense Attributes view
     """
     serializer_class = ExpenseAttributeSerializer
     pagination_class = None
@@ -117,28 +114,8 @@ class ExpenseGroupByIdView(generics.RetrieveAPIView):
     """
     Expense Group by Id view
     """
-
-    def get(self, request, *args, **kwargs):
-        """
-        Get expenses
-        """
-        try:
-            expense_group = ExpenseGroup.objects.get(
-                workspace_id=kwargs['workspace_id'], pk=kwargs['expense_group_id']
-            )
-
-            return Response(
-                data=ExpenseGroupSerializer(expense_group).data,
-                status=status.HTTP_200_OK
-            )
-
-        except ExpenseGroup.DoesNotExist:
-            return Response(
-                data={
-                    'message': 'Expense group not found'
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
+    serializer_class = ExpenseGroupSerializer
+    queryset = ExpenseGroup.objects.all()
 
 
 class ExpenseView(generics.RetrieveAPIView):

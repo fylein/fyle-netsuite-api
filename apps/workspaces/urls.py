@@ -4,6 +4,8 @@ from .views import WorkspaceView, ReadyView, ConnectFyleView, ConnectNetSuiteVie
 
 urlpatterns = [
     path('', WorkspaceView.as_view({'get': 'get', 'post': 'post'})),
+    # TODO: rm later after fixing app
+    path('<int:workspace_id>/', WorkspaceView.as_view({'get': 'get_by_id'})),
     path('<int:workspace_id>/schedule/', ScheduleView.as_view({'post': 'post', 'get': 'get'})),
     path('<int:workspace_id>/configuration/', ConfigurationsView.as_view()),
     path('<int:workspace_id>/credentials/fyle/', ConnectFyleView.as_view({'get': 'get'})),
