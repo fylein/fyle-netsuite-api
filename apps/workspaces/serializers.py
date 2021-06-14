@@ -57,7 +57,8 @@ class ConfigurationSerializer(serializers.ModelSerializer):
         :param validated_data: Validated data
         :return: upserted general settings object
         """
-        workspace = validated_data['workspace']
+        # TODO: communicate to Shwetabh
+        workspace = Workspace.objects.get(pk=validated_data['workspace'])
 
         configuration, _ = Configuration.objects.update_or_create(
             workspace=workspace,

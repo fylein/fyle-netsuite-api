@@ -27,10 +27,7 @@ class WorkspacePermissions(permissions.BasePermission):
         workspace_users = cache.get(workspace_id)
 
         if workspace_users:
-            print('asdasd',self.validate_and_cache(workspace_users, user, workspace_id))
-            # TODO: check this buggar later
-            return True
+            return self.validate_and_cache(workspace_users, user, workspace_id)
         else:
             workspace_users = Workspace.objects.filter(pk=workspace_id).values_list('user', flat=True)
-            print('2222',self.validate_and_cache(workspace_users, user, workspace_id, True))
             return self.validate_and_cache(workspace_users, user, workspace_id, True)

@@ -268,7 +268,7 @@ class FyleConnector:
 
         return []
 
-    def sync_expense_custom_fields(self, active_only: bool):
+    def sync_expense_custom_fields(self, active_only: bool = True):
         """
         Get Expense Custom Fields from Fyle (Type = Select)
         """
@@ -324,30 +324,3 @@ class FyleConnector:
         Process Reimbursements in bulk.
         """
         return self.connection.Reimbursements.post(reimbursement_ids)
-
-    def sync_dimensions(self):
-        try:
-            self.sync_employees()
-        except Exception as exception:
-            logger.exception(exception)
-
-        try:
-            self.sync_categories()
-        except Exception as exception:
-            logger.exception(exception)
-
-        try:
-            self.sync_cost_centers()
-        except Exception as exception:
-            logger.exception(exception)
-
-        try:
-            self.sync_projects()
-        except Exception as exception:
-            logger.exception(exception)
-
-        try:
-            self.sync_expense_custom_fields(active_only=True)
-        except Exception as exception:
-            logger.exception(exception)
-

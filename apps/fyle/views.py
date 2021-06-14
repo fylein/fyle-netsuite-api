@@ -11,7 +11,7 @@ from fyle_accounting_mappings.serializers import ExpenseAttributeSerializer
 from apps.workspaces.models import FyleCredential, Workspace
 
 from .tasks import schedule_expense_group_creation
-from .connector import FyleConnector
+from .helpers import check_interval_and_sync_dimension, sync_dimensions
 from .models import Expense, ExpenseGroup, ExpenseGroupSettings
 from .serializers import ExpenseGroupSerializer, ExpenseSerializer, ExpenseFieldSerializer, \
     ExpenseGroupSettingsSerializer
@@ -176,16 +176,11 @@ class SyncFyleDimensionView(generics.ListCreateAPIView):
         Sync data from Fyle
         """
         try:
-            workspace = Workspace.objects.get(id=kwargs['workspace_id'])
-            if workspace.source_synced_at:
-                time_interval = datetime.now(timezone.utc) - workspace.source_synced_at
+            workspace = Workspace.objects.get(pk=kwargs['workspace_id'])
+            fyle_credentials = FyleCredential.objects.get(workspace_id=workspace.id)
 
-            if workspace.source_synced_at is None or time_interval.days > 0:
-                fyle_credentials = FyleCredential.objects.get(workspace_id=kwargs['workspace_id'])
-                fyle_connector = FyleConnector(fyle_credentials.refresh_token, kwargs['workspace_id'])
-
-                fyle_connector.sync_dimensions()
-
+            synced = check_interval_and_sync_dimension(workspace, fyle_credentials.refresh_token)
+            if synced:
                 workspace.source_synced_at = datetime.now()
                 workspace.save(update_fields=['source_synced_at'])
 
@@ -210,12 +205,10 @@ class RefreshFyleDimensionView(generics.ListCreateAPIView):
         Sync data from Fyle
         """
         try:
-            fyle_credentials = FyleCredential.objects.get(workspace_id=kwargs['workspace_id'])
-            fyle_connector = FyleConnector(fyle_credentials.refresh_token, kwargs['workspace_id'])
-
-            fyle_connector.sync_dimensions()
-
             workspace = Workspace.objects.get(id=kwargs['workspace_id'])
+            fyle_credentials = FyleCredential.objects.get(workspace_id=workspace.id)
+            sync_dimensions(fyle_credentials.refresh_token, workspace.id)
+
             workspace.source_synced_at = datetime.now()
             workspace.save(update_fields=['source_synced_at'])
 
