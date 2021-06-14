@@ -86,7 +86,7 @@ class ExpenseGroupSettingsView(generics.ListCreateAPIView):
         )
 
 
-class ExpenseCustomFieldsView(generics.ListCreateAPIView):
+class ExpenseAttributesView(generics.ListAPIView):
     """
     Expense Attributes view
     """
@@ -100,7 +100,7 @@ class ExpenseCustomFieldsView(generics.ListCreateAPIView):
             attribute_type=attribute_type, workspace_id=self.kwargs['workspace_id']).order_by('value')
 
 
-class ExpenseFieldsView(generics.ListAPIView):
+class FyleFieldsView(generics.ListAPIView):
     pagination_class = None
     serializer_class = ExpenseFieldSerializer
 

@@ -2,8 +2,8 @@ import itertools
 
 from django.urls import path
 
-from .views import ExpenseGroupView, ExpenseGroupByIdView, ExpenseGroupScheduleView, ExpenseFieldsView, ExpenseView,\
-    ExpenseCustomFieldsView, ExpenseGroupSettingsView, SyncFyleDimensionView, RefreshFyleDimensionView,\
+from .views import ExpenseGroupView, ExpenseGroupByIdView, ExpenseGroupScheduleView, FyleFieldsView, ExpenseView,\
+    ExpenseAttributesView, ExpenseGroupSettingsView, SyncFyleDimensionView, RefreshFyleDimensionView,\
     ExpenseGroupCountView
 
 expense_groups_paths = [
@@ -21,8 +21,8 @@ fyle_dimension_paths = [
 ]
 
 other_paths = [
-    path('expense_custom_fields/', ExpenseCustomFieldsView.as_view()),
-    path('expense_fields/', ExpenseFieldsView.as_view())
+    path('expense_attributes/', ExpenseAttributesView.as_view()),
+    path('fyle_fields/', FyleFieldsView.as_view())
 ]
 
 urlpatterns = list(itertools.chain(expense_groups_paths, fyle_dimension_paths, other_paths))
