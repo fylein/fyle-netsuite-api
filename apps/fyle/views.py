@@ -48,7 +48,6 @@ class ExpenseGroupCountView(generics.ListAPIView):
     """
     Expense Group Count View
     """
-    serializer_class = ExpenseGroupSerializer
 
     def get(self, request, *args, **kwargs):
         state_filter = {
