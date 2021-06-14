@@ -144,14 +144,14 @@ class NetSuiteFieldsView(generics.ListAPIView):
             ~Q(attribute_type='EXPENSE_CATEGORY') & ~Q(attribute_type='BANK_ACCOUNT') &
             ~Q(attribute_type='CREDIT_CARD_ACCOUNT') & ~Q(attribute_type='BANK_ACCOUNT') &
             ~Q(attribute_type='SUBSIDIARY') & ~Q(attribute_type='CURRENCY') &
-            ~Q(attribute_type='CCC_ACCOUNT'),
+            ~Q(attribute_type='CCC_ACCOUNT') & ~Q(attribute_type='CUSTOMER') & ~Q(display_name='Customer'),
             workspace_id=self.kwargs['workspace_id']
         ).values('attribute_type', 'display_name').distinct()
 
         return attributes
 
 
-class NetSuiteAttributesCountView(generics.ListCreateAPIView):
+class NetSuiteAttributesCountView(generics.ListAPIView):
     serializer_class = NetSuiteFieldSerializer
 
     def get_queryset(self):
