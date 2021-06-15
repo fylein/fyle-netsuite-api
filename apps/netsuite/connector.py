@@ -171,10 +171,12 @@ class NetSuiteConnector:
 
         return []
 
-    def sync_custom_segments(self, all_custom_list: List[CustomSegment]):
+    def sync_custom_segments(self):
         """
         Sync Custom Segments
         """
+        all_custom_list: List[CustomSegment] = CustomSegment.objects.filter(workspace_id=self.workspace_id).all()
+
         for custom_list_values in all_custom_list:
             custom_segment_attributes = []
 
@@ -204,9 +206,8 @@ class NetSuiteConnector:
                         }
                     )
 
-            DestinationAttribute.bulk_create_or_update_destination_attributes(custom_segment_attributes,
-                                                                              custom_list_values.name.upper().replace(
-                                                                                  ' ', '_'), self.workspace_id, True)
+            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                custom_segment_attributes, custom_list_values.name.upper().replace(' ', '_'), self.workspace_id, True)
 
         return []
 
@@ -263,8 +264,8 @@ class NetSuiteConnector:
                     'destination_id': location['internalId']
                 })
 
-        DestinationAttribute.bulk_create_or_update_destination_attributes(location_attributes,
-                                                                          'LOCATION', self.workspace_id, True)
+        DestinationAttribute.bulk_create_or_update_destination_attributes(
+            location_attributes, 'LOCATION', self.workspace_id, True)
 
         return []
 
@@ -284,8 +285,8 @@ class NetSuiteConnector:
                 'destination_id': classification['internalId']
             })
 
-        DestinationAttribute.bulk_create_or_update_destination_attributes(classification_attributes,
-                                                                          'CLASS', self.workspace_id, True)
+        DestinationAttribute.bulk_create_or_update_destination_attributes(
+            classification_attributes, 'CLASS', self.workspace_id, True)
 
         return []
 
@@ -305,8 +306,8 @@ class NetSuiteConnector:
                 'destination_id': department['internalId']
             })
 
-        DestinationAttribute.bulk_create_or_update_destination_attributes(department_attributes,
-                                                                          'DEPARTMENT', self.workspace_id, True)
+        DestinationAttribute.bulk_create_or_update_destination_attributes(
+            department_attributes, 'DEPARTMENT', self.workspace_id, True)
 
         return []
 
@@ -365,11 +366,14 @@ class NetSuiteConnector:
 
         netsuite_entity_id = vendor.detail['full_name'] if vendor else merchant
 
+        last_name = None
+        if vendor:
+            last_name = netsuite_entity_id.split(' ')[-1] if len(netsuite_entity_id.split(' ')) > 1 \
+                else netsuite_entity_id
+
         vendor = {
             'firstName': netsuite_entity_id.split(' ')[0] if vendor else None,
-            'lastName': (
-                netsuite_entity_id.split(' ')[-1] if len(netsuite_entity_id.split(' ')) > 1 else netsuite_entity_id)
-            if vendor else None,
+            'lastName': last_name,
             'isPerson': True if vendor else False,
             'entityId': netsuite_entity_id,
             'email': vendor.value if vendor else None,
@@ -436,8 +440,8 @@ class NetSuiteConnector:
                         'detail': detail
                     })
 
-            DestinationAttribute.bulk_create_or_update_destination_attributes(attributes,
-                                                                              'EMPLOYEE', self.workspace_id, True)
+            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                attributes, 'EMPLOYEE', self.workspace_id, True)
 
         return []
 
@@ -484,63 +488,6 @@ class NetSuiteConnector:
                 'employee', employee['entityId'], employee['internalId'], employee['email']
             )
 
-    def sync_dimensions(self, workspace_id: str):
-        try:
-            self.sync_expense_categories()
-        except Exception as exception:
-            logger.exception(exception)
-
-        try:
-            self.sync_locations()
-        except Exception as exception:
-            logger.exception(exception)
-
-        try:
-            self.sync_vendors()
-        except Exception as exception:
-            logger.exception(exception)
-
-        try:
-            self.sync_currencies()
-        except Exception as exception:
-            logger.exception(exception)
-
-        try:
-            self.sync_classifications()
-        except Exception as exception:
-            logger.exception(exception)
-
-        try:
-            self.sync_departments()
-        except Exception as exception:
-            logger.exception(exception)
-
-        try:
-            self.sync_employees()
-        except Exception as exception:
-            logger.exception(exception)
-
-        try:
-            self.sync_accounts()
-        except Exception as exception:
-            logger.exception(exception)
-
-        try:
-            all_custom_list = CustomSegment.objects.filter(workspace_id=workspace_id).all()
-            self.sync_custom_segments(all_custom_list)
-        except Exception as exception:
-            logger.exception(exception)
-
-        try:
-            self.sync_projects()
-        except Exception as exception:
-            logger.exception(exception)
-
-        try:
-            self.sync_customers()
-        except Exception as exception:
-            logger.exception(exception)
-
     def post_employee(self, employee: ExpenseAttribute, expense_group: ExpenseGroup):
         """
         Create an Employee on NetSuite
@@ -560,9 +507,8 @@ class NetSuiteConnector:
 
         expense = expense_group.expenses.first()
 
-        currency = DestinationAttribute.objects.filter(value=expense.currency,
-                                                       workspace_id=self.workspace_id,
-                                                       attribute_type='CURRENCY').first()
+        currency = DestinationAttribute.objects.filter(
+            value=expense.currency, workspace_id=self.workspace_id, attribute_type='CURRENCY').first()
 
         employee_entity_id = employee.detail['full_name']
 
@@ -624,8 +570,8 @@ class NetSuiteConnector:
                 'destination_id': subsidiary['internalId']
             })
 
-        DestinationAttribute.bulk_create_or_update_destination_attributes(subsidiary_attributes,
-                                                                          'SUBSIDIARY', self.workspace_id, True)
+        DestinationAttribute.bulk_create_or_update_destination_attributes(
+            subsidiary_attributes, 'SUBSIDIARY', self.workspace_id, True)
 
         return []
 
