@@ -55,10 +55,8 @@ def sync_dimensions(ns_credentials: NetSuiteCredentials, workspace_id: int, dime
             'departments', 'employees', 'accounts', 'custom_segments', 'projects', 'customers'
         ]
 
-    print('dimensions',dimensions)
     for dimension in dimensions:
         try:
-            print('syncing ',dimension)
             sync = getattr(netsuite_connection, 'sync_{}'.format(dimension))
             sync()
         except Exception as exception:
