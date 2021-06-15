@@ -286,7 +286,7 @@ class FyleConnector:
                     'value': option,
                     'source_id': 'expense_custom_field.{}.{}'.format(custom_field['name'].lower(), count),
                     'detail': {
-                        "custom_field_id": custom_field['id']
+                        'custom_field_id': custom_field['id']
                     }
                 })
                 count = count + 1

@@ -1,6 +1,6 @@
 import logging
 import traceback
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from typing import List, Dict
 
@@ -475,31 +475,41 @@ def create_fyle_expense_custom_field_payload(netsuite_attributes: List[Destinati
     :param fyle_attribute: Fyle Attribute
     :return: Fyle Expense Custom Field Payload
     """
+    system_fields = ['employee id', 'organisation name', 'employee name', 'employee email', 'expense date',
+                     'expense id', 'report id', 'employee id', 'department', 'state', 'reporter', 'report',
+                     'purpose', 'vendor', 'category', 'category code', 'mileage distance', 'mileage unit',
+                     'flight from city', 'flight to city', 'flight from date', 'flight to date', 'flight from class',
+                     'flight to class', 'hotel checkin', 'hotel checkout', 'hotel location', 'hotel breakfast',
+                     'currency', 'amount', 'foreign currency', 'foreign amount', 'tax', 'approver', 'project',
+                     'billable', 'cost center', 'cost center code', 'approved on', 'reimbursable', 'receipts',
+                     'paid date', 'expense created date']
+
     fyle_expense_custom_field_options = []
 
-    existing_attribute = ExpenseAttribute.objects.filter(
-        attribute_type=fyle_attribute, workspace_id=workspace_id).values_list('detail', flat=True).first()
+    if fyle_attribute not in system_fields:
+        existing_attribute = ExpenseAttribute.objects.filter(
+            attribute_type=fyle_attribute, workspace_id=workspace_id).values_list('detail', flat=True).first()
 
-    for netsuite_attribute in netsuite_attributes:
-        fyle_expense_custom_field_options.append(netsuite_attribute.value)
+        for netsuite_attribute in netsuite_attributes:
+            fyle_expense_custom_field_options.append(netsuite_attribute.value)
 
-    custom_field_id = None
-    if existing_attribute is not None:
-        custom_field_id = existing_attribute['custom_field_id']
+        custom_field_id = None
+        if existing_attribute is not None:
+            custom_field_id = existing_attribute['custom_field_id']
 
-    expense_custom_field_payload = {
-        "id": custom_field_id,
-        "name": fyle_attribute,
-        "type": "SELECT",
-        "active": True,
-        "mandatory": False,
-        "placeholder": 'Select {0}'.format(fyle_attribute.lower()),
-        "default_value": None,
-        "options": fyle_expense_custom_field_options,
-        "code": None
-    }
+        expense_custom_field_payload = {
+            'id': custom_field_id,
+            'name': fyle_attribute,
+            'type': 'SELECT',
+            'active': True,
+            'mandatory': False,
+            'placeholder': 'Select {0}'.format(fyle_attribute.lower()),
+            'default_value': None,
+            'options': fyle_expense_custom_field_options,
+            'code': None
+        }
 
-    return expense_custom_field_payload
+        return expense_custom_field_payload
 
 
 def upload_attributes_to_fyle(workspace_id: int, netsuite_attribute_type: str, fyle_attribute_type: str):
