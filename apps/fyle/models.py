@@ -108,7 +108,7 @@ class Expense(models.Model):
                     'project': expense['project_name'],
                     'expense_number': expense['expense_number'],
                     'claim_number': expense['claim_number'],
-                    'amount': expense['amount'],
+                    'amount': round(expense['amount'], 2),
                     'currency': expense['currency'],
                     'foreign_amount': expense['foreign_amount'],
                     'foreign_currency': expense['foreign_currency'],
@@ -252,11 +252,10 @@ def _group_expenses(expenses, group_fields, workspace_id):
             field = ExpenseAttribute.objects.filter(workspace_id=workspace_id,
                                                     attribute_type=field.upper()).first()
             if field:
-                custom_fields[field.attribute_type.lower()] = KeyTextTransform(field.display_name,
-                                                                           'custom_properties')
+                custom_fields[field.attribute_type.lower()] = KeyTextTransform(field.display_name, 'custom_properties')
 
-    expense_groups = list(expenses.values(*group_fields, **custom_fields).annotate(
-        total=Count('*'), expense_ids=ArrayAgg('id')))
+    expense_groups = list(
+        expenses.values(*group_fields, **custom_fields).annotate(total=Count('*'), expense_ids=ArrayAgg('id')))
     return expense_groups
 
 

@@ -4,6 +4,7 @@ from django.core.cache import cache
 
 from rest_framework.response import Response
 from rest_framework.views import status
+from rest_framework import generics
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
@@ -14,15 +15,14 @@ from fyle_rest_auth.models import AuthToken
 
 from fyle_netsuite_api.utils import assert_valid
 
-from apps.netsuite.utils import NetSuiteConnection
+from apps.netsuite.connector import NetSuiteConnection
 from apps.fyle.models import ExpenseGroupSettings
 
-from .models import Workspace, FyleCredential, NetSuiteCredentials, WorkspaceGeneralSettings, \
+from .models import Workspace, FyleCredential, NetSuiteCredentials, Configuration, \
     WorkspaceSchedule
-from .utils import create_or_update_general_settings
-from .tasks import schedule_sync, run_sync_schedule
+from .tasks import schedule_sync
 from .serializers import WorkspaceSerializer, FyleCredentialSerializer, NetSuiteCredentialSerializer, \
-    WorkSpaceGeneralSettingsSerializer, WorkspaceScheduleSerializer
+    ConfigurationSerializer, WorkspaceScheduleSerializer
 
 
 User = get_user_model()
@@ -318,20 +318,6 @@ class ConnectFyleView(viewsets.ViewSet):
             )
 
 
-class ScheduledSyncView(viewsets.ViewSet):
-    """
-    Scheduled Sync
-    """
-    def post(self, request, **kwargs):
-        """
-        Scheduled sync
-        """
-        run_sync_schedule(kwargs['workspace_id'])
-        return Response(
-            status=status.HTTP_200_OK
-        )
-
-
 class ScheduleView(viewsets.ViewSet):
     """
     Schedule View
@@ -374,40 +360,24 @@ class ScheduleView(viewsets.ViewSet):
             )
 
 
-class GeneralSettingsView(viewsets.ViewSet):
+class ConfigurationsView(generics.ListCreateAPIView):
     """
     General Settings
     """
-    serializer_class = WorkSpaceGeneralSettingsSerializer
-    queryset = WorkspaceGeneralSettings.objects.all()
-
-    def post(self, request, *args, **kwargs):
-        """
-        Post workspace general settings
-        """
-        general_settings_payload = request.data
-
-        assert_valid(general_settings_payload is not None, 'Request body is empty')
-
-        workspace_id = kwargs['workspace_id']
-
-        general_settings = create_or_update_general_settings(general_settings_payload, workspace_id)
-        return Response(
-            data=self.serializer_class(general_settings).data,
-            status=status.HTTP_200_OK
-        )
+    serializer_class = ConfigurationSerializer
+    queryset = Configuration.objects.all()
 
     def get(self, request, *args, **kwargs):
         """
         Get workspace general settings
         """
         try:
-            general_settings = self.queryset.get(workspace_id=kwargs['workspace_id'])
+            configuration = self.queryset.get(workspace_id=kwargs['workspace_id'])
             return Response(
-                data=self.serializer_class(general_settings).data,
+                data=self.serializer_class(configuration).data,
                 status=status.HTTP_200_OK
             )
-        except WorkspaceGeneralSettings.DoesNotExist:
+        except Configuration.DoesNotExist:
             return Response(
                 {
                     'message': 'General Settings does not exist in workspace'

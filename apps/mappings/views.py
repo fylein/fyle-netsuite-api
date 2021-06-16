@@ -15,7 +15,7 @@ from fyle_accounting_mappings.serializers import MappingSettingSerializer
 
 
 from fyle_netsuite_api.utils import assert_valid
-from apps.workspaces.models import WorkspaceGeneralSettings
+from apps.workspaces.models import Configuration
 from apps.mappings.tasks import schedule_fyle_attributes_creation, upload_attributes_to_fyle
 
 from .serializers import GeneralMappingSerializer, SubsidiaryMappingSerializer
@@ -118,11 +118,11 @@ class AutoMapEmployeeView(generics.CreateAPIView):
         """
         try:
             workspace_id = kwargs['workspace_id']
-            general_settings = WorkspaceGeneralSettings.objects.get(workspace_id=workspace_id)
+            configuration = Configuration.objects.get(workspace_id=workspace_id)
 
             chain = Chain(cached=False)
 
-            if not general_settings.auto_map_employees:
+            if not configuration.auto_map_employees:
                 return Response(
                     data={
                         'message': 'Employee mapping preference not found for this workspace'
@@ -202,7 +202,7 @@ class MappingSettingsView(ListCreateAPIView):
 
                         if schedule:
                             schedule.delete()
-                            general_settings = WorkspaceGeneralSettings.objects.get(
+                            general_settings = Configuration.objects.get(
                                 workspace_id=self.kwargs['workspace_id']
                             )
                             general_settings.import_projects = False

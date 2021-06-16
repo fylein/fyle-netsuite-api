@@ -12,7 +12,7 @@ import unidecode
 from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute
 
 from apps.fyle.models import Expense, ExpenseGroup
-from apps.fyle.utils import FyleConnector
+from apps.fyle.connector import FyleConnector
 
 from apps.mappings.models import SubsidiaryMapping
 from apps.netsuite.models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, \
@@ -26,13 +26,6 @@ SYNC_UPPER_LIMIT = {
     'projects': 5000,
     'customers': 5000
 }
-
-
-def _decode_project_or_customer_name(name):
-    value = name.replace(u'\xa0', ' ')
-    value = value.replace('/', '-')
-
-    return value
 
 
 class NetSuiteConnector:
@@ -55,6 +48,12 @@ class NetSuiteConnector:
         self.__netsuite_credentials = netsuite_credentials
 
         self.workspace_id = workspace_id
+
+    @staticmethod
+    def __decode_project_or_customer_name(name):
+        value = name.replace(u'\xa0', ' ')
+        value = value.replace('/', '-')
+        return value
 
     def sync_accounts(self):
         """
@@ -643,7 +642,7 @@ class NetSuiteConnector:
                 attributes = []
                 for project in projects:
                     if not project['isInactive']:
-                        value = _decode_project_or_customer_name(project['entityId'])
+                        value = self.__decode_project_or_customer_name(project['entityId'])
                         attributes.append({
                             'attribute_type': 'PROJECT',
                             'display_name': 'Project',
@@ -669,7 +668,7 @@ class NetSuiteConnector:
                 attributes = []
                 for customer in customers:
                     if not customer['isInactive']:
-                        value = _decode_project_or_customer_name(customer['entityId'])
+                        value = self.__decode_project_or_customer_name(customer['entityId'])
                         attributes.append({
                             'attribute_type': 'PROJECT',
                             'display_name': 'Customer',

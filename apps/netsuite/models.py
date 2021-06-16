@@ -11,7 +11,7 @@ from fyle_accounting_mappings.models import Mapping, MappingSetting, Destination
 
 from apps.fyle.models import ExpenseGroup, Expense, ExpenseAttribute
 from apps.mappings.models import GeneralMapping, SubsidiaryMapping
-from apps.workspaces.models import Workspace, WorkspaceGeneralSettings
+from apps.workspaces.models import Workspace, Configuration
 
 
 def get_department_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
@@ -315,7 +315,7 @@ class BillLineitem(models.Model):
         """
         expenses = expense_group.expenses.all()
         bill = Bill.objects.get(expense_group=expense_group)
-        general_settings: WorkspaceGeneralSettings = WorkspaceGeneralSettings.objects.get(
+        configuration: Configuration = Configuration.objects.get(
             workspace_id=expense_group.workspace_id)
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
@@ -345,6 +345,18 @@ class BillLineitem(models.Model):
 
             department_id = get_department_id_or_none(expense_group, lineitem)
 
+            if expense_group.fund_source == 'CCC':
+                entity = Mapping.objects.filter(
+                    destination_type='EMPLOYEE',
+                    source_type='EMPLOYEE',
+                    source__value=expense_group.description.get('employee_email'),
+                    workspace_id=expense_group.workspace_id
+                ).first()
+
+                if general_mappings.use_employee_department and entity:
+                    if general_mappings.department_level in ('ALL', 'TRANSACTION_LINE'):
+                        department_id = entity.destination.detail.get('department_id')
+
             location_id = get_location_id_or_none(expense_group, lineitem)
 
             if not location_id:
@@ -354,7 +366,7 @@ class BillLineitem(models.Model):
             custom_segments = get_custom_segments(expense_group, lineitem)
 
             customer_id = None
-            if general_settings.import_projects:
+            if configuration.import_projects:
                 customer_id = get_customer_id_or_none(expense_group, lineitem)
 
             billable = lineitem.billable
@@ -496,7 +508,7 @@ class CreditCardChargeLineItem(models.Model):
         """
         lineitem = expense_group.expenses.first()
         credit_card_charge = CreditCardCharge.objects.get(expense_group=expense_group)
-        general_settings: WorkspaceGeneralSettings = WorkspaceGeneralSettings.objects.get(
+        configuration: Configuration = Configuration.objects.get(
             workspace_id=expense_group.workspace_id)
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
@@ -525,7 +537,7 @@ class CreditCardChargeLineItem(models.Model):
         custom_segments = get_custom_segments(expense_group, lineitem)
 
         customer_id = None
-        if general_settings.import_projects:
+        if configuration.import_projects:
             customer_id = get_customer_id_or_none(expense_group, lineitem)
 
         billable = lineitem.billable
@@ -670,7 +682,7 @@ class ExpenseReportLineItem(models.Model):
         """
         expenses = expense_group.expenses.all()
         expense_report = ExpenseReport.objects.get(expense_group=expense_group)
-        general_settings: WorkspaceGeneralSettings = WorkspaceGeneralSettings.objects.get(
+        configuration: Configuration = Configuration.objects.get(
             workspace_id=expense_group.workspace_id)
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
@@ -705,7 +717,7 @@ class ExpenseReportLineItem(models.Model):
             department_id = get_department_id_or_none(expense_group, lineitem)
 
             customer_id = None
-            if general_settings.import_projects:
+            if configuration.import_projects:
                 customer_id = get_customer_id_or_none(expense_group, lineitem)
 
             location_id = get_location_id_or_none(expense_group, lineitem)
@@ -968,11 +980,11 @@ class VendorPayment(models.Model):
         :return: vendor payment object
         """
         general_mappings = GeneralMapping.objects.get(workspace_id=workspace_id)
-        general_settings = WorkspaceGeneralSettings.objects.get(workspace_id=workspace_id)
+        configuration = Configuration.objects.get(workspace_id=workspace_id)
 
         vendor_payment_object = VendorPayment.objects.create(
             accounts_payable_id=general_mappings.reimbursable_account_id
-            if general_settings.reimbursable_expenses_object == 'EXPENSE REPORT'
+            if configuration.reimbursable_expenses_object == 'EXPENSE REPORT'
             else general_mappings.accounts_payable_id,
             subsidiary_id=netsuite_object['subsidiary_id'],
             account_id=general_mappings.vendor_payment_account_id,
