@@ -16,10 +16,10 @@ from fyle_accounting_mappings.serializers import MappingSettingSerializer
 
 from fyle_netsuite_api.utils import assert_valid
 from apps.workspaces.models import Configuration
-from apps.mappings.tasks import schedule_fyle_attributes_creation, upload_attributes_to_fyle
 
 from .serializers import GeneralMappingSerializer, SubsidiaryMappingSerializer
 from .models import GeneralMapping, SubsidiaryMapping
+from .tasks import schedule_fyle_attributes_creation, upload_attributes_to_fyle
 from .utils import MappingUtils
 
 
@@ -154,7 +154,7 @@ class AutoMapEmployeeView(generics.CreateAPIView):
 
 class MappingSettingsView(ListCreateAPIView):
     """
-    Mapping Settings VIew
+    Mapping Settings View
     """
     serializer_class = MappingSettingSerializer
 

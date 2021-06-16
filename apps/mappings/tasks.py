@@ -486,7 +486,7 @@ def create_fyle_expense_custom_field_payload(netsuite_attributes: List[Destinati
 
     fyle_expense_custom_field_options = []
 
-    if fyle_attribute not in system_fields:
+    if fyle_attribute.lower() not in system_fields:
         existing_attribute = ExpenseAttribute.objects.filter(
             attribute_type=fyle_attribute, workspace_id=workspace_id).values_list('detail', flat=True).first()
 
@@ -588,7 +588,7 @@ def schedule_fyle_attributes_creation(workspace_id: int, netsuite_attribute_type
                 }
             )
         if netsuite_attribute_type == 'PROJECT':
-            general_settings = WorkspaceGeneralSettings.objects.get(workspace_id=workspace_id)
+            general_settings = Configuration.objects.get(workspace_id=workspace_id)
             general_settings.import_projects = True
             general_settings.save()
             schedule_projects_creation(import_projects=general_settings.import_projects, workspace_id=workspace_id)
