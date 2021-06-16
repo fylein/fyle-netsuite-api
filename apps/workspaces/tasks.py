@@ -7,7 +7,7 @@ from apps.fyle.tasks import async_create_expense_groups
 from apps.netsuite.tasks import schedule_bills_creation, schedule_journal_entry_creation, \
     schedule_expense_reports_creation, schedule_credit_card_charge_creation
 from apps.tasks.models import TaskLog
-from apps.workspaces.models import WorkspaceSchedule, WorkspaceGeneralSettings
+from apps.workspaces.models import WorkspaceSchedule, Configuration
 
 
 def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int):
@@ -47,7 +47,6 @@ def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int):
 def run_sync_schedule(workspace_id):
     """
     Run schedule
-    :param user: user email
     :param workspace_id: workspace id
     :return: None
     """
@@ -59,58 +58,57 @@ def run_sync_schedule(workspace_id):
         }
     )
 
-    general_settings = WorkspaceGeneralSettings.objects.get(workspace_id=workspace_id)
+    configuration = Configuration.objects.get(workspace_id=workspace_id)
 
     fund_source = ['PERSONAL']
-    if general_settings.corporate_credit_card_expenses_object:
+    if configuration.corporate_credit_card_expenses_object:
         fund_source.append('CCC')
-    if general_settings.reimbursable_expenses_object:
+    if configuration.reimbursable_expenses_object:
         async_create_expense_groups(
             workspace_id=workspace_id, fund_source=fund_source, task_log=task_log
         )
 
     if task_log.status == 'COMPLETE':
 
-        if general_settings.reimbursable_expenses_object:
+        if configuration.reimbursable_expenses_object:
 
             expense_group_ids = ExpenseGroup.objects.filter(fund_source='PERSONAL',
                                                             workspace_id=workspace_id).values_list('id', flat=True)
 
-            if general_settings.reimbursable_expenses_object == 'BILL':
+            if configuration.reimbursable_expenses_object == 'BILL':
                 schedule_bills_creation(
                     workspace_id=workspace_id, expense_group_ids=expense_group_ids
                 )
 
-            elif general_settings.reimbursable_expenses_object == 'EXPENSE REPORT':
+            elif configuration.reimbursable_expenses_object == 'EXPENSE REPORT':
                 schedule_expense_reports_creation(
                     workspace_id=workspace_id, expense_group_ids=expense_group_ids
                 )
 
-            elif general_settings.reimbursable_expenses_object == 'JOURNAL ENTRY':
+            elif configuration.reimbursable_expenses_object == 'JOURNAL ENTRY':
                 schedule_journal_entry_creation(
                     workspace_id=workspace_id, expense_group_ids=expense_group_ids
                 )
 
-        if general_settings.corporate_credit_card_expenses_object:
+        if configuration.corporate_credit_card_expenses_object:
             expense_group_ids = ExpenseGroup.objects.filter(fund_source='CCC',
                                                             workspace_id=workspace_id).values_list('id', flat=True)
 
-            if general_settings.corporate_credit_card_expenses_object == 'JOURNAL ENTRY':
+            if configuration.corporate_credit_card_expenses_object == 'JOURNAL ENTRY':
                 schedule_journal_entry_creation(
                     workspace_id=workspace_id, expense_group_ids=expense_group_ids
                 )
 
-            elif general_settings.corporate_credit_card_expenses_object == 'BILL':
+            elif configuration.corporate_credit_card_expenses_object == 'BILL':
                 schedule_bills_creation(
                     workspace_id=workspace_id, expense_group_ids=expense_group_ids
                 )
 
-            elif general_settings.corporate_credit_card_expenses_object == 'EXPENSE REPORT':
+            elif configuration.corporate_credit_card_expenses_object == 'EXPENSE REPORT':
                 schedule_expense_reports_creation(
                     workspace_id=workspace_id, expense_group_ids=expense_group_ids
                 )
-            elif general_settings.corporate_credit_card_expenses_object == 'Credit Card Charge':
+            elif configuration.corporate_credit_card_expenses_object == 'Credit Card Charge':
                 schedule_credit_card_charge_creation(
                     workspace_id=workspace_id, expense_group_ids=expense_group_ids
                 )
-

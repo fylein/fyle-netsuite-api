@@ -3,7 +3,9 @@ Workspace Models
 """
 from django.db import models
 from django.contrib.auth import get_user_model
+
 from django_q.models import Schedule
+
 
 User = get_user_model()
 
@@ -74,27 +76,56 @@ class WorkspaceSchedule(models.Model):
         db_table = 'workspace_schedules'
 
 
-class WorkspaceGeneralSettings(models.Model):
+REIMBURSABLE_EXPENSES_OBJECT_CHOICES = (
+    ('EXPENSE REPORT', 'EXPENSE REPORT'),
+    ('JOURNAL ENTRY', 'JOURNAL ENTRY'),
+    ('BILL', 'BILL')
+)
+
+COPORATE_CARD_EXPENSES_OBJECT_CHOICES = (
+    ('EXPENSE REPORT', 'EXPENSE REPORT'),
+    ('JOURNAL ENTRY', 'JOURNAL ENTRY'),
+    ('BILL', 'BILL'),
+    ('CREDIT CARD CHARGE', 'CREDIT CARD CHARGE')
+)
+
+AUTO_MAP_EMPLOYEE_CHOICES = (
+    ('EMAIL', 'EMAIL'),
+    ('NAME', 'NAME'),
+    ('EMPLOYEE_CODE', 'EMPLOYEE_CODE'),
+)
+
+
+class Configuration(models.Model):
     """
     Workspace General Settings
     """
     id = models.AutoField(primary_key=True, help_text='Unique Id to identify a workspace')
     workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
-    reimbursable_expenses_object = models.CharField(max_length=50, help_text='Reimbursable Expenses type')
-    corporate_credit_card_expenses_object = models.CharField(max_length=50,
-                                                             help_text='Non Reimbursable Expenses type', null=True)
+
+    reimbursable_expenses_object = models.CharField(
+        max_length=50, choices=REIMBURSABLE_EXPENSES_OBJECT_CHOICES, help_text='Reimbursable Expenses type'
+    )
+    corporate_credit_card_expenses_object = models.CharField(
+        max_length=50, choices=COPORATE_CARD_EXPENSES_OBJECT_CHOICES,
+        help_text='Corporate Card Expenses type', null=True
+    )
     import_categories = models.BooleanField(default=False, help_text='Auto import categories to Fyle')
     import_projects = models.BooleanField(default=False, help_text='Auto import projects to Fyle')
-    sync_fyle_to_netsuite_payments = models.BooleanField(default=False,
-                                                         help_text='Auto Sync Payments from Fyle to Netsuite')
-    sync_netsuite_to_fyle_payments = models.BooleanField(default=False,
-                                                         help_text='Auto Sync Payments from NetSuite to Fyle')
+    sync_fyle_to_netsuite_payments = models.BooleanField(
+        default=False, help_text='Auto Sync Payments from Fyle to Netsuite'
+    )
+    sync_netsuite_to_fyle_payments = models.BooleanField(
+        default=False, help_text='Auto Sync Payments from NetSuite to Fyle'
+    )
     auto_create_merchants = models.BooleanField(default=False, help_text='Auto Create Merchants for CC Charges')
-    auto_map_employees = models.CharField(max_length=50,
-                                          help_text='Auto Map Employees type from NetSuite to Fyle', null=True)
+    auto_map_employees = models.CharField(
+        max_length=50, choices=AUTO_MAP_EMPLOYEE_CHOICES,
+        help_text='Auto Map Employees type from NetSuite to Fyle', null=True
+    )
     auto_create_destination_entity = models.BooleanField(default=False, help_text='Auto create vendor / employee')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
     class Meta:
-        db_table = 'workspace_general_settings'
+        db_table = 'configurations'

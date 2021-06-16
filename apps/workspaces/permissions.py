@@ -11,8 +11,8 @@ class WorkspacePermissions(permissions.BasePermission):
     """
     Permission check for users <> workspaces
     """
-
-    def validate_and_cache(self, workspace_users, user: User, workspace_id: str, cache_users: bool = False):
+    @staticmethod
+    def validate_and_cache(workspace_users, user: User, workspace_id: str, cache_users: bool = False):
         if user.id in workspace_users:
             if cache_users:
                 # Setting cache to expire after 2 days
