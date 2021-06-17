@@ -1,6 +1,6 @@
 import logging
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from typing import List, Dict
 
@@ -533,7 +533,7 @@ def upload_attributes_to_fyle(workspace_id: int, netsuite_attribute_type: str, f
 
         if fyle_attributes_payload:
             fyle_connection.connection.CostCenters.post(fyle_attributes_payload)
-            fyle_connection.sync_cost_centers()
+            fyle_connection.sync_cost_centers(active_only=True)
 
     else:
         fyle_custom_field_payload = create_fyle_expense_custom_field_payload(
@@ -584,7 +584,7 @@ def schedule_fyle_attributes_creation(workspace_id: int, netsuite_attribute_type
                 defaults={
                     'schedule_type': Schedule.MINUTES,
                     'minutes': 24 * 60,
-                    'next_run': datetime.now()
+                    'next_run': datetime.now() + timedelta(hours=24)
                 }
             )
         if netsuite_attribute_type == 'PROJECT':
