@@ -497,13 +497,15 @@ def create_fyle_expense_custom_field_payload(netsuite_attributes: List[Destinati
         if existing_attribute is not None:
             custom_field_id = existing_attribute['custom_field_id']
 
+        fyle_attribute = fyle_attribute.replace('_', ' ').title()
+
         expense_custom_field_payload = {
             'id': custom_field_id,
             'name': fyle_attribute,
             'type': 'SELECT',
             'active': True,
             'mandatory': False,
-            'placeholder': 'Select {0}'.format(fyle_attribute.lower()),
+            'placeholder': 'Select {0}'.format(fyle_attribute),
             'default_value': None,
             'options': fyle_expense_custom_field_options,
             'code': None
