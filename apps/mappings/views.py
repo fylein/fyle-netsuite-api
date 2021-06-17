@@ -174,6 +174,7 @@ class MappingSettingsView(ListCreateAPIView):
 
             for mapping_setting in mapping_settings:
                 if 'is_custom' not in mapping_setting:
+                    mapping_setting['source_field'] = mapping_setting['source_field'].upper().replace(' ', '_')
                     all_mapping_settings.append(mapping_setting)
 
                 if 'is_custom' in mapping_setting and 'import_to_fyle' in mapping_setting:
@@ -183,6 +184,8 @@ class MappingSettingsView(ListCreateAPIView):
                             netsuite_attribute_type=mapping_setting['destination_field'],
                             fyle_attribute_type=mapping_setting['source_field'],
                         )
+
+                    mapping_setting['source_field'] = mapping_setting['source_field'].upper().replace(' ', '_')
 
                     schedule_fyle_attributes_creation(
                         workspace_id=self.kwargs['workspace_id'],
