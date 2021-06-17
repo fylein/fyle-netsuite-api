@@ -898,7 +898,7 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
         first_object_id = vendor_payment_lineitems[0].doc_id
         if object_type == 'BILL':
             first_object = netsuite_connection.get_bill(first_object_id)
-        elif object_type == 'EXPENSE REPORT':
+        else:
             first_object = netsuite_connection.get_expense_report(first_object_id)
 
         created_vendor_payment = netsuite_connection.post_vendor_payment(
