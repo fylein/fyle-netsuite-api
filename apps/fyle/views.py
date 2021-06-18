@@ -99,7 +99,10 @@ class ExpenseFieldsView(generics.ListAPIView):
         for attribute in attributes:
             expense_fields.append(attribute)
 
-        return Response(expense_fields)
+        return Response(
+            expense_fields,
+            status=status.HTTP_200_OK
+        )
 
 
 class ExpenseGroupScheduleView(generics.CreateAPIView):
