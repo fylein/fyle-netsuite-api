@@ -13,7 +13,6 @@ from fyle_accounting_mappings.views import logger
 from fyle_accounting_mappings.exceptions import BulkError
 from fyle_accounting_mappings.serializers import MappingSettingSerializer
 
-
 from fyle_netsuite_api.utils import assert_valid
 from apps.workspaces.models import Configuration
 
@@ -178,7 +177,7 @@ class MappingSettingsView(ListCreateAPIView):
                     all_mapping_settings.append(mapping_setting)
 
                 if 'is_custom' in mapping_setting and 'import_to_fyle' in mapping_setting:
-                    if mapping_setting['is_custom']:
+                    if mapping_setting['is_custom'] or mapping_setting['source_field'] == 'COST_CENTER':
                         upload_attributes_to_fyle(
                             workspace_id=self.kwargs['workspace_id'],
                             netsuite_attribute_type=mapping_setting['destination_field'],
@@ -196,11 +195,11 @@ class MappingSettingsView(ListCreateAPIView):
 
                     all_mapping_settings.append(mapping_setting)
 
-                    if mapping_setting['destination_field'] in ['PROJECT'] and\
+                    if mapping_setting['destination_field'] == 'PROJECT' and \
                             mapping_setting['import_to_fyle'] is False:
                         schedule: Schedule = Schedule.objects.filter(
                             func='apps.mappings.tasks.auto_create_project_mappings',
-                            args=(self.kwargs['workspace_id']),
+                            args=(self.kwargs['workspace_id'], mapping_setting['source_field']),
                         ).first()
 
                         if schedule:

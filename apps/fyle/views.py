@@ -88,13 +88,18 @@ class ExpenseFieldsView(generics.ListAPIView):
     pagination_class = None
     serializer_class = ExpenseFieldSerializer
 
-    def get_queryset(self):
+    def get(self, request, *args, **kwargs):
         attributes = ExpenseAttribute.objects.filter(
             ~Q(attribute_type='EMPLOYEE') & ~Q(attribute_type='CATEGORY'),
             workspace_id=self.kwargs['workspace_id']
         ).values('attribute_type', 'display_name').distinct()
 
-        return attributes
+        expense_fields = [{'attribute_type': 'COST_CENTER', 'display_name': 'Cost Center'}]
+
+        for attribute in attributes:
+            expense_fields.append(attribute)
+
+        return Response(expense_fields)
 
 
 class ExpenseGroupScheduleView(generics.CreateAPIView):

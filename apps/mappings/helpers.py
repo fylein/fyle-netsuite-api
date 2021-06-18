@@ -8,7 +8,9 @@ def schedule_or_delete_auto_mapping_tasks(configuration: Configuration):
     :param configuration: Workspace Configuration Instance
     :return: None
     """
-    schedule_projects_creation(import_projects=configuration.import_projects, workspace_id=configuration.workspace_id)
+    schedule_projects_creation(
+        import_projects=configuration.import_projects, workspace_id=configuration.workspace_id, source_field='PROJECT'
+    )
     schedule_categories_creation(
         import_categories=configuration.import_categories, workspace_id=configuration.workspace_id)
     schedule_auto_map_employees(
