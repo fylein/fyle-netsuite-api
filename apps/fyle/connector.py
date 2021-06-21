@@ -1,6 +1,7 @@
 from typing import List
 import json
 import logging
+from datetime import datetime
 
 from django.conf import settings
 
@@ -30,8 +31,7 @@ class FyleConnector:
             base_url=base_url,
             client_id=client_id,
             client_secret=client_secret,
-            refresh_token=refresh_token,
-            jobs_url=settings.FYLE_JOBS_URL
+            refresh_token=refresh_token
         )
 
     def _post_request(self, url, body):
@@ -110,6 +110,24 @@ class FyleConnector:
         elif response.status_code == 500:
             raise InternalServerError('Internal server error', response.text)
 
+    def __format_updated_at(self, updated_at):
+        return 'gte:{0}'.format(datetime.strftime(updated_at, '%Y-%m-%dT%H:%M:%S.000Z'))
+
+    def __get_last_synced_at(self, attribute_type: str):
+        latest_synced_record = ExpenseAttribute.objects.filter(
+            workspace_id=self.workspace_id,
+            attribute_type=attribute_type
+        ).order_by('-updated_at').first()
+        updated_at = self.__format_updated_at(latest_synced_record.updated_at) if latest_synced_record else None
+
+        return updated_at
+
+    def existing_db_count(self, attribute_type: str):
+        return ExpenseAttribute.objects.filter(
+            workspace_id=self.workspace_id,
+            attribute_type=attribute_type
+        ).count()
+
     def get_employee_profile(self):
         """
         Get expenses from fyle
@@ -154,7 +172,8 @@ class FyleConnector:
         """
         Get employees from fyle
         """
-        employees = self.connection.Employees.get_all()
+        updated_at = self.__get_last_synced_at('EMPLOYEE')
+        employees = self.connection.Employees.get_all(updated_at=updated_at)
 
         employee_attributes = []
 
@@ -180,12 +199,6 @@ class FyleConnector:
 
         return []
 
-    def existing_db_count(self, attribute_type: str):
-        return ExpenseAttribute.objects.filter(
-            workspace_id=self.workspace_id,
-            attribute_type=attribute_type
-        ).count()
-
     def sync_categories(self):
         """
         Get categories from fyle
@@ -196,7 +209,7 @@ class FyleConnector:
         if existing_db_count == existing_category_count:
             return
 
-        categories = self.connection.Categories.get()['data']
+        categories = self.connection.Categories.get_all()
 
         category_attributes = []
 
@@ -268,7 +281,7 @@ class FyleConnector:
 
         return []
 
-    def sync_expense_custom_fields(self, active_only: bool):
+    def sync_expense_custom_fields(self, active_only: bool = True):
         """
         Get Expense Custom Fields from Fyle (Type = Select)
         """
@@ -298,7 +311,12 @@ class FyleConnector:
         """
         Get reimbursements from fyle
         """
-        reimbursements = self.connection.Reimbursements.get_all()
+        latest_synced_record = Reimbursement.objects.filter(
+            workspace_id=self.workspace_id
+        ).order_by('-updated_at').first()
+        updated_at = self.__format_updated_at(latest_synced_record.updated_at) if latest_synced_record else None
+
+        reimbursements = self.connection.Reimbursements.get_all(updated_at=updated_at)
 
         Reimbursement.create_or_update_reimbursement_objects(
             reimbursements, self.workspace_id
@@ -324,30 +342,3 @@ class FyleConnector:
         Process Reimbursements in bulk.
         """
         return self.connection.Reimbursements.post(reimbursement_ids)
-
-    def sync_dimensions(self):
-        try:
-            self.sync_employees()
-        except Exception as exception:
-            logger.exception(exception)
-
-        try:
-            self.sync_categories()
-        except Exception as exception:
-            logger.exception(exception)
-
-        try:
-            self.sync_cost_centers()
-        except Exception as exception:
-            logger.exception(exception)
-
-        try:
-            self.sync_projects()
-        except Exception as exception:
-            logger.exception(exception)
-
-        try:
-            self.sync_expense_custom_fields(active_only=True)
-        except Exception as exception:
-            logger.exception(exception)
-

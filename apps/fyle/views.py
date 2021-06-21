@@ -11,7 +11,7 @@ from fyle_accounting_mappings.serializers import ExpenseAttributeSerializer
 from apps.workspaces.models import FyleCredential, Workspace
 
 from .tasks import schedule_expense_group_creation
-from .connector import FyleConnector
+from .helpers import check_interval_and_sync_dimension, sync_dimensions
 from .models import Expense, ExpenseGroup, ExpenseGroupSettings
 from .serializers import ExpenseGroupSerializer, ExpenseSerializer, ExpenseFieldSerializer, \
     ExpenseGroupSettingsSerializer
@@ -24,18 +24,15 @@ class ExpenseGroupView(generics.ListCreateAPIView):
     serializer_class = ExpenseGroupSerializer
 
     def get_queryset(self):
-        state = self.request.query_params.get('state', 'ALL')
-
-        if state == 'ALL':
-            return ExpenseGroup.objects.filter(workspace_id=self.kwargs['workspace_id']).order_by('-updated_at')
+        state = self.request.query_params.get('state')
 
         if state == 'FAILED':
-            return ExpenseGroup.objects.filter(tasklog__status='FAILED',
-                                               workspace_id=self.kwargs['workspace_id']).order_by('-updated_at')
+            return ExpenseGroup.objects.filter(
+                tasklog__status='FAILED', workspace_id=self.kwargs['workspace_id']).order_by('-updated_at')
 
         elif state == 'COMPLETE':
-            return ExpenseGroup.objects.filter(tasklog__status='COMPLETE',
-                                               workspace_id=self.kwargs['workspace_id']).order_by('-exported_at')
+            return ExpenseGroup.objects.filter(
+                tasklog__status='COMPLETE', workspace_id=self.kwargs['workspace_id']).order_by('-exported_at')
 
         elif state == 'READY':
             return ExpenseGroup.objects.filter(
@@ -45,6 +42,25 @@ class ExpenseGroupView(generics.ListCreateAPIView):
                 journalentry__id__isnull=True,
                 creditcardcharge__id__isnull=True
             ).order_by('-updated_at')
+
+
+class ExpenseGroupCountView(generics.ListAPIView):
+    """
+    Expense Group Count View
+    """
+
+    def get(self, request, *args, **kwargs):
+        state_filter = {
+            'tasklog__status': self.request.query_params.get('state')
+        }
+        expense_groups_count = ExpenseGroup.objects.filter(
+            workspace_id=kwargs['workspace_id'], **state_filter
+        ).count()
+
+        return Response(
+            data={'count': expense_groups_count},
+            status=status.HTTP_200_OK
+        )
 
 
 class ExpenseGroupSettingsView(generics.ListCreateAPIView):
@@ -70,9 +86,9 @@ class ExpenseGroupSettingsView(generics.ListCreateAPIView):
         )
 
 
-class ExpenseCustomFieldsView(generics.ListCreateAPIView):
+class ExpenseAttributesView(generics.ListAPIView):
     """
-    Project view
+    Expense Attributes view
     """
     serializer_class = ExpenseAttributeSerializer
     pagination_class = None
@@ -84,7 +100,7 @@ class ExpenseCustomFieldsView(generics.ListCreateAPIView):
             attribute_type=attribute_type, workspace_id=self.kwargs['workspace_id']).order_by('value')
 
 
-class ExpenseFieldsView(generics.ListAPIView):
+class FyleFieldsView(generics.ListAPIView):
     pagination_class = None
     serializer_class = ExpenseFieldSerializer
 
@@ -117,28 +133,8 @@ class ExpenseGroupByIdView(generics.RetrieveAPIView):
     """
     Expense Group by Id view
     """
-
-    def get(self, request, *args, **kwargs):
-        """
-        Get expenses
-        """
-        try:
-            expense_group = ExpenseGroup.objects.get(
-                workspace_id=kwargs['workspace_id'], pk=kwargs['expense_group_id']
-            )
-
-            return Response(
-                data=ExpenseGroupSerializer(expense_group).data,
-                status=status.HTTP_200_OK
-            )
-
-        except ExpenseGroup.DoesNotExist:
-            return Response(
-                data={
-                    'message': 'Expense group not found'
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
+    serializer_class = ExpenseGroupSerializer
+    queryset = ExpenseGroup.objects.all()
 
 
 class ExpenseView(generics.RetrieveAPIView):
@@ -179,16 +175,11 @@ class SyncFyleDimensionView(generics.ListCreateAPIView):
         Sync data from Fyle
         """
         try:
-            workspace = Workspace.objects.get(id=kwargs['workspace_id'])
-            if workspace.source_synced_at:
-                time_interval = datetime.now(timezone.utc) - workspace.source_synced_at
+            workspace = Workspace.objects.get(pk=kwargs['workspace_id'])
+            fyle_credentials = FyleCredential.objects.get(workspace_id=workspace.id)
 
-            if workspace.source_synced_at is None or time_interval.days > 0:
-                fyle_credentials = FyleCredential.objects.get(workspace_id=kwargs['workspace_id'])
-                fyle_connector = FyleConnector(fyle_credentials.refresh_token, kwargs['workspace_id'])
-
-                fyle_connector.sync_dimensions()
-
+            synced = check_interval_and_sync_dimension(workspace, fyle_credentials.refresh_token)
+            if synced:
                 workspace.source_synced_at = datetime.now()
                 workspace.save(update_fields=['source_synced_at'])
 
@@ -213,12 +204,10 @@ class RefreshFyleDimensionView(generics.ListCreateAPIView):
         Sync data from Fyle
         """
         try:
-            fyle_credentials = FyleCredential.objects.get(workspace_id=kwargs['workspace_id'])
-            fyle_connector = FyleConnector(fyle_credentials.refresh_token, kwargs['workspace_id'])
-
-            fyle_connector.sync_dimensions()
-
             workspace = Workspace.objects.get(id=kwargs['workspace_id'])
+            fyle_credentials = FyleCredential.objects.get(workspace_id=workspace.id)
+            sync_dimensions(fyle_credentials.refresh_token, workspace.id)
+
             workspace.source_synced_at = datetime.now()
             workspace.save(update_fields=['source_synced_at'])
 

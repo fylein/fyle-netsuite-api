@@ -3,7 +3,7 @@ from datetime import datetime
 from django_q.models import Schedule
 
 from apps.fyle.models import ExpenseGroup
-from apps.fyle.tasks import async_create_expense_groups
+from apps.fyle.tasks import create_expense_groups
 from apps.netsuite.tasks import schedule_bills_creation, schedule_journal_entry_creation, \
     schedule_expense_reports_creation, schedule_credit_card_charge_creation
 from apps.tasks.models import TaskLog
@@ -64,7 +64,7 @@ def run_sync_schedule(workspace_id):
     if configuration.corporate_credit_card_expenses_object:
         fund_source.append('CCC')
     if configuration.reimbursable_expenses_object:
-        async_create_expense_groups(
+        create_expense_groups(
             workspace_id=workspace_id, fund_source=fund_source, task_log=task_log
         )
 
