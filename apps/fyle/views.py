@@ -96,19 +96,16 @@ class ExpenseFieldsView(generics.ListAPIView):
             workspace_id=self.kwargs['workspace_id']
         ).values('attribute_type', 'display_name').distinct()
 
-        attributes.append(
-            {
-                'attribute_type': 'PROJECT',
-                'display_name': 'Project'
-            },
-            {
-                'attribute_type': 'COST_CENTER',
-                'display_name': 'Cost Center'
-            }
-        )
+        expense_fields = [
+            {'attribute_type': 'COST_CENTER', 'display_name': 'Cost Center'},
+            {'attribute_type': 'PROJECT', 'display_name': 'Project'}
+        ]
+
+        for attribute in attributes:
+            expense_fields.append(attribute)
 
         return Response(
-            attributes,
+            expense_fields,
             status=status.HTTP_200_OK
         )
 
