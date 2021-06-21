@@ -340,7 +340,7 @@ class FyleConnector:
             logger.exception(exception)
 
         try:
-            self.sync_cost_centers()
+            self.sync_cost_centers(active_only=True)
         except Exception as exception:
             logger.exception(exception)
 

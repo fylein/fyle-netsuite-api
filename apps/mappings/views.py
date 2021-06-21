@@ -189,7 +189,6 @@ class MappingSettingsView(ListCreateAPIView):
                     schedule_fyle_attributes_creation(
                         workspace_id=self.kwargs['workspace_id'],
                         netsuite_attribute_type=mapping_setting['destination_field'],
-                        fyle_attribute_type=mapping_setting['source_field'],
                         import_to_fyle=mapping_setting['import_to_fyle'],
                     )
 
@@ -199,7 +198,7 @@ class MappingSettingsView(ListCreateAPIView):
                             mapping_setting['import_to_fyle'] is False:
                         schedule: Schedule = Schedule.objects.filter(
                             func='apps.mappings.tasks.auto_create_project_mappings',
-                            args=(self.kwargs['workspace_id'], mapping_setting['source_field']),
+                            args='{}'.format(self.kwargs['workspace_id'])
                         ).first()
 
                         if schedule:
