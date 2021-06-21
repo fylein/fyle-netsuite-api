@@ -178,11 +178,12 @@ class MappingSettingsView(ListCreateAPIView):
 
                 if 'is_custom' in mapping_setting and 'import_to_fyle' in mapping_setting:
                     if mapping_setting['is_custom'] or mapping_setting['source_field'] == 'COST_CENTER':
-                        upload_attributes_to_fyle(
-                            workspace_id=self.kwargs['workspace_id'],
-                            netsuite_attribute_type=mapping_setting['destination_field'],
-                            fyle_attribute_type=mapping_setting['source_field'],
-                        )
+                        if mapping_setting['import_to_fyle']:
+                            upload_attributes_to_fyle(
+                                workspace_id=self.kwargs['workspace_id'],
+                                netsuite_attribute_type=mapping_setting['destination_field'],
+                                fyle_attribute_type=mapping_setting['source_field'],
+                            )
 
                     mapping_setting['source_field'] = mapping_setting['source_field'].upper().replace(' ', '_')
 
