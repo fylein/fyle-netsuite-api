@@ -89,18 +89,26 @@ class ExpenseFieldsView(generics.ListAPIView):
     serializer_class = ExpenseFieldSerializer
 
     def get(self, request, *args, **kwargs):
+        default_attributes = ['EMPLOYEE', 'CATEGORY', 'PROJECT', 'COST_CENTER']
+
         attributes = ExpenseAttribute.objects.filter(
-            ~Q(attribute_type='EMPLOYEE') & ~Q(attribute_type='CATEGORY') & ~Q(attribute_type='COST_CENTER'),
+            ~Q(attribute_type__in=default_attributes),
             workspace_id=self.kwargs['workspace_id']
         ).values('attribute_type', 'display_name').distinct()
 
-        expense_fields = [{'attribute_type': 'COST_CENTER', 'display_name': 'Cost Center'}]
-
-        for attribute in attributes:
-            expense_fields.append(attribute)
+        attributes.append(
+            {
+                'attribute_type': 'PROJECT',
+                'display_name': 'Project'
+            },
+            {
+                'attribute_type': 'COST_CENTER',
+                'display_name': 'Cost Center'
+            }
+        )
 
         return Response(
-            expense_fields,
+            attributes,
             status=status.HTTP_200_OK
         )
 
