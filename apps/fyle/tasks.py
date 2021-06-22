@@ -11,7 +11,6 @@ from apps.tasks.models import TaskLog
 
 from .models import Expense, ExpenseGroup, ExpenseGroupSettings
 from .connector import FyleConnector
-from .serializers import ExpenseGroupSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +39,6 @@ def schedule_expense_group_creation(workspace_id: int):
     async_task('apps.fyle.tasks.create_expense_groups', workspace_id, fund_source, task_log)
 
 
-
 def create_expense_groups(workspace_id: int, fund_source: List[str], task_log: TaskLog):
     """
     Create expense groups
@@ -48,34 +46,18 @@ def create_expense_groups(workspace_id: int, fund_source: List[str], task_log: T
     :param workspace_id: workspace id
     :param state: expense state
     :param fund_source: expense fund source
-    :return: task log
     """
-
-    async_create_expense_groups(workspace_id, fund_source, task_log)
-
-    task_log.detail = {
-        'message': 'Creating expense groups'
-    }
-    task_log.save()
-
-    return task_log
-
-
-def async_create_expense_groups(workspace_id: int, fund_source: List[str], task_log: TaskLog):
     try:
         with transaction.atomic():
+            updated_at = []
 
             workspace = Workspace.objects.get(pk=workspace_id)
-
             last_synced_at = workspace.last_synced_at
-
-            updated_at = []
 
             if last_synced_at:
                 updated_at.append('gte:{0}'.format(datetime.strftime(last_synced_at, '%Y-%m-%dT%H:%M:%S.000Z')))
 
             fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-
             fyle_connector = FyleConnector(fyle_credentials.refresh_token, workspace_id)
 
             expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=workspace_id)
@@ -92,14 +74,11 @@ def async_create_expense_groups(workspace_id: int, fund_source: List[str], task_
 
             expense_objects = Expense.create_expense_objects(expenses, workspace_id)
 
-            expense_group_objects = ExpenseGroup.create_expense_groups_by_report_id_fund_source(
+            ExpenseGroup.create_expense_groups_by_report_id_fund_source(
                 expense_objects, workspace_id
             )
 
-            task_log.detail = ExpenseGroupSerializer(expense_group_objects, many=True).data
-
             task_log.status = 'COMPLETE'
-
             task_log.save()
 
     except FyleCredential.DoesNotExist:

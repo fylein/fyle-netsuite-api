@@ -295,13 +295,10 @@ class ExpenseGroup(models.Model):
 
         expense_groups.extend(corporate_credit_card_expense_groups)
 
-        expense_group_objects = []
-
         for expense_group in expense_groups:
             if expense_group_settings.export_date_type == 'last_spent_at':
                 expense_group['last_spent_at'] = Expense.objects.filter(
-                                                 id__in=expense_group['expense_ids']
-                                                 ).order_by('-spent_at').first().spent_at
+                    id__in=expense_group['expense_ids']).order_by('-spent_at').first().spent_at
 
             expense_ids = expense_group['expense_ids']
             expense_group.pop('total')
@@ -321,10 +318,6 @@ class ExpenseGroup(models.Model):
             )
 
             expense_group_object.expenses.add(*expense_ids)
-
-            expense_group_objects.append(expense_group_object)
-
-        return expense_group_objects
 
 
 class Reimbursement(models.Model):
