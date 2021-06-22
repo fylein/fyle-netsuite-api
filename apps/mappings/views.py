@@ -13,7 +13,6 @@ from fyle_accounting_mappings.views import logger
 from fyle_accounting_mappings.exceptions import BulkError
 from fyle_accounting_mappings.serializers import MappingSettingSerializer
 
-from apps.mappings.helpers import create_mapping_settings
 from fyle_netsuite_api.utils import assert_valid
 from apps.workspaces.models import Configuration
 
