@@ -13,12 +13,13 @@ from fyle_accounting_mappings.views import logger
 from fyle_accounting_mappings.exceptions import BulkError
 from fyle_accounting_mappings.serializers import MappingSettingSerializer
 
+from apps.mappings.helpers import create_mapping_settings
 from fyle_netsuite_api.utils import assert_valid
 from apps.workspaces.models import Configuration
 
 from .serializers import GeneralMappingSerializer, SubsidiaryMappingSerializer
 from .models import GeneralMapping, SubsidiaryMapping
-from .tasks import schedule_fyle_attributes_creation, upload_attributes_to_fyle
+from .tasks import schedule_fyle_attributes_creation, upload_attributes_to_fyle, schedule_cost_centers_creation
 from .utils import MappingUtils
 
 
@@ -169,50 +170,11 @@ class MappingSettingsView(ListCreateAPIView):
 
             assert_valid(mapping_settings != [], 'Mapping settings not found')
 
-            all_mapping_settings = []
+            all_mapping_settings = create_mapping_settings(self.kwargs['workspace_id'], mapping_settings)
 
-            for mapping_setting in mapping_settings:
-                if 'is_custom' not in mapping_setting:
-                    mapping_setting['source_field'] = mapping_setting['source_field'].upper().replace(' ', '_')
-                    all_mapping_settings.append(mapping_setting)
-
-                if 'is_custom' in mapping_setting and 'import_to_fyle' in mapping_setting:
-                    if mapping_setting['is_custom'] or mapping_setting['source_field'] == 'COST_CENTER':
-                        if mapping_setting['import_to_fyle']:
-                            upload_attributes_to_fyle(
-                                workspace_id=self.kwargs['workspace_id'],
-                                netsuite_attribute_type=mapping_setting['destination_field'],
-                                fyle_attribute_type=mapping_setting['source_field'],
-                            )
-
-                    mapping_setting['source_field'] = mapping_setting['source_field'].upper().replace(' ', '_')
-
-                    schedule_fyle_attributes_creation(
-                        workspace_id=self.kwargs['workspace_id'],
-                        netsuite_attribute_type=mapping_setting['destination_field'],
-                        import_to_fyle=mapping_setting['import_to_fyle'],
-                    )
-
-                    all_mapping_settings.append(mapping_setting)
-
-                    if mapping_setting['destination_field'] == 'PROJECT' and \
-                            mapping_setting['import_to_fyle'] is False:
-                        schedule: Schedule = Schedule.objects.filter(
-                            func='apps.mappings.tasks.auto_create_project_mappings',
-                            args='{}'.format(self.kwargs['workspace_id'])
-                        ).first()
-
-                        if schedule:
-                            schedule.delete()
-                            general_settings = Configuration.objects.get(
-                                workspace_id=self.kwargs['workspace_id']
-                            )
-                            general_settings.import_projects = False
-                            general_settings.save()
-
-                mapping_settings = MappingSetting.bulk_upsert_mapping_setting(
-                    all_mapping_settings, self.kwargs['workspace_id']
-                )
+            mapping_settings = MappingSetting.bulk_upsert_mapping_setting(
+                all_mapping_settings, self.kwargs['workspace_id']
+            )
 
             return Response(data=self.serializer_class(mapping_settings, many=True).data, status=status.HTTP_200_OK)
 
