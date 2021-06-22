@@ -189,7 +189,7 @@ class NetSuiteConnector:
                             'attribute_type': custom_list_values.name.upper().replace(' ', '_'),
                             'display_name': custom_lists['name'],
                             'value': field['value'],
-                            'destination_id': field['valueId']
+                            'destination_id': str(field['valueId'])
                         }
                     )
 
