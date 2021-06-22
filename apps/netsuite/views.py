@@ -1,6 +1,6 @@
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 
 from django.db.models import Q
 from rest_framework import generics
@@ -14,7 +14,7 @@ from fyle_accounting_mappings.serializers import DestinationAttributeSerializer
 
 from fyle_netsuite_api.utils import assert_valid
 
-from apps.workspaces.models import NetSuiteCredentials, Workspace
+from apps.workspaces.models import NetSuiteCredentials, Workspace, Configuration
 
 from .serializers import NetSuiteFieldSerializer, CustomSegmentSerializer
 from .tasks import schedule_bills_creation, schedule_expense_reports_creation, schedule_journal_entry_creation,\
@@ -38,11 +38,29 @@ class TriggerExportsView(generics.GenericAPIView):
         if export_type == 'BILL':
             schedule_bills_creation(kwargs['workspace_id'], expense_group_ids)
         elif export_type == 'CREDIT CARD CHARGE':
-            schedule_journal_entry_creation(kwargs['workspace_id'], expense_group_ids)
+            schedule_credit_card_charge_creation(kwargs['workspace_id'], expense_group_ids)
         elif export_type == 'JOURNAL ENTRY':
-            schedule_bills_creation(kwargs['workspace_id'], expense_group_ids)
+            schedule_journal_entry_creation(kwargs['workspace_id'], expense_group_ids)
         elif export_type == 'EXPENSE REPORT':
             schedule_expense_reports_creation(kwargs['workspace_id'], expense_group_ids)
+
+        return Response(
+            status=status.HTTP_200_OK
+        )
+
+
+class TriggerPaymentsView(generics.GenericAPIView):
+    """
+    Trigger payments sync
+    """
+    def post(self, request, *args, **kwargs):
+        configurations = Configuration.objects.get(workspace_id=kwargs['workspace_id'])
+
+        if configurations.sync_fyle_to_netsuite_payments:
+            create_vendor_payment(workspace_id=self.kwargs['workspace_id'])
+        elif configurations.sync_netsuite_to_fyle_payments:
+            check_netsuite_object_status(workspace_id=self.kwargs['workspace_id'])
+            process_reimbursements(workspace_id=self.kwargs['workspace_id'])
 
         return Response(
             status=status.HTTP_200_OK
@@ -165,37 +183,6 @@ class CustomSegmentView(generics.ListCreateAPIView):
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
-
-class VendorPaymentView(generics.CreateAPIView):
-    """
-    Create Vendor Payment View
-    """
-    def post(self, request, *args, **kwargs):
-        """
-        Create vendor payment
-        """
-        create_vendor_payment(workspace_id=self.kwargs['workspace_id'])
-
-        return Response(
-            status=status.HTTP_200_OK
-        )
-
-
-class ReimburseNetSuitePaymentsView(generics.CreateAPIView):
-    """
-    Reimburse NetSuite Payments View
-    """
-    def post(self, request, *args, **kwargs):
-        """
-        Process Reimbursements in Fyle
-        """
-        check_netsuite_object_status(workspace_id=self.kwargs['workspace_id'])
-        process_reimbursements(workspace_id=self.kwargs['workspace_id'])
-
-        return Response(
-            status=status.HTTP_200_OK
-        )
 
 
 class SyncNetSuiteDimensionView(generics.ListCreateAPIView):
