@@ -18,6 +18,4 @@ netsuite_dimension_paths = [
     path('refresh_dimensions/', RefreshNetSuiteDimensionView.as_view())
 ]
 
-urlpatterns = list(
-    itertools.chain(netsuite_app_paths, netsuite_dimension_paths)
-)
+urlpatterns = list(itertools.chain(netsuite_app_paths, netsuite_dimension_paths))
