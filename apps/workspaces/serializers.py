@@ -57,11 +57,10 @@ class ConfigurationSerializer(serializers.ModelSerializer):
         :param validated_data: Validated data
         :return: upserted general settings object
         """
-        # TODO: communicate to Shwetabh
-        workspace = Workspace.objects.get(pk=validated_data['workspace'])
+        workspace = validated_data['workspace']
 
         configuration, _ = Configuration.objects.update_or_create(
-            workspace=workspace,
+            workspace_id=workspace,
             defaults={
                 'reimbursable_expenses_object': validated_data['reimbursable_expenses_object'],
                 'corporate_credit_card_expenses_object': validated_data['corporate_credit_card_expenses_object'],

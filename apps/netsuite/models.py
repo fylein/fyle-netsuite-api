@@ -361,7 +361,7 @@ class BillLineitem(models.Model):
             location_id = get_location_id_or_none(expense_group, lineitem)
 
             if not location_id:
-                if general_mappings.location_id:
+                if general_mappings.location_id and general_mappings.location_level in ['TRANSACTION_LINE', 'ALL']:
                     location_id = general_mappings.location_id
 
             custom_segments = get_custom_segments(expense_group, lineitem)
@@ -382,8 +382,7 @@ class BillLineitem(models.Model):
                 expense_id=lineitem.id,
                 defaults={
                     'account_id': account.destination.destination_id if account else None,
-                    'location_id': location_id if general_mappings.location_level in [
-                        'TRANSACTION_LINE', 'ALL'] else None,
+                    'location_id': location_id,
                     'class_id': class_id,
                     'department_id': department_id,
                     'customer_id': customer_id,
@@ -532,7 +531,7 @@ class CreditCardChargeLineItem(models.Model):
         location_id = get_location_id_or_none(expense_group, lineitem)
 
         if not location_id:
-            if general_mappings.location_id:
+            if general_mappings.location_id and general_mappings.location_level in ['TRANSACTION_LINE', 'ALL']:
                 location_id = general_mappings.location_id
 
         custom_segments = get_custom_segments(expense_group, lineitem)
@@ -553,8 +552,7 @@ class CreditCardChargeLineItem(models.Model):
             expense_id=lineitem.id,
             defaults={
                 'account_id': account.destination.destination_id if account else None,
-                'location_id': location_id if general_mappings.location_level in [
-                    'TRANSACTION_LINE', 'ALL'] else None,
+                'location_id': location_id,
                 'class_id': class_id,
                 'department_id': department_id,
                 'customer_id': customer_id,
@@ -724,7 +722,7 @@ class ExpenseReportLineItem(models.Model):
             location_id = get_location_id_or_none(expense_group, lineitem)
 
             if not location_id:
-                if general_mappings.location_id:
+                if general_mappings.location_id and general_mappings.location_level in ['TRANSACTION_LINE', 'ALL']:
                     location_id = general_mappings.location_id
 
             custom_segments = get_custom_segments(expense_group, lineitem)
@@ -745,8 +743,7 @@ class ExpenseReportLineItem(models.Model):
                     'category': account.destination.destination_id,
                     'class_id': class_id if class_id else None,
                     'customer_id': customer_id,
-                    'location_id': location_id if general_mappings.location_level in [
-                        'TRANSACTION_LINE', 'ALL'] else None,
+                    'location_id': location_id,
                     'department_id': department_id,
                     'currency': currency.destination_id if currency else '1',
                     'transaction_date': get_transaction_date(expense_group),

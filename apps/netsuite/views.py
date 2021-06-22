@@ -23,6 +23,7 @@ from .models import CustomSegment
 from .connector import NetSuiteConnector
 from .helpers import check_interval_and_sync_dimension, sync_dimensions
 
+
 logger = logging.getLogger(__name__)
 
 

@@ -39,7 +39,7 @@ def check_interval_and_sync_dimension(workspace: Workspace, refresh_token: str) 
     return False
 
 def sync_dimensions(refresh_token: str, workspace_id: int) -> None:
-    fyle_connection = import_string('apps.fyle.connector.FyleConnector')(refresh_token,workspace_id)
+    fyle_connection = import_string('apps.fyle.connector.FyleConnector')(refresh_token, workspace_id)
     dimensions = [
         'employees', 'categories', 'cost_centers',
         'projects', 'expense_custom_fields'

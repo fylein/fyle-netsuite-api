@@ -3,9 +3,10 @@ import logging
 
 from django.utils.module_loading import import_string
 
-from apps.netsuite.tasks import schedule_vendor_payment_creation, schedule_netsuite_objects_status_sync, \
-    schedule_reimbursements_sync
 from apps.workspaces.models import Configuration, Workspace, NetSuiteCredentials
+
+from .tasks import schedule_vendor_payment_creation, schedule_netsuite_objects_status_sync, \
+    schedule_reimbursements_sync
 
 logger = logging.getLogger(__name__)
 
