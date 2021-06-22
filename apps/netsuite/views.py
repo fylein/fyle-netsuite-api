@@ -27,64 +27,22 @@ from .helpers import check_interval_and_sync_dimension, sync_dimensions
 logger = logging.getLogger(__name__)
 
 
-class BillScheduleView(generics.CreateAPIView):
+class TriggerExportsView(generics.GenericAPIView):
     """
-    Schedule bills creation
+    Trigger exports creation
     """
-
     def post(self, request, *args, **kwargs):
         expense_group_ids = request.data.get('expense_group_ids', [])
+        export_type = request.data.get('export_type')
 
-        schedule_bills_creation(
-            kwargs['workspace_id'], expense_group_ids)
-
-        return Response(
-            status=status.HTTP_200_OK
-        )
-
-
-class CreditCardChargeScheduleView(generics.CreateAPIView):
-    """
-    Schedule Credit Card Charge creation
-    """
-
-    def post(self, request, *args, **kwargs):
-        expense_group_ids = request.data.get('expense_group_ids', [])
-
-        schedule_credit_card_charge_creation(
-            kwargs['workspace_id'], expense_group_ids)
-
-        return Response(
-            status=status.HTTP_200_OK
-        )
-
-
-class ExpenseReportScheduleView(generics.CreateAPIView):
-    """
-    Schedule expense reports creation
-    """
-
-    def post(self, request, *args, **kwargs):
-        expense_group_ids = request.data.get('expense_group_ids', [])
-
-        schedule_expense_reports_creation(
-            kwargs['workspace_id'], expense_group_ids)
-
-        return Response(
-            status=status.HTTP_200_OK
-        )
-
-
-class JournalEntryScheduleView(generics.CreateAPIView):
-    """
-    Schedule JournalEntry creation
-    """
-
-    def post(self, request, *args, **kwargs):
-        expense_group_ids = request.data.get('expense_group_ids', [])
-
-        schedule_journal_entry_creation(
-            kwargs['workspace_id'], expense_group_ids)
+        if export_type == 'BILL':
+            schedule_bills_creation(kwargs['workspace_id'], expense_group_ids)
+        elif export_type == 'CREDIT CARD CHARGE':
+            schedule_journal_entry_creation(kwargs['workspace_id'], expense_group_ids)
+        elif export_type == 'JOURNAL ENTRY':
+            schedule_bills_creation(kwargs['workspace_id'], expense_group_ids)
+        elif export_type == 'EXPENSE REPORT':
+            schedule_expense_reports_creation(kwargs['workspace_id'], expense_group_ids)
 
         return Response(
             status=status.HTTP_200_OK
@@ -220,7 +178,6 @@ class VendorPaymentView(generics.CreateAPIView):
         create_vendor_payment(workspace_id=self.kwargs['workspace_id'])
 
         return Response(
-            data={},
             status=status.HTTP_200_OK
         )
 
@@ -237,7 +194,6 @@ class ReimburseNetSuitePaymentsView(generics.CreateAPIView):
         process_reimbursements(workspace_id=self.kwargs['workspace_id'])
 
         return Response(
-            data={},
             status=status.HTTP_200_OK
         )
 
