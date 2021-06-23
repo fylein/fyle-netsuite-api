@@ -228,7 +228,7 @@ class FyleConnector:
 
         return []
 
-    def sync_cost_centers(self, active_only: bool):
+    def sync_cost_centers(self):
         """
         Get cost centers from fyle
         """
@@ -238,7 +238,7 @@ class FyleConnector:
         if existing_db_count == existing_category_count:
             return
 
-        cost_centers = self.connection.CostCenters.get(active_only=active_only)['data']
+        cost_centers = self.connection.CostCenters.get()['data']
 
         cost_center_attributes = []
 

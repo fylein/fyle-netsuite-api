@@ -66,7 +66,7 @@ class ConfigurationSerializer(serializers.ModelSerializer):
                 'corporate_credit_card_expenses_object': validated_data['corporate_credit_card_expenses_object'],
                 'sync_fyle_to_netsuite_payments': validated_data['sync_fyle_to_netsuite_payments'],
                 'sync_netsuite_to_fyle_payments': validated_data['sync_netsuite_to_fyle_payments'],
-                'import_projects': validated_data['import_projects'],
+                'import_projects': validated_data['import_projects'] if 'import_projects' in validated_data else False,
                 'import_categories': validated_data['import_categories'],
                 'auto_map_employees': validated_data['auto_map_employees'],
                 'auto_create_merchants': validated_data['auto_create_merchants'],

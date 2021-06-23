@@ -247,11 +247,11 @@ def schedule_categories_creation(import_categories, workspace_id):
             schedule.delete()
 
 
-def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_project_names: list, workspace_id: int):
+def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_project_names: list):
     """
     Create Fyle Projects Payload from NetSuite Projects
+    :param existing_project_names: Existing Projects in Fyle
     :param projects: NetSuite Projects
-    :param workspace_id: integer id of workspace
     :return: Fyle Projects Payload
     """
     payload = []
@@ -271,30 +271,31 @@ def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_
     return payload
 
 
-def post_projects_in_batches(fyle_connection: FyleConnector, workspace_id: int):
+def post_projects_in_batches(fyle_connection: FyleConnector, workspace_id: int, source_field: str,
+                             destination_field: str):
     existing_project_names = ExpenseAttribute.objects.filter(
-        attribute_type='PROJECT', workspace_id=workspace_id).values_list('value', flat=True)
+        attribute_type=source_field, workspace_id=workspace_id).values_list('value', flat=True)
     ns_attributes_count = DestinationAttribute.objects.filter(
-        attribute_type='PROJECT', workspace_id=workspace_id).count()
+        attribute_type=destination_field, workspace_id=workspace_id).count()
     page_size = 200
 
     for offset in range(0, ns_attributes_count, page_size):
         limit = offset + page_size
         paginated_ns_attributes = DestinationAttribute.objects.filter(
-            attribute_type='PROJECT', workspace_id=workspace_id).order_by('value', 'id')[offset:limit]
+            attribute_type=destination_field, workspace_id=workspace_id).order_by('value', 'id')[offset:limit]
 
         paginated_ns_attributes = remove_duplicates(paginated_ns_attributes)
 
         fyle_payload: List[Dict] = create_fyle_projects_payload(
-            paginated_ns_attributes, existing_project_names, workspace_id)
+            paginated_ns_attributes, existing_project_names)
         if fyle_payload:
             fyle_connection.connection.Projects.post(fyle_payload)
             fyle_connection.sync_projects()
 
-        Mapping.bulk_create_mappings(paginated_ns_attributes, 'PROJECT', 'PROJECT', workspace_id)
+        Mapping.bulk_create_mappings(paginated_ns_attributes, source_field, destination_field, workspace_id)
 
 
-def auto_create_project_mappings(workspace_id):
+def auto_create_project_mappings(workspace_id, source_field, destination_field):
     """
     Create Project Mappings
     """
@@ -316,7 +317,7 @@ def auto_create_project_mappings(workspace_id):
         ns_connection.sync_projects()
         ns_connection.sync_customers()
 
-        post_projects_in_batches(fyle_connection, workspace_id)
+        post_projects_in_batches(fyle_connection, workspace_id, source_field, destination_field)
 
     except WrongParamsError as exception:
         logger.error(
@@ -335,32 +336,53 @@ def auto_create_project_mappings(workspace_id):
         )
 
 
+def async_auto_create_projects(workspace_id: int):
+    mapping_setting = MappingSetting.objects.get(
+        source_field='PROJECT', workspace_id=workspace_id
+    )
+
+    if mapping_setting:
+        configurations = Configuration.objects.get(workspace_id=workspace_id)
+        if not configurations.import_projects:
+            configurations.import_projects = True
+            configurations.save()
+
+        auto_create_project_mappings(workspace_id, mapping_setting.source_field, mapping_setting.destination_field)
+
+
 def schedule_projects_creation(import_projects, workspace_id):
     if import_projects:
-        start_datetime = datetime.now()
-        schedule, _ = Schedule.objects.update_or_create(
-            func='apps.mappings.tasks.auto_create_project_mappings',
+        schedule: Schedule = Schedule.objects.filter(
+            func='apps.mappings.tasks.async_auto_create_projects',
             args='{}'.format(workspace_id),
-            defaults={
-                'schedule_type': Schedule.MINUTES,
-                'minutes': 24 * 60,
-                'next_run': start_datetime
-            }
-        )
+        ).first()
+        if not schedule:
+            schedule, _ = Schedule.objects.update_or_create(
+                func='apps.mappings.tasks.async_auto_create_projects',
+                args='{}'.format(workspace_id),
+                defaults={
+                    'schedule_type': Schedule.MINUTES,
+                    'minutes': 24 * 60,
+                    'next_run': datetime.now()
+                }
+            )
     else:
         schedule: Schedule = Schedule.objects.filter(
-            func='apps.mappings.tasks.auto_create_project_mappings',
+            func='apps.mappings.tasks.async_auto_create_projects',
             args='{}'.format(workspace_id)
         ).first()
 
         if schedule:
             schedule.delete()
             mapping_setting = MappingSetting.objects.filter(
-                workspace_id=workspace_id, source_field='PROJECT', destination_field='PROJECT'
+                workspace_id=workspace_id, source_field='PROJECT'
             ).first()
             if mapping_setting:
                 mapping_setting.import_to_fyle = False
                 mapping_setting.save()
+                configurations = Configuration.objects.get(workspace_id=workspace_id)
+                configurations.import_projects = False
+                configurations.save()
 
 
 def async_auto_map_employees(workspace_id: int):
@@ -487,7 +509,7 @@ def post_cost_centers_in_batches(fyle_connection: FyleConnector, workspace_id: i
 
         if fyle_payload:
             fyle_connection.connection.CostCenters.post(fyle_payload)
-            fyle_connection.sync_cost_centers(active_only=True)
+            fyle_connection.sync_cost_centers()
 
         Mapping.bulk_create_mappings(paginated_ns_attributes, 'COST_CENTER', netsuite_attribute_type, workspace_id)
 
@@ -554,16 +576,20 @@ def async_auto_map_cost_centers(workspace_id: int):
 
 def schedule_cost_centers_creation(import_to_fyle, workspace_id):
     if import_to_fyle:
-        start_datetime = datetime.now()
-        schedule, _ = Schedule.objects.update_or_create(
+        schedule: Schedule = Schedule.objects.filter(
             func='apps.mappings.tasks.async_auto_map_cost_centers',
             args='{}'.format(workspace_id),
-            defaults={
-                'schedule_type': Schedule.MINUTES,
-                'minutes': 24 * 60,
-                'next_run': start_datetime
-            }
-        )
+        ).first()
+        if not schedule:
+            schedule, _ = Schedule.objects.update_or_create(
+                func='apps.mappings.tasks.async_auto_map_cost_centers',
+                args='{}'.format(workspace_id),
+                defaults={
+                    'schedule_type': Schedule.MINUTES,
+                    'minutes': 24 * 60,
+                    'next_run': datetime.now()
+                }
+            )
     else:
         schedule: Schedule = Schedule.objects.filter(
             func='apps.mappings.tasks.async_auto_map_cost_centers',
@@ -704,33 +730,26 @@ def async_auto_create_custom_field_mappings(workspace_id):
             )
 
 
-def schedule_fyle_attributes_creation(workspace_id: int, netsuite_attribute_type: str, import_to_fyle: bool,
-                                      fyle_attribute_type: str):
+def schedule_fyle_attributes_creation(import_to_fyle: bool, workspace_id: int):
     if import_to_fyle:
-        if netsuite_attribute_type != 'PROJECT':
+        schedule: Schedule = Schedule.objects.filter(
+            func='apps.mappings.tasks.async_auto_create_custom_field_mappings',
+            args='{}'.format(workspace_id),
+        ).first()
+        if not schedule:
             schedule, _ = Schedule.objects.update_or_create(
                 func='apps.mappings.tasks.async_auto_create_custom_field_mappings',
-                args=workspace_id,
+                args='{}'.format(workspace_id),
                 defaults={
                     'schedule_type': Schedule.MINUTES,
                     'minutes': 24 * 60,
                     'next_run': datetime.now() + timedelta(hours=24)
                 }
             )
-        if netsuite_attribute_type == 'PROJECT' and fyle_attribute_type == 'PROJECT':
-            configurations = Configuration.objects.get(workspace_id=workspace_id)
-            if not configurations.import_projects:
-                configurations.import_projects = True
-                configurations.save()
-
-            schedule_projects_creation(
-                import_projects=configurations.import_projects,
-                workspace_id=workspace_id
-            )
     else:
         schedule: Schedule = Schedule.objects.filter(
             func='apps.mappings.tasks.async_auto_create_custom_field_mappings',
-            args=workspace_id
+            args='{}'.format(workspace_id),
         ).first()
 
         if schedule:
