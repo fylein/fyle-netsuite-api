@@ -634,12 +634,6 @@ def upload_attributes_to_fyle(workspace_id: int, netsuite_attribute_type: str, f
         fyle_connection.connection.ExpensesCustomFields.post(fyle_custom_field_payload)
         fyle_connection.sync_expense_custom_fields(active_only=True)
 
-        async_task(
-            'apps.mappings.tasks.auto_create_expense_fields_mappings',
-            workspace_id,
-            netsuite_attribute_type,
-            fyle_attribute_type
-        )
     return netsuite_attributes
 
 

@@ -4,6 +4,7 @@ Mapping Signals
 from django.db.models import Q
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
+from django_q.tasks import async_task
 
 from fyle_accounting_mappings.models import MappingSetting, ExpenseAttribute
 
@@ -51,4 +52,11 @@ def run_pre_mapping_settings_triggers(sender, instance: MappingSetting, **kwargs
             workspace_id=int(instance.workspace_id),
             netsuite_attribute_type=instance.destination_field,
             fyle_attribute_type=instance.source_field
+        )
+
+        async_task(
+            'apps.mappings.tasks.auto_create_expense_fields_mappings',
+            int(instance.workspace_id),
+            instance.destination_field,
+            instance.source_field
         )
