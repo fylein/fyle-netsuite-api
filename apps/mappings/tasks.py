@@ -461,7 +461,7 @@ def create_fyle_cost_centers_payload(netsuite_attributes: List[DestinationAttrib
                 'description': 'Cost Center - {0}, Id - {1}'.format(
                     netsuite_attribute.value,
                     netsuite_attribute.destination_id
-                ),
+                )
             })
 
     return fyle_cost_centers_payload
@@ -591,9 +591,6 @@ def create_fyle_expense_custom_field_payload(netsuite_attributes: List[Destinati
         existing_attribute = ExpenseAttribute.objects.filter(
             attribute_type=fyle_attribute, workspace_id=workspace_id).values_list('detail', flat=True).first()
 
-        for netsuite_attribute in netsuite_attributes:
-            fyle_expense_custom_field_options.append(netsuite_attribute.value)
-
         custom_field_id = None
         if existing_attribute is not None:
             custom_field_id = existing_attribute['custom_field_id']
@@ -626,8 +623,6 @@ def upload_attributes_to_fyle(workspace_id: int, netsuite_attribute_type: str, f
     netsuite_attributes: List[DestinationAttribute] = DestinationAttribute.objects.filter(
         workspace_id=workspace_id, attribute_type=netsuite_attribute_type
     )
-
-    netsuite_attributes = remove_duplicates(netsuite_attributes)
 
     fyle_custom_field_payload = create_fyle_expense_custom_field_payload(
         fyle_attribute=fyle_attribute_type,
