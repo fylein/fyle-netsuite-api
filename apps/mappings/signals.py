@@ -25,7 +25,7 @@ def run_post_mapping_settings_triggers(sender, instance: MappingSetting, **kwarg
         schedule_cost_centers_creation(instance.import_to_fyle, int(instance.workspace_id))
 
     if instance.is_custom:
-        schedule_fyle_attributes_creation(instance.import_to_fyle, int(instance.workspace_id), instance.source_field)
+        schedule_fyle_attributes_creation(int(instance.workspace_id))
 
 
 @receiver(pre_save, sender=MappingSetting)
