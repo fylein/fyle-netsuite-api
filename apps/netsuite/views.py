@@ -94,10 +94,10 @@ class DestinationAttributesView(generics.ListAPIView):
     pagination_class = None
 
     def get_queryset(self):
-        attribute_type = self.request.query_params.get('attribute_type')
+        attribute_types = self.request.query_params.get('attribute_types').split(',')
 
         return DestinationAttribute.objects.filter(
-            attribute_type=attribute_type, workspace_id=self.kwargs['workspace_id']).order_by('value')
+            attribute_type__in=attribute_types, workspace_id=self.kwargs['workspace_id']).order_by('value')
 
 
 class CustomSegmentView(generics.ListCreateAPIView):
