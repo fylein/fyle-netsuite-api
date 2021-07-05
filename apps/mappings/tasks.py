@@ -6,7 +6,6 @@ from typing import List, Dict
 
 from django_q.models import Schedule
 from django.db.models import Q, Count
-from django_q.tasks import async_task
 
 from fylesdk.exceptions import WrongParamsError
 
@@ -623,6 +622,8 @@ def upload_attributes_to_fyle(workspace_id: int, netsuite_attribute_type: str, f
     netsuite_attributes: List[DestinationAttribute] = DestinationAttribute.objects.filter(
         workspace_id=workspace_id, attribute_type=netsuite_attribute_type
     )
+
+    netsuite_attributes = remove_duplicates(netsuite_attributes)
 
     fyle_custom_field_payload = create_fyle_expense_custom_field_payload(
         fyle_attribute=fyle_attribute_type,
