@@ -174,7 +174,8 @@ def create_bill(expense_group, task_log_id):
     else:
         return
 
-    configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
+    configuration: Configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
+    general_mappings: GeneralMapping = Configuration.objects.filter(workspace_id=expense_group.workspace_id).first()
 
     try:
         netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
@@ -183,6 +184,10 @@ def create_bill(expense_group, task_log_id):
 
         if expense_group.fund_source == 'PERSONAL' and configuration.auto_map_employees \
                 and configuration.auto_create_destination_entity:
+            create_or_update_employee_mapping(expense_group, netsuite_connection, configuration.auto_map_employees)
+
+        if general_mappings and general_mappings.use_employee_department and expense_group.fund_source == 'CCC' \
+                and configuration.auto_map_employees and configuration.auto_create_destination_entity:
             create_or_update_employee_mapping(expense_group, netsuite_connection, configuration.auto_map_employees)
 
         with transaction.atomic():
