@@ -238,7 +238,7 @@ class FyleConnector:
         if existing_db_count == existing_category_count:
             return
 
-        cost_centers = self.connection.CostCenters.get()['data']
+        cost_centers = self.connection.CostCenters.get_all()
 
         cost_center_attributes = []
 

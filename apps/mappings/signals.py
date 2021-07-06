@@ -38,7 +38,7 @@ def run_pre_mapping_settings_triggers(sender, instance: MappingSetting, **kwargs
     """
     default_attributes = ['EMPLOYEE', 'CATEGORY', 'PROJECT', 'COST_CENTER']
 
-    instance.source_field = instance.source_field .upper().replace(' ', '_')
+    instance.source_field = instance.source_field.upper().replace(' ', '_')
 
     attributes = ExpenseAttribute.objects.filter(
         ~Q(attribute_type__in=default_attributes),
