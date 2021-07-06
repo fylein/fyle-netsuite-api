@@ -306,7 +306,8 @@ class FyleConnector:
                 count = count + 1
 
             ExpenseAttribute.bulk_create_or_update_expense_attributes(
-                expense_custom_field_attributes, custom_field['name'].upper().replace(' ', '_'), self.workspace_id
+                expense_custom_field_attributes, custom_field['name'].upper().replace(' ', '_'), self.workspace_id,
+                update=True
             )
 
         return []
