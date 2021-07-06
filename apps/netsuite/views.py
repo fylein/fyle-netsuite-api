@@ -144,11 +144,28 @@ class NetSuiteFieldsView(generics.ListAPIView):
             ~Q(attribute_type='EXPENSE_CATEGORY') & ~Q(attribute_type='BANK_ACCOUNT') &
             ~Q(attribute_type='CREDIT_CARD_ACCOUNT') & ~Q(attribute_type='BANK_ACCOUNT') &
             ~Q(attribute_type='SUBSIDIARY') & ~Q(attribute_type='CURRENCY') &
-            ~Q(attribute_type='CCC_ACCOUNT'),
+            ~Q(attribute_type='CCC_ACCOUNT') & ~Q(display_name='Customer'),
             workspace_id=self.kwargs['workspace_id']
         ).values('attribute_type', 'display_name').distinct()
 
         return attributes
+
+
+class NetSuiteAttributesCountView(generics.RetrieveAPIView):
+
+    def get(self, request, *args, **kwargs):
+        attribute_type = self.request.query_params.get('attribute_type')
+
+        attribute_count = DestinationAttribute.objects.filter(
+            attribute_type=attribute_type, workspace_id=self.kwargs['workspace_id']
+        ).count()
+
+        return Response(
+            data={
+                'count': attribute_count
+            },
+            status=status.HTTP_200_OK
+        )
 
 
 class SyncCustomFieldsView(generics.ListCreateAPIView):
