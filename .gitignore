@@ -144,3 +144,6 @@ docker-compose.yml
 # Cache db
 cache.db
 cache.db-journal
+
+# Test scripts
+test_scripts/
