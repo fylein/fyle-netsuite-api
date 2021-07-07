@@ -58,7 +58,18 @@ def create_fyle_categories_payload(categories: List[DestinationAttribute], works
     return payload
 
 
-def upload_categories_to_fyle(workspace_id, reimbursable_expenses_object):
+def sync_expense_categories_and_accounts(reimbursable_expenses_object: str, corporate_credit_card_expenses_object: str,
+    netsuite_connection: NetSuiteConnector):
+    if reimbursable_expenses_object == 'EXPENSE REPORT' or corporate_credit_card_expenses_object == 'EXPENSE REPORT':
+        netsuite_connection.sync_expense_categories()
+
+    if reimbursable_expenses_object in ('BILL', 'JOURNAL ENTRY') or \
+        corporate_credit_card_expenses_object in ('BILL', 'JOURNAL ENTRY', 'CREDIT CARD CHARGE'):
+        netsuite_connection.sync_accounts()
+
+
+def upload_categories_to_fyle(workspace_id: int, reimbursable_expenses_object: str,
+    corporate_credit_card_expenses_object: str):
     """
     Upload categories to Fyle
     """
@@ -76,13 +87,14 @@ def upload_categories_to_fyle(workspace_id, reimbursable_expenses_object):
     )
     fyle_connection.sync_categories()
 
+    sync_expense_categories_and_accounts(
+        reimbursable_expenses_object, corporate_credit_card_expenses_object, netsuite_connection)
+
     if reimbursable_expenses_object == 'EXPENSE REPORT':
-        netsuite_connection.sync_expense_categories()
         netsuite_attributes: List[DestinationAttribute] = DestinationAttribute.objects.filter(
             workspace_id=workspace_id, attribute_type='EXPENSE_CATEGORY'
         )
     else:
-        netsuite_connection.sync_accounts()
         netsuite_attributes: List[DestinationAttribute] = DestinationAttribute.objects.filter(
             workspace_id=workspace_id, attribute_type='ACCOUNT'
         )
@@ -203,7 +215,8 @@ def auto_create_category_mappings(workspace_id):
 
     try:
         fyle_categories = upload_categories_to_fyle(
-            workspace_id=workspace_id, reimbursable_expenses_object=reimbursable_expenses_object)
+            workspace_id=workspace_id, reimbursable_expenses_object=reimbursable_expenses_object,
+            corporate_credit_card_expenses_object=corporate_credit_card_expenses_object)
 
         Mapping.bulk_create_mappings(fyle_categories, 'CATEGORY', reimbursable_destination_type, workspace_id)
 
