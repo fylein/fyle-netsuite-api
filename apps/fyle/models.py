@@ -9,7 +9,7 @@ from django.contrib.postgres.aggregates import ArrayAgg
 from django.contrib.postgres.fields import JSONField, ArrayField
 from django.contrib.postgres.fields.jsonb import KeyTextTransform
 from django.db import models
-from django.db.models import Count
+from django.db.models import Count, Q
 
 from fyle_accounting_mappings.models import ExpenseAttribute
 
@@ -19,7 +19,7 @@ from apps.workspaces.models import Workspace
 ALLOWED_FIELDS = [
     'employee_email', 'report_id', 'claim_number', 'settlement_id',
     'fund_source', 'vendor', 'category', 'project', 'cost_center',
-    'verified_at', 'approved_at', 'spent_at'
+    'verified_at', 'approved_at', 'spent_at', 'expense_id'
 ]
 
 
@@ -44,6 +44,7 @@ class Expense(models.Model):
     category = models.CharField(max_length=255, null=True, blank=True, help_text='Fyle Expense Category')
     sub_category = models.CharField(max_length=255, null=True, blank=True, help_text='Fyle Expense Sub-Category')
     project = models.CharField(max_length=255, null=True, blank=True, help_text='Project')
+    org_id = models.CharField(max_length=255, null=True, help_text='Organization ID')
     expense_id = models.CharField(max_length=255, unique=True, help_text='Expense ID')
     expense_number = models.CharField(max_length=255, help_text='Expense Number')
     claim_number = models.CharField(max_length=255, help_text='Claim Number', null=True)
@@ -75,16 +76,21 @@ class Expense(models.Model):
         db_table = 'expenses'
 
     @staticmethod
-    def create_expense_objects(expenses: List[Dict], custom_properties: List[ExpenseAttribute]):
+    def create_expense_objects(expenses: List[Dict], workspace_id: int):
         """
         Bulk create expense objects
         """
         expense_objects = []
 
-        custom_property_keys = list(set([prop.display_name.lower() for prop in custom_properties]))
+        custom_properties = ExpenseAttribute.objects.filter(
+            ~Q(attribute_type='EMPLOYEE') & ~Q(attribute_type='CATEGORY'),
+            ~Q(attribute_type='PROJECT') & ~Q(attribute_type='COST_CENTER'),
+            workspace_id=workspace_id
+        ).values('display_name').distinct()
+
+        custom_property_keys = list(set([prop['display_name'].lower() for prop in custom_properties]))
 
         for expense in expenses:
-
             expense_custom_properties = {}
 
             if custom_property_keys and expense['custom_properties']:
@@ -95,13 +101,14 @@ class Expense(models.Model):
             expense_object, _ = Expense.objects.update_or_create(
                 expense_id=expense['id'],
                 defaults={
+                    'org_id': expense['org_id'],
                     'employee_email': expense['employee_email'],
                     'category': expense['category_name'],
                     'sub_category': expense['sub_category'],
                     'project': expense['project_name'],
                     'expense_number': expense['expense_number'],
                     'claim_number': expense['claim_number'],
-                    'amount': expense['amount'],
+                    'amount': round(expense['amount'], 2),
                     'currency': expense['currency'],
                     'foreign_amount': expense['foreign_amount'],
                     'foreign_currency': expense['foreign_currency'],
@@ -120,7 +127,7 @@ class Expense(models.Model):
                     'expense_updated_at': expense['updated_at'],
                     'fund_source': expense['fund_source'],
                     'verified_at': _format_date(expense['verified_at']),
-                    'custom_properties': expense_custom_properties
+                    'custom_properties': expense_custom_properties if expense_custom_properties else {}
                 }
             )
 
@@ -174,11 +181,14 @@ class ExpenseGroupSettings(models.Model):
         reimbursable_grouped_by = []
         corporate_credit_card_expenses_grouped_by = []
 
-        for field in current_reimbursable_settings:
+        immutable_reimbursable_list = tuple(current_reimbursable_settings)
+        immutable_ccc_list = tuple(current_ccc_settings)
+
+        for field in immutable_reimbursable_list:
             if field in ALLOWED_FORM_INPUT['group_expenses_by']:
                 current_reimbursable_settings.remove(field)
 
-        for field in current_ccc_settings:
+        for field in immutable_ccc_list:
             if field in ALLOWED_FORM_INPUT['group_expenses_by']:
                 current_ccc_settings.remove(field)
 
@@ -242,11 +252,10 @@ def _group_expenses(expenses, group_fields, workspace_id):
             field = ExpenseAttribute.objects.filter(workspace_id=workspace_id,
                                                     attribute_type=field.upper()).first()
             if field:
-                custom_fields[field.attribute_type.lower()] = KeyTextTransform(field.display_name,
-                                                                           'custom_properties')
+                custom_fields[field.attribute_type.lower()] = KeyTextTransform(field.display_name, 'custom_properties')
 
-    expense_groups = list(expenses.values(*group_fields, **custom_fields).annotate(
-        total=Count('*'), expense_ids=ArrayAgg('id')))
+    expense_groups = list(
+        expenses.values(*group_fields, **custom_fields).annotate(total=Count('*'), expense_ids=ArrayAgg('id')))
     return expense_groups
 
 
@@ -286,13 +295,10 @@ class ExpenseGroup(models.Model):
 
         expense_groups.extend(corporate_credit_card_expense_groups)
 
-        expense_group_objects = []
-
         for expense_group in expense_groups:
             if expense_group_settings.export_date_type == 'last_spent_at':
                 expense_group['last_spent_at'] = Expense.objects.filter(
-                                                 id__in=expense_group['expense_ids']
-                                                 ).order_by('-spent_at').first().spent_at
+                    id__in=expense_group['expense_ids']).order_by('-spent_at').first().spent_at
 
             expense_ids = expense_group['expense_ids']
             expense_group.pop('total')
@@ -313,10 +319,6 @@ class ExpenseGroup(models.Model):
 
             expense_group_object.expenses.add(*expense_ids)
 
-            expense_group_objects.append(expense_group_object)
-
-        return expense_group_objects
-
 
 class Reimbursement(models.Model):
     """
@@ -336,19 +338,48 @@ class Reimbursement(models.Model):
         db_table = 'reimbursements'
 
     @staticmethod
-    def create_reimbursement_objects(attributes: List[Dict], workspace_id):
+    def create_or_update_reimbursement_objects(reimbursements: List[Dict], workspace_id):
         """
-        Get or create reimbursement attributes
+        Create or Update reimbursement attributes
         """
-        reimbursement_attributes = []
+        reimbursement_id_list = [reimbursement['id'] for reimbursement in reimbursements]
+        existing_reimbursements = Reimbursement.objects.filter(
+            reimbursement_id__in=reimbursement_id_list, workspace_id=workspace_id).all()
 
-        for attribute in attributes:
-            reimbursement_attribute, _ = Reimbursement.objects.update_or_create(
-                workspace_id=workspace_id,
-                settlement_id=attribute['settlement_id'],
-                defaults={
-                    'reimbursement_id': attribute['reimbursement_id'],
-                    'state': attribute['state']
-                })
-            reimbursement_attributes.append(reimbursement_attribute)
-        return reimbursement_attributes
+        existing_reimbursement_ids = []
+        primary_key_map = {}
+
+        for existing_reimbursement in existing_reimbursements:
+            existing_reimbursement_ids.append(existing_reimbursement.reimbursement_id)
+            primary_key_map[existing_reimbursement.reimbursement_id] = {
+                'id': existing_reimbursement.id,
+                'state': existing_reimbursement.state
+            }
+
+        attributes_to_be_created = []
+        attributes_to_be_updated = []
+
+        for reimbursement in reimbursements:
+            if reimbursement['id'] not in existing_reimbursement_ids:
+                attributes_to_be_created.append(
+                    Reimbursement(
+                        settlement_id=reimbursement['settlement_id'],
+                        reimbursement_id=reimbursement['id'],
+                        state=reimbursement['state'],
+                        workspace_id=workspace_id
+                    )
+                )
+            else:
+                if reimbursement['state'] != primary_key_map[reimbursement['id']]['state']:
+                    attributes_to_be_updated.append(
+                        Reimbursement(
+                            id=primary_key_map[reimbursement['id']]['id'],
+                            state=reimbursement['state']
+                        )
+                    )
+
+        if attributes_to_be_created:
+            Reimbursement.objects.bulk_create(attributes_to_be_created, batch_size=50)
+
+        if attributes_to_be_updated:
+            Reimbursement.objects.bulk_update(attributes_to_be_updated, fields=['state'], batch_size=50)

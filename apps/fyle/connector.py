@@ -1,5 +1,7 @@
 from typing import List
 import json
+import logging
+from datetime import datetime
 
 from django.conf import settings
 
@@ -10,6 +12,8 @@ from fyle_accounting_mappings.models import ExpenseAttribute
 import requests
 
 from apps.fyle.models import Reimbursement
+
+logger = logging.getLogger(__name__)
 
 
 class FyleConnector:
@@ -106,6 +110,24 @@ class FyleConnector:
         elif response.status_code == 500:
             raise InternalServerError('Internal server error', response.text)
 
+    def __format_updated_at(self, updated_at):
+        return 'gte:{0}'.format(datetime.strftime(updated_at, '%Y-%m-%dT%H:%M:%S.000Z'))
+
+    def __get_last_synced_at(self, attribute_type: str):
+        latest_synced_record = ExpenseAttribute.objects.filter(
+            workspace_id=self.workspace_id,
+            attribute_type=attribute_type
+        ).order_by('-updated_at').first()
+        updated_at = self.__format_updated_at(latest_synced_record.updated_at) if latest_synced_record else None
+
+        return updated_at
+
+    def existing_db_count(self, attribute_type: str):
+        return ExpenseAttribute.objects.filter(
+            workspace_id=self.workspace_id,
+            attribute_type=attribute_type
+        ).count()
+
     def get_employee_profile(self):
         """
         Get expenses from fyle
@@ -150,7 +172,8 @@ class FyleConnector:
         """
         Get employees from fyle
         """
-        employees = self.connection.Employees.get_all()
+        updated_at = self.__get_last_synced_at('EMPLOYEE')
+        employees = self.connection.Employees.get_all(updated_at=updated_at)
 
         employee_attributes = []
 
@@ -171,15 +194,22 @@ class FyleConnector:
                 }
             })
 
-        employee_attributes = ExpenseAttribute.bulk_upsert_expense_attributes(employee_attributes, self.workspace_id)
+        ExpenseAttribute.bulk_create_or_update_expense_attributes(
+            employee_attributes, 'EMPLOYEE', self.workspace_id, True)
 
-        return employee_attributes
+        return []
 
-    def sync_categories(self, active_only: bool):
+    def sync_categories(self):
         """
         Get categories from fyle
         """
-        categories = self.connection.Categories.get(active_only=active_only)['data']
+        existing_db_count = self.existing_db_count('CATEGORY')
+        existing_category_count = self.connection.Categories.count()['count']
+
+        if existing_db_count == existing_category_count:
+            return
+
+        categories = self.connection.Categories.get_all()
 
         category_attributes = []
 
@@ -194,15 +224,21 @@ class FyleConnector:
                 'source_id': category['id']
             })
 
-        category_attributes = ExpenseAttribute.bulk_upsert_expense_attributes(category_attributes, self.workspace_id)
+        ExpenseAttribute.bulk_create_or_update_expense_attributes(category_attributes, 'CATEGORY', self.workspace_id)
 
-        return category_attributes
+        return []
 
-    def sync_cost_centers(self, active_only: bool):
+    def sync_cost_centers(self):
         """
         Get cost centers from fyle
         """
-        cost_centers = self.connection.CostCenters.get(active_only=active_only)['data']
+        existing_db_count = self.existing_db_count('COST_CENTER')
+        existing_category_count = self.connection.CostCenters.count()['count']
+
+        if existing_db_count == existing_category_count:
+            return
+
+        cost_centers = self.connection.CostCenters.get_all()
 
         cost_center_attributes = []
 
@@ -214,31 +250,26 @@ class FyleConnector:
                 'source_id': cost_center['id']
             })
 
-        cost_center_attributes = ExpenseAttribute.bulk_upsert_expense_attributes(
-            cost_center_attributes, self.workspace_id)
+        ExpenseAttribute.bulk_create_or_update_expense_attributes(
+            cost_center_attributes, 'COST_CENTER', self.workspace_id)
 
-        return cost_center_attributes
+        return []
 
     def sync_projects(self):
         """
         Get projects from fyle
         """
-        all_projects = []
-        limit = 1000
-        offset = 0
+        existing_db_count = self.existing_db_count('PROJECT')
+        existing_category_count = self.connection.Projects.count()['count']
 
-        while True:
-            projects = self.connection.Projects.get(limit=str(limit), offset=str(offset))['data']
+        if existing_db_count == existing_category_count:
+            return
 
-            if len(projects) == 0:
-                break
-            else:
-                all_projects.extend(projects)
-                offset = offset + limit
+        projects = self.connection.Projects.get_all()
 
         project_attributes = []
 
-        for project in all_projects:
+        for project in projects:
             project_attributes.append({
                 'attribute_type': 'PROJECT',
                 'display_name': 'Project',
@@ -246,11 +277,11 @@ class FyleConnector:
                 'source_id': project['id']
             })
 
-        project_attributes = ExpenseAttribute.bulk_upsert_expense_attributes(project_attributes, self.workspace_id)
+        ExpenseAttribute.bulk_create_or_update_expense_attributes(project_attributes, 'PROJECT', self.workspace_id)
 
-        return project_attributes
+        return []
 
-    def sync_expense_custom_fields(self, active_only: bool):
+    def sync_expense_custom_fields(self, active_only: bool = True):
         """
         Get Expense Custom Fields from Fyle (Type = Select)
         """
@@ -258,44 +289,46 @@ class FyleConnector:
 
         expense_custom_fields = filter(lambda field: field['type'] == 'SELECT', expense_custom_fields)
 
-        expense_custom_field_attributes = []
-
         for custom_field in expense_custom_fields:
+            expense_custom_field_attributes = []
             count = 1
+            options = []
+
             for option in custom_field['options']:
-                expense_custom_field_attributes.append({
-                    'attribute_type': custom_field['name'].upper().replace(' ', '_'),
-                    'display_name': custom_field['name'],
-                    'value': option,
-                    'source_id': 'expense_custom_field.{}.{}'.format(custom_field['name'].lower(), count)
-                })
-                count = count + 1
+                if option not in options:
+                    expense_custom_field_attributes.append({
+                        'attribute_type': custom_field['name'].upper().replace(' ', '_'),
+                        'display_name': custom_field['name'],
+                        'value': option,
+                        'source_id': 'expense_custom_field.{}.{}'.format(custom_field['name'].lower(), count),
+                        'detail': {
+                            'custom_field_id': custom_field['id']
+                        }
+                    })
+                    count = count + 1
+                options.append(option)
 
-        expense_custom_field_attributes = ExpenseAttribute.bulk_upsert_expense_attributes(
-            expense_custom_field_attributes, self.workspace_id)
+            ExpenseAttribute.bulk_create_or_update_expense_attributes(
+                expense_custom_field_attributes, custom_field['name'].upper().replace(' ', '_'), self.workspace_id,
+                update=True
+            )
 
-        return expense_custom_field_attributes
+        return []
 
     def sync_reimbursements(self):
         """
         Get reimbursements from fyle
         """
-        reimbursements = self.connection.Reimbursements.get_all()
+        latest_synced_record = Reimbursement.objects.filter(
+            workspace_id=self.workspace_id
+        ).order_by('-updated_at').first()
+        updated_at = self.__format_updated_at(latest_synced_record.updated_at) if latest_synced_record else None
 
-        reimbursement_attributes = []
+        reimbursements = self.connection.Reimbursements.get_all(updated_at=updated_at)
 
-        for reimbursement in reimbursements:
-            reimbursement_attributes.append({
-                'reimbursement_id': reimbursement['id'],
-                'settlement_id': reimbursement['settlement_id'],
-                'state': reimbursement['state']
-            })
-
-        reimbursement_attributes = Reimbursement.create_reimbursement_objects(
-            reimbursement_attributes, self.workspace_id
+        Reimbursement.create_or_update_reimbursement_objects(
+            reimbursements, self.workspace_id
         )
-
-        return reimbursement_attributes
 
     def get_attachment(self, expense_id: str):
         """
@@ -305,8 +338,12 @@ class FyleConnector:
 
         if attachment['data']:
             attachment = attachment['data'][0]
-            attachment['expense_id'] = expense_id
-            return attachment
+            attachment_format = attachment['filename'].split('.')[-1]
+            if attachment_format != 'html':
+                attachment['expense_id'] = expense_id
+                return attachment
+            else:
+                return []
 
     def post_reimbursement(self, reimbursement_ids: list):
         """

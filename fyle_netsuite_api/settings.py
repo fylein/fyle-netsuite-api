@@ -166,13 +166,18 @@ CACHES = {
 
 Q_CLUSTER = {
     'name': 'fyle_netsuite_api',
-    'compress': True,
     'save_limit': 0,
     'workers': 4,
     'queue_limit': 30,
+    'cached': False,
     'orm': 'default',
     'ack_failures': True,
-    'poll': 1
+    'poll': 1,
+    'max_attempts': 1,
+    'attempt_count': 1,
+    'retry': 14400,
+    'timeout': 3600,
+    'catch_up': False
 }
 
 # Database
@@ -247,7 +252,6 @@ FYLE_TOKEN_URI = os.environ.get('FYLE_TOKEN_URI')
 FYLE_CLIENT_ID = os.environ.get('FYLE_CLIENT_ID')
 FYLE_CLIENT_SECRET = os.environ.get('FYLE_CLIENT_SECRET')
 FYLE_BASE_URL = os.environ.get('FYLE_BASE_URL')
-FYLE_JOBS_URL = os.environ.get('FYLE_JOBS_URL')
 
 # Netsuite Settings
 NS_CONSUMER_KEY = os.environ.get('NS_CONSUMER_KEY')

@@ -27,7 +27,6 @@ Django Rest Framework API for Fyle Netsuite Integration
       FYLE_CLIENT_ID: 
       FYLE_CLIENT_SECRET: 
       FYLE_TOKEN_URI: 
-      FYLE_JOBS_URL: 
       NS_CONSUMER_KEY:
       NS_CONSUMER_SECRET:
    ```
