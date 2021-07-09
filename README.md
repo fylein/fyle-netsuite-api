@@ -72,3 +72,35 @@ Django Rest Framework API for Fyle Netsuite Integration
     ```
     docker-compose exec api /bin/bash
     ```
+ 
+### Running Tests
+
+* Add the following environment variables to setup.sh file
+
+    ```
+    export FYLE_TEST_CLIENT_ID=<client_id>
+    export FYLE_TEST_CLIENT_SECRET=<client_secret>
+    export FYLE_TEST_REFRESH_TOKEN=<refresh_token>
+    export TEST_USER_EMAIL=<email>
+    export TEST_USER_ID=<user_id>
+    ```
+* Run the following command
+
+    ```
+    python manage.py test --settings=fyle_netsuite_api.test_settings
+    ``` 
+
+* You should see output like this
+
+    ```
+    Sravans-MacBook-Air:fyle-netsuite-api sravankumar$ python manage.py test --settings=fyle_netsuite_api.test_settings
+
+    Creating test database for alias 'default'...
+    System check identified no issues (0 silenced).
+    ......
+    ----------------------------------------------------------------------
+    Ran 6 tests in 15.670s
+
+    OK
+    Destroying test database for alias 'default'...
+    ```
