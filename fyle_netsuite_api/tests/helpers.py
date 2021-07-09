@@ -62,7 +62,7 @@ class TestHelpers:
         """
         GET workspace_id of the user
         """
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.access_token)
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer {0}'.format(self.access_token))
         self.client.post('{0}/workspaces/'.format(settings.API_URL),
                          headers={'Authorization': 'Bearer {}'.format(self.access_token)})
         self.workspace = Workspace.objects.get(user=self.user)

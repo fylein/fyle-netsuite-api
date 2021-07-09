@@ -21,11 +21,6 @@ class TestViews(APITestCase):
             'Authorization': 'Bearer {}'.format(access_token)
         }
 
-        self.subsidiary_mappings_payload = {
-            'subsidiary_name': 'Test Subsidiary',
-            'internal_id': 1
-        }
-
     def test_get_subsidiary_mapping_view(self):
         self.subsidiary_mappings = SubsidiaryMapping.objects.create(
             subsidiary_name='Test Subsidiary',
