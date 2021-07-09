@@ -231,13 +231,12 @@ API_URL = os.environ.get('API_URL')
 FYLE_TOKEN_URI = os.environ.get('FYLE_TOKEN_URI')
 FYLE_CLIENT_ID = os.environ.get('FYLE_CLIENT_ID')
 FYLE_CLIENT_SECRET = os.environ.get('FYLE_CLIENT_SECRET')
+FYLE_REFRESH_TOKEN = os.environ.get('FYLE_REFRESH_TOKEN')
 FYLE_BASE_URL = os.environ.get('FYLE_BASE_URL')
 
-# To do @Sravan: Add all environment variables in the settings File
-
-
 # Netsuite Settings
-
-# To do @Sravan: Add Account id, token key, token secret here only
+NS_ACCOUNT_ID = os.environ.get('NS_ACCOUNT_ID')
+NS_TOKEN_ID = os.environ.get('NS_TOKEN_ID')
+NS_TOKEN_SECRET = os.environ.get('NS_TOKEN_SECRET')
 NS_CONSUMER_KEY = os.environ.get('NS_CONSUMER_KEY')
 NS_CONSUMER_SECRET = os.environ.get('NS_CONSUMER_SECRET')

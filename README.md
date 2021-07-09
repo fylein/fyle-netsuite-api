@@ -78,11 +78,14 @@ Django Rest Framework API for Fyle Netsuite Integration
 * Add the following environment variables to setup.sh file
 
     ```
-    export FYLE_TEST_CLIENT_ID=<client_id>
-    export FYLE_TEST_CLIENT_SECRET=<client_secret>
-    export FYLE_TEST_REFRESH_TOKEN=<refresh_token>
-    export TEST_USER_EMAIL=<email>
-    export TEST_USER_ID=<user_id>
+    export FYLE_CLIENT_ID=<client_id>
+    export FYLE_CLIENT_SECRET=<client_secret>
+    export FYLE_REFRESH_TOKEN=<refresh_token>
+    export NS_ACCOUNT_ID=<netsuite_account_id>
+    export NS_TOKEN_ID=<netsuite_token_id>
+    export NS_TOKEN_SECRET=<netsuite_token_secret>
+    export NS_CONSUMER_KEY=<netsuite_consumer_key>
+    export NS_CONSUMER_SECRET=<netsuite_consumer_secret>
     ```
 * Run the following command
 

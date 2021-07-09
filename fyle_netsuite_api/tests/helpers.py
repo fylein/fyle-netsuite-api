@@ -1,7 +1,6 @@
 """
-@Sravan: Add what the module does
+Helper module for running tests
 """
-import os
 from datetime import datetime
 
 from django.utils import timezone
@@ -14,13 +13,10 @@ from fyle_netsuite_api.tests import settings
 
 class TestHelpers:
     """
-    @Sravan: Add what the class does
+    Tests helper functions
     """
 
     def __init__(self):
-        """
-        @Sravan: Add what the function does
-        """
         self.access_token = None
         self.workspace = None
         self.auth_token = None
@@ -29,12 +25,12 @@ class TestHelpers:
 
     def test_connection(self):
         """
-        @Sravan: Add what the function does
+        Creates a connection with Fyle
         """
-        client_id = os.environ.get('FYLE_TEST_CLIENT_ID')
-        client_secret = os.environ.get('FYLE_TEST_CLIENT_SECRET')
+        client_id = settings.FYLE_CLIENT_ID
+        client_secret = settings.FYLE_CLIENT_SECRET
         base_url = settings.FYLE_BASE_URL
-        refresh_token = os.environ.get('FYLE_TEST_REFRESH_TOKEN')
+        refresh_token = settings.FYLE_REFRESH_TOKEN
 
         fyle_connection = FyleSDK(
             base_url=base_url,
@@ -45,12 +41,11 @@ class TestHelpers:
 
         self.access_token = fyle_connection.access_token
 
-        # To do @Sravan: Use email and user id from my profile call
         user_profile = fyle_connection.Employees.get_my_profile()['data']
 
         self.user = User(
-            password='', last_login=datetime.now(tz=timezone.utc), id=1, email=os.environ.get('TEST_USER_EMAIL'),
-            user_id=os.environ.get('TEST_USER_ID'), full_name='', active='t', staff='f', admin='t'
+            password='', last_login=datetime.now(tz=timezone.utc), id=1, email=user_profile['employee_email'],
+            user_id=user_profile['user_id'], full_name='', active='t', staff='f', admin='t'
         )
         self.user.save()
 
@@ -63,17 +58,12 @@ class TestHelpers:
 
         return fyle_connection
 
-    # To do @Sravan: Rename the function to get_user_workspace_id()
-    def api_authentication(self):
+    def get_user_workspace_id(self):
         """
-        @Sravan: Add what the function does
+        GET workspace_id of the user
         """
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.access_token)
-
-        # To do @Sravan: To move this to workspace tests so that we can test workspace creation too
         self.client.post('{0}/workspaces/'.format(settings.API_URL),
                          headers={'Authorization': 'Bearer {}'.format(self.access_token)})
-
-        # This bit can stay here
         self.workspace = Workspace.objects.get(user=self.user)
         return self.workspace

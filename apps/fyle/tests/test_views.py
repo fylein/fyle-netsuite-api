@@ -14,7 +14,7 @@ class TestViews(APITestCase):
 
         self.client = APIClient()
         test_helpers.client = self.client
-        self.workspace = test_helpers.api_authentication()
+        self.workspace = test_helpers.get_user_workspace_id()
 
         self.__headers = {
             'Authorization': 'Bearer {}'.format(access_token)
