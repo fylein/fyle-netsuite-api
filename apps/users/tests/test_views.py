@@ -2,7 +2,7 @@ from django.urls import reverse
 
 from rest_framework.test import APITestCase, APIClient
 
-from fyle_netsuite_api.test_helpers import TestHelpers
+from fyle_netsuite_api.tests.helpers import TestHelpers
 
 
 class TestViews(APITestCase):

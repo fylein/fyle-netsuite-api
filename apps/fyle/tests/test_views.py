@@ -2,21 +2,31 @@ from django.urls import reverse
 
 from rest_framework.test import APITestCase, APIClient
 
-from fyle_netsuite_api.test_helpers import TestHelpers
+from fyle_netsuite_api.tests.helpers import TestHelpers
 
 
 class TestViews(APITestCase):
 
     def setUp(self):
-        self.connection = TestHelpers.test_connection(self)
-        self.access_token = self.connection.access_token
+        test_helpers = TestHelpers()
+        connection = test_helpers.test_connection()
+        access_token = connection.access_token
 
         self.client = APIClient()
-        auth = TestHelpers.api_authentication(self)
+        test_helpers.client = self.client
+        self.workspace = test_helpers.api_authentication()
 
-        self.workspace = auth
+        self.__headers = {
+            'Authorization': 'Bearer {}'.format(access_token)
+        }
 
     def test_get_fyle_fields_view(self):
-        response = self.client.get(reverse('fyle-fields', kwargs={'workspace_id': self.workspace.id}),
-                                   headers={'Authorization': 'Bearer {}'.format(self.access_token)})
+        response = self.client.get(
+            reverse(
+                'fyle-fields', kwargs={
+                    'workspace_id': self.workspace.id
+                }
+            ),
+            headers=self.__headers
+        )
         self.assertEqual(response.status_code, 200, msg='GET Fyle Fields Failed')

@@ -87,13 +87,13 @@ Django Rest Framework API for Fyle Netsuite Integration
 * Run the following command
 
     ```
-    python manage.py test --settings=fyle_netsuite_api.test_settings
+    python manage.py test --settings=fyle_netsuite_api.tests.settings
     ``` 
 
 * You should see output like this
 
     ```
-    Sravans-MacBook-Air:fyle-netsuite-api sravankumar$ python manage.py test --settings=fyle_netsuite_api.test_settings
+    Sravans-MacBook-Air:fyle-netsuite-api sravankumar$ python manage.py test --settings=fyle_netsuite_api.tests.settings
 
     Creating test database for alias 'default'...
     System check identified no issues (0 silenced).

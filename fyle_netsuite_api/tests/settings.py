@@ -6,7 +6,6 @@ import dj_database_url
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
@@ -14,10 +13,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True if os.environ.get('DEBUG') == 'True' else False
+DEBUG = True
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS').split(',')
-
 
 # Application definition
 
@@ -203,7 +201,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
 
@@ -217,12 +214,18 @@ USE_L10N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
 
+CACHE_EXPIRY = 3600
+
+CORS_ORIGIN_ALLOW_ALL = True
+
+"""
+------------------------------------------ Test Settings ----------------------------------------------------
+"""
 # Fyle Settings
 API_URL = os.environ.get('API_URL')
 FYLE_TOKEN_URI = os.environ.get('FYLE_TOKEN_URI')
@@ -230,10 +233,11 @@ FYLE_CLIENT_ID = os.environ.get('FYLE_CLIENT_ID')
 FYLE_CLIENT_SECRET = os.environ.get('FYLE_CLIENT_SECRET')
 FYLE_BASE_URL = os.environ.get('FYLE_BASE_URL')
 
+# To do @Sravan: Add all environment variables in the settings File
+
+
 # Netsuite Settings
+
+# To do @Sravan: Add Account id, token key, token secret here only
 NS_CONSUMER_KEY = os.environ.get('NS_CONSUMER_KEY')
 NS_CONSUMER_SECRET = os.environ.get('NS_CONSUMER_SECRET')
-
-CACHE_EXPIRY = 3600
-
-CORS_ORIGIN_ALLOW_ALL = True
