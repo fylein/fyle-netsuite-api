@@ -3,11 +3,13 @@ import itertools
 from django.urls import path
 
 from .views import NetSuiteFieldsView, DestinationAttributesView, CustomSegmentView, \
-    SyncNetSuiteDimensionView, RefreshNetSuiteDimensionView, TriggerExportsView, TriggerPaymentsView
+    SyncNetSuiteDimensionView, RefreshNetSuiteDimensionView, TriggerExportsView, TriggerPaymentsView, \
+    DestinationAttributesCountView
 
 netsuite_app_paths = [
     path('netsuite_fields/', NetSuiteFieldsView.as_view()),
     path('destination_attributes/', DestinationAttributesView.as_view()),
+    path('destination_attributes/count/', DestinationAttributesCountView.as_view()),
     path('custom_segments/', CustomSegmentView.as_view()),
     path('exports/trigger/', TriggerExportsView.as_view()),
     path('payments/trigger/', TriggerPaymentsView.as_view()),

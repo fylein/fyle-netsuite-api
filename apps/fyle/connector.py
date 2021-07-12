@@ -238,7 +238,7 @@ class FyleConnector:
         if existing_db_count == existing_category_count:
             return
 
-        cost_centers = self.connection.CostCenters.get()['data']
+        cost_centers = self.connection.CostCenters.get_all()
 
         cost_center_attributes = []
 
@@ -292,18 +292,26 @@ class FyleConnector:
         for custom_field in expense_custom_fields:
             expense_custom_field_attributes = []
             count = 1
+            options = []
 
             for option in custom_field['options']:
-                expense_custom_field_attributes.append({
-                    'attribute_type': custom_field['name'].upper().replace(' ', '_'),
-                    'display_name': custom_field['name'],
-                    'value': option,
-                    'source_id': 'expense_custom_field.{}.{}'.format(custom_field['name'].lower(), count)
-                })
-                count = count + 1
+                if option not in options:
+                    expense_custom_field_attributes.append({
+                        'attribute_type': custom_field['name'].upper().replace(' ', '_'),
+                        'display_name': custom_field['name'],
+                        'value': option,
+                        'source_id': 'expense_custom_field.{}.{}'.format(custom_field['name'].lower(), count),
+                        'detail': {
+                            'custom_field_id': custom_field['id']
+                        }
+                    })
+                    count = count + 1
+                options.append(option)
 
-            ExpenseAttribute.bulk_create_or_update_expense_attributes(expense_custom_field_attributes,
-                custom_field['name'].upper().replace(' ', '_'), self.workspace_id)
+            ExpenseAttribute.bulk_create_or_update_expense_attributes(
+                expense_custom_field_attributes, custom_field['name'].upper().replace(' ', '_'), self.workspace_id,
+                update=True
+            )
 
         return []
 

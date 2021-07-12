@@ -1,6 +1,6 @@
 import logging
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from typing import List, Dict
 
@@ -8,12 +8,16 @@ from django_q.models import Schedule
 from django.db.models import Q, Count
 
 from fylesdk.exceptions import WrongParamsError
+
+from apps.netsuite.models import CustomSegment
 from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttribute, DestinationAttribute
 
 from apps.fyle.connector import FyleConnector
 from apps.mappings.models import GeneralMapping
 from apps.netsuite.connector import NetSuiteConnector
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configuration
+
+from .constants import FYLE_EXPENSE_SYSTEM_FIELDS
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +58,18 @@ def create_fyle_categories_payload(categories: List[DestinationAttribute], works
     return payload
 
 
-def upload_categories_to_fyle(workspace_id, reimbursable_expenses_object):
+def sync_expense_categories_and_accounts(reimbursable_expenses_object: str, corporate_credit_card_expenses_object: str,
+    netsuite_connection: NetSuiteConnector):
+    if reimbursable_expenses_object == 'EXPENSE REPORT' or corporate_credit_card_expenses_object == 'EXPENSE REPORT':
+        netsuite_connection.sync_expense_categories()
+
+    if reimbursable_expenses_object in ('BILL', 'JOURNAL ENTRY') or \
+        corporate_credit_card_expenses_object in ('BILL', 'JOURNAL ENTRY', 'CREDIT CARD CHARGE'):
+        netsuite_connection.sync_accounts()
+
+
+def upload_categories_to_fyle(workspace_id: int, reimbursable_expenses_object: str,
+    corporate_credit_card_expenses_object: str):
     """
     Upload categories to Fyle
     """
@@ -72,13 +87,14 @@ def upload_categories_to_fyle(workspace_id, reimbursable_expenses_object):
     )
     fyle_connection.sync_categories()
 
+    sync_expense_categories_and_accounts(
+        reimbursable_expenses_object, corporate_credit_card_expenses_object, netsuite_connection)
+
     if reimbursable_expenses_object == 'EXPENSE REPORT':
-        netsuite_connection.sync_expense_categories()
         netsuite_attributes: List[DestinationAttribute] = DestinationAttribute.objects.filter(
             workspace_id=workspace_id, attribute_type='EXPENSE_CATEGORY'
         )
     else:
-        netsuite_connection.sync_accounts()
         netsuite_attributes: List[DestinationAttribute] = DestinationAttribute.objects.filter(
             workspace_id=workspace_id, attribute_type='ACCOUNT'
         )
@@ -199,7 +215,8 @@ def auto_create_category_mappings(workspace_id):
 
     try:
         fyle_categories = upload_categories_to_fyle(
-            workspace_id=workspace_id, reimbursable_expenses_object=reimbursable_expenses_object)
+            workspace_id=workspace_id, reimbursable_expenses_object=reimbursable_expenses_object,
+            corporate_credit_card_expenses_object=corporate_credit_card_expenses_object)
 
         Mapping.bulk_create_mappings(fyle_categories, 'CATEGORY', reimbursable_destination_type, workspace_id)
 
@@ -246,11 +263,11 @@ def schedule_categories_creation(import_categories, workspace_id):
             schedule.delete()
 
 
-def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_project_names: list, workspace_id: int):
+def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_project_names: list):
     """
     Create Fyle Projects Payload from NetSuite Projects
+    :param existing_project_names: Existing Projects in Fyle
     :param projects: NetSuite Projects
-    :param workspace_id: integer id of workspace
     :return: Fyle Projects Payload
     """
     payload = []
@@ -260,7 +277,7 @@ def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_
             payload.append({
                 'name': project.value,
                 'code': project.destination_id,
-                'description': 'NetSuite Customer / Project - {0}, Id - {1}'.format(
+                'description': 'Project - {0}, Id - {1}'.format(
                     project.value,
                     project.destination_id
                 ),
@@ -270,27 +287,27 @@ def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_
     return payload
 
 
-def post_projects_in_batches(fyle_connection: FyleConnector, workspace_id: int):
+def post_projects_in_batches(fyle_connection: FyleConnector, workspace_id: int, destination_field: str):
     existing_project_names = ExpenseAttribute.objects.filter(
         attribute_type='PROJECT', workspace_id=workspace_id).values_list('value', flat=True)
     ns_attributes_count = DestinationAttribute.objects.filter(
-        attribute_type='PROJECT', workspace_id=workspace_id).count()
+        attribute_type=destination_field, workspace_id=workspace_id).count()
     page_size = 200
 
     for offset in range(0, ns_attributes_count, page_size):
         limit = offset + page_size
         paginated_ns_attributes = DestinationAttribute.objects.filter(
-            attribute_type='PROJECT', workspace_id=workspace_id).order_by('value', 'id')[offset:limit]
+            attribute_type=destination_field, workspace_id=workspace_id).order_by('value', 'id')[offset:limit]
 
         paginated_ns_attributes = remove_duplicates(paginated_ns_attributes)
 
         fyle_payload: List[Dict] = create_fyle_projects_payload(
-            paginated_ns_attributes, existing_project_names, workspace_id)
+            paginated_ns_attributes, existing_project_names)
         if fyle_payload:
             fyle_connection.connection.Projects.post(fyle_payload)
             fyle_connection.sync_projects()
 
-        Mapping.bulk_create_mappings(paginated_ns_attributes, 'PROJECT', 'PROJECT', workspace_id)
+        Mapping.bulk_create_mappings(paginated_ns_attributes, 'PROJECT', destination_field, workspace_id)
 
 
 def auto_create_project_mappings(workspace_id):
@@ -315,7 +332,11 @@ def auto_create_project_mappings(workspace_id):
         ns_connection.sync_projects()
         ns_connection.sync_customers()
 
-        post_projects_in_batches(fyle_connection, workspace_id)
+        mapping_setting = MappingSetting.objects.get(
+            source_field='PROJECT', workspace_id=workspace_id
+        )
+
+        post_projects_in_batches(fyle_connection, workspace_id, mapping_setting.destination_field)
 
     except WrongParamsError as exception:
         logger.error(
@@ -334,16 +355,15 @@ def auto_create_project_mappings(workspace_id):
         )
 
 
-def schedule_projects_creation(import_projects, workspace_id):
-    if import_projects:
-        start_datetime = datetime.now()
+def schedule_projects_creation(import_to_fyle, workspace_id):
+    if import_to_fyle:
         schedule, _ = Schedule.objects.update_or_create(
             func='apps.mappings.tasks.auto_create_project_mappings',
             args='{}'.format(workspace_id),
             defaults={
                 'schedule_type': Schedule.MINUTES,
                 'minutes': 24 * 60,
-                'next_run': start_datetime
+                'next_run': datetime.now()
             }
         )
     else:
@@ -430,6 +450,261 @@ def schedule_auto_map_ccc_employees(workspace_id: int):
         schedule: Schedule = Schedule.objects.filter(
             func='apps.mappings.tasks.async_auto_map_ccc_account',
             args='{}'.format(workspace_id)
+        ).first()
+
+        if schedule:
+            schedule.delete()
+
+
+def create_fyle_cost_centers_payload(netsuite_attributes: List[DestinationAttribute], existing_fyle_cost_centers: list):
+    """
+    Create Fyle Cost Centers Payload from NetSuite Objects
+    :param existing_fyle_cost_centers: Existing cost center names
+    :param netsuite_attributes: NetSuite Objects
+    :return: Fyle Cost Centers Payload
+    """
+    fyle_cost_centers_payload = []
+
+    for netsuite_attribute in netsuite_attributes:
+        if netsuite_attribute.value not in existing_fyle_cost_centers:
+            fyle_cost_centers_payload.append({
+                'name': netsuite_attribute.value,
+                'enabled': True if netsuite_attribute.active is None else netsuite_attribute.active,
+                'description': 'Cost Center - {0}, Id - {1}'.format(
+                    netsuite_attribute.value,
+                    netsuite_attribute.destination_id
+                )
+            })
+
+    return fyle_cost_centers_payload
+
+
+def post_cost_centers_in_batches(fyle_connection: FyleConnector, workspace_id: int, netsuite_attribute_type: str):
+    existing_cost_center_names = ExpenseAttribute.objects.filter(
+        attribute_type='COST_CENTER', workspace_id=workspace_id).values_list('value', flat=True)
+
+    ns_attributes_count = DestinationAttribute.objects.filter(
+        attribute_type=netsuite_attribute_type, workspace_id=workspace_id).count()
+
+    page_size = 200
+
+    for offset in range(0, ns_attributes_count, page_size):
+        limit = offset + page_size
+        paginated_ns_attributes = DestinationAttribute.objects.filter(
+            attribute_type=netsuite_attribute_type, workspace_id=workspace_id).order_by('value', 'id')[offset:limit]
+
+        paginated_ns_attributes = remove_duplicates(paginated_ns_attributes)
+
+        fyle_payload: List[Dict] = create_fyle_cost_centers_payload(
+            paginated_ns_attributes, existing_cost_center_names)
+
+        if fyle_payload:
+            fyle_connection.connection.CostCenters.post(fyle_payload)
+            fyle_connection.sync_cost_centers()
+
+        Mapping.bulk_create_mappings(paginated_ns_attributes, 'COST_CENTER', netsuite_attribute_type, workspace_id)
+
+
+def auto_create_cost_center_mappings(workspace_id):
+    """
+    Create Cost Center Mappings
+    """
+    try:
+        fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
+        ns_credentials: NetSuiteCredentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+
+        fyle_connection = FyleConnector(
+            refresh_token=fyle_credentials.refresh_token,
+            workspace_id=workspace_id
+        )
+
+        ns_connection = NetSuiteConnector(
+            netsuite_credentials=ns_credentials,
+            workspace_id=workspace_id
+        )
+
+        mapping_setting = MappingSetting.objects.get(
+            source_field='COST_CENTER', import_to_fyle=True, workspace_id=workspace_id
+        )
+
+        fyle_connection.sync_cost_centers()
+
+        if mapping_setting.destination_field == 'LOCATION':
+            ns_connection.sync_locations()
+
+        elif mapping_setting.destination_field == 'PROJECT':
+            ns_connection.sync_projects()
+
+        elif mapping_setting.destination_field == 'DEPARTMENT':
+            ns_connection.sync_departments()
+
+        elif mapping_setting.destination_field == 'CLASS':
+            ns_connection.sync_classifications()
+
+        else:
+            ns_connection.sync_custom_segments()
+
+        post_cost_centers_in_batches(fyle_connection, workspace_id, mapping_setting.destination_field)
+
+    except WrongParamsError as exception:
+        logger.error(
+            'Error while creating cost centers workspace_id - %s in Fyle %s %s',
+            workspace_id, exception.message, {'error': exception.response}
+        )
+
+    except Exception:
+        error = traceback.format_exc()
+        error = {
+            'error': error
+        }
+        logger.error(
+            'Error while creating cost centers workspace_id - %s error: %s',
+            workspace_id, error
+        )
+
+
+def schedule_cost_centers_creation(import_to_fyle, workspace_id):
+    if import_to_fyle:
+        schedule, _ = Schedule.objects.update_or_create(
+            func='apps.mappings.tasks.auto_create_cost_center_mappings',
+            args='{}'.format(workspace_id),
+            defaults={
+                'schedule_type': Schedule.MINUTES,
+                'minutes': 24 * 60,
+                'next_run': datetime.now()
+            }
+        )
+    else:
+        schedule: Schedule = Schedule.objects.filter(
+            func='apps.mappings.tasks.auto_create_cost_center_mappings',
+            args='{}'.format(workspace_id)
+        ).first()
+
+        if schedule:
+            schedule.delete()
+
+
+def create_fyle_expense_custom_field_payload(netsuite_attributes: List[DestinationAttribute], workspace_id: int,
+                                             fyle_attribute: str):
+    """
+    Create Fyle Expense Custom Field Payload from NetSuite Objects
+    :param workspace_id: Workspace ID
+    :param netsuite_attributes: NetSuite Objects
+    :param fyle_attribute: Fyle Attribute
+    :return: Fyle Expense Custom Field Payload
+    """
+    fyle_expense_custom_field_options = []
+
+    [fyle_expense_custom_field_options.append(netsuite_attribute.value) for netsuite_attribute in netsuite_attributes]
+
+    if fyle_attribute.lower() not in FYLE_EXPENSE_SYSTEM_FIELDS:
+        existing_attribute = ExpenseAttribute.objects.filter(
+            attribute_type=fyle_attribute, workspace_id=workspace_id).values_list('detail', flat=True).first()
+
+        custom_field_id = None
+        if existing_attribute is not None:
+            custom_field_id = existing_attribute['custom_field_id']
+
+        fyle_attribute = fyle_attribute.replace('_', ' ').title()
+
+        expense_custom_field_payload = {
+            'id': custom_field_id,
+            'name': fyle_attribute,
+            'type': 'SELECT',
+            'active': True,
+            'mandatory': False,
+            'placeholder': 'Select {0}'.format(fyle_attribute),
+            'default_value': None,
+            'options': fyle_expense_custom_field_options,
+            'code': None
+        }
+
+        return expense_custom_field_payload
+
+
+def upload_attributes_to_fyle(workspace_id: int, netsuite_attribute_type: str, fyle_attribute_type: str):
+    """
+    Upload attributes to Fyle
+    """
+    fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
+
+    fyle_connection = FyleConnector(refresh_token=fyle_credentials.refresh_token, workspace_id=workspace_id)
+
+    netsuite_attributes: List[DestinationAttribute] = DestinationAttribute.objects.filter(
+        workspace_id=workspace_id, attribute_type=netsuite_attribute_type
+    )
+
+    netsuite_attributes = remove_duplicates(netsuite_attributes)
+
+    fyle_custom_field_payload = create_fyle_expense_custom_field_payload(
+        fyle_attribute=fyle_attribute_type,
+        netsuite_attributes=netsuite_attributes,
+        workspace_id=workspace_id
+    )
+
+    if fyle_custom_field_payload:
+        fyle_connection.connection.ExpensesCustomFields.post(fyle_custom_field_payload)
+        fyle_connection.sync_expense_custom_fields(active_only=True)
+
+    return netsuite_attributes
+
+
+def auto_create_expense_fields_mappings(workspace_id: int, netsuite_attribute_type: str, fyle_attribute_type: str):
+    """
+    Create Fyle Attributes Mappings
+    :return: mappings
+    """
+    try:
+        fyle_attributes = upload_attributes_to_fyle(workspace_id, netsuite_attribute_type, fyle_attribute_type)
+        if fyle_attributes:
+            Mapping.bulk_create_mappings(fyle_attributes, fyle_attribute_type, netsuite_attribute_type, workspace_id)
+
+    except WrongParamsError as exception:
+        logger.error(
+            'Error while creating %s workspace_id - %s in Fyle %s %s',
+            fyle_attribute_type, workspace_id, exception.message, {'error': exception.response}
+        )
+    except Exception:
+        error = traceback.format_exc()
+        error = {
+            'error': error
+        }
+        logger.error(
+            'Error while creating %s workspace_id - %s error: %s', fyle_attribute_type, workspace_id, error
+        )
+
+
+def async_auto_create_custom_field_mappings(workspace_id):
+    mapping_settings = MappingSetting.objects.filter(
+        is_custom=True, import_to_fyle=True, workspace_id=workspace_id
+    ).all()
+
+    if mapping_settings:
+        for mapping_setting in mapping_settings:
+            if mapping_setting.import_to_fyle:
+                auto_create_expense_fields_mappings(
+                    workspace_id, mapping_setting.destination_field, mapping_setting.source_field
+                )
+
+
+def schedule_fyle_attributes_creation(workspace_id: int):
+    mapping_settings = MappingSetting.objects.filter(
+        is_custom=True, import_to_fyle=True, workspace_id=workspace_id
+    ).all()
+    if mapping_settings:
+        schedule, _ = Schedule.objects.get_or_create(
+            func='apps.mappings.tasks.async_auto_create_custom_field_mappings',
+            args='{0}'.format(workspace_id),
+            defaults={
+                'schedule_type': Schedule.MINUTES,
+                'minutes': 24 * 60,
+                'next_run': datetime.now() + timedelta(hours=24)
+            }
+        )
+    else:
+        schedule: Schedule = Schedule.objects.filter(
+            func='apps.mappings.tasks.async_auto_create_custom_field_mappings',
+            args='{0}'.format(workspace_id)
         ).first()
 
         if schedule:
