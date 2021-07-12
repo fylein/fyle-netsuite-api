@@ -316,25 +316,19 @@ def auto_create_project_mappings(workspace_id):
     """
     try:
         fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
-        ns_credentials: NetSuiteCredentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
 
         fyle_connection = FyleConnector(
             refresh_token=fyle_credentials.refresh_token,
             workspace_id=workspace_id
         )
 
-        ns_connection = NetSuiteConnector(
-            netsuite_credentials=ns_credentials,
-            workspace_id=workspace_id
-        )
-
         fyle_connection.sync_projects()
-        ns_connection.sync_projects()
-        ns_connection.sync_customers()
 
         mapping_setting = MappingSetting.objects.get(
             source_field='PROJECT', workspace_id=workspace_id
         )
+
+        sync_netsuite_attribute(mapping_setting.destination_field, workspace_id)
 
         post_projects_in_batches(fyle_connection, workspace_id, mapping_setting.destination_field)
 
@@ -456,6 +450,32 @@ def schedule_auto_map_ccc_employees(workspace_id: int):
             schedule.delete()
 
 
+def sync_netsuite_attribute(netsuite_attribute_type: str, workspace_id: int):
+    ns_credentials: NetSuiteCredentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+
+    ns_connection = NetSuiteConnector(
+        netsuite_credentials=ns_credentials,
+        workspace_id=workspace_id
+    )
+
+    if netsuite_attribute_type == 'LOCATION':
+        ns_connection.sync_locations()
+
+    elif netsuite_attribute_type == 'PROJECT':
+        ns_connection.sync_projects()
+        ns_connection.sync_customers()
+
+    elif netsuite_attribute_type == 'DEPARTMENT':
+        ns_connection.sync_departments()
+
+    elif netsuite_attribute_type == 'CLASS':
+        ns_connection.sync_classifications()
+
+    else:
+        all_custom_list = CustomSegment.objects.filter(workspace_id=workspace_id).all()
+        ns_connection.sync_custom_segments(all_custom_list)
+
+
 def create_fyle_cost_centers_payload(netsuite_attributes: List[DestinationAttribute], existing_fyle_cost_centers: list):
     """
     Create Fyle Cost Centers Payload from NetSuite Objects
@@ -511,15 +531,9 @@ def auto_create_cost_center_mappings(workspace_id):
     """
     try:
         fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
-        ns_credentials: NetSuiteCredentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
 
         fyle_connection = FyleConnector(
             refresh_token=fyle_credentials.refresh_token,
-            workspace_id=workspace_id
-        )
-
-        ns_connection = NetSuiteConnector(
-            netsuite_credentials=ns_credentials,
             workspace_id=workspace_id
         )
 
@@ -529,22 +543,7 @@ def auto_create_cost_center_mappings(workspace_id):
 
         fyle_connection.sync_cost_centers()
 
-        if mapping_setting.destination_field == 'LOCATION':
-            ns_connection.sync_locations()
-
-        elif mapping_setting.destination_field == 'PROJECT':
-            ns_connection.sync_projects()
-
-        elif mapping_setting.destination_field == 'DEPARTMENT':
-            ns_connection.sync_departments()
-
-        elif mapping_setting.destination_field == 'CLASS':
-            ns_connection.sync_classifications()
-
-        else:
-            all_custom_list = CustomSegment.objects.filter(workspace_id=workspace_id).all()
-            custom_lists = ns_connection.sync_custom_segments(all_custom_list)
-            ns_connection.sync_custom_segments(custom_lists)
+        sync_netsuite_attribute(mapping_setting.destination_field, workspace_id)
 
         post_cost_centers_in_batches(fyle_connection, workspace_id, mapping_setting.destination_field)
 
@@ -684,6 +683,7 @@ def async_auto_create_custom_field_mappings(workspace_id):
     if mapping_settings:
         for mapping_setting in mapping_settings:
             if mapping_setting.import_to_fyle:
+                sync_netsuite_attribute(mapping_setting.destination_field, workspace_id)
                 auto_create_expense_fields_mappings(
                     workspace_id, mapping_setting.destination_field, mapping_setting.source_field
                 )
