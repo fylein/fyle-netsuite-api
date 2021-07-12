@@ -450,7 +450,7 @@ def schedule_auto_map_ccc_employees(workspace_id: int):
             schedule.delete()
 
 
-def sync_netsuite_attribute(netsuite_attribute_type, workspace_id):
+def sync_netsuite_attribute(netsuite_attribute_type: str, workspace_id: int):
     ns_credentials: NetSuiteCredentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
 
     ns_connection = NetSuiteConnector(
