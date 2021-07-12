@@ -1,13 +1,10 @@
 """
 NetSuite Signals
 """
-import traceback
-
-from rest_framework.response import Response
-from rest_framework.views import status
-
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
+
+from fyle_accounting_mappings.models import DestinationAttribute
 
 from apps.workspaces.models import NetSuiteCredentials
 
@@ -27,7 +24,15 @@ def sync_custom_segments(sender, instance: CustomSegment, **kwargs):
         netsuite_credentials=ns_credentials,
         workspace_id=instance.workspace_id
     )
-    ns_connection.sync_custom_segments()
+
+    attribute_type = instance.name.upper().replace(' ', '_')
+    if instance.segment_type == 'CUSTOM_LIST':
+        custom_segment_attributes = ns_connection.get_custom_list_attributes(attribute_type, instance.internal_id)
+    elif instance.segment_type == 'CUSTOM_RECORD':
+        custom_segment_attributes = ns_connection.get_custom_record_attributes(attribute_type, instance.internal_id)
+
+    DestinationAttribute.bulk_create_or_update_destination_attributes(
+        custom_segment_attributes, attribute_type, instance.workspace_id, True)
 
 
 @receiver(pre_save, sender=CustomSegment)
