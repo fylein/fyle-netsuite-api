@@ -212,6 +212,7 @@ class CustomSegment(models.Model):
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
     class Meta:
+        unique_together = ('script_id', 'internal_id', 'workspace')
         db_table = 'custom_segments'
 
 

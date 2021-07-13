@@ -472,8 +472,7 @@ def sync_netsuite_attribute(netsuite_attribute_type: str, workspace_id: int):
         ns_connection.sync_classifications()
 
     else:
-        all_custom_list = CustomSegment.objects.filter(workspace_id=workspace_id).all()
-        ns_connection.sync_custom_segments(all_custom_list)
+        ns_connection.sync_custom_segments()
 
 
 def create_fyle_cost_centers_payload(netsuite_attributes: List[DestinationAttribute], existing_fyle_cost_centers: list):

@@ -15,7 +15,7 @@ class NetSuiteFieldSerializer(serializers.ModelSerializer):
 
 class CustomSegmentSerializer(serializers.ModelSerializer):
     """
-    Custom List Serializer
+    Custom Segment Serializer
     """
     class Meta:
         model = CustomSegment

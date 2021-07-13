@@ -1,6 +1,6 @@
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 
 from django.db.models import Q
 from rest_framework import generics
@@ -14,118 +14,53 @@ from fyle_accounting_mappings.serializers import DestinationAttributeSerializer
 
 from fyle_netsuite_api.utils import assert_valid
 
-from apps.workspaces.models import NetSuiteCredentials, Workspace
+from apps.workspaces.models import NetSuiteCredentials, Workspace, Configuration
 
 from .serializers import NetSuiteFieldSerializer, CustomSegmentSerializer
-
 from .tasks import schedule_bills_creation, schedule_expense_reports_creation, schedule_journal_entry_creation,\
     create_vendor_payment, check_netsuite_object_status, process_reimbursements, schedule_credit_card_charge_creation
-
 from .models import CustomSegment
-
 from .connector import NetSuiteConnector
+from .helpers import check_interval_and_sync_dimension, sync_dimensions
+
 
 logger = logging.getLogger(__name__)
 
 
-class SubsidiaryView(generics.ListCreateAPIView):
+class TriggerExportsView(generics.GenericAPIView):
     """
-    Subsidiary view
+    Trigger exports creation
     """
-
-    def post(self, request, *args, **kwargs):
-        """
-        Sync subsidiaries from NetSuite
-        """
-        try:
-            ns_credentials = NetSuiteCredentials.objects.get(workspace_id=kwargs['workspace_id'])
-
-            ns_connector = NetSuiteConnector(ns_credentials, workspace_id=kwargs['workspace_id'])
-
-            subsidiaries = ns_connector.sync_subsidiaries()
-
-            return Response(
-                data=DestinationAttributeSerializer(subsidiaries, many=True).data,
-                status=status.HTTP_200_OK
-            )
-        except NetSuiteCredentials.DoesNotExist:
-            return Response(
-                data={
-                    'message': 'NetSuite credentials not found in workspace'
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        except NetSuiteRequestError as exception:
-            logger.exception({'error': exception})
-            detail = json.dumps(exception.__dict__)
-            detail = json.loads(detail)
-
-            return Response(
-                data={
-                    'message': '{0} - {1}'.format(detail['code'], detail['message'])
-                },
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-
-
-class BillScheduleView(generics.CreateAPIView):
-    """
-    Schedule bills creation
-    """
-
     def post(self, request, *args, **kwargs):
         expense_group_ids = request.data.get('expense_group_ids', [])
+        export_type = request.data.get('export_type')
 
-        schedule_bills_creation(
-            kwargs['workspace_id'], expense_group_ids)
+        if export_type == 'BILL':
+            schedule_bills_creation(kwargs['workspace_id'], expense_group_ids)
+        elif export_type == 'CREDIT CARD CHARGE':
+            schedule_credit_card_charge_creation(kwargs['workspace_id'], expense_group_ids)
+        elif export_type == 'JOURNAL ENTRY':
+            schedule_journal_entry_creation(kwargs['workspace_id'], expense_group_ids)
+        elif export_type == 'EXPENSE REPORT':
+            schedule_expense_reports_creation(kwargs['workspace_id'], expense_group_ids)
 
         return Response(
             status=status.HTTP_200_OK
         )
 
 
-class CreditCardChargeScheduleView(generics.CreateAPIView):
+class TriggerPaymentsView(generics.GenericAPIView):
     """
-    Schedule Credit Card Charge creation
+    Trigger payments sync
     """
-
     def post(self, request, *args, **kwargs):
-        expense_group_ids = request.data.get('expense_group_ids', [])
+        configurations = Configuration.objects.get(workspace_id=kwargs['workspace_id'])
 
-        schedule_credit_card_charge_creation(
-            kwargs['workspace_id'], expense_group_ids)
-
-        return Response(
-            status=status.HTTP_200_OK
-        )
-
-
-class ExpenseReportScheduleView(generics.CreateAPIView):
-    """
-    Schedule expense reports creation
-    """
-
-    def post(self, request, *args, **kwargs):
-        expense_group_ids = request.data.get('expense_group_ids', [])
-
-        schedule_expense_reports_creation(
-            kwargs['workspace_id'], expense_group_ids)
-
-        return Response(
-            status=status.HTTP_200_OK
-        )
-
-
-class JournalEntryScheduleView(generics.CreateAPIView):
-    """
-    Schedule JournalEntry creation
-    """
-
-    def post(self, request, *args, **kwargs):
-        expense_group_ids = request.data.get('expense_group_ids', [])
-
-        schedule_journal_entry_creation(
-            kwargs['workspace_id'], expense_group_ids)
+        if configurations.sync_fyle_to_netsuite_payments:
+            create_vendor_payment(workspace_id=self.kwargs['workspace_id'])
+        elif configurations.sync_netsuite_to_fyle_payments:
+            check_netsuite_object_status(workspace_id=self.kwargs['workspace_id'])
+            process_reimbursements(workspace_id=self.kwargs['workspace_id'])
 
         return Response(
             status=status.HTTP_200_OK
@@ -151,8 +86,24 @@ class NetSuiteFieldsView(generics.ListAPIView):
         return attributes
 
 
-class NetSuiteAttributesCountView(generics.RetrieveAPIView):
+class DestinationAttributesView(generics.ListAPIView):
+    """
+    Destination Attributes view
+    """
+    serializer_class = DestinationAttributeSerializer
+    pagination_class = None
 
+    def get_queryset(self):
+        attribute_types = self.request.query_params.get('attribute_types').split(',')
+
+        return DestinationAttribute.objects.filter(
+            attribute_type__in=attribute_types, workspace_id=self.kwargs['workspace_id']).order_by('value')
+
+
+class DestinationAttributesCountView(generics.RetrieveAPIView):
+    """
+    Destination Attributes Count view
+    """
     def get(self, request, *args, **kwargs):
         attribute_type = self.request.query_params.get('attribute_type')
 
@@ -166,55 +117,6 @@ class NetSuiteAttributesCountView(generics.RetrieveAPIView):
             },
             status=status.HTTP_200_OK
         )
-
-
-class SyncCustomFieldsView(generics.ListCreateAPIView):
-    """
-    SyncCustomFields view
-    """
-    serializer_class = DestinationAttributeSerializer
-    pagination_class = None
-
-    def get_queryset(self):
-        attribute_type = self.request.query_params.get('attribute_type')
-
-        return DestinationAttribute.objects.filter(
-            attribute_type=attribute_type, workspace_id=self.kwargs['workspace_id']).order_by('value')
-
-    def post(self, request, *args, **kwargs):
-        """
-        Get Expense Category from NetSuite
-        """
-        try:
-            ns_credentials = NetSuiteCredentials.objects.get(workspace_id=kwargs['workspace_id'])
-            ns_connector = NetSuiteConnector(ns_credentials, workspace_id=kwargs['workspace_id'])
-
-            all_custom_list = CustomSegment.objects.filter(workspace_id=kwargs['workspace_id']).all()
-
-            custom_lists = ns_connector.sync_custom_segments(all_custom_list)
-
-            return Response(
-                data=self.serializer_class(custom_lists, many=True).data,
-                status=status.HTTP_200_OK
-            )
-        except NetSuiteCredentials.DoesNotExist:
-            return Response(
-                data={
-                    'message': 'NetSuite credentials not found in workspace'
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        except NetSuiteRequestError as exception:
-            logger.exception({'error': exception})
-            detail = json.dumps(exception.__dict__)
-            detail = json.loads(detail)
-
-            return Response(
-                data={
-                    'message': '{0} - {1}'.format(detail['code'], detail['message'])
-                },
-                status=status.HTTP_401_UNAUTHORIZED
-            )
 
 
 class CustomSegmentView(generics.ListCreateAPIView):
@@ -298,41 +200,8 @@ class CustomSegmentView(generics.ListCreateAPIView):
                 data={
                     'message': '{0} - {1}'.format(detail['code'], detail['message'])
                 },
-                status=status.HTTP_401_UNAUTHORIZED
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
-
-class VendorPaymentView(generics.CreateAPIView):
-    """
-    Create Vendor Payment View
-    """
-    def post(self, request, *args, **kwargs):
-        """
-        Create vendor payment
-        """
-        create_vendor_payment(workspace_id=self.kwargs['workspace_id'])
-
-        return Response(
-            data={},
-            status=status.HTTP_200_OK
-        )
-
-
-class ReimburseNetSuitePaymentsView(generics.CreateAPIView):
-    """
-    Reimburse NetSuite Payments View
-    """
-    def post(self, request, *args, **kwargs):
-        """
-        Process Reimbursements in Fyle
-        """
-        check_netsuite_object_status(workspace_id=self.kwargs['workspace_id'])
-        process_reimbursements(workspace_id=self.kwargs['workspace_id'])
-
-        return Response(
-            data={},
-            status=status.HTTP_200_OK
-        )
 
 
 class SyncNetSuiteDimensionView(generics.ListCreateAPIView):
@@ -344,19 +213,12 @@ class SyncNetSuiteDimensionView(generics.ListCreateAPIView):
         Sync data from NetSuite
         """
         try:
-            workspace = Workspace.objects.get(id=kwargs['workspace_id'])
+            workspace = Workspace.objects.get(pk=kwargs['workspace_id'])
+            netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace.id)
 
-            time_interval = 0
+            synced = check_interval_and_sync_dimension(workspace, netsuite_credentials)
 
-            if workspace.destination_synced_at:
-                time_interval = datetime.now(timezone.utc) - workspace.destination_synced_at
-
-            if not workspace.destination_synced_at or time_interval.days > 0:
-                ns_credentials = NetSuiteCredentials.objects.get(workspace_id=kwargs['workspace_id'])
-                ns_connector = NetSuiteConnector(ns_credentials, workspace_id=kwargs['workspace_id'])
-
-                ns_connector.sync_dimensions(kwargs['workspace_id'])
-
+            if synced:
                 workspace.destination_synced_at = datetime.now()
                 workspace.save(update_fields=['destination_synced_at'])
 
@@ -381,14 +243,16 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
         Sync data from NetSuite
         """
         try:
-            ns_credentials = NetSuiteCredentials.objects.get(workspace_id=kwargs['workspace_id'])
-            ns_connector = NetSuiteConnector(ns_credentials, workspace_id=kwargs['workspace_id'])
+            dimensions_to_sync = request.data.get('dimensions_to_sync', [])
+            workspace = Workspace.objects.get(pk=kwargs['workspace_id'])
 
-            ns_connector.sync_dimensions(kwargs['workspace_id'])
+            netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace.id)
+            sync_dimensions(netsuite_credentials, workspace.id, dimensions_to_sync)
 
-            workspace = Workspace.objects.get(id=kwargs['workspace_id'])
-            workspace.destination_synced_at = datetime.now()
-            workspace.save(update_fields=['destination_synced_at'])
+            # Update destination_synced_at to current time only when full refresh happens
+            if not dimensions_to_sync:
+                workspace.destination_synced_at = datetime.now()
+                workspace.save(update_fields=['destination_synced_at'])
 
             return Response(
                 status=status.HTTP_200_OK
