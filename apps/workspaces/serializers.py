@@ -53,9 +53,9 @@ class ConfigurationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """
-        Create Workspace General Settings
+        Create / Update Configurations
         :param validated_data: Validated data
-        :return: upserted general settings object
+        :return: upserted configurations object
         """
         workspace = validated_data['workspace']
 
