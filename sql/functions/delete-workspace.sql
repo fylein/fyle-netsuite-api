@@ -59,24 +59,6 @@ BEGIN
     RAISE NOTICE 'Deleted % expense_report_lineitems', rcount;
 
     DELETE
-    FROM vendor_payments vp
-    WHERE vp.id IN (
-        SELECT vpl.vendor_payment_id FROM vendor_payment_lineitems vpl WHERE vpl.expense_group_id IN (
-            SELECT eg.id FROM expense_groups eg WHERE eg.workspace_id = _workspace_id
-        )
-    );
-    GET DIAGNOSTICS rcount = ROW_COUNT;
-    RAISE NOTICE 'Deleted % vendor_payments', rcount;
-
-    DELETE
-    FROM vendor_payment_lineitems vpl
-    WHERE vpl.expense_group_id IN (
-        SELECT eg.id FROM expense_groups eg WHERE eg.workspace_id = _workspace_id
-    );
-    GET DIAGNOSTICS rcount = ROW_COUNT;
-    RAISE NOTICE 'Deleted % vendor_payment_lineitems', rcount;
-
-    DELETE
     FROM expense_reports er
     WHERE er.expense_group_id IN (
         SELECT eg.id FROM expense_groups eg WHERE eg.workspace_id = _workspace_id
@@ -132,6 +114,24 @@ BEGIN
     WHERE eg.workspace_id = _workspace_id;
     GET DIAGNOSTICS rcount = ROW_COUNT;
     RAISE NOTICE 'Deleted % expense_groups', rcount;
+
+    DELETE
+    FROM vendor_payments vp
+    WHERE vp.id IN (
+        SELECT vpl.vendor_payment_id FROM vendor_payment_lineitems vpl WHERE vpl.expense_group_id IN (
+            SELECT eg.id FROM expense_groups eg WHERE eg.workspace_id = _workspace_id
+        )
+    );
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % vendor_payments', rcount;
+
+    DELETE
+    FROM vendor_payment_lineitems vpl
+    WHERE vpl.expense_group_id IN (
+        SELECT eg.id FROM expense_groups eg WHERE eg.workspace_id = _workspace_id
+    );
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % vendor_payment_lineitems', rcount;
 
     DELETE
     FROM mappings m
