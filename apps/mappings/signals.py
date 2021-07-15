@@ -40,13 +40,6 @@ def run_pre_mapping_settings_triggers(sender, instance: MappingSetting, **kwargs
 
     instance.source_field = instance.source_field.upper().replace(' ', '_')
 
-    attributes = ExpenseAttribute.objects.filter(
-        ~Q(attribute_type__in=default_attributes),
-        workspace_id=int(instance.workspace_id)
-    ).values('attribute_type').distinct()
-
-    [default_attributes.append(attribute['attribute_type']) for attribute in attributes]
-
     if instance.source_field not in default_attributes:
         upload_attributes_to_fyle(
             workspace_id=int(instance.workspace_id),
