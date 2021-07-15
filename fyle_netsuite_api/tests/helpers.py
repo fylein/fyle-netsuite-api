@@ -22,6 +22,7 @@ class TestHelpers:
         self.auth_token = None
         self.user = None
         self.client = None
+        self.user_profile = None
 
     def test_connection(self):
         """
@@ -41,11 +42,11 @@ class TestHelpers:
 
         self.access_token = fyle_connection.access_token
 
-        user_profile = fyle_connection.Employees.get_my_profile()['data']
+        self.user_profile = fyle_connection.Employees.get_my_profile()['data']
 
         self.user = User(
-            password='', last_login=datetime.now(tz=timezone.utc), id=1, email=user_profile['employee_email'],
-            user_id=user_profile['user_id'], full_name='', active='t', staff='f', admin='t'
+            password='', last_login=datetime.now(tz=timezone.utc), id=1, email=self.user_profile['employee_email'],
+            user_id=self.user_profile['user_id'], full_name='', active='t', staff='f', admin='t'
         )
         self.user.save()
 
@@ -63,7 +64,18 @@ class TestHelpers:
         GET workspace_id of the user
         """
         self.client.credentials(HTTP_AUTHORIZATION='Bearer {0}'.format(self.access_token))
-        self.client.post('{0}/workspaces/'.format(settings.API_URL),
-                         headers={'Authorization': 'Bearer {}'.format(self.access_token)})
-        self.workspace = Workspace.objects.get(user=self.user)
+
+        self.workspace = Workspace(
+            id=1,
+            name=self.user_profile['org_name'],
+            fyle_org_id=self.user_profile['org_id'],
+            ns_account_id=settings.NS_ACCOUNT_ID,
+            last_synced_at=None,
+            source_synced_at=None,
+            destination_synced_at=None,
+            created_at=datetime.now(tz=timezone.utc),
+            updated_at=datetime.now(tz=timezone.utc)
+        )
+        self.workspace.save()
+        self.workspace.user.add(self.user)
         return self.workspace
