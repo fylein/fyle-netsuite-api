@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from django.db.models import Q
 
 from rest_framework.views import status
@@ -63,19 +63,13 @@ class ExpenseGroupCountView(generics.ListAPIView):
         )
 
 
-class ExpenseGroupSettingsView(generics.ListCreateAPIView):
+class ExpenseGroupSettingsView(generics.RetrieveAPIView):
     """
     Expense Group Settings View
     """
     serializer_class = ExpenseGroupSettingsSerializer
-
-    def get(self, request, *args, **kwargs):
-        expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=self.kwargs['workspace_id'])
-
-        return Response(
-            data=self.serializer_class(expense_group_settings).data,
-            status=status.HTTP_200_OK
-        )
+    lookup_field = 'workspace_id'
+    queryset = ExpenseGroupSettings.objects.all()
 
     def post(self, request, *args, **kwargs):
         expense_group_settings, _ = ExpenseGroupSettings.update_expense_group_settings(
@@ -130,7 +124,6 @@ class ExpenseGroupScheduleView(generics.CreateAPIView):
     """
     Create expense group schedule
     """
-
     def post(self, request, *args, **kwargs):
         """
         Post expense schedule
