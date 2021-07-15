@@ -1,7 +1,6 @@
 from .models import TaskLog
 
 def filter_tasks_by_params(params, workspace_id: int):
-    print(params, type(params))
     task_status = params.get('status').split(',')
     expense_group_ids = params.get('expense_group_ids')
     task_type = params.get('task_type')
