@@ -212,6 +212,7 @@ class CustomSegment(models.Model):
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
     class Meta:
+        unique_together = ('script_id', 'internal_id', 'workspace')
         db_table = 'custom_segments'
 
 
@@ -365,9 +366,7 @@ class BillLineitem(models.Model):
 
             custom_segments = get_custom_segments(expense_group, lineitem)
 
-            customer_id = None
-            if configuration.import_projects:
-                customer_id = get_customer_id_or_none(expense_group, lineitem)
+            customer_id = get_customer_id_or_none(expense_group, lineitem)
 
             billable = lineitem.billable
             if customer_id:
@@ -535,9 +534,7 @@ class CreditCardChargeLineItem(models.Model):
 
         custom_segments = get_custom_segments(expense_group, lineitem)
 
-        customer_id = None
-        if configuration.import_projects:
-            customer_id = get_customer_id_or_none(expense_group, lineitem)
+        customer_id = get_customer_id_or_none(expense_group, lineitem)
 
         billable = lineitem.billable
         if customer_id:
@@ -714,9 +711,7 @@ class ExpenseReportLineItem(models.Model):
 
             department_id = get_department_id_or_none(expense_group, lineitem)
 
-            customer_id = None
-            if configuration.import_projects:
-                customer_id = get_customer_id_or_none(expense_group, lineitem)
+            customer_id = get_customer_id_or_none(expense_group, lineitem)
 
             location_id = get_location_id_or_none(expense_group, lineitem)
 
