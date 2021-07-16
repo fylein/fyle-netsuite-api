@@ -1,12 +1,11 @@
 """
 Mapping Signals
 """
-from django.db.models import Q
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django_q.tasks import async_task
 
-from fyle_accounting_mappings.models import MappingSetting, ExpenseAttribute
+from fyle_accounting_mappings.models import MappingSetting
 
 from apps.mappings.tasks import upload_attributes_to_fyle, schedule_cost_centers_creation,\
     schedule_fyle_attributes_creation, schedule_projects_creation
