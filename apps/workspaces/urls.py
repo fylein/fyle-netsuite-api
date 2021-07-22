@@ -3,23 +3,29 @@ from django.urls import path, include
 from .views import WorkspaceView, ReadyView, ConnectFyleView, ConnectNetSuiteView, ScheduleView, ConfigurationsView
 
 workspaces_app_paths = [
-    path('', WorkspaceView.as_view({'get': 'get', 'post': 'post'})),
-    path('<int:workspace_id>/', WorkspaceView.as_view({'get': 'get_by_id'})),
-    path('<int:workspace_id>/schedule/', ScheduleView.as_view({'post': 'post', 'get': 'get'})),
-    path('<int:workspace_id>/configuration/', ConfigurationsView.as_view()),
-    path('ready/', ReadyView.as_view({'get': 'get'}))
+    path('', WorkspaceView.as_view({'get': 'get', 'post': 'post'}), name='workspace'),
+    path('<int:workspace_id>/', WorkspaceView.as_view({'get': 'get_by_id'}), name='workspace-by-id'),
+    path('<int:workspace_id>/schedule/', ScheduleView.as_view({'post': 'post', 'get': 'get'}),
+         name='workspace-schedule'),
+    path('<int:workspace_id>/configuration/', ConfigurationsView.as_view(), name='workspace-configurations'),
+    path('ready/', ReadyView.as_view({'get': 'get'}), name='ready')
 ]
 
 fyle_connection_api_paths = [
-    path('<int:workspace_id>/connect_fyle/authorization_code/', ConnectFyleView.as_view({'post': 'post'})),
-    path('<int:workspace_id>/credentials/fyle/', ConnectFyleView.as_view({'get': 'get'})),
-    path('<int:workspace_id>/credentials/fyle/delete/', ConnectFyleView.as_view({'post': 'delete'}))
+    path('<int:workspace_id>/connect_fyle/authorization_code/', ConnectFyleView.as_view({'post': 'post'}),
+         name='connect-fyle'),
+    path('<int:workspace_id>/credentials/fyle/', ConnectFyleView.as_view({'get': 'get'}), name='get-fyle-credentials'),
+    path('<int:workspace_id>/credentials/fyle/delete/', ConnectFyleView.as_view({'post': 'delete'}),
+         name='delete-fyle-credentials')
 ]
 
 netsuite_connection_api_paths = [
-    path('<int:workspace_id>/connect_netsuite/tba/', ConnectNetSuiteView.as_view({'post': 'post'})),
-    path('<int:workspace_id>/credentials/netsuite/', ConnectNetSuiteView.as_view({'get': 'get'})),
-    path('<int:workspace_id>/credentials/netsuite/delete/', ConnectNetSuiteView.as_view({'post': 'delete'}))
+    path('<int:workspace_id>/connect_netsuite/tba/', ConnectNetSuiteView.as_view({'post': 'post'}),
+         name='post-netsuite-credentials'),
+    path('<int:workspace_id>/credentials/netsuite/', ConnectNetSuiteView.as_view({'get': 'get'}),
+         name='get-netsuite-credentials'),
+    path('<int:workspace_id>/credentials/netsuite/delete/', ConnectNetSuiteView.as_view({'post': 'delete'}),
+         name='delete-netsuite-credentials')
 ]
 
 other_app_paths = [
