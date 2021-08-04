@@ -13,8 +13,7 @@ from django.db.models import Count, Q
 
 from fyle_accounting_mappings.models import ExpenseAttribute
 
-from apps.workspaces.models import Workspace
-
+from apps.workspaces.models import Workspace, Configuration
 
 ALLOWED_FIELDS = [
     'employee_email', 'report_id', 'claim_number', 'settlement_id',
@@ -174,6 +173,7 @@ class ExpenseGroupSettings(models.Model):
 
     @staticmethod
     def update_expense_group_settings(expense_group_settings: Dict, workspace_id: int):
+        configuration: Configuration = Configuration.objects.get(workspace_id=workspace_id)
         settings = ExpenseGroupSettings.objects.get(workspace_id=workspace_id)
         current_reimbursable_settings = list(settings.reimbursable_expense_group_fields)
         current_ccc_settings = list(settings.corporate_credit_card_expense_group_fields)
@@ -190,7 +190,10 @@ class ExpenseGroupSettings(models.Model):
 
         for field in immutable_ccc_list:
             if field in ALLOWED_FORM_INPUT['group_expenses_by']:
-                current_ccc_settings.remove(field)
+                if field == 'expense_id' and configuration.corporate_credit_card_expenses_object == 'CREDIT CARD CHARGE':
+                    pass
+                else:
+                    current_ccc_settings.remove(field)
 
         if 'report_id' not in current_reimbursable_settings:
             if 'claim_number' in current_reimbursable_settings:
