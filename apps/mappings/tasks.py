@@ -9,7 +9,6 @@ from django.db.models import Q, Count
 
 from fylesdk.exceptions import WrongParamsError
 
-from apps.netsuite.models import CustomSegment
 from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttribute, DestinationAttribute
 
 from apps.fyle.connector import FyleConnector
