@@ -63,13 +63,19 @@ class ExpenseGroupCountView(generics.ListAPIView):
         )
 
 
-class ExpenseGroupSettingsView(generics.RetrieveAPIView):
+class ExpenseGroupSettingsView(generics.ListCreateAPIView):
     """
     Expense Group Settings View
     """
     serializer_class = ExpenseGroupSettingsSerializer
-    lookup_field = 'workspace_id'
-    queryset = ExpenseGroupSettings.objects.all()
+
+    def get(self, request, *args, **kwargs):
+        expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=self.kwargs['workspace_id'])
+
+        return Response(
+            data=self.serializer_class(expense_group_settings).data,
+            status=status.HTTP_200_OK
+        )
 
     def post(self, request, *args, **kwargs):
         expense_group_settings, _ = ExpenseGroupSettings.update_expense_group_settings(
