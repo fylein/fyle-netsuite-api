@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from django.db.models import Q
 
 from rest_framework.views import status
@@ -130,7 +130,6 @@ class ExpenseGroupScheduleView(generics.CreateAPIView):
     """
     Create expense group schedule
     """
-
     def post(self, request, *args, **kwargs):
         """
         Post expense schedule
