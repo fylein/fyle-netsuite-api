@@ -1,0 +1,57 @@
+"""
+NetSuite Signals
+"""
+from django.db.models.signals import post_save, pre_save
+from django.dispatch import receiver
+
+from rest_framework.exceptions import NotFound
+
+from fyle_accounting_mappings.models import DestinationAttribute
+
+from apps.workspaces.models import NetSuiteCredentials
+
+from .models import CustomSegment
+from .connector import NetSuiteConnector
+
+
+@receiver(post_save, sender=CustomSegment)
+def sync_custom_segments(sender, instance: CustomSegment, **kwargs):
+    """
+    :param sender: Sender Class
+    :param instance: Row Instance of Sender Class
+    :return: None
+    """
+    ns_credentials: NetSuiteCredentials = NetSuiteCredentials.objects.get(workspace_id=instance.workspace_id)
+    ns_connection = NetSuiteConnector(
+        netsuite_credentials=ns_credentials,
+        workspace_id=instance.workspace_id
+    )
+
+    attribute_type = instance.name.upper().replace(' ', '_')
+    if instance.segment_type == 'CUSTOM_LIST':
+        custom_segment_attributes = ns_connection.get_custom_list_attributes(attribute_type, instance.internal_id)
+    elif instance.segment_type == 'CUSTOM_RECORD':
+        custom_segment_attributes = ns_connection.get_custom_record_attributes(attribute_type, instance.internal_id)
+
+    DestinationAttribute.bulk_create_or_update_destination_attributes(
+        custom_segment_attributes, attribute_type, instance.workspace_id, True)
+
+
+@receiver(pre_save, sender=CustomSegment)
+def validate_custom_segment(sender, instance: CustomSegment, **kwargs):
+    """
+    :param sender: Sender Class
+    :param instance: Row Instance of Sender Class
+    :return: None
+    """
+    ns_credentials = NetSuiteCredentials.objects.get(workspace_id=instance.workspace_id)
+    ns_connector = NetSuiteConnector(ns_credentials, workspace_id=instance.workspace_id)
+    try:
+        if instance.segment_type == 'CUSTOM_LIST':
+            custom_list = ns_connector.connection.custom_lists.get(instance.internal_id)
+            instance.name = custom_list['name'].upper().replace(' ', '_')
+        elif instance.segment_type == 'CUSTOM_RECORD':
+            custom_record = ns_connector.connection.custom_records.get_all_by_id(instance.internal_id)
+            instance.name = custom_record[0]['recType']['name'].upper().replace(' ', '_')
+    except Exception:
+        raise NotFound()

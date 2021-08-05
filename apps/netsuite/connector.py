@@ -171,43 +171,55 @@ class NetSuiteConnector:
 
         return []
 
+    def get_custom_list_attributes(self, attribute_type: str, internal_id:str):
+        custom_segment_attributes = []
+        custom_lists = self.connection.custom_lists.get(internal_id)
+
+        for field in custom_lists['customValueList']['customValue']:
+            custom_segment_attributes.append(
+                {
+                    'attribute_type': attribute_type,
+                    'display_name': custom_lists['name'],
+                    'value': field['value'],
+                    'destination_id': str(field['valueId'])
+                }
+            )
+
+        return custom_segment_attributes
+
+    def get_custom_record_attributes(self, attribute_type: str, internal_id: str):
+        custom_segment_attributes = []
+        custom_records = self.connection.custom_records.get_all_by_id(internal_id)
+
+        for field in custom_records:
+            custom_segment_attributes.append(
+                {
+                    'attribute_type': attribute_type,
+                    'display_name': custom_records[0]['recType']['name'],
+                    'value': field['name'],
+                    'destination_id': field['internalId']
+                }
+            )
+
+        return custom_segment_attributes
+
     def sync_custom_segments(self):
         """
         Sync Custom Segments
         """
-        all_custom_list: List[CustomSegment] = CustomSegment.objects.filter(workspace_id=self.workspace_id).all()
+        custom_segments: List[CustomSegment] = CustomSegment.objects.filter(workspace_id=self.workspace_id).all()
 
-        for custom_list_values in all_custom_list:
-            custom_segment_attributes = []
+        for custom_segment in custom_segments:
+            attribute_type = custom_segment.name.upper().replace(' ', '_')
+            if custom_segment.segment_type == 'CUSTOM_LIST':
+                custom_segment_attributes = self.get_custom_list_attributes(attribute_type, custom_segment.internal_id)
 
-            if custom_list_values.segment_type == 'CUSTOM_LIST':
-                custom_lists = self.connection.custom_lists.get(custom_list_values.internal_id)
-
-                for field in custom_lists['customValueList']['customValue']:
-                    custom_segment_attributes.append(
-                        {
-                            'attribute_type': custom_list_values.name.upper().replace(' ', '_'),
-                            'display_name': custom_lists['name'],
-                            'value': field['value'],
-                            'destination_id': str(field['valueId'])
-                        }
-                    )
-
-            elif custom_list_values.segment_type == 'CUSTOM_RECORD':
-                custom_records = self.connection.custom_records.get_all_by_id(custom_list_values.internal_id)
-
-                for field in custom_records:
-                    custom_segment_attributes.append(
-                        {
-                            'attribute_type': custom_list_values.name.upper().replace(' ', '_'),
-                            'display_name': custom_records[0]['recType']['name'],
-                            'value': field['name'],
-                            'destination_id': field['internalId']
-                        }
-                    )
+            elif custom_segment.segment_type == 'CUSTOM_RECORD':
+                custom_segment_attributes = self.get_custom_record_attributes(
+                    attribute_type, custom_segment.internal_id)
 
             DestinationAttribute.bulk_create_or_update_destination_attributes(
-                custom_segment_attributes, custom_list_values.name.upper().replace(' ', '_'), self.workspace_id, True)
+                custom_segment_attributes, attribute_type, self.workspace_id, True)
 
         return []
 
