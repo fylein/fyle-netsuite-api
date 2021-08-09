@@ -62,8 +62,13 @@ def create_expense_groups(workspace_id: int, fund_source: List[str], task_log: T
 
             expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=workspace_id)
 
+            import_state = [expense_group_settings.expense_state]
+
+            if import_state[0] == 'PAYMENT_PROCESSING' and last_synced_at is not None:
+                import_state.append('PAID')
+
             expenses = fyle_connector.get_expenses(
-                state=expense_group_settings.expense_state,
+                state=import_state,
                 updated_at=updated_at,
                 fund_source=fund_source
             )
