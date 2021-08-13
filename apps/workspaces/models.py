@@ -76,6 +76,11 @@ class WorkspaceSchedule(models.Model):
         db_table = 'workspace_schedules'
 
 
+EMPLOYEE_FIELD_MAPPING_CHOICES = (
+    ('EMPLOYEE', 'EMPLOYEE'),
+    ('VENDOR', 'VENDOR')
+)
+
 REIMBURSABLE_EXPENSES_OBJECT_CHOICES = (
     ('EXPENSE REPORT', 'EXPENSE REPORT'),
     ('JOURNAL ENTRY', 'JOURNAL ENTRY'),
@@ -102,7 +107,9 @@ class Configuration(models.Model):
     """
     id = models.AutoField(primary_key=True, help_text='Unique Id to identify a workspace')
     workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
-
+    employee_field_mapping = models.CharField(
+        max_length=50, choices=EMPLOYEE_FIELD_MAPPING_CHOICES, help_text='Employee field mapping'
+    )
     reimbursable_expenses_object = models.CharField(
         max_length=50, choices=REIMBURSABLE_EXPENSES_OBJECT_CHOICES, help_text='Reimbursable Expenses type'
     )
