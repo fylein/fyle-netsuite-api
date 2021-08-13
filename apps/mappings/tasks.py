@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from typing import List, Dict
 
 from django_q.models import Schedule
-from django.db.models import Q, Count
+from django.db.models import Count
 
 from fylesdk.exceptions import WrongParamsError
 

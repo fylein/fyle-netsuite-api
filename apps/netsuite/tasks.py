@@ -12,7 +12,8 @@ from django_q.tasks import Chain
 
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
 
-from fyle_accounting_mappings.models import Mapping, ExpenseAttribute, MappingSetting, DestinationAttribute
+from fyle_accounting_mappings.models import Mapping, ExpenseAttribute, MappingSetting, DestinationAttribute,\
+    CategoryMapping
 
 from fyle_netsuite_api.exceptions import BulkError
 
@@ -632,23 +633,16 @@ def __validate_expense_group(expense_group: ExpenseGroup, configuration: Configu
         category = lineitem.category if lineitem.category == lineitem.sub_category else '{0} / {1}'.format(
             lineitem.category, lineitem.sub_category)
 
-        error_message = 'Category Mapping Not Found'
-        if expense_group.fund_source == 'CCC':
-            account = Mapping.objects.filter(
-                Q(destination_type='CCC_ACCOUNT') | Q(destination_type='CCC_EXPENSE_CATEGORY'),
-                source_type='CATEGORY',
-                source__value=category,
-                workspace_id=expense_group.workspace_id
-            ).first()
+        account = CategoryMapping.objects.filter(
+            source_category__value=category,
+            workspace_id=expense_group.workspace_id
+        ).first()
 
-            error_message = 'Credit Card Expense Category Mapping Not Found'
-        else:
-            account = Mapping.objects.filter(
-                Q(destination_type='ACCOUNT') | Q(destination_type='EXPENSE_CATEGORY'),
-                source_type='CATEGORY',
-                source__value=category,
-                workspace_id=expense_group.workspace_id
-            ).first()
+        if account:
+            if configuration.reimbursable_expenses_object == 'EXPENSE REPORT':
+                account = account.destination_expense_head
+            else:
+                account = account.destination_account
 
         if not account:
             bulk_errors.append({
@@ -656,7 +650,7 @@ def __validate_expense_group(expense_group: ExpenseGroup, configuration: Configu
                 'expense_group_id': expense_group.id,
                 'value': category,
                 'type': 'Category Mapping',
-                'message': error_message
+                'message': 'Category Mapping Not Found'
             })
 
         row = row + 1
