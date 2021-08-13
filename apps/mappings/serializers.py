@@ -65,8 +65,10 @@ class GeneralMappingSerializer(serializers.ModelSerializer):
                     not data['default_ccc_account_name'] or not data['default_ccc_account_id']):
             raise serializers.ValidationError('Default CCC account is missing')
 
-        if (configuration.corporate_credit_card_expenses_object == 'BILL' or \
-                configuration.corporate_credit_card_expenses_object == 'CREDIT CARD CHARGE') and (
+        if (configuration.corporate_credit_card_expenses_object == 'BILL' or
+            (configuration.corporate_credit_card_expenses_object == 'CREDIT CARD CHARGE' and
+             not configuration.auto_create_merchants)) \
+                and (
                     not data['default_ccc_vendor_name'] or not data['default_ccc_vendor_id']):
             raise serializers.ValidationError('Default CCC vendor is missing')
 
