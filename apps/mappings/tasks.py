@@ -236,7 +236,7 @@ def create_category_mappings(destination_attributes: List[DestinationAttribute],
         workspace_id=workspace_id,
         attribute_type='CATEGORY',
         value__in=attribute_value_list,
-        source_category__isnull=True
+        categorymapping__source_category__isnull=True
     ).values('id', 'value')
 
     source_attributes_id_map = {source_attribute['value'].lower(): source_attribute['id'] \
