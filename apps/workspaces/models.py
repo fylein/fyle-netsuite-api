@@ -111,6 +111,7 @@ class Configuration(models.Model):
         help_text='Corporate Card Expenses type', null=True
     )
     import_categories = models.BooleanField(default=False, help_text='Auto import categories to Fyle')
+    import_taxitems = models.BooleanField(default=False, help_text='Auto import tax items to Fyle')
     import_projects = models.BooleanField(default=False, help_text='Auto import projects to Fyle')
     sync_fyle_to_netsuite_payments = models.BooleanField(
         default=False, help_text='Auto Sync Payments from Fyle to Netsuite'

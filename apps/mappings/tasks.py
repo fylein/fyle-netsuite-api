@@ -197,6 +197,91 @@ def create_credit_card_category_mappings(reimbursable_expenses_object,
         Mapping.objects.bulk_create(mapping_batch, batch_size=50)
 
 
+def auto_create_taxgroup_mappings(workspace_id):
+    """
+    Create TaxGroups Mappings
+    :return: mappings
+    """
+    try:
+        fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
+
+        fyle_connection = FyleConnector(
+            refresh_token=fyle_credentials.refresh_token,
+            workspace_id=workspace_id
+        )
+
+        fyle_connection.sync_taxcodes()
+
+        mapping_setting = MappingSetting.objects.get(
+            source_field='TAX_GROUP', workspace_id=workspace_id
+        )
+
+        sync_netsuite_attribute(mapping_setting.destination_field, workspace_id)
+
+        post_taxgroups_in_batches(fyle_connection, workspace_id, mapping_setting.destination_field)
+
+    except WrongParamsError as exception:
+        logger.error(
+            'Error while creating taxgroups workspace_id - %s in Fyle %s %s',
+            workspace_id, exception.message, {'error': exception.response}
+        )
+
+    except Exception:
+        error = traceback.format_exc()
+        error = {
+            'error': error
+        }
+        logger.error(
+            'Error while creating taxgroups workspace_id - %s error: %s',
+            workspace_id, error
+        )
+
+def schedule_taxgroups_creation(import_to_fyle, workspace_id):
+    if import_to_fyle:
+        schedule, _ = Schedule.objects.update_or_create(
+            func='apps.mappings.tasks.auto_create_taxgroup_mappings',
+            args='{}'.format(workspace_id),
+            defaults={
+                'schedule_type': Schedule.MINUTES,
+                'minutes': 6 * 60,
+                'next_run': datetime.now()
+            }
+        )
+    else:
+        schedule: Schedule = Schedule.objects.filter(
+            func='apps.mappings.tasks.auto_create_taxcodes_mappings',
+            args='{}'.format(workspace_id),
+        ).first()
+
+        if schedule:
+            schedule.delete()
+
+def post_taxgroups_in_batches(qbo_attribute_type: str, workspace_id: int):
+
+    existing_taxcodes_name = ExpenseAttribute.objects.filter(
+        attribute_type='TAX_GROUP', workspace_id=workspace_id).values_list('value', flat=True)
+
+    qbo_attributes_count = DestinationAttribute.objects.filter(
+        attribute_type=qbo_attribute_type, workspace_id=workspace_id).count()
+
+    page_size = 200
+
+    for offset in range(0, qbo_attributes_count, page_size):
+        limit = offset + page_size
+        paginated_netsuite_attributes = DestinationAttribute.objects.filter(
+            attribute_type=qbo_attribute_type, workspace_id=workspace_id).order_by('value', 'id')[offset:limit]
+
+        paginated_netsuite_attributes = remove_duplicates(paginated_qbo_attributes)
+
+        fyle_payload: List[Dict] = create_fyle_cost_centers_payload(
+            paginated_netsuite_attributes, existing_cost_center_names)
+
+        if fyle_payload:
+            fyle_connection.connection.TaxCodes.post(fyle_payload)
+            fyle_connection.sync_taxcodes()
+
+        Mapping.bulk_create_mappings(paginated_qbo_attributes, 'TAX_GROUP', qbo_attribute_type, workspace_id)
+
 def auto_create_category_mappings(workspace_id):
     """
     Create Category Mappings
@@ -469,6 +554,9 @@ def sync_netsuite_attribute(netsuite_attribute_type: str, workspace_id: int):
 
     elif netsuite_attribute_type == 'CLASS':
         ns_connection.sync_classifications()
+
+    elif netsuite_attribute_type == 'TAX_DETAIL':
+        ns_connection.sync_taxdetails()
 
     else:
         ns_connection.sync_custom_segments()

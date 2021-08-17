@@ -54,6 +54,11 @@ class NetSuiteConnector:
         value = name.replace(u'\xa0', ' ')
         value = value.replace('/', '-')
         return value
+    
+    @staticmethod
+    def get_tax_code_name(item_id, tax_type, rate):
+        value = tax_type + ':' + item_id + '(' + rate + ')'
+        return value
 
     def sync_accounts(self):
         """
@@ -585,6 +590,29 @@ class NetSuiteConnector:
         DestinationAttribute.bulk_create_or_update_destination_attributes(
             subsidiary_attributes, 'SUBSIDIARY', self.workspace_id, True)
 
+        return []
+    
+    def sync_taxdetails(self):
+        """
+        Sync Tax Details
+        """
+        tax_items_generator = self.connection.tax_items.get_all_generator()
+
+        for tax_items in tax_items_generator:
+            attributes = []
+            for tax_item in tax_items:
+                if not tax_item['isInactive']:
+                    value = get_tax_code_name(tax_item['itemId'], tax_item['taxType']['name'], tax_item['rate'])
+                    attributes.append({
+                        'attribute_type': 'TAX_ITEM',
+                        'display_name': 'Tax Item',
+                        'value': value,
+                        'destination_id': tax_item['internalId'],
+                        'active': True
+                    })
+            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                    attributes, 'TAX_ITEM', self.workspace_id, True)
+        
         return []
 
     def sync_projects(self):

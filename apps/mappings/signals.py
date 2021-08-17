@@ -8,7 +8,7 @@ from django_q.tasks import async_task
 from fyle_accounting_mappings.models import MappingSetting
 
 from apps.mappings.tasks import upload_attributes_to_fyle, schedule_cost_centers_creation,\
-    schedule_fyle_attributes_creation, schedule_projects_creation
+    schedule_fyle_attributes_creation, schedule_projects_creation, schedule_taxgroups_creation
 from apps.netsuite.helpers import schedule_payment_sync
 from apps.workspaces.models import Configuration
 
@@ -28,9 +28,11 @@ def run_post_mapping_settings_triggers(sender, instance: MappingSetting, **kwarg
     if instance.source_field == 'COST_CENTER':
         schedule_cost_centers_creation(instance.import_to_fyle, int(instance.workspace_id))
 
+    #if instance.source_field == 'TAX':
+    #    schedule_taxgroups_creation(instance.import_to_fyle, int(instance.workspace_id))
+
     if instance.is_custom:
         schedule_fyle_attributes_creation(int(instance.workspace_id))
-
 
 @receiver(pre_save, sender=MappingSetting)
 def run_pre_mapping_settings_triggers(sender, instance: MappingSetting, **kwargs):
