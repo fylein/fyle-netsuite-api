@@ -87,7 +87,7 @@ select count(*) from (
 --- No CCC_EXPENSE_CATEGORY in the new view
 select count(*) from (
     select cm.destination_expense_head_id, cm.destination_account_id, da.value, da.attribute_type
-    from category_mappings_view cm left join destination_attributes da on cm.destination_expense_head_id_id = da.id
+    from category_mappings_view cm left join destination_attributes da on cm.destination_expense_head_id = da.id
     where da.attribute_type = 'CCC_EXPENSE_CATEGORY'
 ) s;
 
