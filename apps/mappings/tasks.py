@@ -226,16 +226,11 @@ def create_category_mappings(destination_attributes: List[DestinationAttribute],
     :param workspace_id: Workspace ID
     :return: None
     """
-    attribute_value_list = []
-
     destination_attributes = filter_unmapped_destinations(reimbursable_destination_type, destination_attributes)
-
-    attribute_value_list = [destination_attribute['value'] for destination_attribute in destination_attributes]
 
     source_attributes = ExpenseAttribute.objects.filter(
         workspace_id=workspace_id,
-        attribute_type='CATEGORY',
-        value__in=attribute_value_list
+        attribute_type='CATEGORY'
     ).values('id', 'value')
 
     source_attributes_id_map = {source_attribute['value'].lower(): source_attribute['id'] \
@@ -244,19 +239,20 @@ def create_category_mappings(destination_attributes: List[DestinationAttribute],
     mapping_creation_batch = []
 
     for destination_attribute in destination_attributes:
-        destination = {}
-        if reimbursable_destination_type == 'EXPENSE_CATEGORY':
-            destination['destination_expense_head_id'] = destination_attribute['id']
-        elif reimbursable_destination_type == 'ACCOUNT':
-            destination['destination_account_id'] = destination_attribute['id']
+        if destination_attribute['value'].lower() in source_attributes_id_map:
+            destination = {}
+            if reimbursable_destination_type == 'EXPENSE_CATEGORY':
+                destination['destination_expense_head_id'] = destination_attribute['id']
+            elif reimbursable_destination_type == 'ACCOUNT':
+                destination['destination_account_id'] = destination_attribute['id']
 
-        mapping_creation_batch.append(
-            CategoryMapping(
-                source_category_id=source_attributes_id_map[destination_attribute['value'].lower()],
-                workspace_id=workspace_id,
-                **destination
+            mapping_creation_batch.append(
+                CategoryMapping(
+                    source_category_id=source_attributes_id_map[destination_attribute['value'].lower()],
+                    workspace_id=workspace_id,
+                    **destination
+                )
             )
-        )
 
     bulk_create_update_category_mappings(mapping_creation_batch)
 
