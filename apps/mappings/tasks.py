@@ -228,9 +228,15 @@ def create_category_mappings(destination_attributes: List[DestinationAttribute],
     """
     destination_attributes = filter_unmapped_destinations(reimbursable_destination_type, destination_attributes)
 
+    attribute_value_list = []
+    attribute_value_list = [destination_attribute['value'] for destination_attribute in destination_attributes]
+
+    # Filtering unmapped categories
     source_attributes = ExpenseAttribute.objects.filter(
         workspace_id=workspace_id,
-        attribute_type='CATEGORY'
+        attribute_type='CATEGORY',
+        value__in=attribute_value_list,
+        source_category__isnull=True
     ).values('id', 'value')
 
     source_attributes_id_map = {source_attribute['value'].lower(): source_attribute['id'] \
