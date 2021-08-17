@@ -138,12 +138,12 @@ def bulk_create_ccc_category_mappings(workspace_id: int):
 
     destination_id_pk_map = {}
     for attribute in destination_attributes:
-        destination_id_pk_map[attribute['destination_id']] = attribute['id']
+        destination_id_pk_map[attribute['destination_id'].lower()] = attribute['id']
 
     mapping_updation_batch = []
 
     for category_mapping in category_mappings:
-        ccc_account_id = destination_id_pk_map[category_mapping.destination_expense_head.detail['account_internal_id']]
+        ccc_account_id = destination_id_pk_map[category_mapping.destination_expense_head.detail['account_internal_id'].lower()]
         mapping_updation_batch.append(
             CategoryMapping(
                 id=category_mapping.id,
@@ -238,7 +238,7 @@ def create_category_mappings(destination_attributes: List[DestinationAttribute],
         value__in=attribute_value_list
     ).values('id', 'value')
 
-    source_attributes_id_map = {source_attribute['value']: source_attribute['id'] \
+    source_attributes_id_map = {source_attribute['value'].lower(): source_attribute['id'] \
         for source_attribute in source_attributes}
 
     mapping_creation_batch = []
@@ -252,7 +252,7 @@ def create_category_mappings(destination_attributes: List[DestinationAttribute],
 
         mapping_creation_batch.append(
             CategoryMapping(
-                source_category_id=source_attributes_id_map[destination_attribute['value']],
+                source_category_id=source_attributes_id_map[destination_attribute['value'].lower()],
                 workspace_id=workspace_id,
                 **destination
             )
