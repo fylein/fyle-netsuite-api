@@ -9,7 +9,11 @@ from fyle_accounting_mappings.models import MappingSetting
 
 from apps.mappings.tasks import upload_attributes_to_fyle, schedule_cost_centers_creation,\
     schedule_fyle_attributes_creation, schedule_projects_creation
+from apps.netsuite.helpers import schedule_payment_sync
+from apps.workspaces.models import Configuration
 
+from .models import GeneralMapping
+from .tasks import schedule_auto_map_ccc_employees
 
 @receiver(post_save, sender=MappingSetting)
 def run_post_mapping_settings_triggers(sender, instance: MappingSetting, **kwargs):
@@ -52,3 +56,16 @@ def run_pre_mapping_settings_triggers(sender, instance: MappingSetting, **kwargs
             instance.destination_field,
             instance.source_field
         )
+
+@receiver(post_save, sender=GeneralMapping)
+def run_post_general_mapping_triggers(sender, instance: GeneralMapping, **kwargs):
+    """
+    :param sender: Sender Class
+    :param instance: Row Instance of Sender Class
+    :return: None
+    """
+    configuration = Configuration.objects.get(workspace_id=instance.workspace_id)
+    schedule_payment_sync(configuration)
+
+    if instance.default_ccc_account_name:
+        schedule_auto_map_ccc_employees(instance.workspace_id)

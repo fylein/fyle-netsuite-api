@@ -17,6 +17,7 @@ class CustomSegmentSerializer(serializers.ModelSerializer):
     """
     Custom Segment Serializer
     """
+    name = serializers.CharField(required=False)
     class Meta:
         model = CustomSegment
         fields = '__all__'

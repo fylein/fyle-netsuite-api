@@ -9,7 +9,6 @@ from django.db.models import Q, Count
 
 from fylesdk.exceptions import WrongParamsError
 
-from apps.netsuite.models import CustomSegment
 from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttribute, DestinationAttribute
 
 from apps.fyle.connector import FyleConnector
@@ -373,12 +372,7 @@ def schedule_projects_creation(import_to_fyle, workspace_id):
 def async_auto_map_employees(workspace_id: int):
     configuration = Configuration.objects.get(workspace_id=workspace_id)
     employee_mapping_preference = configuration.auto_map_employees
-
-    mapping_setting = MappingSetting.objects.filter(
-        ~Q(destination_field='CREDIT_CARD_ACCOUNT'),
-        source_field='EMPLOYEE', workspace_id=workspace_id
-    ).first()
-    destination_type = mapping_setting.destination_field
+    destination_type = configuration.employee_field_mapping
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
     fyle_connection = FyleConnector(refresh_token=fyle_credentials.refresh_token, workspace_id=workspace_id)
@@ -679,13 +673,12 @@ def async_auto_create_custom_field_mappings(workspace_id):
         is_custom=True, import_to_fyle=True, workspace_id=workspace_id
     ).all()
 
-    if mapping_settings:
-        for mapping_setting in mapping_settings:
-            if mapping_setting.import_to_fyle:
-                sync_netsuite_attribute(mapping_setting.destination_field, workspace_id)
-                auto_create_expense_fields_mappings(
-                    workspace_id, mapping_setting.destination_field, mapping_setting.source_field
-                )
+    for mapping_setting in mapping_settings:
+        if mapping_setting.import_to_fyle:
+            sync_netsuite_attribute(mapping_setting.destination_field, workspace_id)
+            auto_create_expense_fields_mappings(
+                workspace_id, mapping_setting.destination_field, mapping_setting.source_field
+            )
 
 
 def schedule_fyle_attributes_creation(workspace_id: int):

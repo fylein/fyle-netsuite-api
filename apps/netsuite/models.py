@@ -14,6 +14,12 @@ from apps.mappings.models import GeneralMapping, SubsidiaryMapping
 from apps.workspaces.models import Workspace, Configuration
 
 
+CUSTOM_SEGMENT_CHOICES = (
+    ('CUSTOM_RECORD', 'CUSTOM_RECORD'),
+    ('CUSTOM_LIST', 'CUSTOM_LIST')
+)
+
+
 def get_department_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
     department_setting: MappingSetting = MappingSetting.objects.filter(
         workspace_id=expense_group.workspace_id,
@@ -204,7 +210,7 @@ class CustomSegment(models.Model):
     """
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, help_text='NetSuite Record Name')
-    segment_type = models.CharField(max_length=255, help_text='NetSuite Custom Type')
+    segment_type = models.CharField(max_length=255, choices=CUSTOM_SEGMENT_CHOICES, help_text='NetSuite Custom Type')
     script_id = models.CharField(max_length=255, help_text='NetSuite Transaction Custom Field script id')
     internal_id = models.CharField(max_length=255, help_text='NetSuite Custom Record / Field internal id')
     workspace = models.ForeignKey(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
