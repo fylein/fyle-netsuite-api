@@ -57,7 +57,7 @@ class NetSuiteConnector:
     
     @staticmethod
     def get_tax_code_name(item_id, tax_type, rate):
-        value = tax_type + ':' + item_id + '(' + rate + ')'
+        value = tax_type + ' : ' + item_id + ' ( ' + rate + ' ) '
         return value
 
     def sync_accounts(self):
@@ -600,9 +600,11 @@ class NetSuiteConnector:
 
         for tax_items in tax_items_generator:
             attributes = []
+            attributes1 = []
             for tax_item in tax_items:
-                if not tax_item['isInactive']:
-                    value = get_tax_code_name(tax_item['itemId'], tax_item['taxType']['name'], tax_item['rate'])
+                if not tax_item['isInactive'] and tax_item['itemId'] and tax_item['taxType'] and tax_item['rate']:
+                    print(tax_item)
+                    value = self.get_tax_code_name(tax_item['itemId'], tax_item['taxType']['name'], tax_item['rate'])
                     attributes.append({
                         'attribute_type': 'TAX_ITEM',
                         'display_name': 'Tax Item',
@@ -610,8 +612,18 @@ class NetSuiteConnector:
                         'destination_id': tax_item['internalId'],
                         'active': True
                     })
+                    attributes1.append({
+                    'attribute_type': 'TAX_GROUP',
+                    'display_name': 'Tax Group',
+                    'value': value,
+                    'source_id': tax_item['internalId'],
+                    'active': True
+                })
             DestinationAttribute.bulk_create_or_update_destination_attributes(
                     attributes, 'TAX_ITEM', self.workspace_id, True)
+            
+            ExpenseAttribute.bulk_create_or_update_expense_attributes(
+                    attributes1, 'TAX_GROUP', self.workspace_id)
         
         return []
 

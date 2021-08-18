@@ -730,6 +730,8 @@ def upload_attributes_to_fyle(workspace_id: int, netsuite_attribute_type: str, f
     )
 
     if fyle_custom_field_payload:
+        print("q3qweqe", fyle_attribute_type)
+        print('sdfsfsfsd', netsuite_attribute_type)
         fyle_connection.connection.ExpensesCustomFields.post(fyle_custom_field_payload)
         fyle_connection.sync_expense_custom_fields(active_only=True)
 

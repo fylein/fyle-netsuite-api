@@ -42,7 +42,7 @@ def sync_dimensions(refresh_token: str, workspace_id: int) -> None:
     fyle_connection = import_string('apps.fyle.connector.FyleConnector')(refresh_token, workspace_id)
     dimensions = [
         'employees', 'categories', 'cost_centers',
-        'projects', 'expense_custom_fields', 'taxdetails'
+        'projects', 'expense_custom_fields'
     ]
 
     for dimension in dimensions:
