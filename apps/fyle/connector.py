@@ -11,7 +11,7 @@ from fyle_accounting_mappings.models import ExpenseAttribute
 
 import requests
 
-from apps.fyle.models import Reimbursement
+from apps.fyle.models import Reimbursement, ExpenseGroupSettings
 
 logger = logging.getLogger(__name__)
 
@@ -161,12 +161,18 @@ class FyleConnector:
         Get expenses from fyle
         """
         expenses = self.connection.Expenses.get_all(state=state, updated_at=updated_at, fund_source=fund_source)
-        expenses = list(filter(lambda expense: expense['amount'] > 0, expenses))
         expenses = list(
             filter(lambda expense: not (not expense['reimbursable'] and expense['fund_source'] == 'PERSONAL'),
                    expenses))
 
-        return expenses
+        expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=self.workspace_id)
+
+        if 'ccc_credits' not in expense_group_settings.corporate_credit_card_expense_group_fields:
+            expenses = list(filter(lambda expense: expense['amount'] > 0, expenses))
+            return expenses
+
+        else:
+            return expenses
 
     def sync_employees(self):
         """

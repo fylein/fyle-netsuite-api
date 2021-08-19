@@ -21,6 +21,20 @@ def add_expense_id_to_expense_group_settings(workspace_id: int):
     expense_group_settings.corporate_credit_card_expense_group_fields = list(set(ccc_expense_group_fields))
     expense_group_settings.save()
 
+
+def add_ccc_credits_flag_to_expense_group_settings(workspace_id: int):
+    """
+    Add refund expenses flag to pull ccc refund expenses
+    :param workspace_id: Workspace id
+    return: None
+    """
+    expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=workspace_id)
+    ccc_expense_group_fields = expense_group_settings.corporate_credit_card_expense_group_fields
+    ccc_expense_group_fields.extend(['expense_id', 'ccc_credits'])
+    expense_group_settings.corporate_credit_card_expense_group_fields = list(set(ccc_expense_group_fields))
+    expense_group_settings.save()
+
+
 def check_interval_and_sync_dimension(workspace: Workspace, refresh_token: str) -> bool:
     """
     Check sync interval and sync dimension
@@ -37,6 +51,7 @@ def check_interval_and_sync_dimension(workspace: Workspace, refresh_token: str) 
         return True
 
     return False
+
 
 def sync_dimensions(refresh_token: str, workspace_id: int) -> None:
     fyle_connection = import_string('apps.fyle.connector.FyleConnector')(refresh_token, workspace_id)
