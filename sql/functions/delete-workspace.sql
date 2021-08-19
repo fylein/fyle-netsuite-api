@@ -140,6 +140,12 @@ BEGIN
     RAISE NOTICE 'Deleted % mappings', rcount;
 
     DELETE
+    FROM category_mappings cm
+    WHERE cm.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % category_mappings', rcount;
+
+    DELETE
     FROM mapping_settings ms
     WHERE ms.workspace_id = _workspace_id;
     GET DIAGNOSTICS rcount = ROW_COUNT;
