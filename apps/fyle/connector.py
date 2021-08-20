@@ -167,11 +167,14 @@ class FyleConnector:
 
         expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=self.workspace_id)
 
-        if 'ccc_credits' not in expense_group_settings.corporate_credit_card_expense_group_fields:
+        if not expense_group_settings.import_card_credits:
             expenses = list(filter(lambda expense: expense['amount'] > 0, expenses))
             return expenses
 
         else:
+            expenses = list(filter(
+                lambda expense: not (expense['amount'] < 0 and expense['fund_source'] == 'PERSONAL'), expenses
+            ))
             return expenses
 
     def sync_employees(self):

@@ -22,16 +22,14 @@ def add_expense_id_to_expense_group_settings(workspace_id: int):
     expense_group_settings.save()
 
 
-def add_ccc_credits_flag_to_expense_group_settings(workspace_id: int):
+def update_import_card_credits_flag(workspace_id: int):
     """
-    Add refund expenses flag to pull ccc refund expenses
+    set import_card_credits flag to True in ExpenseGroupSettings
     :param workspace_id: Workspace id
     return: None
     """
     expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=workspace_id)
-    ccc_expense_group_fields = expense_group_settings.corporate_credit_card_expense_group_fields
-    ccc_expense_group_fields.extend(['expense_id', 'ccc_credits'])
-    expense_group_settings.corporate_credit_card_expense_group_fields = list(set(ccc_expense_group_fields))
+    expense_group_settings.import_card_credits = True
     expense_group_settings.save()
 
 
