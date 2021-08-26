@@ -3,6 +3,7 @@ from django.urls import reverse
 from rest_framework.test import APITestCase, APIClient
 
 from apps.mappings.models import SubsidiaryMapping
+from apps.mappings.tests.fixtures import create_subsidiary_mappings_payload
 from fyle_netsuite_api.tests.helpers import TestHelpers
 
 
@@ -36,3 +37,15 @@ class TestViews(APITestCase):
             headers=self.__headers
         )
         self.assertEqual(response.status_code, 200, msg='GET Subsidiary Mappings Failed')
+
+    def test_post_subsidiary_mappings_view(self):
+        response = self.client.post(
+            reverse(
+                'subsidiaries', kwargs={
+                    'workspace_id': self.workspace.id
+                }
+            ),
+            headers=self.__headers,
+            data=create_subsidiary_mappings_payload(self.workspace.id)
+        )
+        self.assertEqual(response.status_code, 201, msg='POST Subsidiary Mappings Failed')
