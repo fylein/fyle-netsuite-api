@@ -7,7 +7,7 @@ from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.db.models import Q
 
-from fyle_accounting_mappings.models import Mapping, MappingSetting, DestinationAttribute
+from fyle_accounting_mappings.models import Mapping, MappingSetting, DestinationAttribute, CategoryMapping
 
 from apps.fyle.models import ExpenseGroup, Expense, ExpenseAttribute
 from apps.mappings.models import GeneralMapping, SubsidiaryMapping
@@ -322,8 +322,6 @@ class BillLineitem(models.Model):
         """
         expenses = expense_group.expenses.all()
         bill = Bill.objects.get(expense_group=expense_group)
-        configuration: Configuration = Configuration.objects.get(
-            workspace_id=expense_group.workspace_id)
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
         bill_lineitem_objects = []
@@ -332,21 +330,10 @@ class BillLineitem(models.Model):
             category = lineitem.category if lineitem.category == lineitem.sub_category else '{0} / {1}'.format(
                 lineitem.category, lineitem.sub_category)
 
-            if expense_group.fund_source == 'CCC':
-                account = Mapping.objects.filter(
-                    source_type='CATEGORY',
-                    source__value=category,
-                    destination_type='CCC_ACCOUNT',
-                    workspace_id=expense_group.workspace_id
-                ).first()
-
-            else:
-                account = Mapping.objects.filter(
-                    source_type='CATEGORY',
-                    source__value=category,
-                    destination_type='ACCOUNT',
-                    workspace_id=expense_group.workspace_id
-                ).first()
+            account = CategoryMapping.objects.filter(
+                source_category__value=category,
+                workspace_id=expense_group.workspace_id
+            ).first()
 
             class_id = get_class_id_or_none(expense_group, lineitem)
 
@@ -385,7 +372,8 @@ class BillLineitem(models.Model):
                 bill=bill,
                 expense_id=lineitem.id,
                 defaults={
-                    'account_id': account.destination.destination_id if account else None,
+                    'account_id': account.destination_account.destination_id \
+                        if account and account.destination_account else None,
                     'location_id': location_id,
                     'class_id': class_id,
                     'department_id': department_id,
@@ -512,8 +500,6 @@ class CreditCardChargeLineItem(models.Model):
         """
         lineitem = expense_group.expenses.first()
         credit_card_charge = CreditCardCharge.objects.get(expense_group=expense_group)
-        configuration: Configuration = Configuration.objects.get(
-            workspace_id=expense_group.workspace_id)
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
         credit_card_charge_lineitem_objects = []
@@ -521,10 +507,8 @@ class CreditCardChargeLineItem(models.Model):
         category = lineitem.category if lineitem.category == lineitem.sub_category else '{0} / {1}'.format(
             lineitem.category, lineitem.sub_category)
 
-        account = Mapping.objects.filter(
-            source_type='CATEGORY',
-            source__value=category,
-            destination_type='CCC_ACCOUNT',
+        account = CategoryMapping.objects.filter(
+            source_category__value=category,
             workspace_id=expense_group.workspace_id
         ).first()
 
@@ -553,7 +537,8 @@ class CreditCardChargeLineItem(models.Model):
             credit_card_charge=credit_card_charge,
             expense_id=lineitem.id,
             defaults={
-                'account_id': account.destination.destination_id if account else None,
+                'account_id': account.destination_account.destination_id \
+                    if account and account.destination_account else None,
                 'location_id': location_id,
                 'class_id': class_id,
                 'department_id': department_id,
@@ -683,8 +668,6 @@ class ExpenseReportLineItem(models.Model):
         """
         expenses = expense_group.expenses.all()
         expense_report = ExpenseReport.objects.get(expense_group=expense_group)
-        configuration: Configuration = Configuration.objects.get(
-            workspace_id=expense_group.workspace_id)
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
         expense_report_lineitem_objects = []
@@ -693,21 +676,10 @@ class ExpenseReportLineItem(models.Model):
             category = lineitem.category if lineitem.category == lineitem.sub_category else '{0} / {1}'.format(
                 lineitem.category, lineitem.sub_category)
 
-            if expense_group.fund_source == 'CCC':
-                account = Mapping.objects.filter(
-                    source_type='CATEGORY',
-                    source__value=category,
-                    destination_type='CCC_EXPENSE_CATEGORY',
-                    workspace_id=expense_group.workspace_id
-                ).first()
-
-            else:
-                account = Mapping.objects.filter(
-                    source_type='CATEGORY',
-                    source__value=category,
-                    destination_type='EXPENSE_CATEGORY',
-                    workspace_id=expense_group.workspace_id
-                ).first()
+            account = CategoryMapping.objects.filter(
+                source_category__value=category,
+                workspace_id=expense_group.workspace_id
+            ).first()
 
             currency = DestinationAttribute.objects.filter(value=lineitem.currency,
                                                            workspace_id=expense_group.workspace_id,
@@ -740,7 +712,7 @@ class ExpenseReportLineItem(models.Model):
                 defaults={
                     'amount': lineitem.amount,
                     'billable': billable,
-                    'category': account.destination.destination_id,
+                    'category': account.destination_expense_head.destination_id if account and account.destination_expense_head else None,
                     'class_id': class_id if class_id else None,
                     'customer_id': customer_id,
                     'location_id': location_id,
@@ -896,21 +868,10 @@ class JournalEntryLineItem(models.Model):
             category = lineitem.category if lineitem.category == lineitem.sub_category else '{0} / {1}'.format(
                 lineitem.category, lineitem.sub_category)
 
-            if expense_group.fund_source == 'CCC':
-                account = Mapping.objects.filter(
-                    source_type='CATEGORY',
-                    source__value=category,
-                    destination_type='CCC_ACCOUNT',
-                    workspace_id=expense_group.workspace_id
-                ).first()
-
-            else:
-                account = Mapping.objects.filter(
-                    source_type='CATEGORY',
-                    source__value=category,
-                    destination_type='ACCOUNT',
-                    workspace_id=expense_group.workspace_id
-                ).first()
+            account = CategoryMapping.objects.filter(
+                source_category__value=category,
+                workspace_id=expense_group.workspace_id
+            ).first()
 
             class_id = get_class_id_or_none(expense_group, lineitem)
 
@@ -934,7 +895,8 @@ class JournalEntryLineItem(models.Model):
                 expense_id=lineitem.id,
                 defaults={
                     'debit_account_id': debit_account_id,
-                    'account_id': account.destination.destination_id,
+                    'account_id': account.destination_account.destination_id \
+                        if account and account.destination_account else None,
                     'department_id': department_id,
                     'location_id': location_id,
                     'class_id': class_id if class_id else None,
