@@ -338,14 +338,13 @@ class BillLineitem(models.Model):
 
             department_id = get_department_id_or_none(expense_group, lineitem)
 
-            if expense_group.fund_source == 'CCC':
+            if expense_group.fund_source == 'CCC' and general_mappings.use_employee_department and \
+                general_mappings.department_level in ('ALL', 'TRANSACTION_LINE'):
                 employee_mapping = EmployeeMapping.objects.filter(
                     source_employee__value=expense_group.description.get('employee_email'),
                     workspace_id=expense_group.workspace_id
-                ).first().destination_employee.destination_id
-
-                if general_mappings.use_employee_department and employee_mapping and \
-                    general_mappings.department_level in ('ALL', 'TRANSACTION_LINE'):
+                ).first()
+                if employee_mapping and employee_mapping.destination_employee:
                     department_id = employee_mapping.destination_employee.detail.get('department_id')
 
             location_id = get_location_id_or_none(expense_group, lineitem)
