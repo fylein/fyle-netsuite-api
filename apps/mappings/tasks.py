@@ -5,12 +5,12 @@ from datetime import datetime, timedelta
 from typing import List, Dict
 
 from django_q.models import Schedule
-from django.db.models import Count
 
 from fylesdk.exceptions import WrongParamsError
 
 from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttribute, DestinationAttribute,\
     CategoryMapping
+from fyle_accounting_mappings.helpers import AutoMapEmployees
 
 from apps.fyle.connector import FyleConnector
 from apps.mappings.models import GeneralMapping
@@ -452,7 +452,7 @@ def async_auto_map_employees(workspace_id: int):
     else:
         netsuite_connection.sync_vendors()
 
-    Mapping.auto_map_employees(destination_type, employee_mapping_preference, workspace_id)
+    AutoMapEmployees(workspace_id, destination_type, employee_mapping_preference).reimburse_mapping()
 
 
 def schedule_auto_map_employees(employee_mapping_preference: str, workspace_id: int):
@@ -484,7 +484,7 @@ def async_auto_map_ccc_account(workspace_id: int):
     fyle_connection = FyleConnector(refresh_token=fyle_credentials.refresh_token, workspace_id=workspace_id)
     fyle_connection.sync_employees()
 
-    Mapping.auto_map_ccc_employees('CREDIT_CARD_ACCOUNT', default_ccc_account_id, workspace_id)
+    AutoMapEmployees(workspace_id).ccc_mapping(default_ccc_account_id)
 
 
 def schedule_auto_map_ccc_employees(workspace_id: int):
