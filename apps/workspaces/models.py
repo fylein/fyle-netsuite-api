@@ -107,8 +107,9 @@ class Configuration(models.Model):
     """
     id = models.AutoField(primary_key=True, help_text='Unique Id to identify a workspace')
     workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
+    # TODO: remove null=True later
     employee_field_mapping = models.CharField(
-        max_length=50, choices=EMPLOYEE_FIELD_MAPPING_CHOICES, help_text='Employee field mapping'
+        max_length=50, choices=EMPLOYEE_FIELD_MAPPING_CHOICES, help_text='Employee field mapping', null=True
     )
     reimbursable_expenses_object = models.CharField(
         max_length=50, choices=REIMBURSABLE_EXPENSES_OBJECT_CHOICES, help_text='Reimbursable Expenses type'
