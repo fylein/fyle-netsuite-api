@@ -15,6 +15,7 @@ services:
       SECRET_KEY: thisisthedjangosecretkey
       ALLOWED_HOSTS: "*"
       DEBUG: "False"
+      NO_WORKERS: 1
       API_URL: http://localhost:8000/api
       DATABASE_URL: postgres://postgres:postgres@db:5432/netsuite_db
       FYLE_BASE_URL: 
@@ -37,6 +38,7 @@ services:
       SECRET_KEY: thisisthedjangosecretkey
       ALLOWED_HOSTS: "*"
       DEBUG: "False"
+      NO_WORKERS: 1
       API_URL: http://localhost:8000/api
       DATABASE_URL: postgres://postgres:postgres@db:5432/netsuite_db
       FYLE_BASE_URL: 
@@ -50,6 +52,7 @@ services:
     image: "postgres:latest"
     environment: 
       POSTGRES_PASSWORD: postgres
+      PGPASSWORD: postgres
     volumes:
       - data:/var/lib/postgresql/data/
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
