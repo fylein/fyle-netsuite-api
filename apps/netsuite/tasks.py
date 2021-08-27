@@ -138,7 +138,6 @@ def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_conn
             ).first()
 
             destination = {}
-
             if employee_field_mapping == 'EMPLOYEE':
                 if created_entity is None:
                     created_entity: DestinationAttribute = netsuite_connection.get_or_create_employee(
