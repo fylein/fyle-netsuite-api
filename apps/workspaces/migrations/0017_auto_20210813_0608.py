@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='configuration',
             name='employee_field_mapping',
-            field=models.CharField(choices=[('EMPLOYEE', 'EMPLOYEE'), ('VENDOR', 'VENDOR')], help_text='Employee field mapping', max_length=50),
+            field=models.CharField(choices=[('EMPLOYEE', 'EMPLOYEE'), ('VENDOR', 'VENDOR')], help_text='Employee field mapping', max_length=50, null=True),
         ),
     ]
