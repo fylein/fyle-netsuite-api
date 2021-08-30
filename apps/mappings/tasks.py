@@ -484,7 +484,7 @@ def async_auto_map_ccc_account(workspace_id: int):
     fyle_connection = FyleConnector(refresh_token=fyle_credentials.refresh_token, workspace_id=workspace_id)
     fyle_connection.sync_employees()
 
-    AutoMapEmployees(workspace_id).ccc_mapping(default_ccc_account_id)
+    AutoMapEmployees(workspace_id, 'CREDIT_CARD_ACCOUNT').ccc_mapping(default_ccc_account_id)
 
 
 def schedule_auto_map_ccc_employees(workspace_id: int):
