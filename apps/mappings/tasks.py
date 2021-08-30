@@ -5,11 +5,12 @@ from datetime import datetime, timedelta
 from typing import List, Dict
 
 from django_q.models import Schedule
-from django.db.models import Q, Count
+from django.db.models import Count
 
 from fylesdk.exceptions import WrongParamsError
 
-from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttribute, DestinationAttribute
+from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttribute, DestinationAttribute,\
+    CategoryMapping
 
 from apps.fyle.connector import FyleConnector
 from apps.mappings.models import GeneralMapping
@@ -109,92 +110,157 @@ def upload_categories_to_fyle(workspace_id: int, reimbursable_expenses_object: s
     return netsuite_attributes
 
 
-def create_credit_card_category_mappings(reimbursable_expenses_object,
-                                         corporate_credit_card_expenses_object, workspace_id):
+def bulk_create_ccc_category_mappings(workspace_id: int):
     """
-    Create credit card mappings
+    Create Category Mappings for CCC Expenses
+    :param workspace_id: Workspace Id
     """
-    mapping_batch = []
-    category_mappings = Mapping.objects.filter(
-        source_id__in=Mapping.objects.filter(
-            workspace_id=workspace_id, source_type='CATEGORY'
-        ).values('source_id').annotate(
-            count=Count('source_id')
-        ).filter(count=1).values_list('source_id')
-    )
+    # Filtering unmapped ccc category mappings
+    category_mappings = CategoryMapping.objects.filter(
+        workspace_id=workspace_id,
+        destination_account__isnull=True
+    ).all()
 
-    if reimbursable_expenses_object == 'EXPENSE REPORT' and corporate_credit_card_expenses_object == 'EXPENSE REPORT':
-        destination_type = 'CCC_EXPENSE_CATEGORY'
-    else:
-        destination_type = 'CCC_ACCOUNT'
-
-    destination_values = []
     account_internal_ids = []
-    for mapping in category_mappings:
-        destination_values.append(mapping.destination.value)
-        if mapping.destination.detail and 'account_internal_id' in mapping.destination.detail:
-            account_internal_ids.append(mapping.destination.detail['account_internal_id'])
 
-    if reimbursable_expenses_object == 'EXPENSE REPORT' and corporate_credit_card_expenses_object in (
-            'BILL', 'JOURNAL ENTRY', 'CREDIT CARD CHARGE'):
-        destination_attributes = DestinationAttribute.objects.filter(
-            workspace_id=workspace_id,
-            attribute_type=destination_type,
-            destination_id__in=account_internal_ids
-        ).all()
-    else:
-        destination_attributes = DestinationAttribute.objects.filter(
-            workspace_id=workspace_id,
-            attribute_type=destination_type,
-            value__in=destination_values
-        ).all()
+    for category_mapping in category_mappings:
+        if category_mapping.destination_expense_head.detail and \
+            'account_internal_id' in category_mapping.destination_expense_head.detail and \
+                category_mapping.destination_expense_head.detail['account_internal_id']:
+            account_internal_ids.append(category_mapping.destination_expense_head.detail['account_internal_id'])
 
-    destination_id_map = {}
+    # Retreiving accounts for creating ccc mapping
+    destination_attributes = DestinationAttribute.objects.filter(
+        workspace_id=workspace_id,
+        attribute_type='ACCOUNT',
+        destination_id__in=account_internal_ids
+    ).values('id', 'destination_id')
+
+    destination_id_pk_map = {}
     for attribute in destination_attributes:
-        destination_id_map[attribute.value] = {
-            'id': attribute.id,
-            'destination_id': attribute.destination_id
-        }
+        destination_id_pk_map[attribute['destination_id'].lower()] = attribute['id']
 
-    for mapping in category_mappings:
-        if reimbursable_expenses_object == 'EXPENSE REPORT':
-            if corporate_credit_card_expenses_object == 'EXPENSE REPORT':
-                mapping_batch.append(
-                    Mapping(
-                        source_type='CATEGORY',
-                        destination_type=destination_type,
-                        source_id=mapping.source.id,
-                        destination_id=destination_id_map[mapping.destination.value]['id'],
-                        workspace_id=workspace_id
-                    )
-                )
-            elif corporate_credit_card_expenses_object in ('BILL', 'JOURNAL ENTRY', 'CREDIT CARD CHARGE'):
-                for value in destination_id_map:
-                    if destination_id_map[value]['destination_id'] == mapping.destination.detail['account_internal_id']:
-                        mapping_batch.append(
-                            Mapping(
-                                source_type='CATEGORY',
-                                destination_type=destination_type,
-                                source_id=mapping.source.id,
-                                destination_id=destination_id_map[value]['id'],
-                                workspace_id=workspace_id
-                            )
-                        )
-                        break
+    mapping_updation_batch = []
 
-        elif reimbursable_expenses_object in ('BILL', 'JOURNAL ENTRY'):
-            mapping_batch.append(
-                Mapping(
-                    source_type='CATEGORY',
-                    destination_type=destination_type,
-                    source_id=mapping.source.id,
-                    destination_id=destination_id_map[mapping.destination.value]['id'],
-                    workspace_id=workspace_id
+    for category_mapping in category_mappings:
+        ccc_account_id = destination_id_pk_map[category_mapping.destination_expense_head.detail['account_internal_id'].lower()]
+        mapping_updation_batch.append(
+            CategoryMapping(
+                id=category_mapping.id,
+                source_category_id=category_mapping.source_category.id,
+                destination_account_id=ccc_account_id
+            )
+        )
+
+    if mapping_updation_batch:
+        CategoryMapping.objects.bulk_update(
+            mapping_updation_batch, fields=['destination_account'], batch_size=50
+        )
+
+
+def construct_filter_based_on_destination(reimbursable_destination_type: str):
+    """
+    Construct Filter Based on Destination
+    :param reimbursable_destination_type: Reimbusable Destination Type
+    :return: Filter
+    """
+    filters = {}
+    if reimbursable_destination_type == 'EXPENSE_CATEGORY':
+        filters['destination_expense_head__isnull'] = True
+    elif reimbursable_destination_type == 'ACCOUNT':
+        filters['destination_account__isnull'] = True
+
+    return filters
+
+
+def filter_unmapped_destinations(reimbursable_destination_type: str,
+    destination_attributes: List[DestinationAttribute]):
+    """
+    Filter unmapped destinations based on workspace
+    :param reimbursable_destination_type: Reimbusable destination type
+    :param destination_attributes: List of destination attributes
+    """
+    filters = construct_filter_based_on_destination(reimbursable_destination_type)
+
+    destination_attribute_ids = [destination_attribute.id for destination_attribute in destination_attributes]
+
+    # Filtering unmapped categories
+    destination_attributes = DestinationAttribute.objects.filter(
+        pk__in=destination_attribute_ids,
+        **filters
+    ).values('id', 'value')
+
+    return destination_attributes
+
+
+def bulk_create_update_category_mappings(mapping_creation_batch: List[CategoryMapping]):
+    """
+    Bulk Create and Update Category Mappings
+    :param mapping_creation_batch: List of Category Mappings
+    """
+    expense_attributes_to_be_updated = []
+    created_mappings = []
+
+    if mapping_creation_batch:
+        created_mappings = CategoryMapping.objects.bulk_create(mapping_creation_batch, batch_size=50)
+
+    for category_mapping in created_mappings:
+        expense_attributes_to_be_updated.append(
+            ExpenseAttribute(
+                id=category_mapping.source_category.id,
+                auto_mapped=True
+            )
+        )
+
+    if expense_attributes_to_be_updated:
+        ExpenseAttribute.objects.bulk_update(
+            expense_attributes_to_be_updated, fields=['auto_mapped'], batch_size=50)
+
+
+def create_category_mappings(destination_attributes: List[DestinationAttribute],
+    reimbursable_destination_type: str, workspace_id: int):
+    """
+    Bulk create category mappings
+    :param destination_attributes: Desitination Attributes
+    :param reimbursable_destination_type: Reimbursable Destination Type
+    :param workspace_id: Workspace ID
+    :return: None
+    """
+    destination_attributes = filter_unmapped_destinations(reimbursable_destination_type, destination_attributes)
+
+    attribute_value_list = []
+    attribute_value_list = [destination_attribute['value'] for destination_attribute in destination_attributes]
+
+    # Filtering unmapped categories
+    source_attributes = ExpenseAttribute.objects.filter(
+        workspace_id=workspace_id,
+        attribute_type='CATEGORY',
+        value__in=attribute_value_list,
+        categorymapping__source_category__isnull=True
+    ).values('id', 'value')
+
+    source_attributes_id_map = {source_attribute['value'].lower(): source_attribute['id'] \
+        for source_attribute in source_attributes}
+
+    mapping_creation_batch = []
+
+    for destination_attribute in destination_attributes:
+        if destination_attribute['value'].lower() in source_attributes_id_map:
+            destination = {}
+            if reimbursable_destination_type == 'EXPENSE_CATEGORY':
+                destination['destination_expense_head_id'] = destination_attribute['id']
+            elif reimbursable_destination_type == 'ACCOUNT':
+                destination['destination_account_id'] = destination_attribute['id']
+
+            mapping_creation_batch.append(
+                CategoryMapping(
+                    source_category_id=source_attributes_id_map[destination_attribute['value'].lower()],
+                    workspace_id=workspace_id,
+                    **destination
                 )
             )
 
-    if mapping_batch:
-        Mapping.objects.bulk_create(mapping_batch, batch_size=50)
+    bulk_create_update_category_mappings(mapping_creation_batch)
 
 
 def auto_create_category_mappings(workspace_id):
@@ -217,11 +283,11 @@ def auto_create_category_mappings(workspace_id):
             workspace_id=workspace_id, reimbursable_expenses_object=reimbursable_expenses_object,
             corporate_credit_card_expenses_object=corporate_credit_card_expenses_object)
 
-        Mapping.bulk_create_mappings(fyle_categories, 'CATEGORY', reimbursable_destination_type, workspace_id)
+        create_category_mappings(fyle_categories, reimbursable_destination_type, workspace_id)
 
-        if corporate_credit_card_expenses_object:
-            create_credit_card_category_mappings(
-                reimbursable_expenses_object, corporate_credit_card_expenses_object, workspace_id)
+        if reimbursable_expenses_object == 'EXPENSE REPORT' and \
+            corporate_credit_card_expenses_object in ('BILL', 'JOURNAL ENTRY', 'CREDIT CARD CHARGE'):
+            bulk_create_ccc_category_mappings(workspace_id)
 
         return []
     except WrongParamsError as exception:
