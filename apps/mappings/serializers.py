@@ -46,17 +46,13 @@ class GeneralMappingSerializer(serializers.ModelSerializer):
         :return: upserted general settings object
         """
         configuration = Configuration.objects.get(workspace_id=data['workspace'])
-        mapping_setting = MappingSetting.objects.filter(
-            Q(destination_field='VENDOR') | Q(destination_field='EMPLOYEE'),
-            source_field='EMPLOYEE', workspace_id=data['workspace']
-        ).first()
 
-        if (mapping_setting.destination_field == 'VENDOR' or\
+        if (configuration.employee_field_mapping == 'VENDOR' or\
                 configuration.corporate_credit_card_expenses_object == 'BILL') and (
                 not data['accounts_payable_name'] or not data['accounts_payable_id']):
             raise serializers.ValidationError('Accounts payable is missing')
 
-        if mapping_setting.destination_field == 'EMPLOYEE' and (
+        if configuration.employee_field_mapping == 'EMPLOYEE' and (
             not data['reimbursable_account_name'] or not data['reimbursable_account_id']):
             raise serializers.ValidationError('Reimbursable account is missing')
 

@@ -12,7 +12,8 @@ from django_q.tasks import Chain
 
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
 
-from fyle_accounting_mappings.models import Mapping, ExpenseAttribute, MappingSetting, DestinationAttribute
+from fyle_accounting_mappings.models import Mapping, ExpenseAttribute, MappingSetting, DestinationAttribute,\
+    CategoryMapping
 
 from fyle_netsuite_api.exceptions import BulkError
 
@@ -95,7 +96,7 @@ def get_or_create_credit_card_vendor(expense_group: ExpenseGroup, merchant: str,
 
 
 def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_connection: NetSuiteConnector,
-                                      auto_map_employees_preference: str):
+                                      auto_map_employees_preference: str, employee_field_mapping: str):
     try:
         Mapping.objects.get(
             Q(destination_type='VENDOR') | Q(destination_type='EMPLOYEE'),
@@ -104,12 +105,6 @@ def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_conn
             workspace_id=expense_group.workspace_id
         )
     except Mapping.DoesNotExist:
-        employee_mapping_setting = MappingSetting.objects.filter(
-            Q(destination_field='VENDOR') | Q(destination_field='EMPLOYEE'),
-            source_field='EMPLOYEE',
-            workspace_id=expense_group.workspace_id
-        ).first().destination_field
-
         source_employee = ExpenseAttribute.objects.get(
             workspace_id=expense_group.workspace_id,
             attribute_type='EMPLOYEE',
@@ -122,13 +117,13 @@ def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_conn
             if auto_map_employees_preference == 'EMAIL':
                 filters = {
                     'detail__email__iexact': source_employee.value,
-                    'attribute_type': employee_mapping_setting
+                    'attribute_type': employee_field_mapping
                 }
 
             elif auto_map_employees_preference == 'NAME':
                 filters = {
                     'value__iexact': source_employee.detail['full_name'],
-                    'attribute_type': employee_mapping_setting
+                    'attribute_type': employee_field_mapping
                 }
 
             created_entity = DestinationAttribute.objects.filter(
@@ -136,7 +131,7 @@ def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_conn
                 **filters
             ).first()
 
-            if employee_mapping_setting == 'EMPLOYEE':
+            if employee_field_mapping == 'EMPLOYEE':
                 if created_entity is None:
                     created_entity: DestinationAttribute = netsuite_connection.get_or_create_employee(
                         source_employee, expense_group)
@@ -149,7 +144,7 @@ def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_conn
             mapping = Mapping.create_or_update_mapping(
                 source_type='EMPLOYEE',
                 source_value=expense_group.description.get('employee_email'),
-                destination_type=employee_mapping_setting,
+                destination_type=employee_field_mapping,
                 destination_id=created_entity.destination_id,
                 destination_value=created_entity.value,
                 workspace_id=int(expense_group.workspace_id)
@@ -184,11 +179,15 @@ def create_bill(expense_group, task_log_id):
 
         if expense_group.fund_source == 'PERSONAL' and configuration.auto_map_employees \
                 and configuration.auto_create_destination_entity:
-            create_or_update_employee_mapping(expense_group, netsuite_connection, configuration.auto_map_employees)
+            create_or_update_employee_mapping(
+                expense_group, netsuite_connection, configuration.auto_map_employees,
+                configuration.employee_field_mapping)
 
         if general_mappings and general_mappings.use_employee_department and expense_group.fund_source == 'CCC' \
                 and configuration.auto_map_employees and configuration.auto_create_destination_entity:
-            create_or_update_employee_mapping(expense_group, netsuite_connection, configuration.auto_map_employees)
+            create_or_update_employee_mapping(
+                expense_group, netsuite_connection, configuration.auto_map_employees,
+                configuration.employee_field_mapping)
 
         with transaction.atomic():
             __validate_expense_group(expense_group, configuration)
@@ -381,7 +380,9 @@ def create_expense_report(expense_group, task_log_id):
         netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
         if configuration.auto_map_employees and configuration.auto_create_destination_entity:
-            create_or_update_employee_mapping(expense_group, netsuite_connection, configuration.auto_map_employees)
+            create_or_update_employee_mapping(
+                expense_group, netsuite_connection, configuration.auto_map_employees,
+                configuration.employee_field_mapping)
 
         with transaction.atomic():
             __validate_expense_group(expense_group, configuration)
@@ -477,7 +478,9 @@ def create_journal_entry(expense_group, task_log_id):
     netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
     if configuration.auto_map_employees and configuration.auto_create_destination_entity:
-        create_or_update_employee_mapping(expense_group, netsuite_connection, configuration.auto_map_employees)
+        create_or_update_employee_mapping(
+            expense_group, netsuite_connection, configuration.auto_map_employees,
+            configuration.employee_field_mapping)
 
     try:
         with transaction.atomic():
@@ -630,23 +633,16 @@ def __validate_expense_group(expense_group: ExpenseGroup, configuration: Configu
         category = lineitem.category if lineitem.category == lineitem.sub_category else '{0} / {1}'.format(
             lineitem.category, lineitem.sub_category)
 
-        error_message = 'Category Mapping Not Found'
-        if expense_group.fund_source == 'CCC':
-            account = Mapping.objects.filter(
-                Q(destination_type='CCC_ACCOUNT') | Q(destination_type='CCC_EXPENSE_CATEGORY'),
-                source_type='CATEGORY',
-                source__value=category,
-                workspace_id=expense_group.workspace_id
-            ).first()
+        account = CategoryMapping.objects.filter(
+            source_category__value=category,
+            workspace_id=expense_group.workspace_id
+        ).first()
 
-            error_message = 'Credit Card Expense Category Mapping Not Found'
-        else:
-            account = Mapping.objects.filter(
-                Q(destination_type='ACCOUNT') | Q(destination_type='EXPENSE_CATEGORY'),
-                source_type='CATEGORY',
-                source__value=category,
-                workspace_id=expense_group.workspace_id
-            ).first()
+        if account:
+            if configuration.reimbursable_expenses_object == 'EXPENSE REPORT':
+                account = account.destination_expense_head
+            else:
+                account = account.destination_account
 
         if not account:
             bulk_errors.append({
@@ -654,7 +650,7 @@ def __validate_expense_group(expense_group: ExpenseGroup, configuration: Configu
                 'expense_group_id': expense_group.id,
                 'value': category,
                 'type': 'Category Mapping',
-                'message': error_message
+                'message': 'Category Mapping Not Found'
             })
 
         row = row + 1
