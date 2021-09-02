@@ -10,7 +10,7 @@ from fylesdk.exceptions import WrongParamsError
 
 from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttribute, DestinationAttribute,\
     CategoryMapping
-from fyle_accounting_mappings.helpers import AutoMapEmployees
+from fyle_accounting_mappings.helpers import EmployeesAutoMappingHelper
 
 from apps.fyle.connector import FyleConnector
 from apps.mappings.models import GeneralMapping
@@ -452,7 +452,7 @@ def async_auto_map_employees(workspace_id: int):
     else:
         netsuite_connection.sync_vendors()
 
-    AutoMapEmployees(workspace_id, destination_type, employee_mapping_preference).reimburse_mapping()
+    EmployeesAutoMappingHelper(workspace_id, destination_type, employee_mapping_preference).reimburse_mapping()
 
 
 def schedule_auto_map_employees(employee_mapping_preference: str, workspace_id: int):
@@ -484,7 +484,7 @@ def async_auto_map_ccc_account(workspace_id: int):
     fyle_connection = FyleConnector(refresh_token=fyle_credentials.refresh_token, workspace_id=workspace_id)
     fyle_connection.sync_employees()
 
-    AutoMapEmployees(workspace_id, 'CREDIT_CARD_ACCOUNT').ccc_mapping(default_ccc_account_id)
+    EmployeesAutoMappingHelper(workspace_id, 'CREDIT_CARD_ACCOUNT').ccc_mapping(default_ccc_account_id)
 
 
 def schedule_auto_map_ccc_employees(workspace_id: int):
