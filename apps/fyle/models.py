@@ -24,7 +24,7 @@ ALLOWED_FIELDS = [
 
 
 ALLOWED_FORM_INPUT = {
-    'group_expenses_by': ['settlement_id', 'claim_number', 'report_id', 'category', 'vendor'],
+    'group_expenses_by': ['settlement_id', 'claim_number', 'report_id', 'category', 'vendor', 'expense_id'],
     'export_date_type': ['current_date', 'approved_at', 'spent_at', 'verified_at', 'last_spent_at']
 }
 
