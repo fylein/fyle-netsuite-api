@@ -7,7 +7,8 @@ from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.db.models import Q
 
-from fyle_accounting_mappings.models import Mapping, MappingSetting, DestinationAttribute, CategoryMapping
+from fyle_accounting_mappings.models import Mapping, MappingSetting, DestinationAttribute, CategoryMapping,\
+    EmployeeMapping
 
 from apps.fyle.models import ExpenseGroup, Expense, ExpenseAttribute
 from apps.mappings.models import GeneralMapping, SubsidiaryMapping
@@ -263,12 +264,10 @@ class Bill(models.Model):
                                                        attribute_type='CURRENCY').first()
         vendor_id = None
         if expense_group.fund_source == 'PERSONAL':
-            vendor_id = Mapping.objects.get(
-                source_type='EMPLOYEE',
-                destination_type='VENDOR',
-                source__value=description.get('employee_email'),
+            vendor_id = EmployeeMapping.objects.get(
+                source_employee__value=description.get('employee_email'),
                 workspace_id=expense_group.workspace_id
-            ).destination.destination_id
+            ).destination_vendor.destination_id
         elif expense_group.fund_source == 'CCC':
             vendor_id = general_mappings.default_ccc_vendor_id
 
@@ -339,23 +338,20 @@ class BillLineitem(models.Model):
 
             department_id = get_department_id_or_none(expense_group, lineitem)
 
-            if expense_group.fund_source == 'CCC':
-                entity = Mapping.objects.filter(
-                    destination_type='EMPLOYEE',
-                    source_type='EMPLOYEE',
-                    source__value=expense_group.description.get('employee_email'),
+            if expense_group.fund_source == 'CCC' and general_mappings.use_employee_department and \
+                general_mappings.department_level in ('ALL', 'TRANSACTION_LINE'):
+                employee_mapping = EmployeeMapping.objects.filter(
+                    source_employee__value=expense_group.description.get('employee_email'),
                     workspace_id=expense_group.workspace_id
                 ).first()
-
-                if general_mappings.use_employee_department and entity:
-                    if general_mappings.department_level in ('ALL', 'TRANSACTION_LINE'):
-                        department_id = entity.destination.detail.get('department_id')
+                if employee_mapping and employee_mapping.destination_employee:
+                    department_id = employee_mapping.destination_employee.detail.get('department_id')
 
             location_id = get_location_id_or_none(expense_group, lineitem)
 
-            if not location_id:
-                if general_mappings.location_id and general_mappings.location_level in ['TRANSACTION_LINE', 'ALL']:
-                    location_id = general_mappings.location_id
+            if not location_id and general_mappings.location_id and \
+                general_mappings.location_level in ['TRANSACTION_LINE', 'ALL']:
+                location_id = general_mappings.location_id
 
             custom_segments = get_custom_segments(expense_group, lineitem)
 
@@ -424,14 +420,14 @@ class CreditCardCharge(models.Model):
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
         subsidiary_mappings = SubsidiaryMapping.objects.get(workspace_id=expense_group.workspace_id)
 
-        account = Mapping.objects.filter(
-            source_type='EMPLOYEE',
-            destination_type='CREDIT_CARD_ACCOUNT',
-            source__value=description.get('employee_email'),
+        ccc_account_mapping: EmployeeMapping = EmployeeMapping.objects.filter(
+            source_employee__value=description.get('employee_email'),
             workspace_id=expense_group.workspace_id
         ).first()
 
-        account_id = account.destination.destination_id if account else general_mappings.default_ccc_account_id
+        ccc_account_id = ccc_account_mapping.destination_card_account.destination_id \
+            if ccc_account_mapping and ccc_account_mapping.destination_card_account \
+            else general_mappings.default_ccc_account_id
 
         currency = DestinationAttribute.objects.filter(value=expense.currency,
                                                        workspace_id=expense_group.workspace_id,
@@ -455,7 +451,7 @@ class CreditCardCharge(models.Model):
             expense_group=expense_group,
             defaults={
                 'subsidiary_id': subsidiary_mappings.internal_id,
-                'credit_card_account_id': account_id,
+                'credit_card_account_id': ccc_account_id,
                 'entity_id': vendor_id,
                 'location_id': general_mappings.location_id if general_mappings.location_level in [
                     'TRANSACTION_BODY', 'ALL'] else None,
@@ -594,13 +590,6 @@ class ExpenseReport(models.Model):
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
         subsidiary_mappings = SubsidiaryMapping.objects.get(workspace_id=expense_group.workspace_id)
 
-        entity = Mapping.objects.get(
-            destination_type='EMPLOYEE',
-            source_type='EMPLOYEE',
-            source__value=description.get('employee_email'),
-            workspace_id=expense_group.workspace_id
-        )
-
         currency = DestinationAttribute.objects.filter(value=expense.currency,
                                                        workspace_id=expense_group.workspace_id,
                                                        attribute_type='CURRENCY').first()
@@ -612,13 +601,14 @@ class ExpenseReport(models.Model):
             expense_group=expense_group,
             defaults={
                 'account_id': debit_account_id,
-                'credit_card_account_id': Mapping.objects.get(
-                    source_type='EMPLOYEE',
-                    destination_type='CREDIT_CARD_ACCOUNT',
-                    source__value=description.get('employee_email'),
+                'credit_card_account_id': EmployeeMapping.objects.get(
+                    source_employee__value=description.get('employee_email'),
                     workspace_id=expense_group.workspace_id
-                ).destination.destination_id if expense_group.fund_source == 'CCC' else None,
-                'entity_id': entity.destination.destination_id,
+                ).destination_card_account.destination_id if expense_group.fund_source == 'CCC' else None,
+                'entity_id': EmployeeMapping.objects.get(
+                    source_employee__value=description.get('employee_email'),
+                    workspace_id=expense_group.workspace_id
+                ).destination_employee.destination_id,
                 'currency': currency.destination_id if currency else '1',
                 'department_id': None,
                 'class_id': None,
@@ -762,12 +752,13 @@ class JournalEntry(models.Model):
 
         description = expense_group.description
 
-        entity = Mapping.objects.get(
-            Q(destination_type='EMPLOYEE') | Q(destination_type='VENDOR'),
-            source_type='EMPLOYEE',
-            source__value=description.get('employee_email'),
+        entity = EmployeeMapping.objects.get(
+            source_employee__value=description.get('employee_email'),
             workspace_id=expense_group.workspace_id
         )
+
+        configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
+        employee_field_mapping = configuration.employee_field_mapping
 
         currency = DestinationAttribute.objects.filter(value=expense.currency,
                                                        workspace_id=expense_group.workspace_id,
@@ -779,22 +770,22 @@ class JournalEntry(models.Model):
 
         department_id = None
 
-        if general_mappings.use_employee_department:
-            if general_mappings.department_level in ('ALL', 'TRANSACTION_BODY'):
-                if entity.destination_type == 'EMPLOYEE':
-                    department_id = entity.destination.detail.get('department_id')
+        if general_mappings.use_employee_department and general_mappings.department_level in (
+            'ALL', 'TRANSACTION_BODY') and entity.destination_type == 'EMPLOYEE':
+            department_id = entity.destination_employee.detail.get('department_id')
 
         journal_entry_object, _ = JournalEntry.objects.update_or_create(
             expense_group=expense_group,
             defaults={
-                'entity_id': entity.destination.destination_id,
+                'entity_id': entity.destination_employee.destination_id if employee_field_mapping == 'EMPLOYEE' \
+                        else entity.destination_vendor.destination_id,
                 'currency': currency.destination_id if currency else '1',
                 'location_id': general_mappings.location_id,
                 'subsidiary_id': subsidiary_mappings.internal_id,
                 'department_id': department_id,
-                'memo': "Reimbursable expenses by {0}".format(description.get('employee_email')) if
+                'memo': 'Reimbursable expenses by {0}'.format(description.get('employee_email')) if
                 expense_group.fund_source == 'PERSONAL' else
-                "Credit card expenses by {0}".format(description.get('employee_email')),
+                'Credit card expenses by {0}'.format(description.get('employee_email')),
                 'transaction_date': get_transaction_date(expense_group),
                 'external_id': 'journal {} - {}'.format(expense_group.id, description.get('employee_email'))
             }
@@ -840,27 +831,26 @@ class JournalEntryLineItem(models.Model):
 
         debit_account_id = None
 
-        entity = Mapping.objects.get(
-            Q(destination_type='EMPLOYEE') | Q(destination_type='VENDOR'),
-            source_type='EMPLOYEE',
-            source__value=description.get('employee_email'),
+        entity = EmployeeMapping.objects.get(
+            source_employee__value=description.get('employee_email'),
             workspace_id=expense_group.workspace_id
         )
 
+        configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
+        employee_field_mapping = configuration.employee_field_mapping
+
         if expense_group.fund_source == 'PERSONAL':
-            if entity.destination_type == 'VENDOR':
+            if employee_field_mapping == 'VENDOR':
                 debit_account_id = GeneralMapping.objects.get(
                     workspace_id=expense_group.workspace_id).accounts_payable_id
-            elif entity.destination_type == 'EMPLOYEE':
+            elif employee_field_mapping == 'EMPLOYEE':
                 debit_account_id = GeneralMapping.objects.get(
                     workspace_id=expense_group.workspace_id).reimbursable_account_id
         elif expense_group.fund_source == 'CCC':
-            debit_account_id = Mapping.objects.get(
-                source_type='EMPLOYEE',
-                destination_type='CREDIT_CARD_ACCOUNT',
-                source__value=description.get('employee_email'),
+            debit_account_id = EmployeeMapping.objects.get(
+                source_employee__value=description.get('employee_email'),
                 workspace_id=expense_group.workspace_id
-            ).destination.destination_id
+            ).destination_card_account.destination_id
 
         journal_entry_lineitem_objects = []
 
@@ -877,16 +867,15 @@ class JournalEntryLineItem(models.Model):
 
             department_id = get_department_id_or_none(expense_group, lineitem)
 
-            if not department_id and general_mappings.use_employee_department:
-                if general_mappings.department_level in ('ALL', 'TRANSACTION_LINE'):
-                    if entity.destination_type == 'EMPLOYEE':
-                        department_id = entity.destination.detail.get('department_id')
+            if not department_id and general_mappings.use_employee_department and \
+                general_mappings.department_level in ('ALL', 'TRANSACTION_LINE') and \
+                    employee_field_mapping == 'EMPLOYEE':
+                department_id = entity.destination_employee.detail.get('department_id')
 
             location_id = get_location_id_or_none(expense_group, lineitem)
 
-            if not location_id:
-                if general_mappings.location_id:
-                    location_id = general_mappings.location_id
+            if not location_id and general_mappings.location_id:
+                location_id = general_mappings.location_id
 
             custom_segments = get_custom_segments(expense_group, lineitem)
 
@@ -900,7 +889,8 @@ class JournalEntryLineItem(models.Model):
                     'department_id': department_id,
                     'location_id': location_id,
                     'class_id': class_id if class_id else None,
-                    'entity_id': entity.destination.destination_id,
+                    'entity_id': entity.destination_employee.destination_id if employee_field_mapping == 'EMPLOYEE' \
+                        else entity.destination_vendor.destination_id,
                     'amount': lineitem.amount,
                     'memo': get_expense_purpose(lineitem, category),
                     'netsuite_custom_segments': custom_segments
