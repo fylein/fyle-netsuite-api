@@ -847,10 +847,16 @@ class JournalEntryLineItem(models.Model):
                 debit_account_id = GeneralMapping.objects.get(
                     workspace_id=expense_group.workspace_id).reimbursable_account_id
         elif expense_group.fund_source == 'CCC':
-            debit_account_id = EmployeeMapping.objects.get(
+            debit_account = EmployeeMapping.objects.filter(
                 source_employee__value=description.get('employee_email'),
                 workspace_id=expense_group.workspace_id
-            ).destination_card_account.destination_id
+            ).first()
+            if debit_account and debit_account.destination_card_account:
+                debit_account_id = debit_account_id.destination_card_account.destination_id
+
+            if not debit_account_id:
+                debit_account_id = GeneralMapping.objects.get(
+                    workspace_id=expense_group.workspace_id).default_ccc_account_id
 
         journal_entry_lineitem_objects = []
 
