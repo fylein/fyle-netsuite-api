@@ -604,7 +604,7 @@ class ExpenseReport(models.Model):
                 'credit_card_account_id': EmployeeMapping.objects.get(
                     source_employee__value=description.get('employee_email'),
                     workspace_id=expense_group.workspace_id
-                ).destination_card_account.destination_id if expense_group.fund_source == 'CCC' else None,
+                ).destination_employee.destination_id if expense_group.fund_source == 'CCC' else None,
                 'entity_id': EmployeeMapping.objects.get(
                     source_employee__value=description.get('employee_email'),
                     workspace_id=expense_group.workspace_id
