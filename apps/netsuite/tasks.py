@@ -624,27 +624,29 @@ def __validate_expense_group(expense_group: ExpenseGroup, configuration: Configu
                     'message': 'Default Credit Card Vendor not found'
                 })
     else:
-        try:
-            entity = EmployeeMapping.objects.get(
-                source_employee__value=expense_group.description.get('employee_email'),
-                workspace_id=expense_group.workspace_id
-            )
+        if expense_group.fund_source == 'PERSONAL' or \
+                (expense_group.fund_source == 'CCC' and configuration.reimbursable_expenses_object == 'EXPENSE REPORT'):
+            try:
+                entity = EmployeeMapping.objects.get(
+                    source_employee__value=expense_group.description.get('employee_email'),
+                    workspace_id=expense_group.workspace_id
+                )
 
-            if configuration.employee_field_mapping == 'EMPLOYEE':
-                entity = entity.destination_employee
-            else:
-                entity = entity.destination_vendor
+                if configuration.employee_field_mapping == 'EMPLOYEE':
+                    entity = entity.destination_employee
+                else:
+                    entity = entity.destination_vendor
 
-            if not entity:
-                raise EmployeeMapping.DoesNotExist
-        except EmployeeMapping.DoesNotExist:
-            bulk_errors.append({
-                'row': None,
-                'expense_group_id': expense_group.id,
-                'value': expense_group.description.get('employee_email'),
-                'type': 'Employee Mapping',
-                'message': 'Employee mapping not found'
-            })
+                if not entity:
+                    raise EmployeeMapping.DoesNotExist
+            except EmployeeMapping.DoesNotExist:
+                bulk_errors.append({
+                    'row': None,
+                    'expense_group_id': expense_group.id,
+                    'value': expense_group.description.get('employee_email'),
+                    'type': 'Employee Mapping',
+                    'message': 'Employee mapping not found'
+                })
 
     if configuration.corporate_credit_card_expenses_object != 'BILL' and expense_group.fund_source == 'CCC':
         if not (general_mapping.default_ccc_account_id or general_mapping.default_ccc_account_name):
