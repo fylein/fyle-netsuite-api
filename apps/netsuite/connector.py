@@ -592,7 +592,7 @@ class NetSuiteConnector:
 
         return []
     
-    def sync_taxdetails(self):
+    def sync_taxitems(self):
         """
         Sync Tax Details
         """

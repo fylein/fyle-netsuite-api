@@ -555,8 +555,8 @@ def sync_netsuite_attribute(netsuite_attribute_type: str, workspace_id: int):
     elif netsuite_attribute_type == 'CLASS':
         ns_connection.sync_classifications()
 
-    elif netsuite_attribute_type == 'TAX_DETAIL':
-        ns_connection.sync_taxdetails()
+    elif netsuite_attribute_type == 'TAX_ITEM':
+        ns_connection.sync_taxitems()
 
     else:
         ns_connection.sync_custom_segments()
@@ -730,8 +730,6 @@ def upload_attributes_to_fyle(workspace_id: int, netsuite_attribute_type: str, f
     )
 
     if fyle_custom_field_payload:
-        print("q3qweqe", fyle_attribute_type)
-        print('sdfsfsfsd', netsuite_attribute_type)
         fyle_connection.connection.ExpensesCustomFields.post(fyle_custom_field_payload)
         fyle_connection.sync_expense_custom_fields(active_only=True)
 
