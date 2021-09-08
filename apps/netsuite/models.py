@@ -852,7 +852,7 @@ class JournalEntryLineItem(models.Model):
                 workspace_id=expense_group.workspace_id
             ).first()
             if debit_account and debit_account.destination_card_account:
-                debit_account_id = debit_account_id.destination_card_account.destination_id
+                debit_account_id = debit_account.destination_card_account.destination_id
 
             if not debit_account_id:
                 debit_account_id = GeneralMapping.objects.get(
