@@ -13,7 +13,7 @@ from django_q.tasks import Chain
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
 
 from fyle_accounting_mappings.models import Mapping, ExpenseAttribute, MappingSetting, DestinationAttribute,\
-    CategoryMapping
+    CategoryMapping, EmployeeMapping
 
 from fyle_netsuite_api.exceptions import BulkError
 
@@ -98,13 +98,17 @@ def get_or_create_credit_card_vendor(expense_group: ExpenseGroup, merchant: str,
 def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_connection: NetSuiteConnector,
                                       auto_map_employees_preference: str, employee_field_mapping: str):
     try:
-        Mapping.objects.get(
-            Q(destination_type='VENDOR') | Q(destination_type='EMPLOYEE'),
-            source_type='EMPLOYEE',
-            source__value=expense_group.description.get('employee_email'),
+        mapping = EmployeeMapping.objects.get(
+            source_employee__value=expense_group.description.get('employee_email'),
             workspace_id=expense_group.workspace_id
         )
-    except Mapping.DoesNotExist:
+
+        mapping = mapping.destination_employee if employee_field_mapping == 'EMPLOYEE' \
+            else mapping.destination_vendor
+
+        if not mapping:
+            raise EmployeeMapping.DoesNotExist
+    except EmployeeMapping.DoesNotExist:
         source_employee = ExpenseAttribute.objects.get(
             workspace_id=expense_group.workspace_id,
             attribute_type='EMPLOYEE',
@@ -113,13 +117,11 @@ def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_conn
 
         try:
             filters = {}
-
             if auto_map_employees_preference == 'EMAIL':
                 filters = {
                     'detail__email__iexact': source_employee.value,
                     'attribute_type': employee_field_mapping
                 }
-
             elif auto_map_employees_preference == 'NAME':
                 filters = {
                     'value__iexact': source_employee.detail['full_name'],
@@ -131,30 +133,51 @@ def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_conn
                 **filters
             ).first()
 
+            existing_employee_mapping = EmployeeMapping.objects.filter(
+                source_employee=source_employee
+            ).first()
+
+            destination = {}
             if employee_field_mapping == 'EMPLOYEE':
                 if created_entity is None:
                     created_entity: DestinationAttribute = netsuite_connection.get_or_create_employee(
                         source_employee, expense_group)
+                    destination['destination_employee_id'] = created_entity.id
+                elif existing_employee_mapping and existing_employee_mapping.destination_employee:
+                    destination['destination_employee_id'] = existing_employee_mapping.destination_employee.id
 
             else:
                 if created_entity is None:
                     created_entity: DestinationAttribute = netsuite_connection.get_or_create_vendor(
                         source_employee, expense_group)
+                    destination['destination_vendor_id'] = created_entity.id
+                elif existing_employee_mapping and existing_employee_mapping.destination_vendor:
+                    destination['destination_vendor_id'] = existing_employee_mapping.destination_vendor.id
 
-            mapping = Mapping.create_or_update_mapping(
-                source_type='EMPLOYEE',
-                source_value=expense_group.description.get('employee_email'),
-                destination_type=employee_field_mapping,
-                destination_id=created_entity.destination_id,
-                destination_value=created_entity.value,
-                workspace_id=int(expense_group.workspace_id)
+            if existing_employee_mapping and existing_employee_mapping.destination_card_account:
+                destination['destination_card_account_id'] = existing_employee_mapping.destination_card_account.id
+
+            if 'destination_employee_id' not in destination or not destination['destination_employee_id']:
+                destination['destination_employee_id'] = created_entity.id
+
+            if 'destination_vendor_id' not in destination or not destination['destination_vendor_id']:
+                destination['destination_vendor_id'] = created_entity.id
+
+            mapping = EmployeeMapping.create_or_update_employee_mapping(
+                source_employee_id=source_employee.id,
+                workspace=expense_group.workspace,
+                **destination
             )
 
-            mapping.source.auto_mapped = True
-            mapping.source.save()
+            mapping.source_employee.auto_mapped = True
+            mapping.source_employee.save()
 
-            mapping.destination.auto_created = True
-            mapping.destination.save()
+            if employee_field_mapping == 'EMPLOYEE':
+                mapping.destination_employee.auto_created = True
+                mapping.destination_employee.save()
+            elif employee_field_mapping == 'VENDOR':
+                mapping.destination_vendor.auto_created = True
+                mapping.destination_vendor.save()
 
         except NetSuiteRequestError as exception:
             logger.exception({'error': exception})
@@ -601,21 +624,29 @@ def __validate_expense_group(expense_group: ExpenseGroup, configuration: Configu
                     'message': 'Default Credit Card Vendor not found'
                 })
     else:
-        try:
-            Mapping.objects.get(
-                Q(destination_type='VENDOR') | Q(destination_type='EMPLOYEE'),
-                source_type='EMPLOYEE',
-                source__value=expense_group.description.get('employee_email'),
-                workspace_id=expense_group.workspace_id
-            )
-        except Mapping.DoesNotExist:
-            bulk_errors.append({
-                'row': None,
-                'expense_group_id': expense_group.id,
-                'value': expense_group.description.get('employee_email'),
-                'type': 'Employee Mapping',
-                'message': 'Employee mapping not found'
-            })
+        if expense_group.fund_source == 'PERSONAL' or \
+                (expense_group.fund_source == 'CCC' and configuration.reimbursable_expenses_object == 'EXPENSE REPORT'):
+            try:
+                entity = EmployeeMapping.objects.get(
+                    source_employee__value=expense_group.description.get('employee_email'),
+                    workspace_id=expense_group.workspace_id
+                )
+
+                if configuration.employee_field_mapping == 'EMPLOYEE':
+                    entity = entity.destination_employee
+                else:
+                    entity = entity.destination_vendor
+
+                if not entity:
+                    raise EmployeeMapping.DoesNotExist
+            except EmployeeMapping.DoesNotExist:
+                bulk_errors.append({
+                    'row': None,
+                    'expense_group_id': expense_group.id,
+                    'value': expense_group.description.get('employee_email'),
+                    'type': 'Employee Mapping',
+                    'message': 'Employee mapping not found'
+                })
 
     if configuration.corporate_credit_card_expenses_object != 'BILL' and expense_group.fund_source == 'CCC':
         if not (general_mapping.default_ccc_account_id or general_mapping.default_ccc_account_name):
