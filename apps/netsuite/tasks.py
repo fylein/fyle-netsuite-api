@@ -723,8 +723,6 @@ def __validate_category_mapping(expense_group: ExpenseGroup, configuration: Conf
 
 
 def __validate_expense_group(expense_group: ExpenseGroup, configuration: Configuration):
-    bulk_errors = []
-
     # General Mapping
     general_mapping_errors = __validate_general_mapping(expense_group, configuration)
 
