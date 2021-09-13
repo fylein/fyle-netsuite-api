@@ -157,6 +157,13 @@ class SyncNetSuiteDimensionView(generics.ListCreateAPIView):
             return Response(
                 status=status.HTTP_200_OK
             )
+        except Exception : 
+            return Response(
+                data={
+                    'message': 'Error in syncing Dimensions'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            ) 
         except NetSuiteCredentials.DoesNotExist:
             return Response(
                 data={
