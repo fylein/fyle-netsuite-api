@@ -106,8 +106,9 @@ class ConfigurationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Reimbursable expenses should be bill or journal entry for employee mapped to vendor')
 
-        if attrs['corporate_credit_card_expenses_object'] and attrs['reimbursable_expenses_object'] == 'EXPENSE REPORT'\
-            and attrs['corporate_credit_card_expenses_object'] != 'EXPENSE REPORT':
+        if attrs['corporate_credit_card_expenses_object'] and \
+            attrs['corporate_credit_card_expenses_object'] == 'EXPENSE REPORT' \
+                and attrs['reimbursable_expenses_object'] != 'EXPENSE REPORT':
             raise serializers.ValidationError(
                 'Corporate credit card expenses can be expense report if reimbursable expense object is expense report')
 
