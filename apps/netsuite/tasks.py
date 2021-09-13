@@ -630,7 +630,7 @@ def __validate_general_mapping(expense_group: ExpenseGroup, configuration: Confi
             })
 
         if not (general_mapping.default_ccc_vendor_id or general_mapping.default_ccc_vendor_name) and \
-            configuration.corporate_credit_card_expenses_object in ('BILL', 'CREDIT CARD CHARGE') and \
+            configuration.corporate_credit_card_expenses_object in ['BILL', 'CREDIT CARD CHARGE'] and \
                 expense_group.fund_source == 'CCC':
             bulk_errors.append({
                 'row': None,
