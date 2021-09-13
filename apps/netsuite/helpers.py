@@ -51,20 +51,16 @@ def check_interval_and_sync_dimension(workspace: Workspace, netsuite_credentials
     return False
 
 def sync_dimensions(ns_credentials: NetSuiteCredentials, workspace_id: int, dimensions: list = []) -> None:
-    try:
-        netsuite_connection = import_string('apps.netsuite.connector.NetSuiteConnector')(ns_credentials, workspace_id)
-        if not dimensions:
-            dimensions = [
-                'expense_categories', 'locations', 'vendors', 'currencies', 'classifications',
-                'departments', 'employees', 'accounts', 'custom_segments', 'projects', 'customers'
-            ]
+    netsuite_connection = import_string('apps.netsuite.connector.NetSuiteConnector')(ns_credentials, workspace_id)
+    if not dimensions:
+        dimensions = [
+            'expense_categories', 'locations', 'vendors', 'currencies', 'classifications',
+            'departments', 'employees', 'accounts', 'custom_segments', 'projects', 'customers'
+        ]
 
-        for dimension in dimensions:
-            try:
-                sync = getattr(netsuite_connection, 'sync_{}'.format(dimension))
-                sync()
-            except Exception as exception:
-                logger.exception(exception)
-    except Exception as exception:
-        logger.exception(exception)
-        raise AuthenticationFailed('Failed to connect to NetSuite')
+    for dimension in dimensions:
+        try:
+            sync = getattr(netsuite_connection, 'sync_{}'.format(dimension))
+            sync()
+        except Exception as exception:
+            logger.exception(exception)
