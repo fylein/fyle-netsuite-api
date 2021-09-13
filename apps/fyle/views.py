@@ -13,6 +13,7 @@ from apps.workspaces.models import FyleCredential, Workspace
 from .tasks import schedule_expense_group_creation
 from .helpers import check_interval_and_sync_dimension, sync_dimensions
 from .models import Expense, ExpenseGroup, ExpenseGroupSettings
+from .platform_connector import FylePlatformConnector
 from .serializers import ExpenseGroupSerializer, ExpenseSerializer, ExpenseFieldSerializer, \
     ExpenseGroupSettingsSerializer
 
@@ -233,3 +234,15 @@ class RefreshFyleDimensionView(generics.ListCreateAPIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+class TaxGroupsView(generics.ListCreateAPIView):
+
+    def get(self, request, *args, **kwargs):
+        fyle_credentials = FyleCredential.objects.get(workspace_id=kwargs['workspace_id'])
+        platform_connector = FylePlatformConnector(fyle_credentials.refresh_token, kwargs['workspace_id'])
+
+        platform_connector.sync_tax_groups()
+
+        return Response(
+            status=status.HTTP_200_OK
+        )

@@ -592,7 +592,7 @@ class NetSuiteConnector:
 
         return []
     
-    def sync_taxitems(self):
+    def sync_tax_items(self):
         """
         Sync Tax Details
         """
@@ -600,31 +600,23 @@ class NetSuiteConnector:
 
         for tax_items in tax_items_generator:
             attributes = []
-            attributes1 = []
             for tax_item in tax_items:
                 if not tax_item['isInactive'] and tax_item['itemId'] and tax_item['taxType'] and tax_item['rate']:
-                    print(tax_item)
                     value = self.get_tax_code_name(tax_item['itemId'], tax_item['taxType']['name'], tax_item['rate'])
                     attributes.append({
                         'attribute_type': 'TAX_ITEM',
                         'display_name': 'Tax Item',
                         'value': value,
                         'destination_id': tax_item['internalId'],
-                        'active': True
+                        'active': True,
+                        'detail': {
+                            'tax_rate': tax_item['rate']
+                        }
                     })
-                    attributes1.append({
-                    'attribute_type': 'TAX_GROUP',
-                    'display_name': 'Tax Group',
-                    'value': value,
-                    'source_id': tax_item['internalId'],
-                    'active': True
-                })
+       
             DestinationAttribute.bulk_create_or_update_destination_attributes(
                     attributes, 'TAX_ITEM', self.workspace_id, True)
-            
-            ExpenseAttribute.bulk_create_or_update_expense_attributes(
-                    attributes1, 'TAX_GROUP', self.workspace_id)
-        
+
         return []
 
     def sync_projects(self):

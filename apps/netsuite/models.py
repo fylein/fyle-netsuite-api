@@ -83,6 +83,18 @@ def get_class_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
             class_id = mapping.destination.destination_id
     return class_id
 
+def get_tax_item_id_or_none(expense_group: ExpenseGroup, lineitem: Expense = None):
+    tax_code = None
+    mapping: Mapping = Mapping.objects.filter(
+        source_type='TAX_GROUP',
+        destination_type='TAX_CODE',
+        source__source_id=lineitem.tax_group_id,
+        workspace_id=expense_group.workspace_id
+    ).first()
+    if mapping:
+        tax_code = mapping.destination.destination_id
+
+    return tax_code
 
 def get_customer_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
     project_setting: MappingSetting = MappingSetting.objects.filter(
@@ -304,6 +316,8 @@ class BillLineitem(models.Model):
     class_id = models.CharField(max_length=255, help_text='NetSuite Class id', null=True)
     customer_id = models.CharField(max_length=255, help_text='NetSuite customer id', null=True)
     amount = models.FloatField(help_text='Bill amount')
+    tax_amount = models.FloatField(null=True, help_text='Tax amount')
+    tax_item_id = models.CharField(max_length=255, help_text='Tax Item ID', null=True)
     billable = models.BooleanField(null=True, help_text='Expense Billable or not')
     memo = models.TextField(help_text='NetSuite bill lineitem memo', null=True)
     netsuite_custom_segments = JSONField(null=True, help_text='NetSuite Custom Segments')
@@ -391,6 +405,8 @@ class BillLineitem(models.Model):
                     'department_id': department_id,
                     'customer_id': customer_id,
                     'amount': lineitem.amount,
+                    'tax_item_id': get_tax_item_id_or_none(expense_group, lineitem),
+                    'tax_amount': lineitem.tax_amount,
                     'billable': billable,
                     'memo': get_expense_purpose(lineitem, category),
                     'netsuite_custom_segments': custom_segments
@@ -494,6 +510,8 @@ class CreditCardChargeLineItem(models.Model):
     class_id = models.CharField(max_length=255, help_text='NetSuite Class id', null=True)
     customer_id = models.CharField(max_length=255, help_text='NetSuite customer id', null=True)
     amount = models.FloatField(help_text='CC Charge line amount')
+    tax_amount = models.FloatField(null=True, help_text='Tax amount')
+    tax_item_id = models.CharField(max_length=255, help_text='Tax Item ID', null=True)
     billable = models.BooleanField(null=True, help_text='Expense Billable or not')
     memo = models.TextField(help_text='NetSuite cc charge lineitem memo', null=True)
     netsuite_custom_segments = JSONField(null=True, help_text='NetSuite Custom Segments')
@@ -559,6 +577,8 @@ class CreditCardChargeLineItem(models.Model):
                 'department_id': department_id,
                 'customer_id': customer_id,
                 'amount': lineitem.amount,
+                'tax_item_id': get_tax_item_id_or_none(expense_group, lineitem),
+                'tax_amount': lineitem.tax_amount,
                 'billable': billable,
                 'memo': get_expense_purpose(lineitem, category),
                 'netsuite_custom_segments': custom_segments
@@ -665,6 +685,8 @@ class ExpenseReportLineItem(models.Model):
     location_id = models.CharField(max_length=255, help_text='NetSuite location id', null=True)
     department_id = models.CharField(max_length=255, help_text='NetSuite department id', null=True)
     currency = models.CharField(max_length=255, help_text='NetSuite Currency id')
+    tax_amount = models.FloatField(null=True, help_text='Tax amount')
+    tax_item_id = models.CharField(max_length=255, help_text='Tax Item ID', null=True)
     memo = models.TextField(help_text='NetSuite ExpenseReport lineitem memo', null=True)
     netsuite_custom_segments = JSONField(null=True, help_text='NetSuite Custom Segments')
     transaction_date = models.DateTimeField(help_text='Expense Report transaction date')
@@ -746,6 +768,8 @@ class ExpenseReportLineItem(models.Model):
                     'location_id': location_id,
                     'department_id': department_id,
                     'currency': currency.destination_id if currency else '1',
+                    'tax_item_id': get_tax_item_id_or_none(expense_group, lineitem),
+                    'tax_amount': lineitem.tax_amount,
                     'transaction_date': get_transaction_date(expense_group),
                     'memo': get_expense_purpose(lineitem, category),
                     'netsuite_custom_segments': custom_segments
@@ -844,6 +868,8 @@ class JournalEntryLineItem(models.Model):
     class_id = models.CharField(max_length=255, help_text='NetSuite class id', null=True)
     entity_id = models.CharField(max_length=255, help_text='NetSuite entity id')
     amount = models.FloatField(help_text='JournalEntry amount')
+    tax_amount = models.FloatField(null=True, help_text='Tax amount')
+    tax_item_id = models.CharField(max_length=255, help_text='Tax Item ID', null=True)
     memo = models.TextField(help_text='NetSuite JournalEntry lineitem description', null=True)
     netsuite_custom_segments = JSONField(null=True, help_text='NetSuite Custom Segments')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
@@ -940,6 +966,8 @@ class JournalEntryLineItem(models.Model):
                     'class_id': class_id if class_id else None,
                     'entity_id': entity.destination.destination_id,
                     'amount': lineitem.amount,
+                    'tax_item_id': get_tax_item_id_or_none(expense_group, lineitem),
+                    'tax_amount': lineitem.tax_amount,
                     'memo': get_expense_purpose(lineitem, category),
                     'netsuite_custom_segments': custom_segments
                 }

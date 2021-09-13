@@ -52,6 +52,8 @@ class Expense(models.Model):
     currency = models.CharField(max_length=5, help_text='Home Currency')
     foreign_amount = models.FloatField(null=True, help_text='Foreign Amount')
     foreign_currency = models.CharField(null=True, max_length=5, help_text='Foreign Currency')
+    tax_amount = models.FloatField(null=True, help_text="Tax Amount")
+    tax_group_id = models.CharField(null=True, max_length=255, help_text="Tax Group ID")
     settlement_id = models.CharField(max_length=255, help_text='Settlement ID', null=True)
     reimbursable = models.BooleanField(default=False, help_text='Expense reimbursable or not')
     billable = models.BooleanField(null=True, help_text='Expense Billable or not')
@@ -85,7 +87,7 @@ class Expense(models.Model):
         custom_properties = ExpenseAttribute.objects.filter(
             ~Q(attribute_type='EMPLOYEE') & ~Q(attribute_type='CATEGORY'),
             ~Q(attribute_type='PROJECT') & ~Q(attribute_type='COST_CENTER'),
-            workspace_id=workspace_id
+            ~Q(attribute_type='TAX_GROUP'), workspace_id=workspace_id
         ).values('display_name').distinct()
 
         custom_property_keys = list(set([prop['display_name'].lower() for prop in custom_properties]))
@@ -112,6 +114,8 @@ class Expense(models.Model):
                     'currency': expense['currency'],
                     'foreign_amount': expense['foreign_amount'],
                     'foreign_currency': expense['foreign_currency'],
+                    'tax_group_id': expense['tax_group_id'],
+                    'tax_amount': expense['tax'],
                     'settlement_id': expense['settlement_id'],
                     'reimbursable': expense['reimbursable'],
                     'billable': expense['billable'] if expense['billable'] else None,

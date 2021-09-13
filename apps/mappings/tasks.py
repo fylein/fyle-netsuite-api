@@ -12,6 +12,7 @@ from fylesdk.exceptions import WrongParamsError
 from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttribute, DestinationAttribute
 
 from apps.fyle.connector import FyleConnector
+from apps.fyle.platform_connector import FylePlatformConnector
 from apps.mappings.models import GeneralMapping
 from apps.netsuite.connector import NetSuiteConnector
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configuration
@@ -197,7 +198,7 @@ def create_credit_card_category_mappings(reimbursable_expenses_object,
         Mapping.objects.bulk_create(mapping_batch, batch_size=50)
 
 
-def auto_create_taxgroup_mappings(workspace_id):
+def auto_create_tax_group_mappings(workspace_id):
     """
     Create TaxGroups Mappings
     :return: mappings
@@ -205,20 +206,19 @@ def auto_create_taxgroup_mappings(workspace_id):
     try:
         fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
 
-        fyle_connection = FyleConnector(
+        fyle_connection = FylePlatformConnector(
             refresh_token=fyle_credentials.refresh_token,
             workspace_id=workspace_id
         )
 
-        fyle_connection.sync_taxcodes()
+        fyle_connection.sync_tax_groups()
 
         mapping_setting = MappingSetting.objects.get(
             source_field='TAX_GROUP', workspace_id=workspace_id
         )
 
         sync_netsuite_attribute(mapping_setting.destination_field, workspace_id)
-
-        post_taxgroups_in_batches(fyle_connection, workspace_id, mapping_setting.destination_field)
+        post_tax_groups_in_batches(fyle_connection, workspace_id)
 
     except WrongParamsError as exception:
         logger.error(
@@ -236,10 +236,10 @@ def auto_create_taxgroup_mappings(workspace_id):
             workspace_id, error
         )
 
-def schedule_taxgroups_creation(import_to_fyle, workspace_id):
-    if import_to_fyle:
+def schedule_tax_groups_creation(import_tax_items, workspace_id):
+    if import_tax_items:
         schedule, _ = Schedule.objects.update_or_create(
-            func='apps.mappings.tasks.auto_create_taxgroup_mappings',
+            func='apps.mappings.tasks.auto_create_tax_group_mappings',
             args='{}'.format(workspace_id),
             defaults={
                 'schedule_type': Schedule.MINUTES,
@@ -249,38 +249,38 @@ def schedule_taxgroups_creation(import_to_fyle, workspace_id):
         )
     else:
         schedule: Schedule = Schedule.objects.filter(
-            func='apps.mappings.tasks.auto_create_taxcodes_mappings',
+            func='apps.mappings.tasks.auto_create_tax_groups_mappings',
             args='{}'.format(workspace_id),
         ).first()
 
         if schedule:
             schedule.delete()
 
-def post_taxgroups_in_batches(qbo_attribute_type: str, workspace_id: int):
-
-    existing_taxcodes_name = ExpenseAttribute.objects.filter(
+def post_tax_groups_in_batches(platform_connection: FylePlatformConnector, workspace_id: int):    
+    existing_tax_items_name = ExpenseAttribute.objects.filter(
         attribute_type='TAX_GROUP', workspace_id=workspace_id).values_list('value', flat=True)
 
-    qbo_attributes_count = DestinationAttribute.objects.filter(
-        attribute_type=qbo_attribute_type, workspace_id=workspace_id).count()
+    netsuite_attributes_count = DestinationAttribute.objects.filter(
+        attribute_type='TAX_ITEM', workspace_id=workspace_id).count()
 
     page_size = 200
 
-    for offset in range(0, qbo_attributes_count, page_size):
+    for offset in range(0, netsuite_attributes_count, page_size):
         limit = offset + page_size
         paginated_netsuite_attributes = DestinationAttribute.objects.filter(
-            attribute_type=qbo_attribute_type, workspace_id=workspace_id).order_by('value', 'id')[offset:limit]
+            attribute_type='TAX_ITEM', workspace_id=workspace_id).order_by('value', 'id')[offset:limit]
 
-        paginated_netsuite_attributes = remove_duplicates(paginated_qbo_attributes)
+        paginated_netsuite_attributes = remove_duplicates(paginated_netsuite_attributes)
 
-        fyle_payload: List[Dict] = create_fyle_cost_centers_payload(
-            paginated_netsuite_attributes, existing_cost_center_names)
+        fyle_payload: List[Dict] = create_fyle_tax_group_payload(
+            paginated_netsuite_attributes, existing_tax_items_name)
 
         if fyle_payload:
-            fyle_connection.connection.TaxCodes.post(fyle_payload)
-            fyle_connection.sync_taxcodes()
+            platform_connection.connection.v1.admin.tax_groups.post(fyle_payload[0])
 
-        Mapping.bulk_create_mappings(paginated_qbo_attributes, 'TAX_GROUP', qbo_attribute_type, workspace_id)
+            platform_connection.sync_tax_groups()
+
+        Mapping.bulk_create_mappings(paginated_netsuite_attributes, 'TAX_ITEM', 'TAX_CODE', workspace_id)
 
 def auto_create_category_mappings(workspace_id):
     """
@@ -346,6 +346,27 @@ def schedule_categories_creation(import_categories, workspace_id):
         if schedule:
             schedule.delete()
 
+def create_fyle_tax_group_payload(netsuite_attributes: List[DestinationAttribute], existing_fyle_tax_groups: list):
+    """
+    Create Fyle Tax Group Payload from Netsuite Objects
+    :param existing_fyle_tax_groups: Existing tax group names
+    :param netsuite_attributes: Netsuite Objects Objects
+    :return: Fyle Tax Group Payload
+    """
+    fyle_tax_group_payload = []
+
+    for netsuite_attribute in netsuite_attributes:
+        percentage = float(netsuite_attribute.detail['tax_rate'].replace('%', ''))
+        if netsuite_attribute.value not in existing_fyle_tax_groups:
+            fyle_tax_group_payload.append({
+                'data': {
+                    'name': netsuite_attribute.value,
+                    'is_enabled': True,
+                    'percentage': round(percentage, 2) if percentage > 0 else 0
+                }
+            })
+
+    return fyle_tax_group_payload
 
 def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_project_names: list):
     """
@@ -556,7 +577,7 @@ def sync_netsuite_attribute(netsuite_attribute_type: str, workspace_id: int):
         ns_connection.sync_classifications()
 
     elif netsuite_attribute_type == 'TAX_ITEM':
-        ns_connection.sync_taxitems()
+        ns_connection.sync_tax_items()
 
     else:
         ns_connection.sync_custom_segments()
