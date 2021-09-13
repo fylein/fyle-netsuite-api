@@ -198,13 +198,6 @@ class SyncFyleDimensionView(generics.ListCreateAPIView):
             return Response(
                 status=status.HTTP_200_OK
             )
-        except Exception : 
-            return Response(
-                data={
-                    'message': 'Error in syncing Dimensions'
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
         except FyleCredential.DoesNotExist:
             return Response(
                 data={
@@ -212,6 +205,13 @@ class SyncFyleDimensionView(generics.ListCreateAPIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
+        except Exception : 
+            return Response(
+                data={
+                    'message': 'Error in syncing Dimensions'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )    
 
 
 class RefreshFyleDimensionView(generics.ListCreateAPIView):
