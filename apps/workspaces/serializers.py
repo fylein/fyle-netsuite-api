@@ -58,7 +58,6 @@ class ConfigurationSerializer(serializers.ModelSerializer):
         :return: upserted configurations object
         """
         workspace = validated_data['workspace']
-        print(validated_data)
 
         configuration, _ = Configuration.objects.update_or_create(
             workspace_id=workspace,

@@ -274,13 +274,14 @@ def post_tax_groups_in_batches(platform_connection: FylePlatformConnector, works
 
         fyle_payload: List[Dict] = create_fyle_tax_group_payload(
             paginated_netsuite_attributes, existing_tax_items_name)
-
+        
         if fyle_payload:
-            platform_connection.connection.v1.admin.tax_groups.post(fyle_payload[0])
+            for payload in fyle_payload:
+                platform_connection.connection.v1.admin.tax_groups.post(payload)
 
             platform_connection.sync_tax_groups()
 
-        Mapping.bulk_create_mappings(paginated_netsuite_attributes, 'TAX_ITEM', 'TAX_CODE', workspace_id)
+        Mapping.bulk_create_mappings(paginated_netsuite_attributes, 'TAX_GROUP', 'TAX_ITEM', workspace_id)
 
 def auto_create_category_mappings(workspace_id):
     """
@@ -362,7 +363,7 @@ def create_fyle_tax_group_payload(netsuite_attributes: List[DestinationAttribute
                 'data': {
                     'name': netsuite_attribute.value,
                     'is_enabled': True,
-                    'percentage': round(percentage, 2) if percentage > 0 else 0
+                    'percentage': round(percentage/100, 2) if percentage > 0 else 0
                 }
             })
 

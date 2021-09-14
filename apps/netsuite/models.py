@@ -87,7 +87,7 @@ def get_tax_item_id_or_none(expense_group: ExpenseGroup, lineitem: Expense = Non
     tax_code = None
     mapping: Mapping = Mapping.objects.filter(
         source_type='TAX_GROUP',
-        destination_type='TAX_CODE',
+        destination_type='TAX_ITEM',
         source__source_id=lineitem.tax_group_id,
         workspace_id=expense_group.workspace_id
     ).first()
