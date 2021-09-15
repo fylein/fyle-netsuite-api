@@ -844,7 +844,7 @@ class NetSuiteConnector:
             'taxDetailsList': None,
             'customFieldList': None,
             'internalId': None,
-            'externalId': 'sdfgsi0odhg9sou8hgrw98erht0ew94y0'
+            'externalId': bill.external_id
         }
 
         return bill_payload
@@ -1214,7 +1214,7 @@ class NetSuiteConnector:
             'accountingBookDetailList': None,
             'customFieldList': None,
             'internalId': None,
-            'externalId': 'sdgsdgsdgsdgsdgzdfszsdfsadfsdfadfawsrasdgsqw3e5'
+            'externalId': expense_report.external_id
         }
 
         return expense_report_payload
