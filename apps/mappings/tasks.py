@@ -357,13 +357,12 @@ def create_fyle_tax_group_payload(netsuite_attributes: List[DestinationAttribute
     fyle_tax_group_payload = []
 
     for netsuite_attribute in netsuite_attributes:
-        percentage = float(netsuite_attribute.detail['tax_rate'].replace('%', ''))
         if netsuite_attribute.value not in existing_fyle_tax_groups:
             fyle_tax_group_payload.append({
                 'data': {
                     'name': netsuite_attribute.value,
                     'is_enabled': True,
-                    'percentage': round(percentage/100, 2) if percentage > 0 else 0
+                    'percentage': round(netsuite_attribute.detail['tax_rate']/100, 2)
                 }
             })
 

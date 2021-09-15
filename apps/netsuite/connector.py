@@ -603,16 +603,20 @@ class NetSuiteConnector:
             for tax_item in tax_items:
                 if not tax_item['isInactive'] and tax_item['itemId'] and tax_item['taxType'] and tax_item['rate']:
                     value = self.get_tax_code_name(tax_item['itemId'], tax_item['taxType']['name'], tax_item['rate'])
-                    attributes.append({
-                        'attribute_type': 'TAX_ITEM',
-                        'display_name': 'Tax Item',
-                        'value': value,
-                        'destination_id': tax_item['internalId'],
-                        'active': True,
-                        'detail': {
-                            'tax_rate': tax_item['rate']
-                        }
-                    })
+                    tax_rate = float(tax_item['rate'].replace('%', ''))
+
+                    if tax_rate >= 0:
+                        print(tax_rate)
+                        attributes.append({
+                            'attribute_type': 'TAX_ITEM',
+                            'display_name': 'Tax Item',
+                            'value': value,
+                            'destination_id': tax_item['internalId'],
+                            'active': True,
+                            'detail': {
+                                'tax_rate': tax_rate
+                            }
+                        })
        
             DestinationAttribute.bulk_create_or_update_destination_attributes(
                     attributes, 'TAX_ITEM', self.workspace_id, True)
@@ -707,6 +711,7 @@ class NetSuiteConnector:
                 }
             )
 
+
             line = {
                 'orderDoc': None,
                 'orderLine': None,
@@ -718,7 +723,7 @@ class NetSuiteConnector:
                     'externalId': None,
                     'type': 'account'
                 },
-                'amount': line.amount,
+                'amount': line.amount - line.tax_amount if line.tax_item_id else line.amount,
                 'memo': line.memo,
                 'grossAmt': line.amount,
                 'taxDetailsReference': None,
@@ -915,7 +920,7 @@ class NetSuiteConnector:
             'account': {
                 'internalId': line.account_id
             },
-            'amount': line.amount - (line.tax_amount if line.tax_amount else 0),
+            'amount': line.amount - line.tax_amount if line.tax_item_id else line.amount,
             'memo': line.memo,
             'grossAmt': line.amount,
             'department': {
@@ -1068,7 +1073,7 @@ class NetSuiteConnector:
             )
 
             lineitem = {
-                'amount': line.amount,
+                'amount': line.amount - line.tax_amount if line.tax_item_id else line.amount,
                 'category': {
                     'name': None,
                     'internalId': line.category,
