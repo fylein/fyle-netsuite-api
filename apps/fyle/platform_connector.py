@@ -20,7 +20,7 @@ class FylePlatformConnector:
         client_id = settings.FYLE_CLIENT_ID
         client_secret = settings.FYLE_CLIENT_SECRET
         token_url = settings.FYLE_TOKEN_URI
-        server_url = 'https://staging.fyle.tech/platform/v1'
+        server_url = settings.PLATFORM_SERVER_URL
         self.workspace_id = workspace_id
 
         self.connection = Platform(
