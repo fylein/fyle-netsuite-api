@@ -111,13 +111,6 @@ class NetSuiteConnector:
                         'destination_id': account['internalId']
                     })
 
-                    attributes['ccc_account'].append({
-                        'attribute_type': 'CCC_ACCOUNT',
-                        'display_name': 'Credit Card Account',
-                        'value': unidecode.unidecode(u'{0}'.format(account['acctName'])).replace('/', '-'),
-                        'destination_id': account['internalId']
-                    })
-
                 if account['acctType'] == '_bank' or account['acctType'] == '_creditCard':
                     attributes['vendor_payment_account'].append({
                         'attribute_type': 'VENDOR_PAYMENT_ACCOUNT',
@@ -154,16 +147,6 @@ class NetSuiteConnector:
                     {
                         'attribute_type': 'EXPENSE_CATEGORY',
                         'display_name': 'Expense Category',
-                        'value': unidecode.unidecode(u'{0}'.format(category['name'])).replace('/', '-'),
-                        'destination_id': category['internalId'],
-                        'detail': detail
-                    }
-                )
-
-                attributes['ccc_expense_category'].append(
-                    {
-                        'attribute_type': 'CCC_EXPENSE_CATEGORY',
-                        'display_name': 'Credit Card Expense Category',
                         'value': unidecode.unidecode(u'{0}'.format(category['name'])).replace('/', '-'),
                         'destination_id': category['internalId'],
                         'detail': detail

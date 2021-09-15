@@ -62,6 +62,7 @@ class ConfigurationSerializer(serializers.ModelSerializer):
         configuration, _ = Configuration.objects.update_or_create(
             workspace_id=workspace,
             defaults={
+                'employee_field_mapping': validated_data['employee_field_mapping'],
                 'reimbursable_expenses_object': validated_data['reimbursable_expenses_object'],
                 'corporate_credit_card_expenses_object': validated_data['corporate_credit_card_expenses_object'],
                 'sync_fyle_to_netsuite_payments': validated_data['sync_fyle_to_netsuite_payments'],
