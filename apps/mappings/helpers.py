@@ -16,7 +16,7 @@ def schedule_or_delete_auto_mapping_tasks(configuration: Configuration):
     schedule_auto_map_employees(
         employee_mapping_preference=configuration.auto_map_employees, workspace_id=int(configuration.workspace_id))
     schedule_tax_groups_creation(
-        import_tax_items=configuration.import_taxitems, workspace_id=int(configuration.workspace_id))
+        import_tax_items=configuration.import_tax_items, workspace_id=int(configuration.workspace_id))
 
     # Delete schedule if auto map is turned off
     if not configuration.auto_map_employees:

@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name='configuration',
-            name='import_taxitems',
+            name='import_tax_items',
             field=models.BooleanField(default=False, help_text='Auto import tax items to Fyle'),
         ),
     ]
