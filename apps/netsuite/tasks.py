@@ -697,18 +697,24 @@ def __validate_category_mapping(expense_group: ExpenseGroup, configuration: Conf
         category = lineitem.category if lineitem.category == lineitem.sub_category else '{0} / {1}'.format(
             lineitem.category, lineitem.sub_category)
 
-        account = CategoryMapping.objects.filter(
+        category_mapping = CategoryMapping.objects.filter(
             source_category__value=category,
             workspace_id=expense_group.workspace_id
         ).first()
 
-        if account:
-            if configuration.reimbursable_expenses_object == 'EXPENSE REPORT':
-                account = account.destination_expense_head
+        if category_mapping:
+            if expense_group.fund_source == 'PERSONAL':
+                if configuration.reimbursable_expenses_object == 'EXPENSE REPORT':
+                    category_mapping = category_mapping.destination_expense_head
+                else:
+                    category_mapping = category_mapping.destination_account
             else:
-                account = account.destination_account
+                if configuration.corporate_credit_card_expenses_object == 'EXPENSE REPORT':
+                    category_mapping = category_mapping.destination_expense_head
+                else:
+                    category_mapping = category_mapping.destination_account
 
-        if not account:
+        if not category_mapping:
             bulk_errors.append({
                 'row': row,
                 'expense_group_id': expense_group.id,
