@@ -584,7 +584,10 @@ class NetSuiteConnector:
                 'attribute_type': 'SUBSIDIARY',
                 'display_name': 'Subsidiary',
                 'value': subsidiary['name'],
-                'destination_id': subsidiary['internalId']
+                'destination_id': subsidiary['internalId'],
+                'detail': {
+                    'country': subsidiary['country']
+                }
             })
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(
