@@ -76,6 +76,11 @@ class WorkspaceSchedule(models.Model):
         db_table = 'workspace_schedules'
 
 
+EMPLOYEE_FIELD_MAPPING_CHOICES = (
+    ('EMPLOYEE', 'EMPLOYEE'),
+    ('VENDOR', 'VENDOR')
+)
+
 REIMBURSABLE_EXPENSES_OBJECT_CHOICES = (
     ('EXPENSE REPORT', 'EXPENSE REPORT'),
     ('JOURNAL ENTRY', 'JOURNAL ENTRY'),
@@ -102,7 +107,10 @@ class Configuration(models.Model):
     """
     id = models.AutoField(primary_key=True, help_text='Unique Id to identify a workspace')
     workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
-
+    # TODO: remove null=True later
+    employee_field_mapping = models.CharField(
+        max_length=50, choices=EMPLOYEE_FIELD_MAPPING_CHOICES, help_text='Employee field mapping', null=True
+    )
     reimbursable_expenses_object = models.CharField(
         max_length=50, choices=REIMBURSABLE_EXPENSES_OBJECT_CHOICES, help_text='Reimbursable Expenses type'
     )
@@ -111,7 +119,7 @@ class Configuration(models.Model):
         help_text='Corporate Card Expenses type', null=True
     )
     import_categories = models.BooleanField(default=False, help_text='Auto import categories to Fyle')
-    import_taxitems = models.BooleanField(default=False, help_text='Auto import tax items to Fyle')
+    import_tax_items = models.BooleanField(default=False, help_text='Auto import tax items to Fyle')
     import_projects = models.BooleanField(default=False, help_text='Auto import projects to Fyle')
     sync_fyle_to_netsuite_payments = models.BooleanField(
         default=False, help_text='Auto Sync Payments from Fyle to Netsuite'

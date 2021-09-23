@@ -110,12 +110,6 @@ BEGIN
     RAISE NOTICE 'Deleted % expense_groups_expenses', rcount;
 
     DELETE
-    FROM expense_groups eg
-    WHERE eg.workspace_id = _workspace_id;
-    GET DIAGNOSTICS rcount = ROW_COUNT;
-    RAISE NOTICE 'Deleted % expense_groups', rcount;
-
-    DELETE
     FROM vendor_payments vp
     WHERE vp.id IN (
         SELECT vpl.vendor_payment_id FROM vendor_payment_lineitems vpl WHERE vpl.expense_group_id IN (
@@ -134,10 +128,28 @@ BEGIN
     RAISE NOTICE 'Deleted % vendor_payment_lineitems', rcount;
 
     DELETE
+    FROM expense_groups eg
+    WHERE eg.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % expense_groups', rcount;
+
+    DELETE
     FROM mappings m
     WHERE m.workspace_id = _workspace_id;
     GET DIAGNOSTICS rcount = ROW_COUNT;
     RAISE NOTICE 'Deleted % mappings', rcount;
+
+    DELETE
+    FROM employee_mappings em
+    WHERE em.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % employee_mappings', rcount;
+
+    DELETE
+    FROM category_mappings cm
+    WHERE cm.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % category_mappings', rcount;
 
     DELETE
     FROM mapping_settings ms

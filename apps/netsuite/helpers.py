@@ -3,6 +3,8 @@ import logging
 
 from django.utils.module_loading import import_string
 
+from rest_framework.exceptions import AuthenticationFailed
+
 from apps.workspaces.models import Configuration, Workspace, NetSuiteCredentials
 
 from .tasks import schedule_vendor_payment_creation, schedule_netsuite_objects_status_sync, \
