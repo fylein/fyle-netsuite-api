@@ -22,14 +22,20 @@ def add_expense_id_to_expense_group_settings(workspace_id: int):
     expense_group_settings.save()
 
 
-def update_import_card_credits_flag(workspace_id: int):
+def update_import_card_credits_flag(corporate_credit_card_expenses_object: str, workspace_id: int) -> None:
     """
     set import_card_credits flag to True in ExpenseGroupSettings
+    :param corporate_credit_card_expenses_object: Corporate credit card expenses object
     :param workspace_id: Workspace id
     return: None
     """
     expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=workspace_id)
-    expense_group_settings.import_card_credits = True
+
+    if corporate_credit_card_expenses_object == 'EXPENSE REPORT' and not expense_group_settings.import_card_credits:
+        expense_group_settings.import_card_credits = True
+    elif corporate_credit_card_expenses_object != 'EXPENSE REPORT' and expense_group_settings.import_card_credits:
+        expense_group_settings.import_card_credits = False
+
     expense_group_settings.save()
 
 
