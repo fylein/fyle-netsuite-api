@@ -30,13 +30,15 @@ def update_import_card_credits_flag(corporate_credit_card_expenses_object: str, 
     return: None
     """
     expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=workspace_id)
+    import_card_credits = None
 
     if corporate_credit_card_expenses_object == 'EXPENSE REPORT' and not expense_group_settings.import_card_credits:
-        expense_group_settings.import_card_credits = True
+        import_card_credits = True
     elif corporate_credit_card_expenses_object != 'EXPENSE REPORT' and expense_group_settings.import_card_credits:
-        expense_group_settings.import_card_credits = False
+        import_card_credits = False
 
-    expense_group_settings.save()
+    if import_card_credits and import_card_credits != expense_group_settings.import_card_credits:
+        expense_group_settings.save()
 
 
 def check_interval_and_sync_dimension(workspace: Workspace, refresh_token: str) -> bool:
