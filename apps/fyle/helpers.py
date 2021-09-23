@@ -38,6 +38,7 @@ def update_import_card_credits_flag(corporate_credit_card_expenses_object: str, 
         import_card_credits = False
 
     if import_card_credits is not None and import_card_credits != expense_group_settings.import_card_credits:
+        expense_group_settings.import_card_credits = import_card_credits
         expense_group_settings.save()
 
 
