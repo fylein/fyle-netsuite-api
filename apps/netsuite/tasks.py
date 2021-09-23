@@ -21,7 +21,7 @@ from apps.fyle.connector import FyleConnector
 from apps.fyle.models import ExpenseGroup, Expense, Reimbursement
 from apps.mappings.models import GeneralMapping, SubsidiaryMapping
 from apps.tasks.models import TaskLog
-from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configuration, Workspace
+from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configuration
 
 from .models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, JournalEntryLineItem, \
     VendorPayment, VendorPaymentLineitem, CreditCardCharge, CreditCardChargeLineItem
@@ -38,7 +38,7 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense_id: str, ex
     :param expense_group: Integration Expense group
     """
     workspace_id = expense_group.workspace_id
-    workspace = Workspace.objects.get(id=workspace_id)
+    workspace = expense_group.workspace
 
     try:
         fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
