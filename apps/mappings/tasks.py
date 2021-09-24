@@ -326,28 +326,20 @@ def post_tax_groups_in_batches(platform_connection: FylePlatformConnector, works
     existing_tax_items_name = ExpenseAttribute.objects.filter(
         attribute_type='TAX_GROUP', workspace_id=workspace_id).values_list('value', flat=True)
 
-    netsuite_attributes_count = DestinationAttribute.objects.filter(
-        attribute_type='TAX_ITEM', workspace_id=workspace_id).count()
+    netsuite_attributes = DestinationAttribute.objects.filter(
+        attribute_type='TAX_ITEM', workspace_id=workspace_id).order_by('value', 'id')
 
-    page_size = 200
+    netsuite_attributes = remove_duplicates(netsuite_attributes)
 
-    for offset in range(0, netsuite_attributes_count, page_size):
-        limit = offset + page_size
-        paginated_netsuite_attributes = DestinationAttribute.objects.filter(
-            attribute_type='TAX_ITEM', workspace_id=workspace_id).order_by('value', 'id')[offset:limit]
-
-        paginated_netsuite_attributes = remove_duplicates(paginated_netsuite_attributes)
-
-        fyle_payload: List[Dict] = create_fyle_tax_group_payload(
-            paginated_netsuite_attributes, existing_tax_items_name)
+    fyle_payload: List[Dict] = create_fyle_tax_group_payload(
+        netsuite_attributes, existing_tax_items_name)
         
-        if fyle_payload:
-            for payload in fyle_payload:
-                platform_connection.connection.v1.admin.tax_groups.post(payload)
+    if fyle_payload:
+        for payload in fyle_payload:
+            platform_connection.connection.v1.admin.tax_groups.post(payload)
 
-            platform_connection.sync_tax_groups()
-
-        Mapping.bulk_create_mappings(paginated_netsuite_attributes, 'TAX_GROUP', 'TAX_ITEM', workspace_id)
+    platform_connection.sync_tax_groups()
+    Mapping.bulk_create_mappings(netsuite_attributes, 'TAX_GROUP', 'TAX_ITEM', workspace_id)
 
 def auto_create_category_mappings(workspace_id):
     """

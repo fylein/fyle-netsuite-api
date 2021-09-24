@@ -9,6 +9,8 @@ from fyle_accounting_mappings.models import ExpenseAttribute
 
 import requests
 from apps.fyle.models import Reimbursement, ExpenseGroupSettings
+from apps.workspaces.models import FyleCredential, Workspace
+from .connector import FyleConnector
 
 logger = logging.getLogger(__name__)
 
@@ -16,12 +18,15 @@ class FylePlatformConnector:
     """
     Fyle Platform Utility Function
     """
+
     def __init__(self, refresh_token, workspace_id=None):
+        self.workspace_id = workspace_id
+        cluster_domain = self.get_or_store_cluster_domain()
+
         client_id = settings.FYLE_CLIENT_ID
         client_secret = settings.FYLE_CLIENT_SECRET
         token_url = settings.FYLE_TOKEN_URI
-        server_url = settings.PLATFORM_SERVER_URL
-        self.workspace_id = workspace_id
+        server_url = '{}/platform/v1'.format(cluster_domain)
 
         self.connection = Platform(
             server_url=server_url,
@@ -30,6 +35,20 @@ class FylePlatformConnector:
             client_secret=client_secret,
             refresh_token=refresh_token
         )
+
+    def get_or_store_cluster_domain(self):
+        workspace = Workspace.objects.filter(pk=self.workspace_id).first()
+        if workspace.cluster_domain:
+            return workspace.cluster_domain
+        else:
+            fyle_credentials = FyleCredential.objects.get(workspace_id=self.workspace_id)
+            fyle_connector = FyleConnector(fyle_credentials.refresh_token, self.workspace_id)
+
+            cluster_domain = fyle_connector.get_cluster_domain()['cluster_domain']
+            workspace.cluster_domain = cluster_domain
+            workspace.save()
+
+            return cluster_domain
 
     def sync_tax_groups(self):
         """
