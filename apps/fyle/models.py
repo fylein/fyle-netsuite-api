@@ -274,6 +274,7 @@ class ExpenseGroup(models.Model):
     fund_source = models.CharField(max_length=255, help_text='Expense fund source')
     expenses = models.ManyToManyField(Expense, help_text="Expenses under this Expense Group")
     description = JSONField(max_length=255, help_text='Description', null=True)
+    response_logs = JSONField(help_text='Reponse log of the export', null=True)
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     exported_at = models.DateTimeField(help_text='Exported at', null=True)
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
