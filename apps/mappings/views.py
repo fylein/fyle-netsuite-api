@@ -93,7 +93,6 @@ class PostCountryView(generics.CreateAPIView):
             netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=kwargs['workspace_id'])
             
             country_name = netsuite_connection.connection.subsidiaries.get(internalId=subsidiary_mapping.internal_id)['country']
-            print(country_name)
             subsidiary_mapping.country_name = country_name
             subsidiary_mapping.save()
             

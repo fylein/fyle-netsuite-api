@@ -635,9 +635,9 @@ class ExpenseReport(models.Model):
                 'location_id': general_mappings.location_id if general_mappings.location_level in [
                     'TRANSACTION_BODY', 'ALL'] else None,
                 'subsidiary_id': subsidiary_mappings.internal_id,
-                'memo': "Reimbursable expenses by {0}".format(description.get('employee_email')) if
+                'memo': 'Reimbursable expenses by {0}'.format(description.get('employee_email')) if
                 expense_group.fund_source == 'PERSONAL' else
-                "Credit card expenses by {0}".format(description.get('employee_email')),
+                'Credit card expenses by {0}'.format(description.get('employee_email')),
                 'transaction_date': get_transaction_date(expense_group),
                 'external_id': 'report {} - {}'.format(expense_group.id, description.get('employee_email'))
             }

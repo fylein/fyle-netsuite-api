@@ -75,10 +75,3 @@ class FylePlatformConnector:
 
         ExpenseAttribute.bulk_create_or_update_expense_attributes(
             tax_attributes, 'TAX_GROUP', self.workspace_id)
-
-    def sync_platform_dimensions(self):
-        try:
-            self.sync_tax_groups()
-        except Exception as exception:
-            logger.exception(exception)
-

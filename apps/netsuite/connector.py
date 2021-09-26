@@ -57,8 +57,7 @@ class NetSuiteConnector:
     
     @staticmethod
     def get_tax_code_name(item_id, tax_type, rate):
-        tax_code_name = '{0}: {1} @{2}'.format(tax_type, item_id, rate)
-        return tax_code_name
+        return '{0}: {1} @{2}'.format(tax_type, item_id, rate)
 
     def sync_accounts(self):
         """
@@ -539,15 +538,15 @@ class NetSuiteConnector:
                 'type': None
             },
             'workCalendar': {
-                "name": None,
-                "internalId": None,
-                "externalId": None,
-                "type": None
+                'name': None,
+                'internalId': None,
+                'externalId': None,
+                'type': None
             },
             'defaultExpenseReportCurrency': {
-                "internalId": currency.destination_id if currency else '1',
-                "externalId": None,
-                "type": "currency"
+                'internalId': currency.destination_id if currency else '1',
+                'externalId': None,
+                'type': 'currency'
             },
             'externalId': employee.detail['user_id']
         }
@@ -592,7 +591,6 @@ class NetSuiteConnector:
                     tax_rate = float(tax_item['rate'].replace('%', ''))
 
                     if tax_rate >= 0:
-                        print(tax_rate)
                         attributes.append({
                             'attribute_type': 'TAX_ITEM',
                             'display_name': 'Tax Item',
@@ -742,11 +740,11 @@ class NetSuiteConnector:
                 'projectTask': None,
                 'tax1Amt': None,
                 'taxAmount': line.tax_amount,
-                "taxCode":{
-                    "name":None,
-                    "internalId": line.tax_item_id,
-                    "externalId":None,
-                    "type":"classification"
+                'taxCode':{
+                    'name': None,
+                    'internalId': line.tax_item_id,
+                    'externalId': None,
+                    'type': 'classification'
                 },                
                 'taxRate1': None,
                 'taxRate2': None,
@@ -924,11 +922,11 @@ class NetSuiteConnector:
             'customFieldList': netsuite_custom_segments,
             'isBillable': line.billable,
             'taxAmount': line.tax_amount,
-            "taxCode":{
-                "name":None,
-                "internalId": line.tax_item_id,
-                "externalId":None,
-                "type":"classification"
+            'taxCode':{
+                'name': None,
+                'internalId': line.tax_item_id,
+                'externalId': None,
+                'type': 'classification'
             },     
         }
         lines.append(line)
@@ -1112,11 +1110,11 @@ class NetSuiteConnector:
                 'receipt': None,
                 'refNumber': None,
                 'tax1Amt': line.tax_amount,
-                "taxCode":{
-                    "name":None,
-                    "internalId": line.tax_item_id,
-                    "externalId":None,
-                    "type":"classification"
+                'taxCode':{
+                    'name':None,
+                    'internalId': line.tax_item_id,
+                    'externalId':None,
+                    'type':'classification'
                 },
                 'taxRate1': None,
                 'taxRate2': None
@@ -1190,6 +1188,7 @@ class NetSuiteConnector:
             'amount': None,
             'memo': expense_report.memo,
             'complete': None,
+            'supervisorApproval': True,
             'accountingApproval': True,
             'useMultiCurrency': None,
             'tax2Amt': None,
@@ -1335,11 +1334,11 @@ class NetSuiteConnector:
                 'taxAccount': None,
                 'taxBasis': None,
                 'tax1Amt': line.tax_amount,
-                "taxCode":{
-                    "name":None,
-                    "internalId": line.tax_item_id,
-                    "externalId":None,
-                    "type":"classification"
+                'taxCode':{
+                    'name':None,
+                    'internalId': line.tax_item_id,
+                    'externalId':None,
+                    'type':'classification'
                 },
                 'taxRate1': None,
                 'totalAmount': None,

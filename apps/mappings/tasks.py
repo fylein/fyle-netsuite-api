@@ -266,8 +266,8 @@ def create_category_mappings(destination_attributes: List[DestinationAttribute],
 
 def auto_create_tax_group_mappings(workspace_id):
     """
-    Create TaxGroups Mappings
-    :return: mappings
+    Create Tax Groups Mappings
+    :return: None
     """
     try:
         fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
@@ -309,7 +309,7 @@ def schedule_tax_groups_creation(import_tax_items, workspace_id):
             args='{}'.format(workspace_id),
             defaults={
                 'schedule_type': Schedule.MINUTES,
-                'minutes': 6 * 60,
+                'minutes': 24 * 60,
                 'next_run': datetime.now()
             }
         )

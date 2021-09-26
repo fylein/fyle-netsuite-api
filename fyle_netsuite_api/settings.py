@@ -253,8 +253,6 @@ FYLE_TOKEN_URI = os.environ.get('FYLE_TOKEN_URI')
 FYLE_CLIENT_ID = os.environ.get('FYLE_CLIENT_ID')
 FYLE_CLIENT_SECRET = os.environ.get('FYLE_CLIENT_SECRET')
 FYLE_BASE_URL = os.environ.get('FYLE_BASE_URL')
-PLATFORM_SERVER_URL = os.environ.get('PLATFORM_SERVER_URL')
-
 
 # Netsuite Settings
 NS_CONSUMER_KEY = os.environ.get('NS_CONSUMER_KEY')
