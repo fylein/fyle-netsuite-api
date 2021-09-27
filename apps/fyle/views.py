@@ -13,7 +13,6 @@ from apps.workspaces.models import FyleCredential, Workspace
 from .tasks import schedule_expense_group_creation
 from .helpers import check_interval_and_sync_dimension, sync_dimensions
 from .models import Expense, ExpenseGroup, ExpenseGroupSettings
-from .platform_connector import FylePlatformConnector
 from .serializers import ExpenseGroupSerializer, ExpenseSerializer, ExpenseFieldSerializer, \
     ExpenseGroupSettingsSerializer
 

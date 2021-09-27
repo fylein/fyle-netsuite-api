@@ -61,17 +61,16 @@ class FylePlatformConnector:
         tax_attributes = []
 
         for response in generator:
-            if response.get('data'):
-                for tax_group in response['data']:
-                    tax_attributes.append({
-                        'attribute_type': 'TAX_GROUP',
-                        'display_name': 'Tax Group',
-                        'value': tax_group['name'],
-                        'source_id': tax_group['id'],
-                        'detail': {
-                            'tax_rate': tax_group['percentage']
-                        }
-                    })
+            for tax_group in response['data']:
+                tax_attributes.append({
+                    'attribute_type': 'TAX_GROUP',
+                    'display_name': 'Tax Group',
+                    'value': tax_group['name'],
+                    'source_id': tax_group['id'],
+                    'detail': {
+                        'tax_rate': tax_group['percentage']
+                    }
+                })
 
         ExpenseAttribute.bulk_create_or_update_expense_attributes(
             tax_attributes, 'TAX_GROUP', self.workspace_id)
