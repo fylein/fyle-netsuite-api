@@ -55,7 +55,7 @@ def sync_dimensions(ns_credentials: NetSuiteCredentials, workspace_id: int, dime
     if not dimensions:
         dimensions = [
             'expense_categories', 'locations', 'vendors', 'currencies', 'classifications',
-            'departments', 'employees', 'accounts', 'custom_segments', 'projects', 'customers'
+            'departments', 'employees', 'accounts', 'custom_segments', 'projects', 'customers', 'tax_items'
         ]
 
     for dimension in dimensions:

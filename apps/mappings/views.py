@@ -6,6 +6,8 @@ from .helpers import validate_and_trigger_auto_map_employees
 from .serializers import GeneralMappingSerializer, SubsidiaryMappingSerializer
 from .models import GeneralMapping, SubsidiaryMapping
 
+from apps.netsuite.connector import NetSuiteConnector
+from apps.workspaces.models import NetSuiteCredentials
 
 class SubsidiaryMappingView(generics.ListCreateAPIView):
     """
@@ -73,3 +75,36 @@ class AutoMapEmployeeView(generics.CreateAPIView):
         return Response(
             status=status.HTTP_200_OK
         )
+
+
+class PostCountryView(generics.CreateAPIView):
+    """
+    Post Country in Subsdiary Mapping
+    """
+
+    serializer_class = SubsidiaryMappingSerializer
+
+    def post(self, request, *args, **kwargs):
+
+        try:
+            subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=kwargs['workspace_id'])
+                                
+            netsuite_credentials: NetSuiteCredentials = NetSuiteCredentials.objects.get(workspace_id=kwargs['workspace_id'])
+            netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=kwargs['workspace_id'])
+            
+            country_name = netsuite_connection.connection.subsidiaries.get(internalId=subsidiary_mapping.internal_id)['country']
+            subsidiary_mapping.country_name = country_name
+            subsidiary_mapping.save()
+            
+            return Response(
+                data=self.serializer_class(subsidiary_mapping).data,
+                status=status.HTTP_200_OK
+            )
+
+        except SubsidiaryMapping.DoesNotExist:
+            return Response(
+                {
+                    'message': 'Subsidiary mappings do not exist for the workspace'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )

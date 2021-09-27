@@ -105,7 +105,7 @@ class FyleFieldsView(generics.ListAPIView):
     serializer_class = ExpenseFieldSerializer
 
     def get(self, request, *args, **kwargs):
-        default_attributes = ['EMPLOYEE', 'CATEGORY', 'PROJECT', 'COST_CENTER']
+        default_attributes = ['EMPLOYEE', 'CATEGORY', 'PROJECT', 'COST_CENTER', 'TAX_GROUP']
 
         attributes = ExpenseAttribute.objects.filter(
             ~Q(attribute_type__in=default_attributes),
@@ -246,4 +246,4 @@ class RefreshFyleDimensionView(generics.ListCreateAPIView):
                     'message': 'Error in refreshing Dimensions'
                 },
                 status=status.HTTP_400_BAD_REQUEST
-            )    
+            )
