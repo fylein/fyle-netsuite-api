@@ -54,6 +54,10 @@ class NetSuiteConnector:
         value = name.replace(u'\xa0', ' ')
         value = value.replace('/', '-')
         return value
+    
+    @staticmethod
+    def get_tax_code_name(item_id, tax_type, rate):
+        return '{0}: {1} @{2}'.format(tax_type, item_id, rate)
 
     def sync_accounts(self):
         """
@@ -534,15 +538,15 @@ class NetSuiteConnector:
                 'type': None
             },
             'workCalendar': {
-                "name": None,
-                "internalId": None,
-                "externalId": None,
-                "type": None
+                'name': None,
+                'internalId': None,
+                'externalId': None,
+                'type': None
             },
             'defaultExpenseReportCurrency': {
-                "internalId": currency.destination_id if currency else '1',
-                "externalId": None,
-                "type": "currency"
+                'internalId': currency.destination_id if currency else '1',
+                'externalId': None,
+                'type': 'currency'
             },
             'externalId': employee.detail['user_id']
         }
@@ -562,11 +566,44 @@ class NetSuiteConnector:
                 'attribute_type': 'SUBSIDIARY',
                 'display_name': 'Subsidiary',
                 'value': subsidiary['name'],
-                'destination_id': subsidiary['internalId']
+                'destination_id': subsidiary['internalId'],
+                'detail': {
+                    'country': subsidiary['country']
+                }
             })
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(
             subsidiary_attributes, 'SUBSIDIARY', self.workspace_id, True)
+
+        return []
+    
+    def sync_tax_items(self):
+        """
+        Sync Tax Details
+        """
+        tax_items_generator = self.connection.tax_items.get_all_generator()
+
+        for tax_items in tax_items_generator:
+            attributes = []
+            for tax_item in tax_items:
+                if not tax_item['isInactive'] and tax_item['itemId'] and tax_item['taxType'] and tax_item['rate']:
+                    value = self.get_tax_code_name(tax_item['itemId'], tax_item['taxType']['name'], tax_item['rate'])
+                    tax_rate = float(tax_item['rate'].replace('%', ''))
+
+                    if tax_rate >= 0:
+                        attributes.append({
+                            'attribute_type': 'TAX_ITEM',
+                            'display_name': 'Tax Item',
+                            'value': value,
+                            'destination_id': tax_item['internalId'],
+                            'active': True,
+                            'detail': {
+                                'tax_rate': tax_rate
+                            }
+                        })
+       
+            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                    attributes, 'TAX_ITEM', self.workspace_id, True)
 
         return []
 
@@ -658,6 +695,7 @@ class NetSuiteConnector:
                 }
             )
 
+
             line = {
                 'orderDoc': None,
                 'orderLine': None,
@@ -669,11 +707,9 @@ class NetSuiteConnector:
                     'externalId': None,
                     'type': 'account'
                 },
-                'amount': line.amount,
-                'taxAmount': None,
-                'tax1Amt': None,
+                'amount': line.amount - line.tax_amount if line.tax_item_id else line.amount,
                 'memo': line.memo,
-                'grossAmt': None,
+                'grossAmt': line.amount,
                 'taxDetailsReference': None,
                 'department': {
                     'name': None,
@@ -702,7 +738,14 @@ class NetSuiteConnector:
                 'customFieldList': netsuite_custom_segments,
                 'isBillable': line.billable,
                 'projectTask': None,
-                'taxCode': None,
+                'tax1Amt': None,
+                'taxAmount': line.tax_amount,
+                'taxCode':{
+                    'name': None,
+                    'internalId': line.tax_item_id,
+                    'externalId': None,
+                    'type': 'classification'
+                },                
                 'taxRate1': None,
                 'taxRate2': None,
                 'amortizationSched': None,
@@ -861,8 +904,9 @@ class NetSuiteConnector:
             'account': {
                 'internalId': line.account_id
             },
-            'amount': line.amount,
+            'amount': line.amount - line.tax_amount if line.tax_item_id else line.amount,
             'memo': line.memo,
+            'grossAmt': line.amount,
             'department': {
                 'internalId': line.department_id
             },
@@ -877,6 +921,13 @@ class NetSuiteConnector:
             },
             'customFieldList': netsuite_custom_segments,
             'isBillable': line.billable,
+            'taxAmount': line.tax_amount,
+            'taxCode':{
+                'name': None,
+                'internalId': line.tax_item_id,
+                'externalId': None,
+                'type': 'classification'
+            },     
         }
         lines.append(line)
 
@@ -1005,8 +1056,8 @@ class NetSuiteConnector:
                 }
             )
 
-            line = {
-                'amount': line.amount,
+            lineitem = {
+                'amount': line.amount - line.tax_amount if line.tax_item_id else line.amount,
                 'category': {
                     'name': None,
                     'internalId': line.category,
@@ -1049,7 +1100,7 @@ class NetSuiteConnector:
                 'expenseDate': line.transaction_date,
                 'expMediaItem': None,
                 'foreignAmount': expense.foreign_amount if expense.foreign_amount else None,
-                'grossAmt': None,
+                'grossAmt': line.amount,
                 'isBillable': line.billable,
                 'isNonReimbursable': None,
                 'line': None,
@@ -1058,13 +1109,18 @@ class NetSuiteConnector:
                 'rate': None,
                 'receipt': None,
                 'refNumber': None,
-                'tax1Amt': None,
-                'taxCode': None,
+                'tax1Amt': line.tax_amount,
+                'taxCode':{
+                    'name':None,
+                    'internalId': line.tax_item_id,
+                    'externalId':None,
+                    'type':'classification'
+                },
                 'taxRate1': None,
                 'taxRate2': None
             }
 
-            lines.append(line)
+            lines.append(lineitem)
 
         return lines
 
@@ -1275,10 +1331,15 @@ class NetSuiteConnector:
                 'scheduleNum': None,
                 'startDate': None,
                 'tax1Acct': None,
-                'tax1Amt': None,
                 'taxAccount': None,
                 'taxBasis': None,
-                'taxCode': None,
+                'tax1Amt': line.tax_amount,
+                'taxCode':{
+                    'name':None,
+                    'internalId': line.tax_item_id,
+                    'externalId':None,
+                    'type':'classification'
+                },
                 'taxRate1': None,
                 'totalAmount': None,
             }

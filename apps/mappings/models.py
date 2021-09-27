@@ -12,6 +12,7 @@ class SubsidiaryMapping(models.Model):
     """
     id = models.AutoField(primary_key=True)
     subsidiary_name = models.CharField(max_length=255, help_text='NetSuite Subsidiary name')
+    country_name = models.CharField(max_length=255, help_text='Netsuite Subsidiary Country', null=True)
     internal_id = models.CharField(max_length=255, help_text='NetSuite Subsidiary id')
     workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')
