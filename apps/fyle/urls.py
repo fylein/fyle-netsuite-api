@@ -4,7 +4,7 @@ from django.urls import path
 
 from .views import ExpenseGroupView, ExpenseGroupByIdView, ExpenseGroupScheduleView, FyleFieldsView, ExpenseView,\
     ExpenseAttributesView, ExpenseGroupSettingsView, SyncFyleDimensionView, RefreshFyleDimensionView,\
-    ExpenseGroupCountView, TaxGroupsView
+    ExpenseGroupCountView
 
 expense_groups_paths = [
     path('expense_groups/', ExpenseGroupView.as_view(), name='expense-groups'),
