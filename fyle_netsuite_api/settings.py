@@ -14,6 +14,8 @@ import os
 
 import dj_database_url
 
+from .sentry import Sentry
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -153,7 +155,11 @@ LOGGING = {
             'handlers': ['debug_logs'],
             'level': 'ERROR',
             'propagate': False
-        }
+        },
+        'django_q': {
+            'handlers': ['debug_logs'],
+            'propagate': True,
+        },
     }
 }
 
@@ -179,6 +185,9 @@ Q_CLUSTER = {
     'timeout': 3600,
     'catch_up': False
 }
+
+# Sentry
+Sentry.init()
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
@@ -260,3 +269,9 @@ NS_CONSUMER_SECRET = os.environ.get('NS_CONSUMER_SECRET')
 CACHE_EXPIRY = 3600
 
 CORS_ORIGIN_ALLOW_ALL = True
+
+CORS_ALLOW_HEADERS = [
+    'sentry-trace',
+    'authorization',
+    'content-type'
+]
