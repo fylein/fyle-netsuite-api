@@ -315,7 +315,7 @@ def schedule_tax_groups_creation(import_tax_items, workspace_id):
         )
     else:
         schedule: Schedule = Schedule.objects.filter(
-            func='apps.mappings.tasks.auto_create_tax_groups_mappings',
+            func='apps.mappings.tasks.auto_create_tax_group_mappings',
             args='{}'.format(workspace_id),
         ).first()
 
