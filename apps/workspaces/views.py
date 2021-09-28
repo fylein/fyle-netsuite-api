@@ -64,7 +64,7 @@ class WorkspaceView(viewsets.ViewSet):
         """
 
         auth_tokens = AuthToken.objects.get(user__user_id=request.user)
-        fyle_user = auth_utils.get_fyle_user(auth_tokens.refresh_token)
+        fyle_user = auth_utils.get_fyle_user(auth_tokens.refresh_token, origin_address=None)
         org_name = fyle_user['org_name']
         org_id = fyle_user['org_id']
 
@@ -235,7 +235,7 @@ class ConnectFyleView(viewsets.ViewSet):
             workspace = Workspace.objects.get(id=kwargs['workspace_id'])
 
             refresh_token = auth_utils.generate_fyle_refresh_token(authorization_code)['refresh_token']
-            fyle_user = auth_utils.get_fyle_user(refresh_token)
+            fyle_user = auth_utils.get_fyle_user(refresh_token, origin_address=None)
             org_id = fyle_user['org_id']
             org_name = fyle_user['org_name']
 
