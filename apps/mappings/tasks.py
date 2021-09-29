@@ -419,7 +419,7 @@ def create_fyle_tax_group_payload(netsuite_attributes: List[DestinationAttribute
                 'data': {
                     'name': netsuite_attribute.value,
                     'is_enabled': True,
-                    'percentage': round(netsuite_attribute.detail['tax_rate']/100, 2)
+                    'percentage': round((netsuite_attribute.detail['tax_rate']/100), 2)
                 }
             })
 
