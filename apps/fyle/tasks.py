@@ -13,6 +13,7 @@ from .models import Expense, ExpenseGroup, ExpenseGroupSettings
 from .connector import FyleConnector
 
 logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 
 def schedule_expense_group_creation(workspace_id: int):
@@ -101,4 +102,4 @@ def create_expense_groups(workspace_id: int, fund_source: List[str], task_log: T
         }
         task_log.status = 'FATAL'
         task_log.save()
-        logger.exception('Something unexpected happened workspace_id: %s %s', task_log.workspace_id, task_log.detail)
+        logger.info('Something unexpected happened workspace_id: %s %s', task_log.workspace_id, task_log.detail)

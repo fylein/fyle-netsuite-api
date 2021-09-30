@@ -28,6 +28,7 @@ from .models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, Jo
 from .connector import NetSuiteConnector
 
 logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 netsuite_paid_state = 'Paid In Full'
 netsuite_error_message = 'NetSuite System Error'
@@ -191,7 +192,7 @@ def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_conn
 
 
 def __handle_netsuite_connection_error(expense_group: ExpenseGroup, task_log: TaskLog) -> None:
-    logger.exception(
+    logger.info(
         'NetSuite Credentials not found for workspace_id %s / expense group %s',
         expense_group.id,
         expense_group.workspace_id
@@ -284,7 +285,7 @@ def create_bill(expense_group, task_log_id):
         task_log.save()
 
     except BulkError as exception:
-        logger.error(exception.response)
+        logger.info(exception.response)
         detail = exception.response
         task_log.status = 'FAILED'
         task_log.detail = detail
@@ -371,7 +372,7 @@ def create_credit_card_charge(expense_group, task_log_id):
         task_log.save()
 
     except BulkError as exception:
-        logger.error(exception.response)
+        logger.info(exception.response)
         detail = exception.response
         task_log.status = 'FAILED'
         task_log.detail = detail
@@ -459,7 +460,7 @@ def create_expense_report(expense_group, task_log_id):
         task_log.save()
 
     except BulkError as exception:
-        logger.error(exception.response)
+        logger.info(exception.response)
         detail = exception.response
         task_log.status = 'FAILED'
         task_log.detail = detail
@@ -547,7 +548,7 @@ def create_journal_entry(expense_group, task_log_id):
         task_log.save()
 
     except BulkError as exception:
-        logger.error(exception.response)
+        logger.info(exception.response)
         detail = exception.response
         task_log.status = 'FAILED'
         task_log.detail = detail
@@ -1019,7 +1020,7 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
 
             task_log.save()
         except NetSuiteCredentials.DoesNotExist:
-            logger.error(
+            logger.info(
                 'NetSuite Credentials not found for workspace_id %s',
                 workspace_id
             )
@@ -1048,7 +1049,7 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
             task_log.save()
 
         except BulkError as exception:
-            logger.error(exception.response)
+            logger.info(exception.response)
             detail = exception.response
             task_log.status = 'FAILED'
             task_log.detail = detail
