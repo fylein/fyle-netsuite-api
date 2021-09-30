@@ -34,4 +34,4 @@ class Sentry:
             if sampling_context['wsgi_environ']['PATH_INFO'] in ['/ready']:
                 return 0
 
-        return 0.5
+        return 0.2

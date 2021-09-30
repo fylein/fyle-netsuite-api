@@ -21,7 +21,7 @@ from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configur
 from .constants import FYLE_EXPENSE_SYSTEM_FIELDS
 
 logger = logging.getLogger(__name__)
-
+logger.level = logging.INFO
 
 def remove_duplicates(ns_attributes: List[DestinationAttribute]):
     unique_attributes = []
@@ -297,7 +297,7 @@ def auto_create_tax_group_mappings(workspace_id):
         error = {
             'error': error
         }
-        logger.error(
+        logger.exception(
             'Error while creating taxgroups workspace_id - %s error: %s',
             workspace_id, error
         )
@@ -377,7 +377,7 @@ def auto_create_category_mappings(workspace_id):
         error = {
             'error': error
         }
-        logger.error(
+        logger.exception(
             'Error while creating categories workspace_id - %s error: %s',
             workspace_id, error
         )
@@ -505,7 +505,7 @@ def auto_create_project_mappings(workspace_id):
         error = {
             'error': error
         }
-        logger.error(
+        logger.exception(
             'Error while creating projects workspace_id - %s error: %s',
             workspace_id, error
         )
@@ -717,7 +717,7 @@ def auto_create_cost_center_mappings(workspace_id):
         error = {
             'error': error
         }
-        logger.error(
+        logger.exception(
             'Error while creating cost centers workspace_id - %s error: %s',
             workspace_id, error
         )
@@ -829,7 +829,7 @@ def auto_create_expense_fields_mappings(workspace_id: int, netsuite_attribute_ty
         error = {
             'error': error
         }
-        logger.error(
+        logger.exception(
             'Error while creating %s workspace_id - %s error: %s', fyle_attribute_type, workspace_id, error
         )
 
