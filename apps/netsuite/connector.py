@@ -1148,7 +1148,7 @@ class NetSuiteConnector:
                     'internalId': line.tax_item_id,
                     'externalId': None,
                     'type': 'classification'
-                }
+                },
                 'taxRate1': None,
                 'taxRate2': None
             }
