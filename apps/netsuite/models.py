@@ -617,19 +617,14 @@ class ExpenseReport(models.Model):
         debit_account_id = GeneralMapping.objects.get(
             workspace_id=expense_group.workspace_id).reimbursable_account_id
 
-        credit_card_account_id = None
-        if expense_group.fund_source == 'CCC':
-            credit_card_account_id = EmployeeMapping.objects.get(
-                        source_employee__value=description.get('employee_email'),
-                        workspace_id=expense_group.workspace_id
-                    ).destination_card_account.destination_id
-
         expense_report_object, _ = ExpenseReport.objects.update_or_create(
             expense_group=expense_group,
             defaults={
                 'account_id': debit_account_id,
-                'credit_card_account_id': credit_card_account_id if credit_card_account_id is not None
-                else general_mappings.default_ccc_account_id,
+                'credit_card_account_id': EmployeeMapping.objects.get(
+                    source_employee__value=description.get('employee_email'),
+                    workspace_id=expense_group.workspace_id
+                ).destination_card_account.destination_id if expense_group.fund_source == 'CCC' else None,
                 'entity_id': EmployeeMapping.objects.get(
                     source_employee__value=description.get('employee_email'),
                     workspace_id=expense_group.workspace_id
