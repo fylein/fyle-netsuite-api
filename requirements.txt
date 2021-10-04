@@ -22,7 +22,7 @@ psycopg2-binary==2.8.4
 python-dateutil==2.8.1
 pytz==2019.3
 pylint==2.7.4
-netsuitesdk==2.3.0
+netsuitesdk==2.6.1
 requests>=2.25.0
 requests-oauthlib==1.3.0
 six==1.13.0
