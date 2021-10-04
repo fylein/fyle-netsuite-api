@@ -617,13 +617,13 @@ class ExpenseReport(models.Model):
         debit_account_id = GeneralMapping.objects.get(
             workspace_id=expense_group.workspace_id).reimbursable_account_id
 
-        credit_card_account = EmployeeMapping.objects.filter(
+        employee_mapping = EmployeeMapping.objects.filter(
             source_employee__value=description.get('employee_email'),
             workspace_id=expense_group.workspace_id
         ).first()
 
-        if credit_card_account and credit_card_account.destination_card_account:
-            credit_card_account_id = credit_card_account.destination_card_account.destination_id
+        if employee_mapping and employee_mapping.destination_card_account:
+            credit_card_account_id = employee_mapping.destination_card_account.destination_id
         else:
             credit_card_account_id = general_mappings.default_ccc_account_id
 
