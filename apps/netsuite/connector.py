@@ -720,7 +720,7 @@ class NetSuiteConnector:
                 },
                 'class': {
                     'name': None,
-                    'internalId': None,
+                    'internalId': line.class_id,
                     'externalId': None,
                     'type': 'classification'
                 },
@@ -732,11 +732,12 @@ class NetSuiteConnector:
                 },
                 'customer': {
                     'name': None,
-                    'internalId': None,
+                    'internalId': line.customer_id,
                     'externalId': None,
                     'type': 'customer'
                 },
                 'customFieldList': netsuite_custom_segments,
+                'isBillable': line.billable,
                 'projectTask': None,
                 'tax1Amt': None,
                 'taxAmount': line.tax_amount,
@@ -1141,6 +1142,13 @@ class NetSuiteConnector:
                 'rate': None,
                 'receipt': None,
                 'refNumber': None,
+                'tax1Amt': line.tax_amount,
+                'taxCode': {
+                    'name': None,
+                    'internalId': line.tax_item_id,
+                    'externalId': None,
+                    'type': 'classification'
+                }
                 'taxRate1': None,
                 'taxRate2': None
             }
