@@ -863,10 +863,8 @@ class NetSuiteConnector:
         except NetSuiteRequestError as exception:
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
-            message = 'An error occured in a upsert request: The transaction date you specified is \
-                       not within the date range of your accounting period.'
-
-            if configuration.change_accounting_period:
+            message = 'An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'
+            if configuration.change_accounting_period and detail['message'] == message:
                 first_day_of_month = datetime.today().date().replace(day=1)
                 bills_payload = self.__construct_bill(bill, bill_lineitems, attachment_links)
                 bills_payload['tranDate'] = first_day_of_month
@@ -1038,12 +1036,9 @@ class NetSuiteConnector:
                 and json.loads(raw_response.text)['success']:
             return json.loads(raw_response.text)
 
-        elif configuration.change_accounting_period:
-
-            print('I am here')
+        elif configuration.change_accounting_period and message == 'An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.':
             first_day_of_month = datetime.today().date().replace(day=1)
             credit_card_charges_payload['tranDate'] = first_day_of_month.strftime('%m/%d/%Y')
-            print(credit_card_charges_payload)
             raw_response = oauth.post(
                 url, headers={
                     'Content-Type': 'application/json',
@@ -1051,9 +1046,6 @@ class NetSuiteConnector:
                 }, data=json.dumps(credit_card_charges_payload))
 
             status_code = raw_response.status_code
-            print("status")
-            print(status_code)
-            print(json.loads(raw_response.text))
             if status_code == 200 and 'success' in json.loads(raw_response.text) \
                     and json.loads(raw_response.text)['success']:
                 return json.loads(raw_response.text)
@@ -1273,7 +1265,7 @@ class NetSuiteConnector:
             message = 'An error occured in a upsert request: The transaction date you specified is \
                        not within the date range of your accounting period.'
 
-            if configuration.change_accounting_period:
+            if configuration.change_accounting_period and detail['message'] == message:
                 expense_report_payload = self.__construct_expense_report(expense_report,
                                                                     expense_report_lineitems, attachment_links)
 
@@ -1502,13 +1494,13 @@ class NetSuiteConnector:
             message = 'An error occured in a upsert request: The transaction date you specified is \
                        not within the date range of your accounting period.'
 
-            if configuration.change_accounting_period:
+            if configuration.change_accounting_period and detail['message'] == message:
                 first_day_of_month = datetime.today().date().replace(day=1)
                 journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems, attachment_links)
                 journal_entry_payload['tranDate'] = first_day_of_month
                 created_journal_entry = self.connection.journal_entries.post(journal_entry_payload)
                 
-                return created_bill
+                return created_journal_entry
 
             else:
                 raise
