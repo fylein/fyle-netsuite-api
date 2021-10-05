@@ -921,10 +921,10 @@ class NetSuiteConnector:
             },
             'customFieldList': netsuite_custom_segments,
             'isBillable': line.billable,
-            'taxAmount': line.tax_amount,
+            'taxAmount': None,
             'taxCode':{
                 'name': None,
-                'internalId': line.tax_item_id,
+                'internalId': None,
                 'externalId': None,
                 'type': 'classification'
             },     
@@ -1282,6 +1282,8 @@ class NetSuiteConnector:
                     }
                 )
 
+            tax_inclusive_amount = line.amount - line.tax_amount if line.tax_item_id else line.amount
+
             line = {
                 'account': {
                     'name': None,
@@ -1313,14 +1315,14 @@ class NetSuiteConnector:
                     'externalId': None,
                     'type': 'vendor'
                 },
-                'credit': line.amount if credit is not None else None,
+                'credit': tax_inclusive_amount if credit is not None else None,
                 'creditTax': None,
                 'customFieldList': netsuite_custom_segments,
-                'debit': line.amount if debit is not None else None,
+                'debit': tax_inclusive_amount if debit is not None else None,
                 'debitTax': None,
                 'eliminate': None,
                 'endDate': None,
-                'grossAmt': None,
+                'grossAmt': line.amount,
                 'line': None,
                 'lineTaxCode': None,
                 'lineTaxRate': None,
