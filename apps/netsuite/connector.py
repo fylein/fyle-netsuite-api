@@ -921,10 +921,10 @@ class NetSuiteConnector:
             },
             'customFieldList': netsuite_custom_segments,
             'isBillable': line.billable,
-            'taxAmount': line.tax_amount,
+            'taxAmount': None,
             'taxCode':{
                 'name': None,
-                'internalId': line.tax_item_id,
+                'internalId': None,
                 'externalId': None,
                 'type': 'classification'
             },     
