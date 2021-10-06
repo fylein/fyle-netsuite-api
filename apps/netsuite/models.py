@@ -213,8 +213,14 @@ def get_expense_purpose(lineitem, category) -> str:
     expense_purpose = ', purpose - {0}'.format(lineitem.purpose) if lineitem.purpose else ''
     spent_at = ' spent on {0} '.format(lineitem.spent_at.date()) if lineitem.spent_at else ''
     vendor = ', merchant {0}'.format(lineitem.vendor) if lineitem.vendor else ''
-    return 'Expense by {0} against category {1}{2}{3}with claim number - {4}{5}'.format(
+
+    purpose = 'Expense by {0} against category {1}{2}{3}with claim number - {4}{5}'.format(
         lineitem.employee_email, category, vendor, spent_at, lineitem.claim_number, expense_purpose)
+
+    purpose = purpose.replace('<', '')
+    purpose = purpose.replace('>', '')
+
+    return purpose
 
 
 class CustomSegment(models.Model):
