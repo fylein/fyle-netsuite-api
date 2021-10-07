@@ -1438,7 +1438,6 @@ class NetSuiteConnector:
         Post journal entries to NetSuite
         """
         journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems, attachment_links)
-        print(journal_entry_payload)
         created_journal_entry = self.connection.journal_entries.post(journal_entry_payload)
         return created_journal_entry
 
