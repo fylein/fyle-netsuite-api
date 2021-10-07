@@ -1322,7 +1322,7 @@ class NetSuiteConnector:
                 'debitTax': None,
                 'eliminate': None,
                 'endDate': None,
-                'grossAmt': line.amount,
+                'grossAmt': line.amount if line.tax_item_id else None,
                 'line': None,
                 'lineTaxCode': None,
                 'lineTaxRate': None,
