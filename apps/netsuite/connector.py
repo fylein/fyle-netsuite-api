@@ -604,26 +604,26 @@ class NetSuiteConnector:
                             }
                         })
 
-            for tax_groups in tax_groups_generator:
-                for tax_group in tax_groups:
-                    if not tax_group['isInactive'] and tax_group['itemId'] and tax_group['taxType'] and tax_group['rate']:
-                        value = self.get_tax_code_name(tax_group['itemId'], tax_group['taxType']['name'], tax_group['rate'])
-                        tax_rate = float(tax_group['rate'])
+        for tax_groups in tax_groups_generator:
+            for tax_group in tax_groups:
+                if not tax_group['isInactive'] and tax_group['itemId'] and tax_group['taxType'] and tax_group['rate']:
+                    value = self.get_tax_code_name(tax_group['itemId'], tax_group['taxType']['name'], tax_group['rate'])
+                    tax_rate = float(tax_group['rate'])
 
-                        if tax_rate >= 0:
-                            attributes.append({
-                                'attribute_type': 'TAX_ITEM',
-                                'display_name': 'Tax Item',
-                                'value': value,
-                                'destination_id': tax_group['internalId'],
-                                'active': True,
-                                'detail': {
-                                    'tax_rate': tax_rate
-                                }
-                            })
-       
-            DestinationAttribute.bulk_create_or_update_destination_attributes(
-                    attributes, 'TAX_ITEM', self.workspace_id, True)
+                    if tax_rate >= 0:
+                        attributes.append({
+                            'attribute_type': 'TAX_ITEM',
+                            'display_name': 'Tax Item',
+                            'value': value,
+                            'destination_id': tax_group['internalId'],
+                            'active': True,
+                            'detail': {
+                                'tax_rate': tax_rate
+                            }
+                        })
+
+        DestinationAttribute.bulk_create_or_update_destination_attributes(
+                attributes, 'TAX_ITEM', self.workspace_id, True)
 
         return []
 
