@@ -13,6 +13,7 @@ from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribu
 
 from apps.fyle.models import Expense, ExpenseGroup
 from apps.fyle.connector import FyleConnector
+from apps.workspaces.models import Configuration
 
 from apps.mappings.models import SubsidiaryMapping
 from apps.netsuite.models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, \
@@ -854,9 +855,26 @@ class NetSuiteConnector:
         """
         Post vendor bills to NetSuite
         """
-        bills_payload = self.__construct_bill(bill, bill_lineitems, attachment_links)
-        created_bill = self.connection.vendor_bills.post(bills_payload)
-        return created_bill
+        configuration = Configuration.objects.get(workspace_id=self.workspace_id)
+        try:
+            bills_payload = self.__construct_bill(bill, bill_lineitems, attachment_links)
+            created_bill = self.connection.vendor_bills.post(bills_payload)
+            return created_bill
+
+        except NetSuiteRequestError as exception:
+            detail = json.dumps(exception.__dict__)
+            detail = json.loads(detail)
+            message = 'An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'
+            if configuration.change_accounting_period and detail['message'] == message:
+                first_day_of_month = datetime.today().date().replace(day=1)
+                bills_payload = self.__construct_bill(bill, bill_lineitems, attachment_links)
+                bills_payload['tranDate'] = first_day_of_month
+                created_bill = self.connection.vendor_bills.post(bills_payload)
+                
+                return created_bill
+
+            else:
+                raise
 
     def get_bill(self, internal_id):
         """
@@ -980,6 +998,8 @@ class NetSuiteConnector:
         """
         Post vendor credit_card_charges to NetSuite
         """
+        
+        configuration = Configuration.objects.get(workspace_id=self.workspace_id)
         credit_card_charges_payload = self.__construct_credit_card_charge(
             credit_card_charge, credit_card_charge_lineitem, attachment_links)
 
@@ -990,7 +1010,7 @@ class NetSuiteConnector:
         token_secret = self.__netsuite_credentials.ns_token_secret
 
         url = f"https://{account.lower()}.restlets.api.netsuite.com/app/site/hosting/restlet.nl?" \
-              f"script=customscript_cc_charge_fyle&deploy=customdeploy_cc_charge_fyle"
+            f"script=customscript_cc_charge_fyle&deploy=customdeploy_cc_charge_fyle"
 
         oauth = OAuth1Session(
             client_key=consumer_key,
@@ -1008,16 +1028,29 @@ class NetSuiteConnector:
             }, data=json.dumps(credit_card_charges_payload))
 
         status_code = raw_response.status_code
-
-        if status_code == 200 and 'success' in json.loads(raw_response.text) \
-                and json.loads(raw_response.text)['success']:
-            return json.loads(raw_response.text)
-
         response = eval(raw_response.text)
 
         code = response['error']['code']
         message = json.loads(response['error']['message'])['message']
 
+        if status_code == 200 and 'success' in json.loads(raw_response.text) \
+                and json.loads(raw_response.text)['success']:
+            return json.loads(raw_response.text)
+
+        elif configuration.change_accounting_period and message == 'An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.':
+            first_day_of_month = datetime.today().date().replace(day=1)
+            credit_card_charges_payload['tranDate'] = first_day_of_month.strftime('%m/%d/%Y')
+            raw_response = oauth.post(
+                url, headers={
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }, data=json.dumps(credit_card_charges_payload))
+
+            status_code = raw_response.status_code
+            if status_code == 200 and 'success' in json.loads(raw_response.text) \
+                    and json.loads(raw_response.text)['success']:
+                return json.loads(raw_response.text)
+        
         raise NetSuiteRequestError(code=code, message=message)
 
     @staticmethod
@@ -1110,11 +1143,11 @@ class NetSuiteConnector:
                 'receipt': None,
                 'refNumber': None,
                 'tax1Amt': line.tax_amount,
-                'taxCode':{
-                    'name':None,
+                'taxCode': {
+                    'name': None,
                     'internalId': line.tax_item_id,
-                    'externalId':None,
-                    'type':'classification'
+                    'externalId': None,
+                    'type': 'classification'
                 },
                 'taxRate1': None,
                 'taxRate2': None
@@ -1227,10 +1260,32 @@ class NetSuiteConnector:
         """
         Post expense reports to NetSuite
         """
-        expense_report_payload = self.__construct_expense_report(expense_report,
-                                                                 expense_report_lineitems, attachment_links)
-        created_expense_report = self.connection.expense_reports.post(expense_report_payload)
-        return created_expense_report
+        configuration = Configuration.objects.get(workspace_id=self.workspace_id)
+        try:
+            expense_report_payload = self.__construct_expense_report(expense_report,
+                                                                    expense_report_lineitems, attachment_links)
+            created_expense_report = self.connection.expense_reports.post(expense_report_payload)
+            return created_expense_report
+
+        except NetSuiteRequestError as exception:
+            detail = json.dumps(exception.__dict__)
+            detail = json.loads(detail)
+            message = 'An error occured in a upsert request: The transaction date you specified is \
+                       not within the date range of your accounting period.'
+
+            if configuration.change_accounting_period and detail['message'] == message:
+                expense_report_payload = self.__construct_expense_report(expense_report,
+                                                                    expense_report_lineitems, attachment_links)
+
+                first_day_of_month = datetime.today().date().replace(day=1)
+                expense_report_payload['TranDate'] = first_day_of_month
+                created_expense_report = self.connection.expense_reports.post(expense_report_payload)
+                expense_report.transaction_date = first_day_of_month
+                expense_report.save()
+                return created_expense_report
+
+            else:
+                raise
 
     def get_expense_report(self, internal_id):
         """
@@ -1437,9 +1492,28 @@ class NetSuiteConnector:
         """
         Post journal entries to NetSuite
         """
-        journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems, attachment_links)
-        created_journal_entry = self.connection.journal_entries.post(journal_entry_payload)
-        return created_journal_entry
+        configuration = Configuration.objects.get(workspace_id=self.workspace_id)
+        try:
+            journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems, attachment_links)
+            created_journal_entry = self.connection.journal_entries.post(journal_entry_payload)
+            return created_journal_entry
+
+        except NetSuiteRequestError as exception:
+            detail = json.dumps(exception.__dict__)
+            detail = json.loads(detail)
+            message = 'An error occured in a upsert request: The transaction date you specified is \
+                       not within the date range of your accounting period.'
+
+            if configuration.change_accounting_period and detail['message'] == message:
+                first_day_of_month = datetime.today().date().replace(day=1)
+                journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems, attachment_links)
+                journal_entry_payload['tranDate'] = first_day_of_month
+                created_journal_entry = self.connection.journal_entries.post(journal_entry_payload)
+                
+                return created_journal_entry
+
+            else:
+                raise
 
     @staticmethod
     def __construct_vendor_payment_lineitems(vendor_payment_lineitems: List[VendorPaymentLineitem]) -> List[Dict]:
