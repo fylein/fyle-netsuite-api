@@ -1278,9 +1278,8 @@ class NetSuiteConnector:
             if configuration.change_accounting_period and detail['message'] == message:
                 expense_report_payload = self.__construct_expense_report(expense_report,
                                                                     expense_report_lineitems, attachment_links)
-
                 first_day_of_month = datetime.today().date().replace(day=1)
-                expense_report_payload['TranDate'] = first_day_of_month
+                expense_report_payload['tranDate'] = first_day_of_month.strftime('%Y-%m-%dT%H:%M:%S.000Z')
                 created_expense_report = self.connection.expense_reports.post(expense_report_payload)
                 expense_report.transaction_date = first_day_of_month
                 expense_report.save()
