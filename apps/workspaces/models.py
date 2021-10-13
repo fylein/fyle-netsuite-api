@@ -122,6 +122,7 @@ class Configuration(models.Model):
     import_categories = models.BooleanField(default=False, help_text='Auto import categories to Fyle')
     import_tax_items = models.BooleanField(default=False, help_text='Auto import tax items to Fyle')
     import_projects = models.BooleanField(default=False, help_text='Auto import projects to Fyle')
+    change_accounting_period = models.BooleanField(default=False, help_text='Change the accounting period')
     sync_fyle_to_netsuite_payments = models.BooleanField(
         default=False, help_text='Auto Sync Payments from Fyle to Netsuite'
     )
