@@ -1028,10 +1028,6 @@ class NetSuiteConnector:
             }, data=json.dumps(credit_card_charges_payload))
 
         status_code = raw_response.status_code
-        response = eval(raw_response.text)
-
-        code = response['error']['code']
-        message = json.loads(response['error']['message'])['message']
 
         if status_code == 200 and 'success' in json.loads(raw_response.text) and json.loads(raw_response.text)['success']:
             return json.loads(raw_response.text)
@@ -1046,14 +1042,23 @@ class NetSuiteConnector:
                 }, data=json.dumps(credit_card_charges_payload))
 
             status_code = raw_response.status_code
+
+            if status_code == 200 and 'success' in json.loads(raw_response.text) \
+                    and json.loads(raw_response.text)['success']:
+                return json.loads(raw_response.text)
+
             response = eval(raw_response.text)
 
             code = response['error']['code']
             message = json.loads(response['error']['message'])['message']
-            if status_code == 200 and 'success' in json.loads(raw_response.text) \
-                    and json.loads(raw_response.text)['success']:
-                return json.loads(raw_response.text)
+
+            raise NetSuiteRequestError(code=code, message=message)
         
+        response = eval(raw_response.text)
+
+        code = response['error']['code']
+        message = json.loads(response['error']['message'])['message']
+
         raise NetSuiteRequestError(code=code, message=message)
 
     @staticmethod
