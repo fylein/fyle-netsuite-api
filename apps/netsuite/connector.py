@@ -55,6 +55,15 @@ class NetSuiteConnector:
         value = name.replace(u'\xa0', ' ')
         value = value.replace('/', '-')
         return value
+
+    @staticmethod
+    def get_message_and_code(raw_response):
+        response = eval(raw_response.text)
+
+        code = response['error']['code']
+        message = json.loads(response['error']['message'])['message']
+
+        return code, message
     
     @staticmethod
     def get_tax_code_name(item_id, tax_type, rate):
@@ -1047,18 +1056,11 @@ class NetSuiteConnector:
                     and json.loads(raw_response.text)['success']:
                 return json.loads(raw_response.text)
 
-            response = eval(raw_response.text)
-
-            code = response['error']['code']
-            message = json.loads(response['error']['message'])['message']
+            code, message = self.get_message_and_code(raw_response)
 
             raise NetSuiteRequestError(code=code, message=message)
-        
-        response = eval(raw_response.text)
 
-        code = response['error']['code']
-        message = json.loads(response['error']['message'])['message']
-
+        code, message = self.get_message_and_code(raw_response)
         raise NetSuiteRequestError(code=code, message=message)
 
     @staticmethod
@@ -1283,8 +1285,9 @@ class NetSuiteConnector:
             if configuration.change_accounting_period and detail['message'] == message:
                 expense_report_payload = self.__construct_expense_report(expense_report,
                                                                     expense_report_lineitems, attachment_links)
+
                 first_day_of_month = datetime.today().date().replace(day=1)
-                expense_report_payload['tranDate'] = first_day_of_month.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+                expense_report_payload['tranDate'] = first_day_of_month.strftime('%Y-%m-%dT%H:%M:%S')
                 created_expense_report = self.connection.expense_reports.post(expense_report_payload)
                 expense_report.transaction_date = first_day_of_month
                 expense_report.save()
