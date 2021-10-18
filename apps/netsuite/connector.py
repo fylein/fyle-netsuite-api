@@ -1032,7 +1032,7 @@ class NetSuiteConnector:
         if status_code == 200 and 'success' in json.loads(raw_response.text) and json.loads(raw_response.text)['success']:
             return json.loads(raw_response.text)
 
-        elif configuration.change_accounting_period and message == 'The transaction date you specified is not within the date range of your accounting period.':
+        elif configuration.change_accounting_period and json.loads(eval(raw_response.text)['error']['message'])['message'] == 'The transaction date you specified is not within the date range of your accounting period.':
             first_day_of_month = datetime.today().date().replace(day=1)
             credit_card_charges_payload['tranDate'] = first_day_of_month.strftime('%m/%d/%Y')
             raw_response = oauth.post(
