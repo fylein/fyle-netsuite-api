@@ -70,6 +70,7 @@ class ConfigurationSerializer(serializers.ModelSerializer):
                 'import_projects': validated_data['import_projects'],
                 'import_categories': validated_data['import_categories'],
                 'import_tax_items': validated_data['import_tax_items'],
+                'change_accounting_period': validated_data['change_accounting_period'],
                 'auto_map_employees': validated_data['auto_map_employees'],
                 'auto_create_merchants': validated_data['auto_create_merchants'],
                 'auto_create_destination_entity': validated_data['auto_create_destination_entity']
