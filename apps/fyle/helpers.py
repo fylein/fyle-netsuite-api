@@ -4,6 +4,7 @@ import logging
 from django.utils.module_loading import import_string
 
 from apps.fyle.models import ExpenseGroupSettings
+from apps.mappings.models import GeneralMapping
 from apps.workspaces.models import Workspace
 
 logger = logging.getLogger(__name__)
@@ -40,6 +41,18 @@ def update_import_card_credits_flag(corporate_credit_card_expenses_object: str, 
     if import_card_credits is not None and import_card_credits != expense_group_settings.import_card_credits:
         expense_group_settings.import_card_credits = import_card_credits
         expense_group_settings.save()
+
+
+def update_use_employee_department_flag(workspace_id: int) -> None:
+    """
+    Update use_employee_department_flag in GeneralMapping
+    :param workspace_id: Workspace id
+    return: None
+    """
+    general_mapping = GeneralMapping.objects.filter(workspace_id=workspace_id).first()
+    if general_mapping and general_mapping.use_employee_department_flag:
+        general_mapping.use_employee_department = False
+        general_mapping.save()
 
 
 def check_interval_and_sync_dimension(workspace: Workspace, refresh_token: str) -> bool:
