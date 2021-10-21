@@ -1,6 +1,7 @@
 """
 Fyle Models
 """
+import logging
 import dateutil.parser
 from typing import List, Dict
 from datetime import datetime
@@ -14,6 +15,9 @@ from django.db.models import Count, Q
 from fyle_accounting_mappings.models import ExpenseAttribute
 
 from apps.workspaces.models import Workspace
+
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 
 ALLOWED_FIELDS = [
