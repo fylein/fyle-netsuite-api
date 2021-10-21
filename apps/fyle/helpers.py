@@ -45,12 +45,12 @@ def update_import_card_credits_flag(corporate_credit_card_expenses_object: str, 
 
 def update_use_employee_department_flag(workspace_id: int) -> None:
     """
-    Update use_employee_department_flag in GeneralMapping
+    Update use_employee_department in GeneralMapping
     :param workspace_id: Workspace id
     return: None
     """
     general_mapping = GeneralMapping.objects.filter(workspace_id=workspace_id).first()
-    if general_mapping and general_mapping.use_employee_department_flag:
+    if general_mapping and general_mapping.use_employee_department:
         general_mapping.use_employee_department = False
         general_mapping.save()
 
