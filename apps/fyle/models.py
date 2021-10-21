@@ -92,6 +92,8 @@ class Expense(models.Model):
 
         custom_property_keys = list(set([prop['display_name'].lower() for prop in custom_properties]))
 
+        eliminated_expenses = []
+
         for expense in expenses:
             cutoff_date = _format_date('2021-08-01T00:00:00.000Z')
             expense_created_at = _format_date(expense['created_at'])
@@ -140,6 +142,12 @@ class Expense(models.Model):
 
                 if not ExpenseGroup.objects.filter(expenses__id=expense_object.id).first():
                     expense_objects.append(expense_object)
+
+            else:
+                eliminated_expenses.append(expense['id'])
+
+            if eliminated_expenses:
+                logger.error('Expenses with ids {} are not eligible for import'.format(eliminated_expenses))
 
         return expense_objects
 
