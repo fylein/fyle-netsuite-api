@@ -369,6 +369,15 @@ class BillLineitem(models.Model):
 
             location_id = get_location_id_or_none(expense_group, lineitem)
 
+            if expense_group.fund_source == 'CCC' and general_mappings.use_employee_location and\
+                    general_mappings.location_level in ('ALL', 'TRANSACTION_LINE'):
+                employee_mapping = EmployeeMapping.objects.filter(
+                    source_employee__value=expense_group.description.get('employee_email'),
+                    workspace_id=expense_group.workspace_id
+                ).first()
+                if employee_mapping and employee_mapping.destination_employee:
+                    location_id = employee_mapping.destination_employee.detail.get('location_id')
+
             if not location_id and general_mappings.location_id and \
                 general_mappings.location_level in ['TRANSACTION_LINE', 'ALL']:
                 location_id = general_mappings.location_id
@@ -633,6 +642,27 @@ class ExpenseReport(models.Model):
         else:
             credit_card_account_id = general_mappings.default_ccc_account_id
 
+        configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
+        employee_field_mapping = configuration.employee_field_mapping
+
+        department_id = None
+        class_id = None
+
+        if general_mappings.use_employee_department and general_mappings.department_level in (
+            'ALL', 'TRANSACTION_BODY') and employee_field_mapping == 'EMPLOYEE':
+            department_id = employee_mapping.destination_employee.detail.get('department_id')
+
+        if general_mappings.use_employee_location and general_mappings.location_level in ('ALL', 'TRANSACTION_BODY') \
+                and employee_field_mapping == 'EMPLOYEE':
+            location_id = employee_mapping.destination_employee.detail.get('location_id')
+        else:
+            location_id = general_mappings.location_id if general_mappings.location_level in [
+                    'TRANSACTION_BODY', 'ALL'] else None
+
+        if general_mappings.use_employee_location and general_mappings.location_level in ('ALL', 'TRANSACTION_BODY') \
+                and employee_field_mapping == 'EMPLOYEE':
+            class_id = employee_mapping.destination_employee.detail.get('class_id')
+
         expense_report_object, _ = ExpenseReport.objects.update_or_create(
             expense_group=expense_group,
             defaults={
@@ -643,10 +673,9 @@ class ExpenseReport(models.Model):
                     workspace_id=expense_group.workspace_id
                 ).destination_employee.destination_id,
                 'currency': currency.destination_id if currency else '1',
-                'department_id': None,
-                'class_id': None,
-                'location_id': general_mappings.location_id if general_mappings.location_level in [
-                    'TRANSACTION_BODY', 'ALL'] else None,
+                'department_id': department_id,
+                'class_id': class_id,
+                'location_id': location_id,
                 'subsidiary_id': subsidiary_mappings.internal_id,
                 'memo': 'Reimbursable expenses by {0}'.format(description.get('employee_email')) if
                 expense_group.fund_source == 'PERSONAL' else
@@ -695,6 +724,10 @@ class ExpenseReportLineItem(models.Model):
         expense_report = ExpenseReport.objects.get(expense_group=expense_group)
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
+        configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
+        employee_field_mapping = configuration.employee_field_mapping
+        description = expense_group.description
+
         expense_report_lineitem_objects = []
 
         for lineitem in expenses:
@@ -706,17 +739,35 @@ class ExpenseReportLineItem(models.Model):
                 workspace_id=expense_group.workspace_id
             ).first()
 
+            entity = EmployeeMapping.objects.get(
+                source_employee__value=description.get('employee_email'),
+                workspace_id=expense_group.workspace_id
+            )
+
             currency = DestinationAttribute.objects.filter(value=lineitem.currency,
                                                            workspace_id=expense_group.workspace_id,
                                                            attribute_type='CURRENCY').first()
 
             class_id = get_class_id_or_none(expense_group, lineitem)
 
+            if not class_id and general_mappings.use_employee_class and employee_field_mapping == 'EMPLOYEE':
+                class_id = entity.destination_employee.detail.get('class_id')
+
             department_id = get_department_id_or_none(expense_group, lineitem)
+
+            if not department_id and general_mappings.use_employee_department and \
+                general_mappings.department_level in ('ALL', 'TRANSACTION_LINE') and \
+                    employee_field_mapping == 'EMPLOYEE':
+                department_id = entity.destination_employee.detail.get('department_id')
 
             customer_id = get_customer_id_or_none(expense_group, lineitem)
 
             location_id = get_location_id_or_none(expense_group, lineitem)
+
+            if not location_id and general_mappings.use_employee_location and \
+                general_mappings.location_level in ('ALL', 'TRANSACTION_LINE') and \
+                    employee_field_mapping == 'EMPLOYEE':
+                location_id = entity.destination_employee.detail.get('location_id')
 
             if not location_id:
                 if general_mappings.location_id and general_mappings.location_level in ['TRANSACTION_LINE', 'ALL']:
@@ -801,17 +852,25 @@ class JournalEntry(models.Model):
 
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
+        configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
+        employee_field_mapping = configuration.employee_field_mapping
+
         department_id = None
+        location_id = None
 
         if general_mappings.use_employee_department and general_mappings.department_level in (
-            'ALL', 'TRANSACTION_BODY') and entity.destination_type == 'EMPLOYEE':
+            'ALL', 'TRANSACTION_BODY') and employee_field_mapping == 'EMPLOYEE':
             department_id = entity.destination_employee.detail.get('department_id')
+
+        if general_mappings.use_employee_location and general_mappings.location_level in ('ALL', 'TRANSACTION_BODY') \
+                and employee_field_mapping == 'EMPLOYEE':
+            location_id = entity.destination_employee.detail.get('location_id')
 
         journal_entry_object, _ = JournalEntry.objects.update_or_create(
             expense_group=expense_group,
             defaults={
                 'currency': currency.destination_id if currency else '1',
-                'location_id': general_mappings.location_id,
+                'location_id': location_id if location_id else general_mappings.location_id,
                 'subsidiary_id': subsidiary_mappings.internal_id,
                 'department_id': department_id,
                 'memo': 'Reimbursable expenses by {0}'.format(description.get('employee_email')) if
@@ -904,6 +963,9 @@ class JournalEntryLineItem(models.Model):
 
             class_id = get_class_id_or_none(expense_group, lineitem)
 
+            if not class_id and general_mappings.use_employee_class and employee_field_mapping == 'EMPLOYEE':
+                class_id = entity.destination_employee.detail.get('class_id')
+
             department_id = get_department_id_or_none(expense_group, lineitem)
 
             if not department_id and general_mappings.use_employee_department and \
@@ -912,6 +974,11 @@ class JournalEntryLineItem(models.Model):
                 department_id = entity.destination_employee.detail.get('department_id')
 
             location_id = get_location_id_or_none(expense_group, lineitem)
+
+            if not location_id and general_mappings.use_employee_location and \
+                general_mappings.location_level in ('ALL', 'TRANSACTION_LINE') and \
+                    employee_field_mapping == 'EMPLOYEE':
+                location_id = entity.destination_employee.detail.get('location_id')
 
             if not location_id and general_mappings.location_id:
                 location_id = general_mappings.location_id
