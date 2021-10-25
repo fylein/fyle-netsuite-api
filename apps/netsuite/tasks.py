@@ -779,11 +779,11 @@ def __validate_expense_group(expense_group: ExpenseGroup, configuration: Configu
     if configuration.import_tax_items:
         tax_group_mapping_errors = __validate_tax_group_mapping(expense_group, configuration)
 
-        bulk_errors = list(
-            itertools.chain(
-                general_mapping_errors, subsidiary_mapping_errors, employee_mapping_errors, category_mapping_errors, tax_group_mapping_error
-            )
+    bulk_errors = list(
+        itertools.chain(
+            general_mapping_errors, subsidiary_mapping_errors, employee_mapping_errors, category_mapping_errors, tax_group_mapping_error
         )
+    )
 
     if bulk_errors:
         raise BulkError('Mappings are missing', bulk_errors)
