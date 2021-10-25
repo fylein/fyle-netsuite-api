@@ -53,6 +53,7 @@ def update_use_employee_attributes_flag(workspace_id: int) -> None:
     if general_mapping:
         if general_mapping.use_employee_department:
             general_mapping.use_employee_department = False
+            general_mapping.department_level = None
 
         if general_mapping.use_employee_location:
             general_mapping.use_employee_location = False
