@@ -13,7 +13,7 @@ from django_q.tasks import Chain
 
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
 
-from fyle_accounting_mappings.models import ExpenseAttribute, DestinationAttribute, CategoryMapping, EmployeeMapping
+from fyle_accounting_mappings.models import ExpenseAttribute, Mapping, DestinationAttribute, CategoryMapping, EmployeeMapping
 
 from fyle_netsuite_api.exceptions import BulkError
 
@@ -659,6 +659,38 @@ def __validate_subsidiary_mapping(expense_group: ExpenseGroup) -> List[BulkError
 
     return bulk_errors
 
+def __validate_tax_group_mapping(expense_group: ExpenseGroup, configuration: Configuration) -> List[BulkError]:
+    row = 0
+    bulk_errors = []
+    expenses = expense_group.expenses.all()
+
+    for lineitem in expenses:
+        if configuration.import_tax_items and lineitem.tax_group_id:
+            tax_group  = ExpenseAttribute.objects.get(
+                workspace_id=expense_group.workspace_id,
+                attribute_type='TAX_GROUP',
+                source_id=lineitem.tax_group_id
+            )
+
+            tax_code = Mapping.objects.filter(
+                source_type='TAX_GROUP',
+                source__value=tax_group.value,
+                workspace_id=expense_group.workspace_id
+            ).first()
+
+            if not tax_code:
+                bulk_errors.append({
+                    'row': row,
+                    'expense_group_id': expense_group.id,
+                    'value': tax_group.value,
+                    'type': 'Tax Group Mapping',
+                    'message': 'Tax Group Mapping not found'
+                })
+
+        row = row + 1
+
+    return bulk_errors
+
 
 def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Configuration) -> List[BulkError]:
     bulk_errors = []
@@ -743,9 +775,14 @@ def __validate_expense_group(expense_group: ExpenseGroup, configuration: Configu
     # Category Mapping
     category_mapping_errors = __validate_category_mapping(expense_group, configuration)
 
+    # Tax Group Mapping
+    tax_group_mapping_errors = []
+    if configuration.import_tax_items:
+        tax_group_mapping_errors = __validate_tax_group_mapping(expense_group, configuration)
+
     bulk_errors = list(
         itertools.chain(
-            general_mapping_errors, subsidiary_mapping_errors, employee_mapping_errors, category_mapping_errors
+            general_mapping_errors, subsidiary_mapping_errors, employee_mapping_errors, category_mapping_errors, tax_group_mapping_errors
         )
     )
 
