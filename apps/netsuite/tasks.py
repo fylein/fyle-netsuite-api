@@ -776,6 +776,7 @@ def __validate_expense_group(expense_group: ExpenseGroup, configuration: Configu
     category_mapping_errors = __validate_category_mapping(expense_group, configuration)
 
     # Tax Group Mapping
+    tax_group_mapping_errors = []
     if configuration.import_tax_items:
         tax_group_mapping_errors = __validate_tax_group_mapping(expense_group, configuration)
 
