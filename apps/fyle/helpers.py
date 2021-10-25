@@ -50,16 +50,17 @@ def update_use_employee_attributes_flag(workspace_id: int) -> None:
     return: None
     """
     general_mapping = GeneralMapping.objects.filter(workspace_id=workspace_id).first()
-    if general_mapping and general_mapping.use_employee_department:
-        general_mapping.use_employee_department = False
+    if general_mapping:
+        if general_mapping.use_employee_department:
+            general_mapping.use_employee_department = False
 
-    if general_mapping and general_mapping.use_employee_location:
-        general_mapping.use_employee_location = False
+        if general_mapping.use_employee_location:
+            general_mapping.use_employee_location = False
 
-    if general_mapping and general_mapping.use_employee_class:
-        general_mapping.use_employee_class = False
+        if general_mapping.use_employee_class:
+            general_mapping.use_employee_class = False
 
-    general_mapping.save()
+        general_mapping.save()
 
 
 def check_interval_and_sync_dimension(workspace: Workspace, refresh_token: str) -> bool:

@@ -66,8 +66,8 @@ class GeneralMappingSerializer(serializers.ModelSerializer):
             not data['vendor_payment_account_name'] or not data['vendor_payment_account_id']):
             raise serializers.ValidationError('Vendor payment account is missing')
 
-        if configuration.employee_field_mapping != 'EMPLOYEE' and data['use_employee_department']\
-                and data['use_employee_location'] and data['use_employee_class']:
+        if configuration.employee_field_mapping != 'EMPLOYEE' and\
+                (data['use_employee_department'] or data['use_employee_location'] or data['use_employee_class']):
             raise serializers.ValidationError(
                 'use_employee_department or use_employee_location or use_employee_class'
                 ' can be used only when employee is mapped to employee'

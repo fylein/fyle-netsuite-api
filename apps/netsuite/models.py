@@ -5,7 +5,6 @@ from datetime import datetime
 
 from django.contrib.postgres.fields import JSONField
 from django.db import models
-from django.db.models import Q
 
 from fyle_accounting_mappings.models import Mapping, MappingSetting, DestinationAttribute, CategoryMapping,\
     EmployeeMapping
@@ -659,8 +658,7 @@ class ExpenseReport(models.Model):
             location_id = general_mappings.location_id if general_mappings.location_level in [
                     'TRANSACTION_BODY', 'ALL'] else None
 
-        if general_mappings.use_employee_location and general_mappings.location_level in ('ALL', 'TRANSACTION_BODY') \
-                and employee_field_mapping == 'EMPLOYEE':
+        if not class_id and general_mappings.use_employee_class and employee_field_mapping == 'EMPLOYEE':
             class_id = employee_mapping.destination_employee.detail.get('class_id')
 
         expense_report_object, _ = ExpenseReport.objects.update_or_create(
@@ -748,26 +746,26 @@ class ExpenseReportLineItem(models.Model):
                                                            workspace_id=expense_group.workspace_id,
                                                            attribute_type='CURRENCY').first()
 
-            class_id = get_class_id_or_none(expense_group, lineitem)
-
-            if not class_id and general_mappings.use_employee_class and employee_field_mapping == 'EMPLOYEE':
+            if general_mappings.use_employee_class and employee_field_mapping == 'EMPLOYEE':
                 class_id = entity.destination_employee.detail.get('class_id')
+            else:
+                class_id = get_class_id_or_none(expense_group, lineitem)
 
-            department_id = get_department_id_or_none(expense_group, lineitem)
-
-            if not department_id and general_mappings.use_employee_department and \
+            if general_mappings.use_employee_department and \
                 general_mappings.department_level in ('ALL', 'TRANSACTION_LINE') and \
                     employee_field_mapping == 'EMPLOYEE':
                 department_id = entity.destination_employee.detail.get('department_id')
+            else:
+                department_id = get_department_id_or_none(expense_group, lineitem)
 
             customer_id = get_customer_id_or_none(expense_group, lineitem)
 
-            location_id = get_location_id_or_none(expense_group, lineitem)
-
-            if not location_id and general_mappings.use_employee_location and \
+            if general_mappings.use_employee_location and \
                 general_mappings.location_level in ('ALL', 'TRANSACTION_LINE') and \
                     employee_field_mapping == 'EMPLOYEE':
                 location_id = entity.destination_employee.detail.get('location_id')
+            else:
+                location_id = get_location_id_or_none(expense_group, lineitem)
 
             if not location_id:
                 if general_mappings.location_id and general_mappings.location_level in ['TRANSACTION_LINE', 'ALL']:
@@ -961,24 +959,24 @@ class JournalEntryLineItem(models.Model):
                 workspace_id=expense_group.workspace_id
             ).first()
 
-            class_id = get_class_id_or_none(expense_group, lineitem)
-
-            if not class_id and general_mappings.use_employee_class and employee_field_mapping == 'EMPLOYEE':
+            if general_mappings.use_employee_class and employee_field_mapping == 'EMPLOYEE':
                 class_id = entity.destination_employee.detail.get('class_id')
+            else:
+                class_id = get_class_id_or_none(expense_group, lineitem)
 
-            department_id = get_department_id_or_none(expense_group, lineitem)
-
-            if not department_id and general_mappings.use_employee_department and \
+            if general_mappings.use_employee_department and \
                 general_mappings.department_level in ('ALL', 'TRANSACTION_LINE') and \
                     employee_field_mapping == 'EMPLOYEE':
                 department_id = entity.destination_employee.detail.get('department_id')
+            else:
+                department_id = get_department_id_or_none(expense_group, lineitem)
 
-            location_id = get_location_id_or_none(expense_group, lineitem)
-
-            if not location_id and general_mappings.use_employee_location and \
+            if general_mappings.use_employee_location and \
                 general_mappings.location_level in ('ALL', 'TRANSACTION_LINE') and \
                     employee_field_mapping == 'EMPLOYEE':
                 location_id = entity.destination_employee.detail.get('location_id')
+            else:
+                location_id = get_location_id_or_none(expense_group, lineitem)
 
             if not location_id and general_mappings.location_id:
                 location_id = general_mappings.location_id
