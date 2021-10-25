@@ -782,7 +782,7 @@ def __validate_expense_group(expense_group: ExpenseGroup, configuration: Configu
 
     bulk_errors = list(
         itertools.chain(
-            general_mapping_errors, subsidiary_mapping_errors, employee_mapping_errors, category_mapping_errors, tax_group_mapping_error
+            general_mapping_errors, subsidiary_mapping_errors, employee_mapping_errors, category_mapping_errors, tax_group_mapping_errors
         )
     )
 
