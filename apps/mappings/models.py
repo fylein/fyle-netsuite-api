@@ -41,6 +41,8 @@ class GeneralMapping(models.Model):
     vendor_payment_account_id = models.CharField(max_length=255, help_text='NetSuite VendorPayment Account id',
                                                  null=True)
     use_employee_department = models.BooleanField(default=False, help_text='use employee department in netsuite')
+    use_employee_class = models.BooleanField(default=False, help_text='use employee class in netsuite')
+    use_employee_location = models.BooleanField(default=False, help_text='use employee location in netsuite')
     department_level = models.CharField(max_length=255, help_text='Transaction Body, Line, Both', null=True)
     vendor_payment_account_name = models.CharField(max_length=255, help_text='VendorPayment Account name', null=True)
     default_ccc_vendor_id = models.CharField(max_length=255, help_text='Default CCC Vendor ID', null=True)
