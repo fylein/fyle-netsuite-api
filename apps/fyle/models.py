@@ -99,9 +99,9 @@ class Expense(models.Model):
         eliminated_expenses = []
 
         for expense in expenses:
-            cutoff_date = _format_date('2021-08-01T00:00:00.000Z')
-            expense_created_at = _format_date(expense['created_at'])
-            if expense_created_at > cutoff_date:
+            cutoff_date = _format_date('2021-06-15T00:00:00.000Z')
+            expense_settled_at = _format_date(expense['settled_at'])
+            if expense_settled_at > cutoff_date:
                 expense_custom_properties = {}
 
                 if custom_property_keys and expense['custom_properties']:
@@ -151,7 +151,7 @@ class Expense(models.Model):
                 eliminated_expenses.append(expense['id'])
 
         if eliminated_expenses:
-            logger.error('Expenses with ids {} are not eligible for import'.format(eliminated_expenses))
+            logger.error('Eliminated Expense - Workspace ID {} - Expense Ids - {}'.format(workspace_id, eliminated_expenses))
 
         return expense_objects
 
