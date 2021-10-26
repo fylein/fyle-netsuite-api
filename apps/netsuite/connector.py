@@ -186,7 +186,7 @@ class NetSuiteConnector:
 
     def get_custom_record_attributes(self, attribute_type: str, internal_id: str):
         custom_segment_attributes = []
-        custom_records = self.connection.custom_records.get_all_by_id(internal_id)
+        custom_records = self.connection.custom_record_types.get_all_by_id(internal_id)
 
         for field in custom_records:
             custom_segment_attributes.append(
