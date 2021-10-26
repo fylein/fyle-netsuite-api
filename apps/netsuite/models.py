@@ -353,7 +353,16 @@ class BillLineitem(models.Model):
                 workspace_id=expense_group.workspace_id
             ).first()
 
-            class_id = get_class_id_or_none(expense_group, lineitem)
+            if expense_group.fund_source == 'CCC' and general_mappings.use_employee_class:
+                employee_mapping = EmployeeMapping.objects.filter(
+                    source_employee__value=expense_group.description.get('employee_email'),
+                    workspace_id=expense_group.workspace_id
+                ).first()
+                if employee_mapping and employee_mapping.destination_employee:
+                    class_id = employee_mapping.destination_employee.detail.get('class_id')
+
+            else:
+                class_id = get_class_id_or_none(expense_group, lineitem)
 
             department_id = get_department_id_or_none(expense_group, lineitem)
 
