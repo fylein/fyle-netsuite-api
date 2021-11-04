@@ -229,9 +229,9 @@ CORS_ORIGIN_ALLOW_ALL = True
 # Fyle Settings
 API_URL = os.environ.get('API_URL')
 FYLE_TOKEN_URI = os.environ.get('FYLE_TOKEN_URI')
-FYLE_CLIENT_ID = os.environ.get('FYLE_CLIENT_ID')
-FYLE_CLIENT_SECRET = os.environ.get('FYLE_CLIENT_SECRET')
-FYLE_REFRESH_TOKEN = os.environ.get('FYLE_REFRESH_TOKEN')
+FYLE_CLIENT_ID = os.environ.get('FYLE_TEST_CLIENT_ID')
+FYLE_CLIENT_SECRET = os.environ.get('FYLE_TEST_CLIENT_SECRET')
+FYLE_REFRESH_TOKEN = os.environ.get('FYLE_TEST_REFRESH_TOKEN')
 FYLE_BASE_URL = os.environ.get('FYLE_BASE_URL')
 
 # Netsuite Settings

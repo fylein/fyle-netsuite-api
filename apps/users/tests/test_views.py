@@ -2,26 +2,43 @@ from django.urls import reverse
 
 from rest_framework.test import APITestCase, APIClient
 
-from fyle_netsuite_api.tests.helpers import TestHelpers
+from fyle_netsuite_api.tests.helpers import django_db_setup, test_connection
+from fyle_rest_auth.models import User
+import pytest
+
+@pytest.fixture
+def api_client():
+   from rest_framework.test import APIClient
+   return APIClient()
 
 
-class TestViews(APITestCase):
+#  Will use paramaterize decorator of python later
 
-    def setUp(self):
-        test_helpers = TestHelpers()
-        connection = test_helpers.test_connection()
-        access_token = connection.access_token
+@pytest.mark.django_db(databases=['cache_db', 'default'])
+def test_get_profile_view(api_client, django_db_setup, test_connection):
+    
+    access_token = test_connection.access_token
+    url = reverse('profile')
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
 
-        self.client = APIClient()
-        test_helpers.client = self.client
-        self.workspace = test_helpers.get_user_workspace_id()
+    response = api_client.get(url)
+    assert response.status_code == 200
 
-        self.__headers = {
-            'Authorization': 'Bearer {}'.format(access_token)
-        }
+@pytest.mark.django_db(databases=['cache_db', 'default'])
+def test_get_cluster_domain_view(api_client, test_connection):
+    access_token = test_connection.access_token
+    url = reverse('domain')
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
 
-    def test_get_profile_view(self):
-        response = self.client.get(
-            reverse('profile'), headers=self.__headers
-        )
-        self.assertEqual(response.status_code, 200, msg='GET Profile Failed')
+    response = api_client.get(url)
+    assert response.status_code == 200
+    assert response.content == b'"https://staging.fyle.tech"'
+
+@pytest.mark.django_db(databases=['cache_db', 'default'])
+def test_get_fyle_orgs_view(api_client, test_connection):
+    access_token = test_connection.access_token
+    url = reverse('orgs')
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
+
+    response = api_client.get(url)
+    assert response.status_code == 200
