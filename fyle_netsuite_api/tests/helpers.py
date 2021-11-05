@@ -85,9 +85,3 @@ def get_user_workspace_id(db):
     workspace.save()
     workspace.user.add(user)
     return workspace
-
-
-
-
-
-    
