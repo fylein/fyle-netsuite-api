@@ -739,7 +739,7 @@ class NetSuiteConnector:
                     'externalId': None,
                     'type': 'account'
                 },
-                'amount': line.amount - line.tax_amount if line.tax_item_id else line.amount,
+                'amount': line.amount - line.tax_amount if (line.tax_item_id and line.tax_amount) else line.amount,
                 'memo': line.memo,
                 'grossAmt': line.amount,
                 'taxDetailsReference': None,
@@ -1421,7 +1421,7 @@ class NetSuiteConnector:
                 'tax1Acct': None,
                 'taxAccount': None,
                 'taxBasis': None,
-                'tax1Amt': line.tax_amount,
+                'tax1Amt': line.tax_amount if (line.tax_item_id and line.tax_amount) else None,
                 'taxCode':{
                     'name':None,
                     'internalId': line.tax_item_id if (line.tax_item_id and line.tax_amount) else None,
