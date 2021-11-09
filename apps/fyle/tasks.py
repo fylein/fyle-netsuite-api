@@ -50,13 +50,13 @@ def create_expense_groups(workspace_id: int, fund_source: List[str], task_log: T
     """
     try:
         with transaction.atomic():
-            updated_at = []
+            settled_at = []
 
             workspace = Workspace.objects.get(pk=workspace_id)
             last_synced_at = workspace.last_synced_at
 
             if last_synced_at:
-                updated_at.append('gte:{0}'.format(datetime.strftime(last_synced_at, '%Y-%m-%dT%H:%M:%S.000Z')))
+                settled_at.append('gte:{0}'.format(datetime.strftime(last_synced_at, '%Y-%m-%dT%H:%M:%S.000Z')))
 
             fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
             fyle_connector = FyleConnector(fyle_credentials.refresh_token, workspace_id)
@@ -70,7 +70,7 @@ def create_expense_groups(workspace_id: int, fund_source: List[str], task_log: T
 
             expenses = fyle_connector.get_expenses(
                 state=import_state,
-                updated_at=updated_at,
+                settled_at=settled_at,
                 fund_source=fund_source
             )
 
