@@ -1,8 +1,9 @@
-import pytest
 from datetime import datetime, timezone
+import pytest
+from rest_framework.test import APIClient
 from fylesdk import FyleSDK
-from fyle_netsuite_api.tests import settings
 from fyle_rest_auth.models import AuthToken, User
+from fyle_netsuite_api.tests import settings
 from apps.mappings.models import SubsidiaryMapping
 
 from apps.workspaces.models import Workspace, NetSuiteCredentials, FyleCredential
@@ -17,8 +18,7 @@ def django_db_setup():
 
 @pytest.fixture
 def api_client():
-   from rest_framework.test import APIClient
-   return APIClient()
+    return APIClient()
 
 @pytest.fixture()
 def test_connection():
@@ -37,8 +37,6 @@ def test_connection():
         client_secret=client_secret,
         refresh_token=refresh_token
     )
-
-    access_token = fyle_connection.access_token
 
     user_profile = fyle_connection.Employees.get_my_profile()['data']
 
