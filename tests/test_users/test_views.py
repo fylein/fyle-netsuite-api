@@ -1,19 +1,10 @@
 from django.urls import reverse
 
 from rest_framework.test import APITestCase, APIClient
-
-from fyle_netsuite_api.tests.helpers import django_db_setup, test_connection
 from fyle_rest_auth.models import User
 import pytest
 
-@pytest.fixture
-def api_client():
-   from rest_framework.test import APIClient
-   return APIClient()
-
-
 #  Will use paramaterize decorator of python later
-
 @pytest.mark.django_db(databases=['cache_db', 'default'])
 def test_get_profile_view(api_client, django_db_setup, test_connection):
     
