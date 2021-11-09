@@ -27,6 +27,3 @@ def test_sync_dimension(test_connection, sync_fyle_dimensions):
     assert len(employees) == 13
     assert len(projects) == 1098
     assert len(categories) == 33
-
-
-

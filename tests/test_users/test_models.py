@@ -24,6 +24,3 @@ def test_get_of_user(add_users_to_database):
     user = User.objects.filter(email='nilesh.p@fyle.in').first()
 
     assert user.user_id == 'ust5Gda9HC3qc'
-
-
-    

@@ -57,9 +57,3 @@ def create_general_mapping(django_db_setup):
     )
 
     general_mapping.save()
-
-
-
-    
-
-

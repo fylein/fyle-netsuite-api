@@ -29,4 +29,3 @@ def test_get_workspace_detail(api_client, test_connection, configuration_with_em
     response = api_client.get(url)
 
     assert response.status_code == 200
-    

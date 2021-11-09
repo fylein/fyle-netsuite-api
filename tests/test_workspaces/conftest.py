@@ -7,7 +7,7 @@ def configuration_with_employee_mapping(django_db_setup):
     
     workspace = Workspace.objects.filter(id=1).first()
 
-    expense_group_settings = ExpenseGroupSettings.objects.update_or_create(
+    ExpenseGroupSettings.objects.update_or_create(
         workspace_id=workspace.id,
         defaults={
             'reimbursable_expense_group_fields': ['employee_email','report_id','claim_number','fund_source'],

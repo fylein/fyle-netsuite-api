@@ -7,8 +7,6 @@ from apps.mappings.models import SubsidiaryMapping
 
 from apps.workspaces.models import Workspace, NetSuiteCredentials, FyleCredential
 
-
-
 @pytest.fixture(scope='session')
 def django_db_setup():
     settings.DATABASES['default'] = {

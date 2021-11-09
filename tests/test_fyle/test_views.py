@@ -64,3 +64,4 @@ def test_expense_view(api_client, test_connection, create_expense_group):
    response = json.loads(response.content)
 
    assert response[0]['expense_id'] == 'txiRmGpGNHyT'
+   
