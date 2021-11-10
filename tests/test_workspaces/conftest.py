@@ -1,4 +1,5 @@
 import pytest
+from datetime import datetime
 from apps.workspaces.models import Configuration, Workspace
 from apps.fyle.models import ExpenseGroupSettings
 
@@ -28,6 +29,7 @@ def configuration_with_employee_mapping(django_db_setup):
         import_projects=True,
         auto_map_employees='NAME',
         auto_create_destination_entity=False,
+        created_at=datetime.now()
     )
 
     configuration.save()
