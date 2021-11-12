@@ -141,7 +141,7 @@ def test_post_bill_mapping_error(create_expense_group, create_general_mapping, m
     assert task_log.detail[1]['message'] == 'Category Mapping Not Found'
     assert task_log.status == 'FAILED'
 
-@pytest.skip
+@pytest.mark.skip
 def test_create_expense_report(create_expense_group, create_general_mapping, create_necessary_mapping, mocker):
     mocker.patch(
         'apps.netsuite.connector.NetSuiteConnector.post_expense_report',

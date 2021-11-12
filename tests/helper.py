@@ -1,5 +1,4 @@
 import json
-import logging
 from os import path
 
 def dict_compare_keys(d1, d2, key_path=''):
@@ -32,6 +31,6 @@ def dict_compare_keys(d1, d2, key_path=''):
 def get_response_dict(filename):
     basepath = path.dirname(__file__)
     filepath = path.join(basepath, filename)
-    mock_qbo_json = open(filepath, 'r').read()
-    mock_qbo_dict = json.loads(mock_qbo_json)
-    return mock_qbo_dict
+    mock_json = open(filepath, 'r').read()
+    mock_dict = json.loads(mock_json)
+    return mock_dict

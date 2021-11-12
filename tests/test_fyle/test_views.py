@@ -47,7 +47,7 @@ def test_expense_group_id_view(api_client, test_connection, create_expense_group
    assert response.status_code == 200
    response = json.loads(response.content)
 
-   assert dict_compare_keys(response, data['expense_group_id']) == [], 'qbo.accounts.get() has stuff that mock_qbo doesnt'
+   assert dict_compare_keys(response, data['expense_group_id']) == [], 'expense group api return diffs in keys'
 
 @pytest.mark.django_db(databases=['default'])
 def test_expense_view(api_client, test_connection, create_expense_group):
@@ -68,4 +68,4 @@ def test_expense_view(api_client, test_connection, create_expense_group):
    assert response.status_code == 200
    response = json.loads(response.content)
 
-   assert dict_compare_keys(response, data['expense_group_expenses']) == [], 'qbo.accounts.get() has stuff that mock_qbo doesnt'
+   assert dict_compare_keys(response, data['expense_group_expenses']) == [], 'expenses group expenses returns diffs in keys'

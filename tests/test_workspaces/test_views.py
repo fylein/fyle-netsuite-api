@@ -22,7 +22,7 @@ def test_get_workspace_by_id(api_client, test_connection):
 
     expected_response = get_response_dict('test_workspaces/data.json')
 
-    assert dict_compare_keys(response, expected_response['workspace']) == [], 'qbo.accounts.get() has stuff that mock_qbo doesnt'
+    assert dict_compare_keys(response, expected_response['workspace']) == [], 'workspaces api returns a diff in the keys'
 
 
 @pytest.mark.django_db(databases=['default'])
@@ -40,7 +40,7 @@ def test_post_of_workspace(api_client, test_connection):
 
     expected_response = get_response_dict('test_workspaces/data.json')
 
-    assert dict_compare_keys(response, expected_response['workspace']) == [], 'qbo.accounts.get() has stuff that mock_qbo doesnt'
+    assert dict_compare_keys(response, expected_response['workspace']) == [], 'workspaces api returns a diff in the keys'
 
 
 @pytest.mark.django_db(databases=['default'])
@@ -59,4 +59,4 @@ def test_get_configuration_detail(api_client, test_connection, configuration_wit
 
     expected_response = get_response_dict('test_workspaces/data.json')
 
-    assert dict_compare_keys(response, expected_response['configuration']) == [], 'qbo.accounts.get() has stuff that mock_qbo doesnt'
+    assert dict_compare_keys(response, expected_response['configuration']) == [], 'configuration api returns a diff in keys'
