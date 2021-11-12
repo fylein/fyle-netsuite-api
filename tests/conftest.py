@@ -8,20 +8,12 @@ from apps.mappings.models import SubsidiaryMapping
 
 from apps.workspaces.models import Workspace, NetSuiteCredentials, FyleCredential
 
-@pytest.fixture(scope='session')
-def django_db_setup():
-    settings.DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': settings.DB_NAME,
-        'HOST': settings.HOST,
-    }
-
 @pytest.fixture
 def api_client():
     return APIClient()
 
 @pytest.fixture()
-def test_connection():
+def test_connection(db):
     """
     Creates a connection with Fyle
     """
@@ -29,7 +21,6 @@ def test_connection():
     client_secret = settings.FYLE_CLIENT_SECRET
     base_url = settings.FYLE_BASE_URL
     refresh_token = settings.FYLE_REFRESH_TOKEN
-
 
     fyle_connection = FyleSDK(
         base_url=base_url,
@@ -44,6 +35,7 @@ def test_connection():
         password='', last_login=datetime.now(tz=timezone.utc), id=1, email=user_profile['employee_email'],
         user_id=user_profile['user_id'], full_name='', active='t', staff='f', admin='t'
     )
+
     user.save()
 
     auth_token = AuthToken(
@@ -67,7 +59,6 @@ def test_connection():
     workspace.save()
     workspace.user.add(user)
 
-
     fyle_credentials, _ = FyleCredential.objects.update_or_create(
         workspace_id=1,
         defaults={
@@ -76,7 +67,6 @@ def test_connection():
     )
 
     fyle_credentials.save()
-
 
     subsidiary_mappings = SubsidiaryMapping(
         id=1,

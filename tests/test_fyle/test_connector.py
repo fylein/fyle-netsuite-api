@@ -14,11 +14,11 @@ def test_get_of_expenses(test_connection, create_expense_group):
     personal_expenses = fyle_connector.get_expenses(['PAYMENT_PROCESSING'], [], ['PERSONAL'])
     ccc_expenses = fyle_connector.get_expenses(['PAYMENT_PROCESSING'], [], ['CCC'])
 
-    assert len(personal_expenses) == 4
-    assert len(ccc_expenses) == 2
+    assert len(personal_expenses) == 6
+    assert len(ccc_expenses) == 6
 
 @pytest.mark.django_db()
-def test_sync_dimension(test_connection, sync_fyle_dimensions):
+def test_sync_l(test_connection, sync_fyle_dimensions):
 
     employees = ExpenseAttribute.objects.filter(attribute_type='EMPLOYEE')
     projects = ExpenseAttribute.objects.filter(attribute_type='PROJECT')

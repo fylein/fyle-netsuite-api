@@ -1,8 +1,12 @@
 import pytest
+import json
 from django.urls import reverse
 
-@pytest.mark.django_db(databases=['cache_db', 'default'])
-def test_get_workspace_detail(api_client, test_connection, configuration_with_employee_mapping):
+
+from tests.helper import dict_compare_keys, get_response_dict
+
+@pytest.mark.django_db(databases=['default'])
+def test_get_workspace_by_id(api_client, test_connection):
 
     url = reverse(
         'workspace-by-id', kwargs={
@@ -12,12 +16,35 @@ def test_get_workspace_detail(api_client, test_connection, configuration_with_em
 
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
     response = api_client.get(url)
-
     assert response.status_code == 200
 
+    response = json.loads(response.content)
 
-@pytest.mark.django_db(databases=['cache_db', 'default'])
-def test_get_workspace_detail(api_client, test_connection, configuration_with_employee_mapping):
+    expected_response = get_response_dict('test_workspaces/data.json')
+
+    assert dict_compare_keys(response, expected_response['workspace']) == [], 'qbo.accounts.get() has stuff that mock_qbo doesnt'
+
+
+@pytest.mark.django_db(databases=['default'])
+def test_post_of_workspace(api_client, test_connection):
+
+    url = reverse(
+        'workspace'
+    )
+
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    response = api_client.post(url)
+    assert response.status_code == 200
+
+    response = json.loads(response.content)
+
+    expected_response = get_response_dict('test_workspaces/data.json')
+
+    assert dict_compare_keys(response, expected_response['workspace']) == [], 'qbo.accounts.get() has stuff that mock_qbo doesnt'
+
+
+@pytest.mark.django_db(databases=['default'])
+def test_get_configuration_detail(api_client, test_connection, configuration_with_employee_mapping):
 
     url = reverse(
         'workspace-configurations', kwargs={
@@ -27,5 +54,9 @@ def test_get_workspace_detail(api_client, test_connection, configuration_with_em
 
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
     response = api_client.get(url)
-
     assert response.status_code == 200
+    response = json.loads(response.content)
+
+    expected_response = get_response_dict('test_workspaces/data.json')
+
+    assert dict_compare_keys(response, expected_response['configuration']) == [], 'qbo.accounts.get() has stuff that mock_qbo doesnt'

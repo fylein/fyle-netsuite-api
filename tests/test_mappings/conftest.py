@@ -9,8 +9,7 @@ from apps.fyle.models import ExpenseGroupSettings
 
 
 @pytest.fixture
-def create_general_mapping(django_db_setup):
-    
+def create_configuration(db, test_connection):
     workspace = Workspace.objects.filter(id=1).first()
 
     expense_group_settings = ExpenseGroupSettings.objects.update_or_create(
@@ -26,24 +25,27 @@ def create_general_mapping(django_db_setup):
     configuration = Configuration(
         id=1,
         workspace=workspace,
-        employee_field_mapping='EMPLOYEE',
-        reimbursable_expenses_object='EXPENSE_REPORT',
-        corporate_credit_card_expenses_object='EXPENSE_REPORT',
+        employee_field_mapping='VENDOR',
+        reimbursable_expenses_object='BILL',
+        corporate_credit_card_expenses_object='CREDIT CARD CHARGE',
         import_categories=True,
         import_tax_items=False,
         import_projects=True,
         auto_map_employees='NAME',
         auto_create_destination_entity=False,
+        auto_create_merchants=True
     )
 
     configuration.save()
 
+@pytest.fixture
+def create_general_mapping(db, test_connection, create_configuration):
 
     general_mapping = GeneralMapping(
         id=1,
-        location_name='01: San Francisco',
+        location_name='hukiju',
         location_level='ALL',
-        location_id=2,
+        location_id=10,
         accounts_payable_name='Accounts Payable',
         accounts_payable_id=25,
         reimbursable_account_id=25,
@@ -51,9 +53,10 @@ def create_general_mapping(django_db_setup):
         use_employee_department=False,
         use_employee_location=False,
         use_employee_class=False,
+        department_level=None,
         default_ccc_vendor_id=3381,
         default_ccc_vendor_name='Allison Hill',
-        workspace=workspace
+        workspace_id=1
     )
 
     general_mapping.save()

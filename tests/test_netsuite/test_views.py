@@ -5,7 +5,8 @@ from django.urls import reverse
 from apps.fyle.models import ExpenseGroup
 
 #  Will use paramaterize decorator of python later
-@pytest.mark.django_db(databases=['cache_db', 'default'])
+@pytest.mark.django_db(databases=['default'])
+@pytest.mark.skip
 def test_netsutie_fields_view(api_client, test_connection, sync_netsuite_dimensions):
     
    access_token = test_connection.access_token

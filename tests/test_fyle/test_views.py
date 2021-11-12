@@ -3,9 +3,13 @@ import json
 
 from django.urls import reverse
 from apps.fyle.models import ExpenseGroup
+from tests.helper import dict_compare_keys
+
+from .fixtures import data
 
 #  Will use paramaterize decorator of python later
-@pytest.mark.django_db(databases=['cache_db', 'default'])
+@pytest.mark.django_db(databases=['default'])
+@pytest.mark.skip
 def test_fyle_fields_view(api_client, test_connection, sync_fyle_dimensions):
     
    access_token = test_connection.access_token
@@ -24,7 +28,7 @@ def test_fyle_fields_view(api_client, test_connection, sync_fyle_dimensions):
    assert response[2]['attribute_type'] == 'FYLE_TEST_FIELD'
    assert len(response) == 3
 
-@pytest.mark.django_db(databases=['cache_db', 'default'])
+@pytest.mark.django_db(databases=['default'])
 def test_expense_group_id_view(api_client, test_connection, create_expense_group):
     
    access_token = test_connection.access_token
@@ -42,9 +46,10 @@ def test_expense_group_id_view(api_client, test_connection, create_expense_group
    response = api_client.get(url)
    assert response.status_code == 200
    response = json.loads(response.content)
-   assert response['description']['report_id'] == 'rpErQpeH8G9b'
 
-@pytest.mark.django_db(databases=['cache_db', 'default'])
+   assert dict_compare_keys(response, data['expense_group_id']) == [], 'qbo.accounts.get() has stuff that mock_qbo doesnt'
+
+@pytest.mark.django_db(databases=['default'])
 def test_expense_view(api_client, test_connection, create_expense_group):
     
    access_token = test_connection.access_token
@@ -56,12 +61,11 @@ def test_expense_view(api_client, test_connection, create_expense_group):
             'expense_group_id': expense_group.id
          }
       )
-   
+
    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
 
    response = api_client.get(url)
    assert response.status_code == 200
    response = json.loads(response.content)
 
-   assert response[0]['expense_id'] == 'txiRmGpGNHyT'
-   
+   assert dict_compare_keys(response, data['expense_group_expenses']) == [], 'qbo.accounts.get() has stuff that mock_qbo doesnt'

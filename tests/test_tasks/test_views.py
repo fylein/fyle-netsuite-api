@@ -3,7 +3,7 @@ import json
 from django.urls import reverse
 
 #  Will use paramaterize decorator of python later
-@pytest.mark.django_db(databases=['cache_db', 'default'])
+@pytest.mark.django_db(databases=['default'])
 def test_task_view(api_client, test_connection, create_task_logs):
     
    access_token = test_connection.access_token

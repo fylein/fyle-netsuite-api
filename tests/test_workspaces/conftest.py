@@ -4,7 +4,7 @@ from apps.workspaces.models import Configuration, Workspace
 from apps.fyle.models import ExpenseGroupSettings
 
 @pytest.fixture
-def configuration_with_employee_mapping(django_db_setup):
+def configuration_with_employee_mapping(db):
     
     workspace = Workspace.objects.filter(id=1).first()
 
