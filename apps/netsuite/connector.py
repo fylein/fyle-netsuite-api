@@ -953,7 +953,7 @@ class NetSuiteConnector:
             'account': {
                 'internalId': line.account_id
             },
-            'amount': line.amount - line.tax_amount if line.tax_item_id else line.amount,
+            'amount': line.amount,
             'memo': line.memo,
             'grossAmt': line.amount,
             'department': {
