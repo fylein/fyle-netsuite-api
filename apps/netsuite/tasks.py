@@ -693,15 +693,19 @@ def __validate_tax_group_mapping(expense_group: ExpenseGroup, configuration: Con
 
 
 def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Configuration) -> List[BulkError]:
+    print('I am here')
     bulk_errors = []
     if expense_group.fund_source == 'PERSONAL' or \
             (expense_group.fund_source == 'CCC' and \
                 configuration.reimbursable_expenses_object in ['EXPENSE REPORT', 'JOURNAL ENTRY']):
+                
         try:
             entity = EmployeeMapping.objects.get(
                 source_employee__value=expense_group.description.get('employee_email'),
                 workspace_id=expense_group.workspace_id
             )
+
+            print('nilesh', entity.destination_employee.value)
 
             if configuration.employee_field_mapping == 'EMPLOYEE':
                 entity = entity.destination_employee
@@ -711,6 +715,7 @@ def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Conf
             if not entity:
                 raise EmployeeMapping.DoesNotExist
         except EmployeeMapping.DoesNotExist:
+            print('erererere')
             bulk_errors.append({
                 'row': None,
                 'expense_group_id': expense_group.id,
@@ -771,6 +776,7 @@ def __validate_expense_group(expense_group: ExpenseGroup, configuration: Configu
 
     # Employee Mapping
     employee_mapping_errors = __validate_employee_mapping(expense_group, configuration)
+    print('emesadsg', employee_mapping_errors)
 
     # Category Mapping
     category_mapping_errors = __validate_category_mapping(expense_group, configuration)
