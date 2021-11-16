@@ -39,6 +39,6 @@ jobs:
           NS_TOKEN_ID: ${{ secrets.NS_TOKEN_ID }}
           NS_TOKEN_SECRET: ${{ secrets.NS_TOKEN_SECRET }}
       - name: Run Tests  
-        run: docker-compose run api pytest apps/users/tests/
+        run: docker-compose -f docker-compose-pipeline.yml run api pytest apps/users/tests/
       - name: Stop Services
         run: docker compose -f docker-compose-pipeline.yml down
