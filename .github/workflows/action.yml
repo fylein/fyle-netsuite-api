@@ -16,28 +16,28 @@ jobs:
       with:
         args: pip3 install -r requirements.txt && pip install pylint-django==2.3.0 && pylint --load-plugins pylint_django --rcfile=.pylintrc **/**.py
         
-  pytest:
-    runs-on: ubuntu-latest
-    environment: CI Environment
-    steps:
-      - uses: actions/checkout@v2 
-      - uses: satackey/action-docker-layer-caching@v0.0.11
-        continue-on-error: true
-      - name: Bring up Services and Run Tests
-        run: |
-          docker-compose -f docker-compose-pipeline.yml build
-          docker-compose -f docker-compose-pipeline.yml up -d
-          docker-compose -f docker-compose-pipeline.yml run api pytest apps/users/tests/
-        env:
-          FYLE_BASE_URL: ${{ secrets.FYLE_BASE_URL }}
-          FYLE_CLIENT_ID: ${{ secrets.FYLE_CLIENT_ID }}
-          FYLE_CLIENT_SECRET: ${{ secrets.FYLE_CLIENT_SECRET }}
-          FYLE_TOKEN_URI: ${{ secrets.FYLE_TOKEN_URI }}
-          FYLE_REFRESH_TOKEN: ${{ secrets.FYLE_REFRESH_TOKEN }}
-          NS_ACCOUNT_ID: ${{ secrets.NS_ACCOUNT_ID }}
-          NS_CONSUMER_KEY: ${{ secrets.NS_CONSUMER_KEY }}
-          NS_CONSUMER_SECRET: ${{ secrets.NS_CONSUMER_SECRET }}
-          NS_TOKEN_ID: ${{ secrets.NS_TOKEN_ID }}
-          NS_TOKEN_SECRET: ${{ secrets.NS_TOKEN_SECRET }}
-      - name: Stop Services
-        run: docker compose -f docker-compose-pipeline.yml down
+  # pytest:
+  #   runs-on: ubuntu-latest
+  #   environment: CI Environment
+  #   steps:
+  #     - uses: actions/checkout@v2 
+  #     - uses: satackey/action-docker-layer-caching@v0.0.11
+  #       continue-on-error: true
+  #     - name: Bring up Services and Run Tests
+  #       run: |
+  #         docker-compose -f docker-compose-pipeline.yml build
+  #         docker-compose -f docker-compose-pipeline.yml up -d
+  #         docker-compose -f docker-compose-pipeline.yml run api pytest apps/users/tests/
+  #       env:
+  #         FYLE_BASE_URL: ${{ secrets.FYLE_BASE_URL }}
+  #         FYLE_CLIENT_ID: ${{ secrets.FYLE_CLIENT_ID }}
+  #         FYLE_CLIENT_SECRET: ${{ secrets.FYLE_CLIENT_SECRET }}
+  #         FYLE_TOKEN_URI: ${{ secrets.FYLE_TOKEN_URI }}
+  #         FYLE_REFRESH_TOKEN: ${{ secrets.FYLE_REFRESH_TOKEN }}
+  #         NS_ACCOUNT_ID: ${{ secrets.NS_ACCOUNT_ID }}
+  #         NS_CONSUMER_KEY: ${{ secrets.NS_CONSUMER_KEY }}
+  #         NS_CONSUMER_SECRET: ${{ secrets.NS_CONSUMER_SECRET }}
+  #         NS_TOKEN_ID: ${{ secrets.NS_TOKEN_ID }}
+  #         NS_TOKEN_SECRET: ${{ secrets.NS_TOKEN_SECRET }}
+  #     - name: Stop Services
+  #       run: docker compose -f docker-compose-pipeline.yml down
