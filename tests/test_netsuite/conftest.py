@@ -1,11 +1,21 @@
 import pytest
 
-from apps.workspaces.models import Workspace
-from apps.workspaces.models import Workspace, NetSuiteCredentials
-from apps.netsuite.helpers import check_interval_and_sync_dimension
+from apps.tasks.models import TaskLog
 
 @pytest.fixture
-def sync_netsuite_dimensions(django_db_setup, test_connection):
-    workspace = Workspace.objects.get(id=1)
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
-    check_interval_and_sync_dimension(workspace, netsuite_credentials)
+def create_task_logs(db):
+    TaskLog.objects.update_or_create(
+        workspace_id=1,
+        type='FETCHING_EXPENSES',
+        defaults={
+            'status': 'READY'
+        }
+    )
+
+    TaskLog.objects.update_or_create(
+        workspace_id=2,
+        type='FETCHING_EXPENSES',
+        defaults={
+            'status': 'READY'
+        }
+    )

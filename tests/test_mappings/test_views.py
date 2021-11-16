@@ -2,7 +2,7 @@ import pytest
 import json
 from django.urls import reverse
 
-@pytest.mark.django_db(databases=['cache_db', 'default'])
+@pytest.mark.django_db(databases=['default'])
 def test_subsidiary_mapping_view(api_client, test_connection):
     '''
     Test Post of User Profile
@@ -20,10 +20,10 @@ def test_subsidiary_mapping_view(api_client, test_connection):
     response = api_client.get(url)
     response = json.loads(response.content)
 
-    assert response['internal_id']=='1'
-    assert response['subsidiary_name']=='Test Subsidiary'
+    assert response['internal_id']=='3'
+    assert response['subsidiary_name']=='Honeycomb Holdings Inc.'
 
-@pytest.mark.django_db(databases=['cache_db', 'default'])
+@pytest.mark.django_db(databases=['default'])
 def test_post_country_view(api_client, test_connection):
     '''
     Test Post of User Profile
@@ -40,10 +40,10 @@ def test_post_country_view(api_client, test_connection):
     response = json.loads(response.content)
 
     assert response['country_name']=='_unitedStates'
-    assert response['subsidiary_name']=='Test Subsidiary'
+    assert response['subsidiary_name']=='Honeycomb Holdings Inc.'
 
-@pytest.mark.django_db(databases=['cache_db', 'default'])
-def test_general_mappings(api_client, test_connection, create_general_mapping):
+@pytest.mark.django_db(databases=['default'])
+def test_general_mappings(api_client, test_connection):
     '''
     Test Post of User Profile
     '''
@@ -58,4 +58,4 @@ def test_general_mappings(api_client, test_connection, create_general_mapping):
     response = api_client.get(url)
     assert response.status_code == 200
     response = json.loads(response.content)
-    assert response['default_ccc_vendor_name'] == 'Allison Hill'
+    assert response['default_ccc_vendor_name'] == 'Ashwin Vendor'

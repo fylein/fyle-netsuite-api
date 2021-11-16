@@ -240,6 +240,3 @@ NS_TOKEN_ID = os.environ.get('NS_TOKEN_ID')
 NS_TOKEN_SECRET = os.environ.get('NS_TOKEN_SECRET')
 NS_CONSUMER_KEY = os.environ.get('NS_CONSUMER_KEY')
 NS_CONSUMER_SECRET = os.environ.get('NS_CONSUMER_SECRET')
-
-DB_NAME = os.environ.get('TEST_DB_NAME')
-HOST =  os.environ.get('DB_HOST')
