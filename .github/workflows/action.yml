@@ -25,4 +25,5 @@ jobs:
       - name: Bring up Services
         run: |
           docker-compose -f docker-compose-pipeline.yml build
-          docker-compose -f docker-compose-pipleline.yaml up -d
+          docker-compose -f docker-compose-pipeline.yml up -d
+          docker compose -f docker-compose-pipeline.yml down
