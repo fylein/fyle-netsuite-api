@@ -55,7 +55,7 @@ def test_connection(db):
 def add_netsuite_credentials(db):
     count=1
 
-    while (count<3):
+    while count<3:
         NetSuiteCredentials.objects.create(
             id=count,
             ns_account_id=settings.NS_ACCOUNT_ID,
@@ -72,7 +72,7 @@ def add_netsuite_credentials(db):
 def add_fyle_credentials(db):
     count=1
 
-    while (count<3):
+    while count<3:
         FyleCredential.objects.create(
             id=count,
             refresh_token=settings.FYLE_REFRESH_TOKEN,
