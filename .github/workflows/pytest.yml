@@ -1,5 +1,9 @@
 name: Test Coverage
 
+on:
+  pull_request:
+    types: [assigned, opened, synchronize, reopened]
+
 jobs:
   pytest:
     runs-on: ubuntu-latest
