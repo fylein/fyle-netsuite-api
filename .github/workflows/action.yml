@@ -27,9 +27,6 @@ jobs:
         run: |
           docker-compose -f docker-compose-pipeline.yml build
           docker-compose -f docker-compose-pipeline.yml up -d
-          sleep 10
-          docker-compose -f docker-compose-pipeline.yml logs api
-          docker compose -f docker-compose-pipeline.yml down
         env:
           FYLE_BASE_URL: ${{ secrets.FYLE_BASE_URL }}
           FYLE_CLIENT_ID: ${{ secrets.FYLE_CLIENT_ID }}
@@ -41,3 +38,7 @@ jobs:
           NS_CONSUMER_SECRET: ${{ secrets.NS_CONSUMER_SECRET }}
           NS_TOKEN_ID: ${{ secrets.NS_TOKEN_ID }}
           NS_TOKEN_SECRET: ${{ secrets.NS_TOKEN_SECRET }}
+      - name: Run Tests  
+        run: docker-compose run api pytest apps/users/tests/
+      - name: Stop Services
+        run: docker compose -f docker-compose-pipeline.yml down
