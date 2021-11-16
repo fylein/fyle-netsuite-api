@@ -1,10 +1,10 @@
-import pytest
-from datetime import datetime, timezone
 import os
+from datetime import datetime, timezone
+import pytest
 from rest_framework.test import APIClient
 from fylesdk import FyleSDK
-from fyle_netsuite_api.tests import settings
 from fyle_rest_auth.models import AuthToken, User
+from fyle_netsuite_api.tests import settings
 
 
 def pytest_configure():
