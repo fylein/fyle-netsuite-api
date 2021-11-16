@@ -540,4 +540,9 @@ data = {
         "workspace": 1,
         "expenses": [1],
     },
+    "expense_group_setting_payload": {
+        "expenses_grouped_by": ["claim_number"],
+        "expense_state": "PAID",
+        "export_date_type": "spent_at",
+    },
 }
