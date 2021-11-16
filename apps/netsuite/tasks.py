@@ -696,7 +696,7 @@ def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Conf
     bulk_errors = []
     if expense_group.fund_source == 'PERSONAL' or \
             (expense_group.fund_source == 'CCC' and \
-                configuration.reimbursable_expenses_object in ['EXPENSE REPORT', 'JOURNAL ENTRY']):  
+                configuration.reimbursable_expenses_object in ['EXPENSE REPORT', 'JOURNAL ENTRY']):
         try:
             entity = EmployeeMapping.objects.get(
                 source_employee__value=expense_group.description.get('employee_email'),
