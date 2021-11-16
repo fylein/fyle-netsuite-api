@@ -63,10 +63,8 @@ def run_post_general_mapping_triggers(sender, instance: GeneralMapping, **kwargs
     :param instance: Row Instance of Sender Class
     :return: None
     """
-    print('I am here')
     configuration = Configuration.objects.get(workspace_id=instance.workspace_id)
     schedule_payment_sync(configuration)
 
     if instance.default_ccc_account_name:
-        print('I am s sdfopihsdo9gihs')
         schedule_auto_map_ccc_employees(instance.workspace_id)

@@ -746,13 +746,10 @@ class ExpenseReportLineItem(models.Model):
                 workspace_id=expense_group.workspace_id
             ).first()
 
-            print('account', account.destination_expense_head.destination_id)
             entity = EmployeeMapping.objects.get(
                 source_employee__value=description.get('employee_email'),
                 workspace_id=expense_group.workspace_id
             )
-
-            print('entity', entity)
 
             currency = DestinationAttribute.objects.filter(value=lineitem.currency,
                                                            workspace_id=expense_group.workspace_id,

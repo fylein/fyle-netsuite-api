@@ -692,7 +692,6 @@ def __validate_tax_group_mapping(expense_group: ExpenseGroup, configuration: Con
 
 
 def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Configuration) -> List[BulkError]:
-    print('I am here')
     bulk_errors = []
     if expense_group.fund_source == 'PERSONAL' or \
             (expense_group.fund_source == 'CCC' and \
@@ -704,20 +703,14 @@ def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Conf
                 workspace_id=expense_group.workspace_id
             )
 
-            print('nilesh', entity.destination_vendor)
-
             if configuration.employee_field_mapping == 'EMPLOYEE':
                 entity = entity.destination_employee
             else:
                 entity = entity.destination_vendor
 
-            print('nilesh 222', entity)
-
             if not entity:
-                print('herswersdts')
                 raise EmployeeMapping.DoesNotExist
         except EmployeeMapping.DoesNotExist:
-            print('erererere')
             bulk_errors.append({
                 'row': None,
                 'expense_group_id': expense_group.id,

@@ -70,11 +70,9 @@ class WorkspaceView(viewsets.ViewSet):
         """
 
         auth_tokens = AuthToken.objects.get(user__user_id=request.user)
-        print(auth_tokens)
         fyle_user = auth_utils.get_fyle_user(
             auth_tokens.refresh_token, origin_address=None
         )
-        print(fyle_user)
         org_name = fyle_user["org_name"]
         org_id = fyle_user["org_id"]
 
