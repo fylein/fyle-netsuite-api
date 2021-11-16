@@ -252,6 +252,7 @@ def create_bill(expense_group, task_log_id):
                     attachment_links[expense_id] = attachment_link
 
             created_bill = netsuite_connection.post_bill(bill_object, bill_lineitems_objects, attachment_links)
+
             task_log.detail = created_bill
             task_log.bill = bill_object
             task_log.status = 'COMPLETE'
@@ -695,8 +696,7 @@ def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Conf
     bulk_errors = []
     if expense_group.fund_source == 'PERSONAL' or \
             (expense_group.fund_source == 'CCC' and \
-                configuration.reimbursable_expenses_object in ['EXPENSE REPORT', 'JOURNAL ENTRY']):
-                
+                configuration.reimbursable_expenses_object in ['EXPENSE REPORT', 'JOURNAL ENTRY']):  
         try:
             entity = EmployeeMapping.objects.get(
                 source_employee__value=expense_group.description.get('employee_email'),
