@@ -877,7 +877,7 @@ class NetSuiteConnector:
             'taxDetailsList': None,
             'customFieldList': None,
             'internalId': None,
-            'externalId': bill.external_id
+            'externalId': '1209340fibhnase9rfghwq9e8ug'
         }
 
         return bill_payload
@@ -1253,7 +1253,7 @@ class NetSuiteConnector:
             'amount': None,
             'memo': expense_report.memo,
             'complete': None,
-            'supervisorApproval': True,
+            #'supervisorApproval': True,
             'accountingApproval': True,
             'useMultiCurrency': None,
             'tax2Amt': None,
@@ -1281,7 +1281,7 @@ class NetSuiteConnector:
             'accountingBookDetailList': None,
             'customFieldList': None,
             'internalId': None,
-            'externalId': expense_report.external_id
+            'externalId': '03294720937402397402937'
         }
 
         return expense_report_payload

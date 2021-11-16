@@ -44,7 +44,7 @@ def test_post_of_workspace(api_client, test_connection):
 
 
 @pytest.mark.django_db(databases=['default'])
-def test_get_configuration_detail(api_client, test_connection, configuration_with_employee_mapping):
+def test_get_configuration_detail(api_client, test_connection):
 
     url = reverse(
         'workspace-configurations', kwargs={

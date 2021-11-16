@@ -520,19 +520,24 @@ data = {
         }
     ],
     "expense_group_id": {
-        "id": 82,
+        "id": 1,
         "fund_source": "PERSONAL",
         "description": {
-            "report_id": "rpErQpeH8G9b",
+            "report_id": "rpuN3bgphxbK",
             "fund_source": "PERSONAL",
-            "claim_number": "C/2021/11/R/2",
-            "employee_email": "admin1@fylefornt.com",
+            "claim_number": "C/2021/11/R/5",
+            "employee_email": "ashwin.t@fyle.in",
         },
-        "response_logs": None,
-        "created_at": "2021-11-10T21:29:46.235089Z",
-        "exported_at": None,
-        "updated_at": "2021-11-10T21:29:46.235103Z",
+        "response_logs": {
+            "name": None,
+            "type": "expenseReport",
+            "externalId": "03294720937402397402937",
+            "internalId": "116142",
+        },
+        "created_at": "2021-11-15T10:29:07.618062Z",
+        "exported_at": "2021-11-15T11:02:55.125205Z",
+        "updated_at": "2021-11-15T11:02:55.125634Z",
         "workspace": 1,
-        "expenses": [168],
+        "expenses": [1],
     },
 }

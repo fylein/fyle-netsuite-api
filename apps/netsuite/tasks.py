@@ -252,7 +252,6 @@ def create_bill(expense_group, task_log_id):
                     attachment_links[expense_id] = attachment_link
 
             created_bill = netsuite_connection.post_bill(bill_object, bill_lineitems_objects, attachment_links)
-
             task_log.detail = created_bill
             task_log.bill = bill_object
             task_log.status = 'COMPLETE'
@@ -705,14 +704,17 @@ def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Conf
                 workspace_id=expense_group.workspace_id
             )
 
-            print('nilesh', entity.destination_employee.value)
+            print('nilesh', entity.destination_vendor)
 
             if configuration.employee_field_mapping == 'EMPLOYEE':
                 entity = entity.destination_employee
             else:
                 entity = entity.destination_vendor
 
+            print('nilesh 222', entity)
+
             if not entity:
+                print('herswersdts')
                 raise EmployeeMapping.DoesNotExist
         except EmployeeMapping.DoesNotExist:
             print('erererere')
@@ -776,7 +778,6 @@ def __validate_expense_group(expense_group: ExpenseGroup, configuration: Configu
 
     # Employee Mapping
     employee_mapping_errors = __validate_employee_mapping(expense_group, configuration)
-    print('emesadsg', employee_mapping_errors)
 
     # Category Mapping
     category_mapping_errors = __validate_category_mapping(expense_group, configuration)

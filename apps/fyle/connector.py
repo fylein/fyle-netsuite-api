@@ -334,7 +334,6 @@ class FyleConnector:
         updated_at = self.__format_updated_at(latest_synced_record.updated_at) if latest_synced_record else None
 
         reimbursements = self.connection.Reimbursements.get_all(updated_at=updated_at)
-
         Reimbursement.create_or_update_reimbursement_objects(
             reimbursements, self.workspace_id
         )

@@ -9,8 +9,7 @@ from .fixtures import data
 
 #  Will use paramaterize decorator of python later
 @pytest.mark.django_db(databases=['default'])
-@pytest.mark.skip
-def test_fyle_fields_view(api_client, test_connection, sync_fyle_dimensions):
+def test_fyle_fields_view(api_client, test_connection):
     
    access_token = test_connection.access_token
    url = reverse('fyle-fields', 
@@ -25,11 +24,11 @@ def test_fyle_fields_view(api_client, test_connection, sync_fyle_dimensions):
    assert response.status_code == 200
    response = json.loads(response.content)
 
-   assert response[2]['attribute_type'] == 'FYLE_TEST_FIELD'
-   assert len(response) == 3
+   assert response[2]['attribute_type'] == 'CLASS'
+   assert len(response) == 15
 
 @pytest.mark.django_db(databases=['default'])
-def test_expense_group_id_view(api_client, test_connection, create_expense_group):
+def test_expense_group_id_view(api_client, test_connection):
     
    access_token = test_connection.access_token
 
@@ -50,7 +49,7 @@ def test_expense_group_id_view(api_client, test_connection, create_expense_group
    assert dict_compare_keys(response, data['expense_group_id']) == [], 'expense group api return diffs in keys'
 
 @pytest.mark.django_db(databases=['default'])
-def test_expense_view(api_client, test_connection, create_expense_group):
+def test_expense_view(api_client, test_connection):
     
    access_token = test_connection.access_token
 

@@ -6,16 +6,15 @@ from apps.fyle.models import ExpenseGroup
 
 #  Will use paramaterize decorator of python later
 @pytest.mark.django_db(databases=['default'])
-@pytest.mark.skip
-def test_netsutie_fields_view(api_client, test_connection, sync_netsuite_dimensions):
-    
+def test_netsutie_fields_view(api_client, test_connection):
+
    access_token = test_connection.access_token
    url = reverse('netsuite-fields', 
       kwargs={
             'workspace_id': 1
          }
       )
-   
+
    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
 
    response = api_client.get(url)
