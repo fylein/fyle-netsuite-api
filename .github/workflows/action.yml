@@ -1,11 +1,11 @@
-name: Pylint Check
+name: Continuous Integration
 
 on:
   pull_request:
     types: [assigned, opened, synchronize, reopened]
 
 jobs:
-  build:
+  pylint:
 
     runs-on: ubuntu-latest
 
@@ -16,3 +16,13 @@ jobs:
       with:
         args: pip3 install -r requirements.txt && pip install pylint-django==2.3.0 && pylint --load-plugins pylint_django --rcfile=.pylintrc **/**.py
         
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2 
+      - uses: satackey/action-docker-layer-caching@v0.0.11
+        continue-on-error: true
+      - name: Bring up Services
+        run: |
+          docker-compose -f docker-compose-pipeline.yml build
+          docker-compose -f docker-compose-pipleline.yaml up -d

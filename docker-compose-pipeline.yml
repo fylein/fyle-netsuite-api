@@ -1,0 +1,39 @@
+version: '3.7'
+
+services:
+  api:
+    build: ./
+    entrypoint: bash run.sh
+    restart: unless-stopped
+    volumes:
+    - ./:/fyle-netsuite-api
+    ports:
+    - 8000:8000
+    depends_on:
+    - db
+    environment: 
+      SECRET_KEY: thisisthedjangosecretkey
+      ALLOWED_HOSTS: "*"
+      DEBUG: "False"
+      NO_WORKERS: 1
+      API_URL: http://localhost:8000/api
+      DATABASE_URL: postgres://postgres:postgres@db:5432/netsuite_db
+      FYLE_BASE_URL: 
+      FYLE_CLIENT_ID: 
+      FYLE_CLIENT_SECRET: 
+      FYLE_TOKEN_URI: 
+      NS_CONSUMER_KEY:
+      NS_CONSUMER_SECRET:
+  db:
+    image: "postgres:latest"
+    environment: 
+      POSTGRES_DB: dummy
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - data:/var/lib/postgresql/data/
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  api:
+  data:
