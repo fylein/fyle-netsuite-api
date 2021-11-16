@@ -25,7 +25,7 @@ def test_create_expense_group(mocker):
     expense_group = ExpenseGroup.objects.filter(workspace_id=1)
     expenses = Expense.objects.filter(org_id='or79Cob97KSh')
     
-    assert len(expense_group) == 5
+    assert len(expense_group) == 2
     assert len(expenses) == 2
 
 @pytest.mark.django_db()

@@ -7,7 +7,7 @@ from fyle_accounting_mappings.models import ExpenseAttribute
 
 
 @pytest.mark.django_db()
-def test_get_of_expenses(test_connection):
+def test_get_of_expenses(add_fyle_credentials):
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=1)
     fyle_connector = FyleConnector(fyle_credentials.refresh_token, 1)
@@ -15,21 +15,21 @@ def test_get_of_expenses(test_connection):
     personal_expenses = fyle_connector.get_expenses(['PAYMENT_PROCESSING'], [], ['PERSONAL'])
     ccc_expenses = fyle_connector.get_expenses(['PAYMENT_PROCESSING'], [], ['CCC'])
 
-    assert len(personal_expenses) == 1
-    assert len(ccc_expenses) == 1
+    assert len(personal_expenses) == 4
+    assert len(ccc_expenses) == 2
 
 @pytest.mark.django_db()
-def test_sync_reimbursements():
+def test_sync_reimbursements(add_fyle_credentials):
     fyle_credentials = FyleCredential.objects.get(workspace_id=1)
     fyle_connector = FyleConnector(fyle_credentials.refresh_token, 1)
 
     reimbursements = fyle_connector.sync_reimbursements()
 
     response = Reimbursement.objects.all()
-    assert len(response) == 79
+    assert len(response) == 14
 
 @pytest.mark.django_db()
-def test_get_cluster_domain():
+def test_get_cluster_domain(add_fyle_credentials):
     fyle_credentials = FyleCredential.objects.get(workspace_id=1)
     fyle_connector = FyleConnector(fyle_credentials.refresh_token, 1)
 
@@ -39,16 +39,16 @@ def test_get_cluster_domain():
 
 
 @pytest.mark.django_db()
-def test_get_employee_profile():
+def test_get_employee_profile(add_fyle_credentials):
     fyle_credentials = FyleCredential.objects.get(workspace_id=1)
     fyle_connector = FyleConnector(fyle_credentials.refresh_token, 1)
 
     employee_profile = fyle_connector.get_employee_profile()
-    assert employee_profile['employee_email'] == 'ashwin.t@fyle.in'
-    assert employee_profile['org_name'] == 'Fyle For Arkham Asylum'
+    assert employee_profile['employee_email'] == 'admin1@fylefornt.com'
+    assert employee_profile['org_name'] == 'Fyle For NetSuite Testing'
 
 @pytest.mark.django_db()
-def test_sync(test_connection):
+def test_sync(add_fyle_credentials):
 
     employees = ExpenseAttribute.objects.filter(attribute_type='EMPLOYEE', workspace_id=1)
     projects = ExpenseAttribute.objects.filter(attribute_type='PROJECT', workspace_id=1)

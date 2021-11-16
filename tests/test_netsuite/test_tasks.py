@@ -76,7 +76,7 @@ def test_subsidary_mapping_not_found():
     assert errors == []
 
 @pytest.mark.django_db()
-def test_get_or_create_credit_card_vendor():
+def test_get_or_create_credit_card_vendor(add_netsuite_credentials):
     configuration = Configuration.objects.get(workspace_id=1)
     expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
     merchant = 'Uber BV'
@@ -93,7 +93,7 @@ def test_get_or_create_credit_card_vendor():
     assert created_vendor.display_name == 'vendor'
 
 @pytest.mark.django_db()
-def test_post_bill_success(create_task_logs):
+def test_post_bill_success(create_task_logs, add_netsuite_credentials):
 
 
     task_log = TaskLog.objects.filter(workspace_id=1).first()
@@ -133,7 +133,7 @@ def test_post_bill_mapping_error(mocker):
     assert task_log.status == 'FAILED'
 
 @pytest.mark.django_db()
-def test_create_expense_report(create_task_logs):
+def test_create_expense_report(create_task_logs, add_netsuite_credentials):
 
     task_log = TaskLog.objects.filter(workspace_id=1).first()
     task_log.status = 'READY'

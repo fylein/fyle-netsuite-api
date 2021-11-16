@@ -24,7 +24,7 @@ def test_subsidiary_mapping_view(api_client, test_connection):
     assert response['subsidiary_name']=='Honeycomb Holdings Inc.'
 
 @pytest.mark.django_db(databases=['default'])
-def test_post_country_view(api_client, test_connection):
+def test_post_country_view(api_client, test_connection, add_netsuite_credentials):
     '''
     Test Post of User Profile
     '''

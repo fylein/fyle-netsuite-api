@@ -5,6 +5,7 @@ from rest_framework.test import APIClient
 from fylesdk import FyleSDK
 from fyle_rest_auth.models import AuthToken, User
 from fyle_netsuite_api.tests import settings
+from apps.workspaces.models import NetSuiteCredentials, FyleCredential
 
 
 def pytest_configure():
@@ -48,3 +49,34 @@ def test_connection(db):
     auth_token.save()
 
     return fyle_connection
+
+
+@pytest.fixture()
+def add_netsuite_credentials(db):
+    count=1
+
+    while (count<3):
+        NetSuiteCredentials.objects.create(
+            id=count,
+            ns_account_id=settings.NS_ACCOUNT_ID,
+            ns_consumer_key=settings.NS_CONSUMER_KEY,
+            ns_consumer_secret=settings.NS_CONSUMER_SECRET,
+            ns_token_id=settings.NS_TOKEN_ID,
+            ns_token_secret=settings.NS_TOKEN_SECRET,
+            workspace_id=count
+        )
+
+        count+=1
+
+@pytest.fixture()
+def add_fyle_credentials(db):
+    count=1
+
+    while (count<3):
+        FyleCredential.objects.create(
+            id=count,
+            refresh_token=settings.FYLE_REFRESH_TOKEN,
+            workspace_id=count
+        )
+
+        count+=1
