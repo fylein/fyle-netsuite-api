@@ -2,7 +2,7 @@ import pytest
 import random
 import string
 from django.urls import reverse
-from apps.fyle.models import ExpenseGroup
+from apps.fyle.models import Expense, ExpenseGroup
 from apps.netsuite.models import ExpenseReport, Bill
 from apps.workspaces.models import Configuration
 from tests.helper import dict_compare_keys
@@ -96,7 +96,6 @@ def test_get_or_create_credit_card_vendor(add_netsuite_credentials):
     assert created_vendor.destination_id == '12106'
     assert created_vendor.display_name == 'vendor'
 
-@pytest.mark.skip
 @pytest.mark.django_db()
 def test_post_bill_success(create_task_logs, add_netsuite_credentials, add_fyle_credentials):
 
@@ -106,10 +105,21 @@ def test_post_bill_success(create_task_logs, add_netsuite_credentials, add_fyle_
     task_log.save()
 
     expense_group = ExpenseGroup.objects.get(id=2)
+    expenses = expense_group.expenses.all()
+
+    expense_group.id = random.randint(100, 1500000)
+    expense_group.save()
+
+    for expense in expenses:
+        expense.expense_group_id = expense_group.id
+        expense.save()
+    
+    expense_group.expenses.set(expenses)
+    
     create_bill(expense_group, task_log.id)
     
-    task_log = TaskLog.objects.filter(workspace_id=1).first()
-    bill = Bill.objects.get(expense_group_id='2')
+    task_log = TaskLog.objects.get(pk=task_log.id)
+    bill = Bill.objects.get(expense_group_id=expense_group.id)
     assert task_log.status=='COMPLETE'
     assert bill.entity_id=='1674'
     assert bill.currency=='1'

@@ -9,7 +9,7 @@ from apps.workspaces.models import NetSuiteCredentials, FyleCredential
 
 
 def pytest_configure():
-    os.system('sh ./reset_db.sh')
+    os.system('sh ./tests/sql_fixtures/reset_db_fixtures/reset_db.sh')
 
 @pytest.fixture
 def api_client():
