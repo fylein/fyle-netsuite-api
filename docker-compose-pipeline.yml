@@ -2,7 +2,10 @@ version: '3.7'
 
 services:
   api:
-    build: ./
+    build: 
+      context: ./
+      args: 
+        CI: ENABLED
     entrypoint: bash run.sh
     restart: unless-stopped
     volumes:
@@ -18,10 +21,15 @@ services:
       NO_WORKERS: 1
       API_URL: http://localhost:8000/api
       DATABASE_URL: postgres://postgres:postgres@db:5432/netsuite_db
+      DB_HOST: db
       FYLE_BASE_URL: ${FYLE_BASE_URL}
       FYLE_CLIENT_ID: ${FYLE_CLIENT_ID}
       FYLE_CLIENT_SECRET: ${FYLE_CLIENT_SECRET}
+      FYLE_REFRESH_TOKEN: ${FYLE_REFRESH_TOKEN}
       FYLE_TOKEN_URI: ${FYLE_TOKEN_URI}
+      NS_ACCOUNT_ID: ${NS_ACCOUNT_ID}
+      NS_TOKEN_ID: ${NS_TOKEN_ID}
+      NS_TOKEN_SECRET: ${NS_TOKEN_SECRET}
       NS_CONSUMER_KEY: ${NS_CONSUMER_KEY}
       NS_CONSUMER_SECRET: ${NS_CONSUMER_SECRET}
   db:

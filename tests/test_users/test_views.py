@@ -5,8 +5,8 @@ from fyle_rest_auth.models import User
 import pytest
 
 #  Will use paramaterize decorator of python later
-@pytest.mark.django_db(databases=['cache_db', 'default'])
-def test_get_profile_view(api_client, django_db_setup, test_connection):
+@pytest.mark.django_db(databases=['default'])
+def test_get_profile_view(api_client, test_connection):
     
     access_token = test_connection.access_token
     url = reverse('profile')
@@ -15,7 +15,7 @@ def test_get_profile_view(api_client, django_db_setup, test_connection):
     response = api_client.get(url)
     assert response.status_code == 200
 
-@pytest.mark.django_db(databases=['cache_db', 'default'])
+@pytest.mark.django_db(databases=['default'])
 def test_get_cluster_domain_view(api_client, test_connection):
     access_token = test_connection.access_token
     url = reverse('domain')
@@ -25,7 +25,7 @@ def test_get_cluster_domain_view(api_client, test_connection):
     assert response.status_code == 200
     assert response.content == b'"https://staging.fyle.tech"'
 
-@pytest.mark.django_db(databases=['cache_db', 'default'])
+@pytest.mark.django_db(databases=['default'])
 def test_get_fyle_orgs_view(api_client, test_connection):
     access_token = test_connection.access_token
     url = reverse('orgs')

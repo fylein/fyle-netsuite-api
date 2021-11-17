@@ -1,10 +1,9 @@
 import pytest
 from datetime import datetime, timezone
 from fyle_rest_auth.models import User
-from pytest_postgresql import factories
 
 @pytest.mark.django_db
-def test_user_creation(django_db_setup):
+def test_user_creation():
     '''
     Test Post of User Profile
     '''
