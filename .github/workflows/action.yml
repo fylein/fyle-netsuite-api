@@ -27,7 +27,7 @@ jobs:
         run: |
           docker-compose -f docker-compose-pipeline.yml build
           docker-compose -f docker-compose-pipeline.yml up -d
-          docker-compose -f docker-compose-pipeline.yml exec -T api pytest tests/
+          docker-compose -f docker-compose-pipeline.yml exec -T api pytest tests/ --cov=. --junit-xml=test-reports/report.xml --cov-report=term-missing --cov-fail-under=47 | tee pytest-coverage.txt
         env:
           FYLE_BASE_URL: ${{ secrets.FYLE_BASE_URL }}
           FYLE_CLIENT_ID: ${{ secrets.FYLE_CLIENT_ID }}
@@ -39,5 +39,12 @@ jobs:
           NS_CONSUMER_SECRET: ${{ secrets.NS_CONSUMER_SECRET }}
           NS_TOKEN_ID: ${{ secrets.NS_TOKEN_ID }}
           NS_TOKEN_SECRET: ${{ secrets.NS_TOKEN_SECRET }}
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
+        if: ${{ always() && github.ref != 'refs/heads/master' }}
+        with:
+          create-new-comment: true
+          pytest-coverage-path: ./pytest-coverage.txt
+          junitxml-path: ./test-reports/report.xml
       - name: Stop Services
         run: docker compose -f docker-compose-pipeline.yml down
