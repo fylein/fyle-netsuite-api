@@ -50,10 +50,10 @@ jobs:
         run: docker compose -f docker-compose-pipeline.yml down
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2
-        if: ${{ always() && github.ref == 'refs/heads/master' }}
+        if: ${{ always() && github.ref !== 'refs/heads/master' }}
         env:
           SLACK_COLOR: ${{ job.status }}
-          SLACK_MESSAGE: pytest job status - ${{ job.status }}
+          SLACK_MESSAGE: pytest job status - ${{ job.status }} - github.ref
           MSG_MINIMAL: ref,actions url,commit
           SLACK_TITLE: pytest job
           SLACK_USERNAME: gandalf
