@@ -11161,14 +11161,4 @@ ALTER TABLE ONLY public.workspace_schedules
 
 
 --
--- Name: configurations workspaces_workspace_workspace_id_a18c5f9f_fk_workspace; Type: FK CONSTRAINT; Schema: public; Owner: nileshpant
---
-
-ALTER TABLE ONLY public.configurations
-    ADD CONSTRAINT workspaces_workspace_workspace_id_a18c5f9f_fk_workspace FOREIGN KEY (workspace_id) REFERENCES public.workspaces(id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- PostgreSQL database dump complete
---
-
+-- Name
