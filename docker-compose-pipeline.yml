@@ -2,7 +2,10 @@ version: '3.7'
 
 services:
   api:
-    build: ./
+    build: 
+      context: ./
+      args: 
+        CI: ENABLED
     entrypoint: bash run.sh
     restart: unless-stopped
     volumes:
