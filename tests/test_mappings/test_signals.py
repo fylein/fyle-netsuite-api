@@ -18,8 +18,8 @@ def test_run_post_mapping_settings_triggers(test_connection):
     mapping_setting.save()
     schedule = Schedule.objects.first()
 
-    assert schedule.func == 'apps.mappings.tasks.auto_create_project_mappings'
-    assert schedule.args == '1'
+    assert schedule.func == 'apps.mappings.tasks.auto_create_tax_group_mappings'
+    assert schedule.args == '2'
 
     mapping_setting = MappingSetting(
         source_field='COST_CENTER',
@@ -32,8 +32,8 @@ def test_run_post_mapping_settings_triggers(test_connection):
     mapping_setting.save()
 
     schedule = Schedule.objects.first()
-    assert schedule.func == 'apps.mappings.tasks.auto_create_project_mappings'
-    assert schedule.args == '1'
+    assert schedule.func == 'apps.mappings.tasks.auto_create_tax_group_mappings'
+    assert schedule.args == '2'
 
 
 def test_run_post_general_mapping_triggers(test_connection):
