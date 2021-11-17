@@ -116,6 +116,10 @@ env.bak/
 venv.bak/
 setup.sh
 
+*.DS_Store
+.DS_Store
+fyle_netsuite_api/.DS_Store
+
 # Spyder project settings
 .spyderproject
 .spyproject
