@@ -219,8 +219,6 @@ def create_bill(expense_group, task_log_id):
     configuration: Configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
     general_mappings: GeneralMapping = GeneralMapping.objects.filter(workspace_id=expense_group.workspace_id).first()
 
-    print(expense_group.expenses.all())
-    print(expense_group.id)
     try:
         netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
 
