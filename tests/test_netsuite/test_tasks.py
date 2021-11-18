@@ -9,7 +9,7 @@ from tests.helper import dict_compare_keys
 from apps.tasks.models import TaskLog
 from apps.netsuite.tasks import __validate_general_mapping, __validate_subsidiary_mapping, get_or_create_credit_card_vendor, create_bill, create_expense_report
 from apps.mappings.models import GeneralMapping
-from fyle_accounting_mappings.models import DestinationAttribute
+from fyle_accounting_mappings.models import DestinationAttribute, EmployeeMapping, CategoryMapping
 from .fixtures import data
 
 
@@ -127,27 +127,25 @@ def test_post_bill_success(create_task_logs, add_netsuite_credentials, add_fyle_
     assert bill.accounts_payable_id=='25'
     
 
-@pytest.mark.skip
-def test_post_bill_mapping_error(mocker):
-    mocker.patch(
-        'apps.netsuite.connector.NetSuiteConnector.post_bill',
-        return_value=data['bill_response']
-    )
+@pytest.mark.django_db()
+def test_post_bill_mapping_error(create_task_logs, add_netsuite_credentials, add_fyle_credentials):
 
     task_log = TaskLog.objects.filter(workspace_id=1).first()
     task_log.status = 'READY'
     task_log.save()
 
-    expense_group = ExpenseGroup.objects.filter(workspace_id=1, id=2)
+    CategoryMapping.objects.filter(workspace_id=1).delete()
+    EmployeeMapping.objects.filter(workspace_id=1).delete()
+
+    expense_group = ExpenseGroup.objects.get(id=2)
     create_bill(expense_group, task_log.id)
 
-    task_log = TaskLog.objects.filter(workspace_id=1).first()
+    task_log = TaskLog.objects.filter(pk=task_log.id).first()
 
     assert task_log.detail[0]['message'] == 'Employee mapping not found'
     assert task_log.detail[1]['message'] == 'Category Mapping Not Found'
     assert task_log.status == 'FAILED'
 
-@pytest.mark.skip
 @pytest.mark.django_db()
 def test_create_expense_report(create_task_logs, add_netsuite_credentials, add_fyle_credentials):
 
@@ -156,10 +154,22 @@ def test_create_expense_report(create_task_logs, add_netsuite_credentials, add_f
     task_log.save()
 
     expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
+    expenses = expense_group.expenses.all()
+
+    
+
+    expense_group.id = random.randint(100, 1500000)
+    expense_group.save()
+
+    for expense in expenses:
+        expense.expense_group_id = expense_group.id
+        expense.save()
+    
+    expense_group.expenses.set(expenses)
     create_expense_report(expense_group, task_log.id)
-    expense_report = ExpenseReport.objects.first()
+    expense_report = ExpenseReport.objects.get(expense_group_id=expense_group.id)
 
     assert expense_report.account_id=='118'
     assert expense_report.entity_id=='1676'
-    assert expense_report.expense_group_id==1
+    assert expense_report.expense_group_id==expense_group.id
     assert expense_report.subsidiary_id == '3'
