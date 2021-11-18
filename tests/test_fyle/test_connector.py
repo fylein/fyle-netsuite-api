@@ -12,8 +12,10 @@ def test_get_of_expenses(add_fyle_credentials):
     fyle_credentials = FyleCredential.objects.get(workspace_id=1)
     fyle_connector = FyleConnector(fyle_credentials.refresh_token, 1)
 
-    personal_expenses = fyle_connector.get_expenses(['PAYMENT_PROCESSING'], ['PERSONAL'])
-    ccc_expenses = fyle_connector.get_expenses(['PAYMENT_PROCESSING'], ['CCC'])
+    personal_expenses = fyle_connector.get_expenses(
+        state=['PAYMENT_PROCESSING'], settled_at=[], updated_at=[], fund_source=['PERSONAL'])
+    ccc_expenses = fyle_connector.get_expenses(
+        state=['PAYMENT_PROCESSING'], settled_at=[], updated_at=[], fund_source=['CCC'])
 
     assert len(personal_expenses) == 4
     assert len(ccc_expenses) == 2
