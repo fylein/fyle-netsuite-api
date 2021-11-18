@@ -1,6 +1,7 @@
 """
 Fyle Models
 """
+import logging
 import dateutil.parser
 from typing import List, Dict
 from datetime import datetime
@@ -14,6 +15,9 @@ from django.db.models import Count, Q
 from fyle_accounting_mappings.models import ExpenseAttribute
 
 from apps.workspaces.models import Workspace
+
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 
 ALLOWED_FIELDS = [
@@ -52,6 +56,8 @@ class Expense(models.Model):
     currency = models.CharField(max_length=5, help_text='Home Currency')
     foreign_amount = models.FloatField(null=True, help_text='Foreign Amount')
     foreign_currency = models.CharField(null=True, max_length=5, help_text='Foreign Currency')
+    tax_amount = models.FloatField(null=True, help_text="Tax Amount")
+    tax_group_id = models.CharField(null=True, max_length=255, help_text="Tax Group ID")
     settlement_id = models.CharField(max_length=255, help_text='Settlement ID', null=True)
     reimbursable = models.BooleanField(default=False, help_text='Expense reimbursable or not')
     billable = models.BooleanField(null=True, help_text='Expense Billable or not')
@@ -85,54 +91,67 @@ class Expense(models.Model):
         custom_properties = ExpenseAttribute.objects.filter(
             ~Q(attribute_type='EMPLOYEE') & ~Q(attribute_type='CATEGORY'),
             ~Q(attribute_type='PROJECT') & ~Q(attribute_type='COST_CENTER'),
-            workspace_id=workspace_id
+            ~Q(attribute_type='TAX_GROUP'), workspace_id=workspace_id
         ).values('display_name').distinct()
 
         custom_property_keys = list(set([prop['display_name'].lower() for prop in custom_properties]))
 
+        eliminated_expenses = []
+
         for expense in expenses:
-            expense_custom_properties = {}
+            cutoff_date = _format_date('2021-06-15T00:00:00.000Z')
+            expense_settled_at = _format_date(expense['settled_at'])
+            if expense_settled_at > cutoff_date:
+                expense_custom_properties = {}
 
-            if custom_property_keys and expense['custom_properties']:
-                for prop in expense['custom_properties']:
-                    if prop['name'].lower() in custom_property_keys:
-                        expense_custom_properties[prop['name']] = prop['value']
+                if custom_property_keys and expense['custom_properties']:
+                    for prop in expense['custom_properties']:
+                        if prop['name'].lower() in custom_property_keys:
+                            expense_custom_properties[prop['name']] = prop['value']
 
-            expense_object, _ = Expense.objects.update_or_create(
-                expense_id=expense['id'],
-                defaults={
-                    'org_id': expense['org_id'],
-                    'employee_email': expense['employee_email'],
-                    'category': expense['category_name'],
-                    'sub_category': expense['sub_category'],
-                    'project': expense['project_name'],
-                    'expense_number': expense['expense_number'],
-                    'claim_number': expense['claim_number'],
-                    'amount': round(expense['amount'], 2),
-                    'currency': expense['currency'],
-                    'foreign_amount': expense['foreign_amount'],
-                    'foreign_currency': expense['foreign_currency'],
-                    'settlement_id': expense['settlement_id'],
-                    'reimbursable': expense['reimbursable'],
-                    'billable': expense['billable'] if expense['billable'] else None,
-                    'exported': expense['exported'],
-                    'state': expense['state'],
-                    'vendor': expense['vendor'],
-                    'cost_center': expense['cost_center_name'],
-                    'purpose': expense['purpose'],
-                    'report_id': expense['report_id'],
-                    'spent_at': _format_date(expense['spent_at']),
-                    'approved_at': _format_date(expense['approved_at']),
-                    'expense_created_at': expense['created_at'],
-                    'expense_updated_at': expense['updated_at'],
-                    'fund_source': expense['fund_source'],
-                    'verified_at': _format_date(expense['verified_at']),
-                    'custom_properties': expense_custom_properties if expense_custom_properties else {}
-                }
-            )
+                expense_object, _ = Expense.objects.update_or_create(
+                    expense_id=expense['id'],
+                    defaults={
+                        'org_id': expense['org_id'],
+                        'employee_email': expense['employee_email'],
+                        'category': expense['category_name'],
+                        'sub_category': expense['sub_category'],
+                        'project': expense['project_name'],
+                        'expense_number': expense['expense_number'],
+                        'claim_number': expense['claim_number'],
+                        'amount': round(expense['amount'], 2),
+                        'currency': expense['currency'],
+                        'foreign_amount': expense['foreign_amount'],
+                        'foreign_currency': expense['foreign_currency'],
+                        'tax_group_id': expense['tax_group_id'],
+                        'tax_amount': expense['tax'],
+                        'settlement_id': expense['settlement_id'],
+                        'reimbursable': expense['reimbursable'],
+                        'billable': expense['billable'] if expense['billable'] else None,
+                        'exported': expense['exported'],
+                        'state': expense['state'],
+                        'vendor': expense['vendor'],
+                        'cost_center': expense['cost_center_name'],
+                        'purpose': expense['purpose'],
+                        'report_id': expense['report_id'],
+                        'spent_at': _format_date(expense['spent_at']),
+                        'approved_at': _format_date(expense['approved_at']),
+                        'expense_created_at': expense['created_at'],
+                        'expense_updated_at': expense['updated_at'],
+                        'fund_source': expense['fund_source'],
+                        'verified_at': _format_date(expense['verified_at']),
+                        'custom_properties': expense_custom_properties if expense_custom_properties else {}
+                    }
+                )
 
-            if not ExpenseGroup.objects.filter(expenses__id=expense_object.id).first():
-                expense_objects.append(expense_object)
+                if not ExpenseGroup.objects.filter(expenses__id=expense_object.id).first():
+                    expense_objects.append(expense_object)
+
+            else:
+                eliminated_expenses.append(expense['id'])
+
+        if eliminated_expenses:
+            logger.error('Eliminated Expense - Workspace ID {} - Expense Ids - {}'.format(workspace_id, eliminated_expenses))
 
         return expense_objects
 
@@ -276,6 +295,7 @@ class ExpenseGroup(models.Model):
     fund_source = models.CharField(max_length=255, help_text='Expense fund source')
     expenses = models.ManyToManyField(Expense, help_text="Expenses under this Expense Group")
     description = JSONField(max_length=255, help_text='Description', null=True)
+    response_logs = JSONField(help_text='Reponse log of the export', null=True)
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     exported_at = models.DateTimeField(help_text='Exported at', null=True)
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')

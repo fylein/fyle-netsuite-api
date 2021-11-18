@@ -12,6 +12,7 @@ class SubsidiaryMapping(models.Model):
     """
     id = models.AutoField(primary_key=True)
     subsidiary_name = models.CharField(max_length=255, help_text='NetSuite Subsidiary name')
+    country_name = models.CharField(max_length=255, help_text='Netsuite Subsidiary Country', null=True)
     internal_id = models.CharField(max_length=255, help_text='NetSuite Subsidiary id')
     workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')
@@ -40,6 +41,8 @@ class GeneralMapping(models.Model):
     vendor_payment_account_id = models.CharField(max_length=255, help_text='NetSuite VendorPayment Account id',
                                                  null=True)
     use_employee_department = models.BooleanField(default=False, help_text='use employee department in netsuite')
+    use_employee_class = models.BooleanField(default=False, help_text='use employee class in netsuite')
+    use_employee_location = models.BooleanField(default=False, help_text='use employee location in netsuite')
     department_level = models.CharField(max_length=255, help_text='Transaction Body, Line, Both', null=True)
     vendor_payment_account_name = models.CharField(max_length=255, help_text='VendorPayment Account name', null=True)
     default_ccc_vendor_id = models.CharField(max_length=255, help_text='Default CCC Vendor ID', null=True)

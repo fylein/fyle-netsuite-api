@@ -13,6 +13,7 @@ from .models import Expense, ExpenseGroup, ExpenseGroupSettings
 from .connector import FyleConnector
 
 logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 
 def schedule_expense_group_creation(workspace_id: int):
@@ -49,13 +50,15 @@ def create_expense_groups(workspace_id: int, fund_source: List[str], task_log: T
     """
     try:
         with transaction.atomic():
-            updated_at = []
+            filter_by_timestamp = []
 
             workspace = Workspace.objects.get(pk=workspace_id)
             last_synced_at = workspace.last_synced_at
 
             if last_synced_at:
-                updated_at.append('gte:{0}'.format(datetime.strftime(last_synced_at, '%Y-%m-%dT%H:%M:%S.000Z')))
+                filter_by_timestamp.append(
+                    'gte:{0}'.format(datetime.strftime(last_synced_at, '%Y-%m-%dT%H:%M:%S.000Z'))
+                )
 
             fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
             fyle_connector = FyleConnector(fyle_credentials.refresh_token, workspace_id)
@@ -69,8 +72,10 @@ def create_expense_groups(workspace_id: int, fund_source: List[str], task_log: T
 
             expenses = fyle_connector.get_expenses(
                 state=import_state,
-                updated_at=updated_at,
-                fund_source=fund_source
+                fund_source=fund_source,
+                settled_at=filter_by_timestamp if expense_group_settings.expense_state == 'PAYMENT_PROCESSING' \
+                    else None,
+                updated_at=filter_by_timestamp if expense_group_settings.expense_state == 'PAID' else None
             )
 
             if expenses:
@@ -87,7 +92,7 @@ def create_expense_groups(workspace_id: int, fund_source: List[str], task_log: T
             task_log.save()
 
     except FyleCredential.DoesNotExist:
-        logger.exception('Fyle credentials not found %s', workspace_id)
+        logger.info('Fyle credentials not found %s', workspace_id)
         task_log.detail = {
             'message': 'Fyle credentials do not exist in workspace'
         }

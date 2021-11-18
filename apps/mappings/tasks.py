@@ -13,6 +13,7 @@ from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttr
 from fyle_accounting_mappings.helpers import EmployeesAutoMappingHelper
 
 from apps.fyle.connector import FyleConnector
+from apps.fyle.platform_connector import FylePlatformConnector
 from apps.mappings.models import GeneralMapping
 from apps.netsuite.connector import NetSuiteConnector
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configuration
@@ -20,7 +21,7 @@ from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configur
 from .constants import FYLE_EXPENSE_SYSTEM_FIELDS
 
 logger = logging.getLogger(__name__)
-
+logger.level = logging.INFO
 
 def remove_duplicates(ns_attributes: List[DestinationAttribute]):
     unique_attributes = []
@@ -263,6 +264,82 @@ def create_category_mappings(destination_attributes: List[DestinationAttribute],
     bulk_create_update_category_mappings(mapping_creation_batch)
 
 
+def auto_create_tax_group_mappings(workspace_id):
+    """
+    Create Tax Groups Mappings
+    :return: None
+    """
+    try:
+        fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
+
+        fyle_connection = FylePlatformConnector(
+            refresh_token=fyle_credentials.refresh_token,
+            workspace_id=workspace_id
+        )
+
+        fyle_connection.sync_tax_groups()
+
+        mapping_setting = MappingSetting.objects.get(
+            source_field='TAX_GROUP', workspace_id=workspace_id
+        )
+
+        sync_netsuite_attribute(mapping_setting.destination_field, workspace_id)
+        post_tax_groups_in_batches(fyle_connection, workspace_id)
+
+    except WrongParamsError as exception:
+        logger.error(
+            'Error while creating taxgroups workspace_id - %s in Fyle %s %s',
+            workspace_id, exception.message, {'error': exception.response}
+        )
+
+    except Exception:
+        error = traceback.format_exc()
+        error = {
+            'error': error
+        }
+        logger.exception(
+            'Error while creating taxgroups workspace_id - %s error: %s',
+            workspace_id, error
+        )
+
+def schedule_tax_groups_creation(import_tax_items, workspace_id):
+    if import_tax_items:
+        schedule, _ = Schedule.objects.update_or_create(
+            func='apps.mappings.tasks.auto_create_tax_group_mappings',
+            args='{}'.format(workspace_id),
+            defaults={
+                'schedule_type': Schedule.MINUTES,
+                'minutes': 24 * 60,
+                'next_run': datetime.now()
+            }
+        )
+    else:
+        schedule: Schedule = Schedule.objects.filter(
+            func='apps.mappings.tasks.auto_create_tax_group_mappings',
+            args='{}'.format(workspace_id),
+        ).first()
+
+        if schedule:
+            schedule.delete()
+
+def post_tax_groups_in_batches(platform_connection: FylePlatformConnector, workspace_id: int):    
+    existing_tax_items_name = ExpenseAttribute.objects.filter(
+        attribute_type='TAX_GROUP', workspace_id=workspace_id).values_list('value', flat=True)
+
+    netsuite_attributes = DestinationAttribute.objects.filter(
+        attribute_type='TAX_ITEM', workspace_id=workspace_id).order_by('value', 'id')
+
+    netsuite_attributes = remove_duplicates(netsuite_attributes)
+
+    fyle_payload: List[Dict] = create_fyle_tax_group_payload(
+        netsuite_attributes, existing_tax_items_name)
+        
+    for payload in fyle_payload:
+        platform_connection.connection.v1.admin.tax_groups.post(payload)
+
+    platform_connection.sync_tax_groups()
+    Mapping.bulk_create_mappings(netsuite_attributes, 'TAX_GROUP', 'TAX_ITEM', workspace_id)
+
 def auto_create_category_mappings(workspace_id):
     """
     Create Category Mappings
@@ -300,7 +377,7 @@ def auto_create_category_mappings(workspace_id):
         error = {
             'error': error
         }
-        logger.error(
+        logger.exception(
             'Error while creating categories workspace_id - %s error: %s',
             workspace_id, error
         )
@@ -327,6 +404,26 @@ def schedule_categories_creation(import_categories, workspace_id):
         if schedule:
             schedule.delete()
 
+def create_fyle_tax_group_payload(netsuite_attributes: List[DestinationAttribute], existing_fyle_tax_groups: list):
+    """
+    Create Fyle Tax Group Payload from Netsuite Objects
+    :param existing_fyle_tax_groups: Existing tax group names
+    :param netsuite_attributes: Netsuite Objects Objects
+    :return: Fyle Tax Group Payload
+    """
+    fyle_tax_group_payload = []
+
+    for netsuite_attribute in netsuite_attributes:
+        if netsuite_attribute.value not in existing_fyle_tax_groups:
+            fyle_tax_group_payload.append({
+                'data': {
+                    'name': netsuite_attribute.value,
+                    'is_enabled': True,
+                    'percentage': round((netsuite_attribute.detail['tax_rate']/100), 2)
+                }
+            })
+
+    return fyle_tax_group_payload
 
 def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_project_names: list):
     """
@@ -408,7 +505,7 @@ def auto_create_project_mappings(workspace_id):
         error = {
             'error': error
         }
-        logger.error(
+        logger.exception(
             'Error while creating projects workspace_id - %s error: %s',
             workspace_id, error
         )
@@ -531,6 +628,9 @@ def sync_netsuite_attribute(netsuite_attribute_type: str, workspace_id: int):
     elif netsuite_attribute_type == 'CLASS':
         ns_connection.sync_classifications()
 
+    elif netsuite_attribute_type == 'TAX_ITEM':
+        ns_connection.sync_tax_items()
+
     else:
         ns_connection.sync_custom_segments()
 
@@ -617,7 +717,7 @@ def auto_create_cost_center_mappings(workspace_id):
         error = {
             'error': error
         }
-        logger.error(
+        logger.exception(
             'Error while creating cost centers workspace_id - %s error: %s',
             workspace_id, error
         )
@@ -729,7 +829,7 @@ def auto_create_expense_fields_mappings(workspace_id: int, netsuite_attribute_ty
         error = {
             'error': error
         }
-        logger.error(
+        logger.exception(
             'Error while creating %s workspace_id - %s error: %s', fyle_attribute_type, workspace_id, error
         )
 

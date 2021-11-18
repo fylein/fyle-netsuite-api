@@ -226,6 +226,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 """
 ------------------------------------------ Test Settings ----------------------------------------------------
 """
+
 # Fyle Settings
 API_URL = os.environ.get('API_URL')
 FYLE_TOKEN_URI = os.environ.get('FYLE_TOKEN_URI')

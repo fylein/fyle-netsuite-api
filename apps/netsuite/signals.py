@@ -51,7 +51,7 @@ def validate_custom_segment(sender, instance: CustomSegment, **kwargs):
             custom_list = ns_connector.connection.custom_lists.get(instance.internal_id)
             instance.name = custom_list['name'].upper().replace(' ', '_')
         elif instance.segment_type == 'CUSTOM_RECORD':
-            custom_record = ns_connector.connection.custom_records.get_all_by_id(instance.internal_id)
+            custom_record = ns_connector.connection.custom_record_types.get_all_by_id(instance.internal_id)
             instance.name = custom_record[0]['recType']['name'].upper().replace(' ', '_')
     except Exception:
         raise NotFound()

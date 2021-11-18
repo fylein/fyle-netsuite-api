@@ -1,9 +1,5 @@
 from rest_framework import serializers
 
-from django.db.models import Q
-
-from fyle_accounting_mappings.models import MappingSetting
-
 from apps.workspaces.models import Configuration
 
 from .models import GeneralMapping, SubsidiaryMapping
@@ -69,6 +65,18 @@ class GeneralMappingSerializer(serializers.ModelSerializer):
         if configuration.sync_fyle_to_netsuite_payments and (
             not data['vendor_payment_account_name'] or not data['vendor_payment_account_id']):
             raise serializers.ValidationError('Vendor payment account is missing')
+
+        if configuration.employee_field_mapping != 'EMPLOYEE' and\
+                (data['use_employee_department'] or data['use_employee_location'] or data['use_employee_class']):
+            raise serializers.ValidationError(
+                'use_employee_department or use_employee_location or use_employee_class'
+                ' can be used only when employee is mapped to employee'
+            )
+        if configuration.employee_field_mapping == 'EMPLOYEE' and data['use_employee_department'] and\
+                (data['department_level'] is None):
+            raise serializers.ValidationError(
+                'department_level cannot be null'
+            )
 
         return data
 

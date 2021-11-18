@@ -1,6 +1,7 @@
 import json
 import logging
 import traceback
+import itertools
 from typing import List
 import base64
 from datetime import datetime, timedelta
@@ -12,8 +13,7 @@ from django_q.tasks import Chain
 
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
 
-from fyle_accounting_mappings.models import Mapping, ExpenseAttribute, MappingSetting, DestinationAttribute,\
-    CategoryMapping, EmployeeMapping
+from fyle_accounting_mappings.models import ExpenseAttribute, Mapping, DestinationAttribute, CategoryMapping, EmployeeMapping
 
 from fyle_netsuite_api.exceptions import BulkError
 
@@ -28,6 +28,10 @@ from .models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, Jo
 from .connector import NetSuiteConnector
 
 logger = logging.getLogger(__name__)
+logger.level = logging.INFO
+
+netsuite_paid_state = 'Paid In Full'
+netsuite_error_message = 'NetSuite System Error'
 
 
 def load_attachments(netsuite_connection: NetSuiteConnector, expense_id: str, expense_group: ExpenseGroup):
@@ -38,16 +42,16 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense_id: str, ex
     :param expense_group: Integration Expense group
     """
     workspace_id = expense_group.workspace_id
+    workspace = expense_group.workspace
+
     try:
         fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
         fyle_connector = FyleConnector(fyle_credentials.refresh_token, workspace_id)
         attachment = fyle_connector.get_attachment(expense_id)
 
         folder = netsuite_connection.connection.folders.post({
-            "externalId": '{}-{}-{}'.format(
-                workspace_id, expense_group.id, expense_group.description['employee_email']
-            ),
-            "name": '{}-{}-{}'.format(workspace_id, expense_group.id, expense_group.description['employee_email'])
+            "externalId": workspace.fyle_org_id,
+            "name": 'Fyle Attachments - {0}'.format(workspace.name)
         })
         if attachment:
             netsuite_connection.connection.files.post({
@@ -93,6 +97,10 @@ def get_or_create_credit_card_vendor(expense_group: ExpenseGroup, merchant: str,
         vendor = vendor[0]
         return netsuite_connection.create_destination_attribute(
             'vendor', vendor['entityId'], vendor['internalId'])
+
+
+def __log_error(task_log: TaskLog) -> None:
+    logger.exception('Something unexpected happened workspace_id: %s %s', task_log.workspace_id, task_log.detail)
 
 
 def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_connection: NetSuiteConnector,
@@ -183,6 +191,22 @@ def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_conn
             logger.exception({'error': exception})
 
 
+def __handle_netsuite_connection_error(expense_group: ExpenseGroup, task_log: TaskLog) -> None:
+    logger.info(
+        'NetSuite Credentials not found for workspace_id %s / expense group %s',
+        expense_group.id,
+        expense_group.workspace_id
+    )
+    detail = {
+        'expense_group_id': expense_group.id,
+        'message': 'NetSuite Account not connected'
+    }
+    task_log.status = 'FAILED'
+    task_log.detail = detail
+
+    task_log.save()
+
+
 def create_bill(expense_group, task_log_id):
     task_log = TaskLog.objects.get(id=task_log_id)
 
@@ -236,22 +260,12 @@ def create_bill(expense_group, task_log_id):
             task_log.save()
 
             expense_group.exported_at = datetime.now()
+            expense_group.response_logs = created_bill
             expense_group.save()
 
     except NetSuiteCredentials.DoesNotExist:
-        logger.exception(
-            'NetSuite Credentials not found for workspace_id %s / expense group %s',
-            expense_group.id,
-            expense_group.workspace_id
-        )
-        detail = {
-            'expense_group_id': expense_group.id,
-            'message': 'NetSuite Account not connected'
-        }
-        task_log.status = 'FAILED'
-        task_log.detail = detail
+        __handle_netsuite_connection_error(expense_group, task_log)
 
-        task_log.save()
 
     except NetSuiteRequestError as exception:
         all_details = []
@@ -262,7 +276,7 @@ def create_bill(expense_group, task_log_id):
 
         all_details.append({
             'expense_group_id': expense_group.id,
-            'value': 'NetSuite System Error',
+            'value': netsuite_error_message,
             'type': detail['code'],
             'message': detail['message']
         })
@@ -271,7 +285,7 @@ def create_bill(expense_group, task_log_id):
         task_log.save()
 
     except BulkError as exception:
-        logger.error(exception.response)
+        logger.info(exception.response)
         detail = exception.response
         task_log.status = 'FAILED'
         task_log.detail = detail
@@ -285,7 +299,7 @@ def create_bill(expense_group, task_log_id):
         }
         task_log.status = 'FATAL'
         task_log.save()
-        logger.exception('Something unexpected happened workspace_id: %s %s', task_log.workspace_id, task_log.detail)
+        __log_error(task_log)
 
 
 def create_credit_card_charge(expense_group, task_log_id):
@@ -334,22 +348,11 @@ def create_credit_card_charge(expense_group, task_log_id):
             task_log.save()
 
             expense_group.exported_at = datetime.now()
+            expense_group.response_logs = created_credit_card_charge
             expense_group.save()
 
     except NetSuiteCredentials.DoesNotExist:
-        logger.exception(
-            'NetSuite Credentials not found for workspace_id %s / expense group %s',
-            expense_group.id,
-            expense_group.workspace_id
-        )
-        detail = {
-            'expense_group_id': expense_group.id,
-            'message': 'NetSuite Account not connected'
-        }
-        task_log.status = 'FAILED'
-        task_log.detail = detail
-
-        task_log.save()
+        __handle_netsuite_connection_error(expense_group, task_log)
 
     except NetSuiteRequestError as exception:
         all_details = []
@@ -360,7 +363,7 @@ def create_credit_card_charge(expense_group, task_log_id):
 
         all_details.append({
             'expense_group_id': expense_group.id,
-            'value': 'NetSuite System Error',
+            'value': netsuite_error_message,
             'type': detail['code'],
             'message': detail['message']
         })
@@ -369,7 +372,7 @@ def create_credit_card_charge(expense_group, task_log_id):
         task_log.save()
 
     except BulkError as exception:
-        logger.error(exception.response)
+        logger.info(exception.response)
         detail = exception.response
         task_log.status = 'FAILED'
         task_log.detail = detail
@@ -383,7 +386,7 @@ def create_credit_card_charge(expense_group, task_log_id):
         }
         task_log.status = 'FATAL'
         task_log.save()
-        logger.exception('Something unexpected happened workspace_id: %s %s', task_log.workspace_id, task_log.detail)
+        __log_error(task_log)
 
 
 def create_expense_report(expense_group, task_log_id):
@@ -433,22 +436,11 @@ def create_expense_report(expense_group, task_log_id):
             task_log.save()
 
             expense_group.exported_at = datetime.now()
+            expense_group.response_logs = created_expense_report
             expense_group.save()
 
     except NetSuiteCredentials.DoesNotExist:
-        logger.exception(
-            'NetSuite Credentials not found for workspace_id %s / expense group %s',
-            expense_group.id,
-            expense_group.workspace_id
-        )
-        detail = {
-            'expense_group_id': expense_group.id,
-            'message': 'NetSuite Account not connected'
-        }
-        task_log.status = 'FAILED'
-        task_log.detail = detail
-
-        task_log.save()
+        __handle_netsuite_connection_error(expense_group, task_log)
 
     except NetSuiteRequestError as exception:
         all_details = []
@@ -459,7 +451,7 @@ def create_expense_report(expense_group, task_log_id):
 
         all_details.append({
             'expense_group_id': expense_group.id,
-            'value': 'NetSuite System Error',
+            'value': netsuite_error_message,
             'type': detail['code'],
             'message': detail['message']
         })
@@ -468,7 +460,7 @@ def create_expense_report(expense_group, task_log_id):
         task_log.save()
 
     except BulkError as exception:
-        logger.error(exception.response)
+        logger.info(exception.response)
         detail = exception.response
         task_log.status = 'FAILED'
         task_log.detail = detail
@@ -482,7 +474,7 @@ def create_expense_report(expense_group, task_log_id):
         }
         task_log.status = 'FATAL'
         task_log.save()
-        logger.exception('Something unexpected happened workspace_id: %s %s', task_log.workspace_id, task_log.detail)
+        __log_error(task_log)
 
 
 def create_journal_entry(expense_group, task_log_id):
@@ -532,22 +524,11 @@ def create_journal_entry(expense_group, task_log_id):
             task_log.save()
 
             expense_group.exported_at = datetime.now()
+            expense_group.response_logs = created_journal_entry
             expense_group.save()
 
     except NetSuiteCredentials.DoesNotExist:
-        logger.exception(
-            'NetSuite Credentials not found for workspace_id %s / expense group %s',
-            expense_group.id,
-            expense_group.workspace_id
-        )
-        detail = {
-            'expense_group_id': expense_group.id,
-            'message': 'NetSuite Account not connected'
-        }
-        task_log.status = 'FAILED'
-        task_log.detail = detail
-
-        task_log.save()
+        __handle_netsuite_connection_error(expense_group, task_log)
 
     except NetSuiteRequestError as exception:
         all_details = []
@@ -558,7 +539,7 @@ def create_journal_entry(expense_group, task_log_id):
 
         all_details.append({
             'expense_group_id': expense_group.id,
-            'value': 'NetSuite System Error',
+            'value': netsuite_error_message,
             'type': detail['code'],
             'message': detail['message']
         })
@@ -567,7 +548,7 @@ def create_journal_entry(expense_group, task_log_id):
         task_log.save()
 
     except BulkError as exception:
-        logger.error(exception.response)
+        logger.info(exception.response)
         detail = exception.response
         task_log.status = 'FAILED'
         task_log.detail = detail
@@ -581,25 +562,90 @@ def create_journal_entry(expense_group, task_log_id):
         }
         task_log.status = 'FATAL'
         task_log.save()
-        logger.exception('Something unexpected happened workspace_id: %s %s', task_log.workspace_id, task_log.detail)
+        __log_error(task_log)
 
 
-def __validate_expense_group(expense_group: ExpenseGroup, configuration: Configuration):
+def __validate_general_mapping(expense_group: ExpenseGroup, configuration: Configuration) -> List[BulkError]:
     bulk_errors = []
-    row = 0
-
     general_mapping = None
+    error_type = 'General Mappings'
+
     try:
         general_mapping = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
     except GeneralMapping.DoesNotExist:
         bulk_errors.append({
             'row': None,
             'expense_group_id': expense_group.id,
-            'value': 'general mappings',
-            'type': 'General Mappings',
-            'message': 'General mappings not found'
+            'value': error_type,
+            'type': error_type,
+            'message': '{} not found'.format(error_type)
         })
 
+    if general_mapping:
+        if not (general_mapping.accounts_payable_id or general_mapping.accounts_payable_name) \
+            and (
+                    (
+                    configuration.reimbursable_expenses_object == 'BILL' or \
+                        configuration.corporate_credit_card_expenses_object == 'BILL'
+                    ) or (
+                        configuration.reimbursable_expenses_object == 'JOURNAL ENTRY' and \
+                            configuration.employee_field_mapping == 'VENDOR' and \
+                                expense_group.fund_source == 'PERSONAL'
+                    )
+                ):
+            bulk_errors.append({
+                'row': None,
+                'expense_group_id': expense_group.id,
+                'value': 'Accounts Payable',
+                'type': error_type,
+                'message': 'Accounts Payable not found'
+            })
+
+        if not (general_mapping.reimbursable_account_id or general_mapping.reimbursable_account_name) \
+            and (
+                    (
+                        configuration.reimbursable_expenses_object == 'EXPENSE REPORT'
+                    ) or (
+                        configuration.reimbursable_expenses_object == 'JOURNAL ENTRY' and \
+                                configuration.employee_field_mapping == 'EMPLOYEE' and \
+                                    expense_group.fund_source == 'PERSONAL'
+                    )
+            ):
+            bulk_errors.append({
+                'row': None,
+                'expense_group_id': expense_group.id,
+                'value': 'Reimbursable Account',
+                'type': error_type,
+                'message': 'Reimbursable Account not found'
+            })
+
+        if not (general_mapping.default_ccc_account_id or general_mapping.default_ccc_account_name) and \
+            expense_group.fund_source == 'CCC' and \
+                configuration.corporate_credit_card_expenses_object in ['CREDIT CARD CHARGE', 'JOURNAL ENTRY']:
+            bulk_errors.append({
+                'row': None,
+                'expense_group_id': expense_group.id,
+                'value': 'Default Credit Card Account',
+                'type': error_type,
+                'message': 'Default Credit Card Account not found'
+            })
+
+        if not (general_mapping.default_ccc_vendor_id or general_mapping.default_ccc_vendor_name) and \
+            configuration.corporate_credit_card_expenses_object in ['BILL', 'CREDIT CARD CHARGE'] and \
+                expense_group.fund_source == 'CCC':
+            bulk_errors.append({
+                'row': None,
+                'expense_group_id': expense_group.id,
+                'value': expense_group.description.get('employee_email'),
+                'type': error_type,
+                'message': 'Default Credit Card Vendor not found'
+            })
+
+    return bulk_errors
+
+
+def __validate_subsidiary_mapping(expense_group: ExpenseGroup) -> List[BulkError]:
+    bulk_errors = []
     try:
         SubsidiaryMapping.objects.get(workspace_id=expense_group.workspace_id)
     except SubsidiaryMapping.DoesNotExist:
@@ -611,71 +657,98 @@ def __validate_expense_group(expense_group: ExpenseGroup, configuration: Configu
             'message': 'Subsidiary mapping not found'
         })
 
-    if configuration.corporate_credit_card_expenses_object and \
-            configuration.corporate_credit_card_expenses_object in ('BILL', 'CREDIT CARD CHARGE') and \
-            expense_group.fund_source == 'CCC':
-        if general_mapping:
-            if not (general_mapping.default_ccc_vendor_id or general_mapping.default_ccc_vendor_name):
-                bulk_errors.append({
-                    'row': None,
-                    'expense_group_id': expense_group.id,
-                    'value': expense_group.description.get('employee_email'),
-                    'type': 'General Mapping',
-                    'message': 'Default Credit Card Vendor not found'
-                })
-    else:
-        if expense_group.fund_source == 'PERSONAL' or \
-                (expense_group.fund_source == 'CCC' and configuration.reimbursable_expenses_object == 'EXPENSE REPORT'):
-            try:
-                entity = EmployeeMapping.objects.get(
-                    source_employee__value=expense_group.description.get('employee_email'),
-                    workspace_id=expense_group.workspace_id
-                )
+    return bulk_errors
 
-                if configuration.employee_field_mapping == 'EMPLOYEE':
-                    entity = entity.destination_employee
-                else:
-                    entity = entity.destination_vendor
+def __validate_tax_group_mapping(expense_group: ExpenseGroup, configuration: Configuration) -> List[BulkError]:
+    row = 0
+    bulk_errors = []
+    expenses = expense_group.expenses.all()
 
-                if not entity:
-                    raise EmployeeMapping.DoesNotExist
-            except EmployeeMapping.DoesNotExist:
+    for lineitem in expenses:
+        if configuration.import_tax_items and lineitem.tax_group_id:
+            tax_group  = ExpenseAttribute.objects.get(
+                workspace_id=expense_group.workspace_id,
+                attribute_type='TAX_GROUP',
+                source_id=lineitem.tax_group_id
+            )
+
+            tax_code = Mapping.objects.filter(
+                source_type='TAX_GROUP',
+                source__value=tax_group.value,
+                workspace_id=expense_group.workspace_id
+            ).first()
+
+            if not tax_code:
                 bulk_errors.append({
-                    'row': None,
+                    'row': row,
                     'expense_group_id': expense_group.id,
-                    'value': expense_group.description.get('employee_email'),
-                    'type': 'Employee Mapping',
-                    'message': 'Employee mapping not found'
+                    'value': tax_group.value,
+                    'type': 'Tax Group Mapping',
+                    'message': 'Tax Group Mapping not found'
                 })
 
-    if configuration.corporate_credit_card_expenses_object != 'BILL' and expense_group.fund_source == 'CCC':
-        if not (general_mapping.default_ccc_account_id or general_mapping.default_ccc_account_name):
+        row = row + 1
+
+    return bulk_errors
+
+
+def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Configuration) -> List[BulkError]:
+    bulk_errors = []
+    if expense_group.fund_source == 'PERSONAL' or \
+            (expense_group.fund_source == 'CCC' and \
+                configuration.reimbursable_expenses_object in ['EXPENSE REPORT', 'JOURNAL ENTRY']):
+        try:
+            entity = EmployeeMapping.objects.get(
+                source_employee__value=expense_group.description.get('employee_email'),
+                workspace_id=expense_group.workspace_id
+            )
+
+            if configuration.employee_field_mapping == 'EMPLOYEE':
+                entity = entity.destination_employee
+            else:
+                entity = entity.destination_vendor
+
+            if not entity:
+                raise EmployeeMapping.DoesNotExist
+        except EmployeeMapping.DoesNotExist:
             bulk_errors.append({
                 'row': None,
                 'expense_group_id': expense_group.id,
-                'value': 'Default Credit Card Account',
-                'type': 'General Mapping',
-                'message': 'Default Credit Card Account not found'
+                'value': expense_group.description.get('employee_email'),
+                'type': 'Employee Mapping',
+                'message': 'Employee mapping not found'
             })
 
+    return bulk_errors
+
+
+def __validate_category_mapping(expense_group: ExpenseGroup, configuration: Configuration) -> List[BulkError]:
+    row = 0
+    bulk_errors = []
     expenses = expense_group.expenses.all()
 
     for lineitem in expenses:
         category = lineitem.category if lineitem.category == lineitem.sub_category else '{0} / {1}'.format(
             lineitem.category, lineitem.sub_category)
 
-        account = CategoryMapping.objects.filter(
+        category_mapping = CategoryMapping.objects.filter(
             source_category__value=category,
             workspace_id=expense_group.workspace_id
         ).first()
 
-        if account:
-            if configuration.reimbursable_expenses_object == 'EXPENSE REPORT':
-                account = account.destination_expense_head
+        if category_mapping:
+            if expense_group.fund_source == 'PERSONAL':
+                if configuration.reimbursable_expenses_object == 'EXPENSE REPORT':
+                    category_mapping = category_mapping.destination_expense_head
+                else:
+                    category_mapping = category_mapping.destination_account
             else:
-                account = account.destination_account
+                if configuration.corporate_credit_card_expenses_object == 'EXPENSE REPORT':
+                    category_mapping = category_mapping.destination_expense_head
+                else:
+                    category_mapping = category_mapping.destination_account
 
-        if not account:
+        if not category_mapping:
             bulk_errors.append({
                 'row': row,
                 'expense_group_id': expense_group.id,
@@ -685,6 +758,33 @@ def __validate_expense_group(expense_group: ExpenseGroup, configuration: Configu
             })
 
         row = row + 1
+
+    return bulk_errors
+
+
+def __validate_expense_group(expense_group: ExpenseGroup, configuration: Configuration):
+    # General Mapping
+    general_mapping_errors = __validate_general_mapping(expense_group, configuration)
+
+    # Subsidiary Mapping
+    subsidiary_mapping_errors = __validate_subsidiary_mapping(expense_group)
+
+    # Employee Mapping
+    employee_mapping_errors = __validate_employee_mapping(expense_group, configuration)
+
+    # Category Mapping
+    category_mapping_errors = __validate_category_mapping(expense_group, configuration)
+
+    # Tax Group Mapping
+    tax_group_mapping_errors = []
+    if configuration.import_tax_items:
+        tax_group_mapping_errors = __validate_tax_group_mapping(expense_group, configuration)
+
+    bulk_errors = list(
+        itertools.chain(
+            general_mapping_errors, subsidiary_mapping_errors, employee_mapping_errors, category_mapping_errors, tax_group_mapping_errors
+        )
+    )
 
     if bulk_errors:
         raise BulkError('Mappings are missing', bulk_errors)
@@ -716,6 +816,7 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str]):
             )
 
             if task_log.status not in ['IN_PROGRESS', 'ENQUEUED']:
+                task_log.type = 'CREATING_BILL'
                 task_log.status = 'ENQUEUED'
                 task_log.save()
 
@@ -753,6 +854,7 @@ def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: L
             )
 
             if task_log.status not in ['IN_PROGRESS', 'ENQUEUED']:
+                task_log.type = 'CREATING_CREDIT_CARD_CHARGE'
                 task_log.status = 'ENQUEUED'
                 task_log.save()
 
@@ -790,6 +892,7 @@ def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List
             )
 
             if task_log.status not in ['IN_PROGRESS', 'ENQUEUED']:
+                task_log.type = 'CREATING_EXPENSE_REPORT'
                 task_log.status = 'ENQUEUED'
                 task_log.save()
 
@@ -825,6 +928,7 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
             )
 
             if task_log.status not in ['IN_PROGRESS', 'ENQUEUED']:
+                task_log.type = 'CREATING_JOURNAL_ENTRY'
                 task_log.status = 'ENQUEUED'
                 task_log.save()
 
@@ -871,33 +975,32 @@ def create_netsuite_payment_objects(netsuite_objects, object_type, workspace_id)
         except Exception:
             netsuite_entry = None
 
-        if netsuite_entry and netsuite_entry['status'] != 'Paid In Full':
-            if expense_group_reimbursement_status:
-                if entity_id not in netsuite_payment_objects:
-                    netsuite_payment_objects[entity_id] = {
-                        'subsidiary_id': netsuite_object.subsidiary_id,
-                        'entity_id': entity_id,
-                        'currency': netsuite_object.currency,
-                        'memo': 'Payment for {0} by {1}'.format(
-                            object_type.lower(), netsuite_object.expense_group.description['employee_email']
-                        ),
-                        'unique_id': '{0}-{1}'.format(netsuite_object.external_id, netsuite_object.id),
-                        'line': [
-                            {
-                                'internal_id': netsuite_object_task_log.detail['internalId'],
-                                'entity_id': entity_id,
-                                'expense_group': netsuite_object.expense_group,
-                            }
-                        ]
-                    }
-                else:
-                    netsuite_payment_objects[entity_id]['line'].append(
+        if netsuite_entry and netsuite_entry['status'] != netsuite_paid_state and expense_group_reimbursement_status:
+            if entity_id not in netsuite_payment_objects:
+                netsuite_payment_objects[entity_id] = {
+                    'subsidiary_id': netsuite_object.subsidiary_id,
+                    'entity_id': entity_id,
+                    'currency': netsuite_object.currency,
+                    'memo': 'Payment for {0} by {1}'.format(
+                        object_type.lower(), netsuite_object.expense_group.description['employee_email']
+                    ),
+                    'unique_id': '{0}-{1}'.format(netsuite_object.external_id, netsuite_object.id),
+                    'line': [
                         {
                             'internal_id': netsuite_object_task_log.detail['internalId'],
                             'entity_id': entity_id,
                             'expense_group': netsuite_object.expense_group,
                         }
-                    )
+                    ]
+                }
+            else:
+                netsuite_payment_objects[entity_id]['line'].append(
+                    {
+                        'internal_id': netsuite_object_task_log.detail['internalId'],
+                        'entity_id': entity_id,
+                        'expense_group': netsuite_object.expense_group,
+                    }
+                )
 
     return netsuite_payment_objects
 
@@ -954,7 +1057,7 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
 
             task_log.save()
         except NetSuiteCredentials.DoesNotExist:
-            logger.error(
+            logger.info(
                 'NetSuite Credentials not found for workspace_id %s',
                 workspace_id
             )
@@ -974,7 +1077,7 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
             task_log.status = 'FAILED'
 
             all_details.append({
-                'value': 'NetSuite System Error',
+                'value': netsuite_error_message,
                 'type': detail['code'],
                 'message': detail['message']
             })
@@ -983,7 +1086,7 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
             task_log.save()
 
         except BulkError as exception:
-            logger.error(exception.response)
+            logger.info(exception.response)
             detail = exception.response
             task_log.status = 'FAILED'
             task_log.detail = detail
@@ -1028,18 +1131,17 @@ def create_vendor_payment(workspace_id):
 
 def schedule_vendor_payment_creation(sync_fyle_to_netsuite_payments, workspace_id):
     general_mappings: GeneralMapping = GeneralMapping.objects.filter(workspace_id=workspace_id).first()
-    if general_mappings:
-        if sync_fyle_to_netsuite_payments and general_mappings.vendor_payment_account_id:
-            start_datetime = datetime.now()
-            schedule, _ = Schedule.objects.update_or_create(
-                func='apps.netsuite.tasks.create_vendor_payment',
-                args='{}'.format(workspace_id),
-                defaults={
-                    'schedule_type': Schedule.MINUTES,
-                    'minutes': 24 * 60,
-                    'next_run': start_datetime
-                }
-            )
+    if general_mappings and sync_fyle_to_netsuite_payments and general_mappings.vendor_payment_account_id:
+        start_datetime = datetime.now()
+        schedule, _ = Schedule.objects.update_or_create(
+            func='apps.netsuite.tasks.create_vendor_payment',
+            args='{}'.format(workspace_id),
+            defaults={
+                'schedule_type': Schedule.MINUTES,
+                'minutes': 24 * 60,
+                'next_run': start_datetime
+            }
+        )
     if not sync_fyle_to_netsuite_payments:
         schedule: Schedule = Schedule.objects.filter(
             func='apps.netsuite.tasks.create_vendor_payment',
@@ -1085,7 +1187,7 @@ def check_netsuite_object_status(workspace_id):
         for bill in bills:
             bill_object = netsuite_connection.get_bill(internal_ids[bill.expense_group.id]['internal_id'])
 
-            if bill_object['status'] == 'Paid In Full':
+            if bill_object['status'] == netsuite_paid_state:
                 line_items = BillLineitem.objects.filter(bill_id=bill.id)
                 for line_item in line_items:
                     expense = line_item.expense
@@ -1103,7 +1205,7 @@ def check_netsuite_object_status(workspace_id):
             expense_report_object = netsuite_connection.get_expense_report(
                 internal_ids[expense_report.expense_group.id]['internal_id'])
 
-            if expense_report_object['status'] == 'Paid In Full':
+            if expense_report_object['status'] == netsuite_paid_state:
                 line_items = ExpenseReportLineItem.objects.filter(expense_report_id=expense_report.id)
                 for line_item in line_items:
                     expense = line_item.expense

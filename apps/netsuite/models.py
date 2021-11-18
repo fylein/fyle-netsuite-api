@@ -5,7 +5,6 @@ from datetime import datetime
 
 from django.contrib.postgres.fields import JSONField
 from django.db import models
-from django.db.models import Q
 
 from fyle_accounting_mappings.models import Mapping, MappingSetting, DestinationAttribute, CategoryMapping,\
     EmployeeMapping
@@ -84,6 +83,18 @@ def get_class_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
             class_id = mapping.destination.destination_id
     return class_id
 
+def get_tax_item_id_or_none(expense_group: ExpenseGroup, lineitem: Expense = None):
+    tax_code = None
+    mapping: Mapping = Mapping.objects.filter(
+        source_type='TAX_GROUP',
+        destination_type='TAX_ITEM',
+        source__source_id=lineitem.tax_group_id,
+        workspace_id=expense_group.workspace_id
+    ).first()
+    if mapping:
+        tax_code = mapping.destination.destination_id
+
+    return tax_code
 
 def get_customer_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
     project_setting: MappingSetting = MappingSetting.objects.filter(
@@ -201,8 +212,14 @@ def get_expense_purpose(lineitem, category) -> str:
     expense_purpose = ', purpose - {0}'.format(lineitem.purpose) if lineitem.purpose else ''
     spent_at = ' spent on {0} '.format(lineitem.spent_at.date()) if lineitem.spent_at else ''
     vendor = ', merchant {0}'.format(lineitem.vendor) if lineitem.vendor else ''
-    return 'Expense by {0} against category {1}{2}{3}with claim number - {4}{5}'.format(
+
+    purpose = 'Expense by {0} against category {1}{2}{3}with report number - {4}{5}'.format(
         lineitem.employee_email, category, vendor, spent_at, lineitem.claim_number, expense_purpose)
+
+    purpose = purpose.replace('<', '')
+    purpose = purpose.replace('>', '')
+
+    return purpose
 
 
 class CustomSegment(models.Model):
@@ -303,6 +320,8 @@ class BillLineitem(models.Model):
     class_id = models.CharField(max_length=255, help_text='NetSuite Class id', null=True)
     customer_id = models.CharField(max_length=255, help_text='NetSuite customer id', null=True)
     amount = models.FloatField(help_text='Bill amount')
+    tax_amount = models.FloatField(null=True, help_text='Tax amount')
+    tax_item_id = models.CharField(max_length=255, help_text='Tax Item ID', null=True)
     billable = models.BooleanField(null=True, help_text='Expense Billable or not')
     memo = models.TextField(help_text='NetSuite bill lineitem memo', null=True)
     netsuite_custom_segments = JSONField(null=True, help_text='NetSuite Custom Segments')
@@ -334,7 +353,16 @@ class BillLineitem(models.Model):
                 workspace_id=expense_group.workspace_id
             ).first()
 
-            class_id = get_class_id_or_none(expense_group, lineitem)
+            if expense_group.fund_source == 'CCC' and general_mappings.use_employee_class:
+                employee_mapping = EmployeeMapping.objects.filter(
+                    source_employee__value=expense_group.description.get('employee_email'),
+                    workspace_id=expense_group.workspace_id
+                ).first()
+                if employee_mapping and employee_mapping.destination_employee:
+                    class_id = employee_mapping.destination_employee.detail.get('class_id')
+
+            else:
+                class_id = get_class_id_or_none(expense_group, lineitem)
 
             department_id = get_department_id_or_none(expense_group, lineitem)
 
@@ -348,6 +376,15 @@ class BillLineitem(models.Model):
                     department_id = employee_mapping.destination_employee.detail.get('department_id')
 
             location_id = get_location_id_or_none(expense_group, lineitem)
+
+            if expense_group.fund_source == 'CCC' and general_mappings.use_employee_location and\
+                    general_mappings.location_level in ('ALL', 'TRANSACTION_LINE'):
+                employee_mapping = EmployeeMapping.objects.filter(
+                    source_employee__value=expense_group.description.get('employee_email'),
+                    workspace_id=expense_group.workspace_id
+                ).first()
+                if employee_mapping and employee_mapping.destination_employee:
+                    location_id = employee_mapping.destination_employee.detail.get('location_id')
 
             if not location_id and general_mappings.location_id and \
                 general_mappings.location_level in ['TRANSACTION_LINE', 'ALL']:
@@ -375,6 +412,8 @@ class BillLineitem(models.Model):
                     'department_id': department_id,
                     'customer_id': customer_id,
                     'amount': lineitem.amount,
+                    'tax_item_id': get_tax_item_id_or_none(expense_group, lineitem),
+                    'tax_amount': lineitem.tax_amount,
                     'billable': billable,
                     'memo': get_expense_purpose(lineitem, category),
                     'netsuite_custom_segments': custom_segments
@@ -478,6 +517,8 @@ class CreditCardChargeLineItem(models.Model):
     class_id = models.CharField(max_length=255, help_text='NetSuite Class id', null=True)
     customer_id = models.CharField(max_length=255, help_text='NetSuite customer id', null=True)
     amount = models.FloatField(help_text='CC Charge line amount')
+    tax_amount = models.FloatField(null=True, help_text='Tax amount')
+    tax_item_id = models.CharField(max_length=255, help_text='Tax Item ID', null=True)
     billable = models.BooleanField(null=True, help_text='Expense Billable or not')
     memo = models.TextField(help_text='NetSuite cc charge lineitem memo', null=True)
     netsuite_custom_segments = JSONField(null=True, help_text='NetSuite Custom Segments')
@@ -540,6 +581,8 @@ class CreditCardChargeLineItem(models.Model):
                 'department_id': department_id,
                 'customer_id': customer_id,
                 'amount': lineitem.amount,
+                'tax_item_id': get_tax_item_id_or_none(expense_group, lineitem),
+                'tax_amount': lineitem.tax_amount,
                 'billable': billable,
                 'memo': get_expense_purpose(lineitem, category),
                 'netsuite_custom_segments': custom_segments
@@ -597,27 +640,53 @@ class ExpenseReport(models.Model):
         debit_account_id = GeneralMapping.objects.get(
             workspace_id=expense_group.workspace_id).reimbursable_account_id
 
+        employee_mapping = EmployeeMapping.objects.filter(
+            source_employee__value=description.get('employee_email'),
+            workspace_id=expense_group.workspace_id
+        ).first()
+
+        if employee_mapping and employee_mapping.destination_card_account:
+            credit_card_account_id = employee_mapping.destination_card_account.destination_id
+        else:
+            credit_card_account_id = general_mappings.default_ccc_account_id
+
+        configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
+        employee_field_mapping = configuration.employee_field_mapping
+
+        department_id = None
+        class_id = None
+
+        if general_mappings.use_employee_department and general_mappings.department_level in (
+            'ALL', 'TRANSACTION_BODY') and employee_field_mapping == 'EMPLOYEE':
+            department_id = employee_mapping.destination_employee.detail.get('department_id')
+
+        if general_mappings.use_employee_location and general_mappings.location_level in ('ALL', 'TRANSACTION_BODY') \
+                and employee_field_mapping == 'EMPLOYEE':
+            location_id = employee_mapping.destination_employee.detail.get('location_id')
+        else:
+            location_id = general_mappings.location_id if general_mappings.location_level in [
+                    'TRANSACTION_BODY', 'ALL'] else None
+
+        if not class_id and general_mappings.use_employee_class and employee_field_mapping == 'EMPLOYEE':
+            class_id = employee_mapping.destination_employee.detail.get('class_id')
+
         expense_report_object, _ = ExpenseReport.objects.update_or_create(
             expense_group=expense_group,
             defaults={
                 'account_id': debit_account_id,
-                'credit_card_account_id': EmployeeMapping.objects.get(
-                    source_employee__value=description.get('employee_email'),
-                    workspace_id=expense_group.workspace_id
-                ).destination_employee.destination_id if expense_group.fund_source == 'CCC' else None,
+                'credit_card_account_id': credit_card_account_id if expense_group.fund_source == 'CCC' else None,
                 'entity_id': EmployeeMapping.objects.get(
                     source_employee__value=description.get('employee_email'),
                     workspace_id=expense_group.workspace_id
                 ).destination_employee.destination_id,
                 'currency': currency.destination_id if currency else '1',
-                'department_id': None,
-                'class_id': None,
-                'location_id': general_mappings.location_id if general_mappings.location_level in [
-                    'TRANSACTION_BODY', 'ALL'] else None,
+                'department_id': department_id,
+                'class_id': class_id,
+                'location_id': location_id,
                 'subsidiary_id': subsidiary_mappings.internal_id,
-                'memo': "Reimbursable expenses by {0}".format(description.get('employee_email')) if
+                'memo': 'Reimbursable expenses by {0}'.format(description.get('employee_email')) if
                 expense_group.fund_source == 'PERSONAL' else
-                "Credit card expenses by {0}".format(description.get('employee_email')),
+                'Credit card expenses by {0}'.format(description.get('employee_email')),
                 'transaction_date': get_transaction_date(expense_group),
                 'external_id': 'report {} - {}'.format(expense_group.id, description.get('employee_email'))
             }
@@ -640,6 +709,8 @@ class ExpenseReportLineItem(models.Model):
     location_id = models.CharField(max_length=255, help_text='NetSuite location id', null=True)
     department_id = models.CharField(max_length=255, help_text='NetSuite department id', null=True)
     currency = models.CharField(max_length=255, help_text='NetSuite Currency id')
+    tax_amount = models.FloatField(null=True, help_text='Tax amount')
+    tax_item_id = models.CharField(max_length=255, help_text='Tax Item ID', null=True)
     memo = models.TextField(help_text='NetSuite ExpenseReport lineitem memo', null=True)
     netsuite_custom_segments = JSONField(null=True, help_text='NetSuite Custom Segments')
     transaction_date = models.DateTimeField(help_text='Expense Report transaction date')
@@ -660,6 +731,10 @@ class ExpenseReportLineItem(models.Model):
         expense_report = ExpenseReport.objects.get(expense_group=expense_group)
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
+        configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
+        employee_field_mapping = configuration.employee_field_mapping
+        description = expense_group.description
+
         expense_report_lineitem_objects = []
 
         for lineitem in expenses:
@@ -671,17 +746,35 @@ class ExpenseReportLineItem(models.Model):
                 workspace_id=expense_group.workspace_id
             ).first()
 
+            entity = EmployeeMapping.objects.get(
+                source_employee__value=description.get('employee_email'),
+                workspace_id=expense_group.workspace_id
+            )
+
             currency = DestinationAttribute.objects.filter(value=lineitem.currency,
                                                            workspace_id=expense_group.workspace_id,
                                                            attribute_type='CURRENCY').first()
 
-            class_id = get_class_id_or_none(expense_group, lineitem)
+            if general_mappings.use_employee_class and employee_field_mapping == 'EMPLOYEE':
+                class_id = entity.destination_employee.detail.get('class_id')
+            else:
+                class_id = get_class_id_or_none(expense_group, lineitem)
 
-            department_id = get_department_id_or_none(expense_group, lineitem)
+            if general_mappings.use_employee_department and \
+                general_mappings.department_level in ('ALL', 'TRANSACTION_LINE') and \
+                    employee_field_mapping == 'EMPLOYEE':
+                department_id = entity.destination_employee.detail.get('department_id')
+            else:
+                department_id = get_department_id_or_none(expense_group, lineitem)
 
             customer_id = get_customer_id_or_none(expense_group, lineitem)
 
-            location_id = get_location_id_or_none(expense_group, lineitem)
+            if general_mappings.use_employee_location and \
+                general_mappings.location_level in ('ALL', 'TRANSACTION_LINE') and \
+                    employee_field_mapping == 'EMPLOYEE':
+                location_id = entity.destination_employee.detail.get('location_id')
+            else:
+                location_id = get_location_id_or_none(expense_group, lineitem)
 
             if not location_id:
                 if general_mappings.location_id and general_mappings.location_level in ['TRANSACTION_LINE', 'ALL']:
@@ -708,6 +801,8 @@ class ExpenseReportLineItem(models.Model):
                     'location_id': location_id,
                     'department_id': department_id,
                     'currency': currency.destination_id if currency else '1',
+                    'tax_item_id': get_tax_item_id_or_none(expense_group, lineitem),
+                    'tax_amount': lineitem.tax_amount,
                     'transaction_date': get_transaction_date(expense_group),
                     'memo': get_expense_purpose(lineitem, category),
                     'netsuite_custom_segments': custom_segments
@@ -725,7 +820,6 @@ class JournalEntry(models.Model):
     """
     id = models.AutoField(primary_key=True)
     expense_group = models.OneToOneField(ExpenseGroup, on_delete=models.PROTECT, help_text='Expense group reference')
-    entity_id = models.CharField(max_length=255, help_text='NetSuite Entity id (Employee / Vendor)')
     currency = models.CharField(max_length=255, help_text='Journal Entry Currency')
     location_id = models.CharField(max_length=255, help_text='NetSuite Location id', null=True)
     department_id = models.CharField(max_length=255, help_text='NetSuite Department id', null=True)
@@ -757,9 +851,6 @@ class JournalEntry(models.Model):
             workspace_id=expense_group.workspace_id
         )
 
-        configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
-        employee_field_mapping = configuration.employee_field_mapping
-
         currency = DestinationAttribute.objects.filter(value=expense.currency,
                                                        workspace_id=expense_group.workspace_id,
                                                        attribute_type='CURRENCY').first()
@@ -768,19 +859,25 @@ class JournalEntry(models.Model):
 
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
+        configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
+        employee_field_mapping = configuration.employee_field_mapping
+
         department_id = None
+        location_id = None
 
         if general_mappings.use_employee_department and general_mappings.department_level in (
-            'ALL', 'TRANSACTION_BODY') and entity.destination_type == 'EMPLOYEE':
+            'ALL', 'TRANSACTION_BODY') and employee_field_mapping == 'EMPLOYEE':
             department_id = entity.destination_employee.detail.get('department_id')
+
+        if general_mappings.use_employee_location and general_mappings.location_level in ('ALL', 'TRANSACTION_BODY') \
+                and employee_field_mapping == 'EMPLOYEE':
+            location_id = entity.destination_employee.detail.get('location_id')
 
         journal_entry_object, _ = JournalEntry.objects.update_or_create(
             expense_group=expense_group,
             defaults={
-                'entity_id': entity.destination_employee.destination_id if employee_field_mapping == 'EMPLOYEE' \
-                        else entity.destination_vendor.destination_id,
                 'currency': currency.destination_id if currency else '1',
-                'location_id': general_mappings.location_id,
+                'location_id': location_id if location_id else general_mappings.location_id,
                 'subsidiary_id': subsidiary_mappings.internal_id,
                 'department_id': department_id,
                 'memo': 'Reimbursable expenses by {0}'.format(description.get('employee_email')) if
@@ -807,6 +904,8 @@ class JournalEntryLineItem(models.Model):
     class_id = models.CharField(max_length=255, help_text='NetSuite class id', null=True)
     entity_id = models.CharField(max_length=255, help_text='NetSuite entity id')
     amount = models.FloatField(help_text='JournalEntry amount')
+    tax_amount = models.FloatField(null=True, help_text='Tax amount')
+    tax_item_id = models.CharField(max_length=255, help_text='Tax Item ID', null=True)
     memo = models.TextField(help_text='NetSuite JournalEntry lineitem description', null=True)
     netsuite_custom_segments = JSONField(null=True, help_text='NetSuite Custom Segments')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
@@ -869,16 +968,24 @@ class JournalEntryLineItem(models.Model):
                 workspace_id=expense_group.workspace_id
             ).first()
 
-            class_id = get_class_id_or_none(expense_group, lineitem)
+            if general_mappings.use_employee_class and employee_field_mapping == 'EMPLOYEE':
+                class_id = entity.destination_employee.detail.get('class_id')
+            else:
+                class_id = get_class_id_or_none(expense_group, lineitem)
 
-            department_id = get_department_id_or_none(expense_group, lineitem)
-
-            if not department_id and general_mappings.use_employee_department and \
+            if general_mappings.use_employee_department and \
                 general_mappings.department_level in ('ALL', 'TRANSACTION_LINE') and \
                     employee_field_mapping == 'EMPLOYEE':
                 department_id = entity.destination_employee.detail.get('department_id')
+            else:
+                department_id = get_department_id_or_none(expense_group, lineitem)
 
-            location_id = get_location_id_or_none(expense_group, lineitem)
+            if general_mappings.use_employee_location and \
+                general_mappings.location_level in ('ALL', 'TRANSACTION_LINE') and \
+                    employee_field_mapping == 'EMPLOYEE':
+                location_id = entity.destination_employee.detail.get('location_id')
+            else:
+                location_id = get_location_id_or_none(expense_group, lineitem)
 
             if not location_id and general_mappings.location_id:
                 location_id = general_mappings.location_id
@@ -898,6 +1005,8 @@ class JournalEntryLineItem(models.Model):
                     'entity_id': entity.destination_employee.destination_id if employee_field_mapping == 'EMPLOYEE' \
                         else entity.destination_vendor.destination_id,
                     'amount': lineitem.amount,
+                    'tax_item_id': get_tax_item_id_or_none(expense_group, lineitem),
+                    'tax_amount': lineitem.tax_amount,
                     'memo': get_expense_purpose(lineitem, category),
                     'netsuite_custom_segments': custom_segments
                 }

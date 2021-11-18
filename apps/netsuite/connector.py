@@ -13,6 +13,7 @@ from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribu
 
 from apps.fyle.models import Expense, ExpenseGroup
 from apps.fyle.connector import FyleConnector
+from apps.workspaces.models import Configuration
 
 from apps.mappings.models import SubsidiaryMapping
 from apps.netsuite.models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, \
@@ -54,6 +55,19 @@ class NetSuiteConnector:
         value = name.replace(u'\xa0', ' ')
         value = value.replace('/', '-')
         return value
+
+    @staticmethod
+    def get_message_and_code(raw_response):
+        response = eval(raw_response.text)
+
+        code = response['error']['code']
+        message = json.loads(response['error']['message'])['message']
+
+        return code, message
+    
+    @staticmethod
+    def get_tax_code_name(item_id, tax_type, rate):
+        return '{0}: {1} @{2}%'.format(tax_type, item_id, rate)
 
     def sync_accounts(self):
         """
@@ -172,7 +186,7 @@ class NetSuiteConnector:
 
     def get_custom_record_attributes(self, attribute_type: str, internal_id: str):
         custom_segment_attributes = []
-        custom_records = self.connection.custom_records.get_all_by_id(internal_id)
+        custom_records = self.connection.custom_record_types.get_all_by_id(internal_id)
 
         for field in custom_records:
             custom_segment_attributes.append(
@@ -415,7 +429,9 @@ class NetSuiteConnector:
             for employee in employees:
                 detail = {
                     'email': employee['email'] if employee['email'] else None,
-                    'department_id': employee['department']['internalId'] if employee['department'] else None
+                    'department_id': employee['department']['internalId'] if employee['department'] else None,
+                    'location_id': employee['location']['internalId'] if employee['location'] else None,
+                    'class_id': employee['class']['internalId'] if employee['class'] else None
                 }
                 if 'subsidiary' in employee and employee['subsidiary']:
                     if employee['subsidiary']['internalId'] == subsidiary_mapping.internal_id:
@@ -534,15 +550,15 @@ class NetSuiteConnector:
                 'type': None
             },
             'workCalendar': {
-                "name": None,
-                "internalId": None,
-                "externalId": None,
-                "type": None
+                'name': None,
+                'internalId': None,
+                'externalId': None,
+                'type': None
             },
             'defaultExpenseReportCurrency': {
-                "internalId": currency.destination_id if currency else '1',
-                "externalId": None,
-                "type": "currency"
+                'internalId': currency.destination_id if currency else '1',
+                'externalId': None,
+                'type': 'currency'
             },
             'externalId': employee.detail['user_id']
         }
@@ -562,11 +578,64 @@ class NetSuiteConnector:
                 'attribute_type': 'SUBSIDIARY',
                 'display_name': 'Subsidiary',
                 'value': subsidiary['name'],
-                'destination_id': subsidiary['internalId']
+                'destination_id': subsidiary['internalId'],
+                'detail': {
+                    'country': subsidiary['country']
+                }
             })
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(
             subsidiary_attributes, 'SUBSIDIARY', self.workspace_id, True)
+
+        return []
+    
+    def sync_tax_items(self):
+        """
+        Sync Tax Details
+        """
+        tax_items_generator = self.connection.tax_items.get_all_generator()
+        tax_groups_generator = self.connection.tax_groups.get_all_generator()
+
+        attributes = []
+
+        for tax_items in tax_items_generator:
+            for tax_item in tax_items:
+                if not tax_item['isInactive'] and tax_item['itemId'] and tax_item['taxType'] and tax_item['rate']:
+                    tax_rate = float(tax_item['rate'].replace('%', ''))
+                    value = self.get_tax_code_name(tax_item['itemId'], tax_item['taxType']['name'], tax_rate)
+
+                    if tax_rate >= 0:
+                        attributes.append({
+                            'attribute_type': 'TAX_ITEM',
+                            'display_name': 'Tax Item',
+                            'value': value,
+                            'destination_id': tax_item['internalId'],
+                            'active': True,
+                            'detail': {
+                                'tax_rate': tax_rate
+                            }
+                        })
+
+        for tax_groups in tax_groups_generator:
+            for tax_group in tax_groups:
+                if not tax_group['isInactive'] and tax_group['itemId'] and tax_group['taxType'] and tax_group['rate']:
+                    value = self.get_tax_code_name(tax_group['itemId'], tax_group['taxType']['name'], tax_group['rate'])
+                    tax_rate = float(tax_group['rate'])
+
+                    if tax_rate >= 0:
+                        attributes.append({
+                            'attribute_type': 'TAX_ITEM',
+                            'display_name': 'Tax Item',
+                            'value': value,
+                            'destination_id': tax_group['internalId'],
+                            'active': True,
+                            'detail': {
+                                'tax_rate': tax_rate
+                            }
+                        })
+
+        DestinationAttribute.bulk_create_or_update_destination_attributes(
+                attributes, 'TAX_ITEM', self.workspace_id, True)
 
         return []
 
@@ -658,7 +727,8 @@ class NetSuiteConnector:
                 }
             )
 
-            line = {
+
+            lineitem = {
                 'orderDoc': None,
                 'orderLine': None,
                 'line': None,
@@ -669,11 +739,9 @@ class NetSuiteConnector:
                     'externalId': None,
                     'type': 'account'
                 },
-                'amount': line.amount,
-                'taxAmount': None,
-                'tax1Amt': None,
+                'amount': line.amount - line.tax_amount if (line.tax_item_id and line.tax_amount) else line.amount,
                 'memo': line.memo,
-                'grossAmt': None,
+                'grossAmt': line.amount,
                 'taxDetailsReference': None,
                 'department': {
                     'name': None,
@@ -702,7 +770,14 @@ class NetSuiteConnector:
                 'customFieldList': netsuite_custom_segments,
                 'isBillable': line.billable,
                 'projectTask': None,
-                'taxCode': None,
+                'tax1Amt': None,
+                'taxAmount': line.tax_amount if (line.tax_item_id and line.tax_amount) else None,
+                'taxCode':{
+                    'name': None,
+                    'internalId': line.tax_item_id if (line.tax_item_id and line.tax_amount) else None,
+                    'externalId': None,
+                    'type': 'classification'
+                },                
                 'taxRate1': None,
                 'taxRate2': None,
                 'amortizationSched': None,
@@ -710,7 +785,7 @@ class NetSuiteConnector:
                 'amortizationEndDate': None,
                 'amortizationResidual': None,
             }
-            lines.append(line)
+            lines.append(lineitem)
 
         return lines
 
@@ -811,9 +886,26 @@ class NetSuiteConnector:
         """
         Post vendor bills to NetSuite
         """
-        bills_payload = self.__construct_bill(bill, bill_lineitems, attachment_links)
-        created_bill = self.connection.vendor_bills.post(bills_payload)
-        return created_bill
+        configuration = Configuration.objects.get(workspace_id=self.workspace_id)
+        try:
+            bills_payload = self.__construct_bill(bill, bill_lineitems, attachment_links)
+            created_bill = self.connection.vendor_bills.post(bills_payload)
+            return created_bill
+
+        except NetSuiteRequestError as exception:
+            detail = json.dumps(exception.__dict__)
+            detail = json.loads(detail)
+            message = 'An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'
+            if configuration.change_accounting_period and detail['message'] == message:
+                first_day_of_month = datetime.today().date().replace(day=1)
+                bills_payload = self.__construct_bill(bill, bill_lineitems, attachment_links)
+                bills_payload['tranDate'] = first_day_of_month
+                created_bill = self.connection.vendor_bills.post(bills_payload)
+                
+                return created_bill
+
+            else:
+                raise
 
     def get_bill(self, internal_id):
         """
@@ -863,6 +955,7 @@ class NetSuiteConnector:
             },
             'amount': line.amount,
             'memo': line.memo,
+            'grossAmt': line.amount,
             'department': {
                 'internalId': line.department_id
             },
@@ -877,6 +970,13 @@ class NetSuiteConnector:
             },
             'customFieldList': netsuite_custom_segments,
             'isBillable': line.billable,
+            'taxAmount': None,
+            'taxCode':{
+                'name': None,
+                'internalId': None,
+                'externalId': None,
+                'type': 'classification'
+            },     
         }
         lines.append(line)
 
@@ -929,6 +1029,8 @@ class NetSuiteConnector:
         """
         Post vendor credit_card_charges to NetSuite
         """
+        
+        configuration = Configuration.objects.get(workspace_id=self.workspace_id)
         credit_card_charges_payload = self.__construct_credit_card_charge(
             credit_card_charge, credit_card_charge_lineitem, attachment_links)
 
@@ -939,7 +1041,7 @@ class NetSuiteConnector:
         token_secret = self.__netsuite_credentials.ns_token_secret
 
         url = f"https://{account.lower()}.restlets.api.netsuite.com/app/site/hosting/restlet.nl?" \
-              f"script=customscript_cc_charge_fyle&deploy=customdeploy_cc_charge_fyle"
+            f"script=customscript_cc_charge_fyle&deploy=customdeploy_cc_charge_fyle"
 
         oauth = OAuth1Session(
             client_key=consumer_key,
@@ -958,15 +1060,29 @@ class NetSuiteConnector:
 
         status_code = raw_response.status_code
 
-        if status_code == 200 and 'success' in json.loads(raw_response.text) \
-                and json.loads(raw_response.text)['success']:
+        if status_code == 200 and 'success' in json.loads(raw_response.text) and json.loads(raw_response.text)['success']:
             return json.loads(raw_response.text)
 
-        response = eval(raw_response.text)
+        elif configuration.change_accounting_period and json.loads(eval(raw_response.text)['error']['message'])['message'] == 'The transaction date you specified is not within the date range of your accounting period.':
+            first_day_of_month = datetime.today().date().replace(day=1)
+            credit_card_charges_payload['tranDate'] = first_day_of_month.strftime('%m/%d/%Y')
+            raw_response = oauth.post(
+                url, headers={
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }, data=json.dumps(credit_card_charges_payload))
 
-        code = response['error']['code']
-        message = json.loads(response['error']['message'])['message']
+            status_code = raw_response.status_code
 
+            if status_code == 200 and 'success' in json.loads(raw_response.text) \
+                    and json.loads(raw_response.text)['success']:
+                return json.loads(raw_response.text)
+
+            code, message = self.get_message_and_code(raw_response)
+
+            raise NetSuiteRequestError(code=code, message=message)
+
+        code, message = self.get_message_and_code(raw_response)
         raise NetSuiteRequestError(code=code, message=message)
 
     @staticmethod
@@ -1005,8 +1121,8 @@ class NetSuiteConnector:
                 }
             )
 
-            line = {
-                'amount': line.amount,
+            lineitem = {
+                'amount': line.amount - line.tax_amount if (line.tax_item_id and line.tax_amount) else line.amount,
                 'category': {
                     'name': None,
                     'internalId': line.category,
@@ -1049,7 +1165,7 @@ class NetSuiteConnector:
                 'expenseDate': line.transaction_date,
                 'expMediaItem': None,
                 'foreignAmount': expense.foreign_amount if expense.foreign_amount else None,
-                'grossAmt': None,
+                'grossAmt': line.amount,
                 'isBillable': line.billable,
                 'isNonReimbursable': None,
                 'line': None,
@@ -1058,13 +1174,18 @@ class NetSuiteConnector:
                 'rate': None,
                 'receipt': None,
                 'refNumber': None,
-                'tax1Amt': None,
-                'taxCode': None,
+                'tax1Amt': line.tax_amount if (line.tax_item_id and line.tax_amount) else None,
+                'taxCode': {
+                    'name': None,
+                    'internalId': line.tax_item_id if (line.tax_item_id and line.tax_amount) else None,
+                    'externalId': None,
+                    'type': 'classification'
+                },
                 'taxRate1': None,
                 'taxRate2': None
             }
 
-            lines.append(line)
+            lines.append(lineitem)
 
         return lines
 
@@ -1171,10 +1292,31 @@ class NetSuiteConnector:
         """
         Post expense reports to NetSuite
         """
-        expense_report_payload = self.__construct_expense_report(expense_report,
-                                                                 expense_report_lineitems, attachment_links)
-        created_expense_report = self.connection.expense_reports.post(expense_report_payload)
-        return created_expense_report
+        configuration = Configuration.objects.get(workspace_id=self.workspace_id)
+        try:
+            expense_report_payload = self.__construct_expense_report(expense_report,
+                                                                    expense_report_lineitems, attachment_links)
+            created_expense_report = self.connection.expense_reports.post(expense_report_payload)
+            return created_expense_report
+
+        except NetSuiteRequestError as exception:
+            detail = json.dumps(exception.__dict__)
+            detail = json.loads(detail)
+            message = 'An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'
+
+            if configuration.change_accounting_period and detail['message'] == message:
+                expense_report_payload = self.__construct_expense_report(expense_report,
+                                                                    expense_report_lineitems, attachment_links)
+
+                first_day_of_month = datetime.today().date().replace(day=1)
+                expense_report_payload['tranDate'] = first_day_of_month.strftime('%Y-%m-%dT%H:%M:%S')
+                created_expense_report = self.connection.expense_reports.post(expense_report_payload)
+                expense_report.transaction_date = first_day_of_month
+                expense_report.save()
+                return created_expense_report
+
+            else:
+                raise
 
     def get_expense_report(self, internal_id):
         """
@@ -1226,7 +1368,9 @@ class NetSuiteConnector:
                     }
                 )
 
-            line = {
+            tax_inclusive_amount = line.amount - line.tax_amount if (line.tax_item_id and line.tax_amount) else line.amount
+
+            lineitem = {
                 'account': {
                     'name': None,
                     'internalId': account_ref,
@@ -1257,14 +1401,14 @@ class NetSuiteConnector:
                     'externalId': None,
                     'type': 'vendor'
                 },
-                'credit': line.amount if credit is not None else None,
+                'credit': tax_inclusive_amount if credit is not None else None,
                 'creditTax': None,
                 'customFieldList': netsuite_custom_segments,
-                'debit': line.amount if debit is not None else None,
+                'debit': tax_inclusive_amount if debit is not None else None,
                 'debitTax': None,
                 'eliminate': None,
                 'endDate': None,
-                'grossAmt': None,
+                'grossAmt': line.amount if (line.tax_item_id and line.tax_amount) else None,
                 'line': None,
                 'lineTaxCode': None,
                 'lineTaxRate': None,
@@ -1275,15 +1419,20 @@ class NetSuiteConnector:
                 'scheduleNum': None,
                 'startDate': None,
                 'tax1Acct': None,
-                'tax1Amt': None,
                 'taxAccount': None,
                 'taxBasis': None,
-                'taxCode': None,
+                'tax1Amt': line.tax_amount if (line.tax_item_id and line.tax_amount) else None,
+                'taxCode':{
+                    'name':None,
+                    'internalId': line.tax_item_id if (line.tax_item_id and line.tax_amount) else None,
+                    'externalId':None,
+                    'type':'classification'
+                },
                 'taxRate1': None,
                 'totalAmount': None,
             }
 
-            lines.append(line)
+            lines.append(lineitem)
 
         return lines
 
@@ -1374,9 +1523,27 @@ class NetSuiteConnector:
         """
         Post journal entries to NetSuite
         """
-        journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems, attachment_links)
-        created_journal_entry = self.connection.journal_entries.post(journal_entry_payload)
-        return created_journal_entry
+        configuration = Configuration.objects.get(workspace_id=self.workspace_id)
+        try:
+            journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems, attachment_links)
+            created_journal_entry = self.connection.journal_entries.post(journal_entry_payload)
+            return created_journal_entry
+
+        except NetSuiteRequestError as exception:
+            detail = json.dumps(exception.__dict__)
+            detail = json.loads(detail)
+            message = 'An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'
+
+            if configuration.change_accounting_period and detail['message'] == message:
+                first_day_of_month = datetime.today().date().replace(day=1)
+                journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems, attachment_links)
+                journal_entry_payload['tranDate'] = first_day_of_month
+                created_journal_entry = self.connection.journal_entries.post(journal_entry_payload)
+                
+                return created_journal_entry
+
+            else:
+                raise
 
     @staticmethod
     def __construct_vendor_payment_lineitems(vendor_payment_lineitems: List[VendorPaymentLineitem]) -> List[Dict]:

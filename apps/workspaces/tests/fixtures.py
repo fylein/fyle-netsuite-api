@@ -1,3 +1,0 @@
-"""
-Contains various tests Payloads
-"""
