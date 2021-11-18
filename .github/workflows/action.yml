@@ -48,6 +48,10 @@ jobs:
           junitxml-path: ./test-reports/report.xml
       - name: Stop Services
         run: docker compose -f docker-compose-pipeline.yml down
+      - name: Evaluate Coverage
+        run: |
+          STATUS=$(cat pytest-coverage.txt | grep 'Required test' | awk '{ print $1 }')
+          if [[ "${STATUS}" = 'FAIL' ]]; then echo exit 1; else echo exit 0; fi;
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2
         if: ${{ always() && github.ref != 'refs/heads/master' }}
