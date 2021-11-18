@@ -4,6 +4,7 @@ from apps.fyle.models import Reimbursement
 from apps.workspaces.models import FyleCredential
 from apps.fyle.connector import FyleConnector
 from fyle_accounting_mappings.models import ExpenseAttribute
+from .fixtures import data
 
 
 @pytest.mark.django_db()
@@ -29,6 +30,25 @@ def test_sync_reimbursements(add_fyle_credentials):
 
     response = Reimbursement.objects.all()
     assert len(response) == 14
+
+@pytest.mark.django_db()
+def test_expense_db_count(add_fyle_credentials):
+    fyle_credentials = FyleCredential.objects.get(workspace_id=1)
+    fyle_connector = FyleConnector(fyle_credentials.refresh_token, 1)
+
+    employee_count = fyle_connector.existing_db_count('EMPLOYEE')
+    assert employee_count == 30
+    category_count = fyle_connector.existing_db_count('CATEGORY')
+    assert category_count == 341
+
+@pytest.mark.django_db()
+def test_get_fyle_orgs(add_fyle_credentials):
+    fyle_credentials = FyleCredential.objects.get(workspace_id=1)
+    fyle_connector = FyleConnector(fyle_credentials.refresh_token, 1)
+
+    fyle_orgs = fyle_connector.get_fyle_orgs('https://staging.fyle.tech')
+    assert fyle_orgs == data['fyle_orgs']
+
 
 @pytest.mark.django_db()
 def test_get_cluster_domain(add_fyle_credentials):
@@ -59,3 +79,12 @@ def test_sync(add_fyle_credentials):
     assert len(employees) == 30
     assert len(projects) == 1193
     assert len(categories) == 341
+
+@pytest.mark.django_db()
+def test_get_attachments(add_fyle_credentials):
+
+    fyle_credentials = FyleCredential.objects.get(workspace_id=1)
+    fyle_connector = FyleConnector(fyle_credentials.refresh_token, 1)
+
+    attachment = fyle_connector.get_attachment(1)
+    assert attachment==None   #later will create an expense with attachments

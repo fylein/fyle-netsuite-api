@@ -31,5 +31,11 @@
         "user":[
            1
         ]
-     }
+     },
+    "netsuite_credentials_payload": {
+        "workspace": 1,
+        "ns_account_id": 123412341234,
+        "ns_token_id": 123412341234,
+        "ns_token_secret": 123412341234
+    }
 }
