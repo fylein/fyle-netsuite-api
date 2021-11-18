@@ -28,7 +28,7 @@ jobs:
           docker-compose -f docker-compose-pipeline.yml build
           docker-compose -f docker-compose-pipeline.yml up -d
           docker-compose -f docker-compose-pipeline.yml exec -T api pytest tests/ --cov=. --junit-xml=test-reports/report.xml --cov-report=term-missing --cov-fail-under=47 | tee pytest-coverage.txt
-          export STATUS=$(cat pytest-coverage.txt | grep 'Required test' | awk '{ print $1 }')
+          echo "STATUS=$(cat pytest-coverage.txt | grep 'Required test' | awk '{ print $1 }')" >> $GITHUB_ENV
         env:
           FYLE_BASE_URL: ${{ secrets.FYLE_BASE_URL }}
           FYLE_CLIENT_ID: ${{ secrets.FYLE_CLIENT_ID }}
@@ -50,6 +50,7 @@ jobs:
       - name: Stop Services
         run: docker compose -f docker-compose-pipeline.yml down
       - name: Evaluate Coverage
+        if: env.STATUS == 'FAIL'
         run: exit 1
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2
