@@ -1,6 +1,9 @@
 import pytest
 import json
 from django.urls import reverse
+from tests.conftest import api_client
+from fyle_rest_auth.models import AuthToken, User
+from .fixtures import create_netsuite_credential_object_payload, create_configurations_object_payload
 
 
 from tests.helper import dict_compare_keys, get_response_dict
@@ -37,9 +40,8 @@ def test_post_of_workspace(api_client, test_connection):
     assert response.status_code == 200
 
     response = json.loads(response.content)
-
     expected_response = get_response_dict('test_workspaces/data.json')
-
+    
     assert dict_compare_keys(response, expected_response['workspace']) == [], 'workspaces api returns a diff in the keys'
 
 
@@ -60,3 +62,35 @@ def test_get_configuration_detail(api_client, test_connection):
     expected_response = get_response_dict('test_workspaces/data.json')
 
     assert dict_compare_keys(response, expected_response['configuration']) == [], 'configuration api returns a diff in keys'
+
+@pytest.mark.django_db(databases=['default'])
+def test_post_netsuite_credentials(api_client, test_connection):
+
+    url = reverse(
+        'post-netsuite-credentials', kwargs={
+            'workspace_id': 1
+        }
+    )
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    paylaod = create_netsuite_credential_object_payload(1)
+    response = api_client.post(
+        url,
+        data=paylaod
+    )
+    assert response.status_code==200
+ 
+@pytest.mark.django_db(databases=['default'])
+def test_post_workspace_configurations(api_client, test_connection):
+    url = reverse(
+        'workspace-configurations', kwargs={
+            'workspace_id': 1
+        }
+    )
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+
+    response = api_client.post(
+        url,
+        data=create_configurations_object_payload(1)
+    )
+
+    assert response.status_code==201

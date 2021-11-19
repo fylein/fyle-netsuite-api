@@ -540,4 +540,31 @@ data = {
         "workspace": 1,
         "expenses": [1],
     },
+    "expense_group_setting_payload": {
+        "expenses_grouped_by": ["claim_number"],
+        "expense_state": "PAID",
+        "export_date_type": "spent_at",
+    },
+    "fyle_orgs": [
+        {
+            "id": "orf6t6jWUnpx",
+            "created_at": "2021-06-21T12:02:32.463Z",
+            "updated_at": "2021-06-21T12:02:46.618Z",
+            "name": "Fyle For NetSuite Testing",
+            "domain": "fylefornt.com",
+            "currency": "USD",
+            "branch_ifsc": None,
+            "branch_account": None,
+            "tally_bank_ledger": None,
+            "tally_default_category": None,
+            "tally_default_user": None,
+            "corporate_credit_card_details": {
+                "bank_name": None,
+                "number_of_cards": None,
+            },
+            "verified": True,
+            "lite": False,
+            "dwolla_customers_metadata_id": "dcmFudU7eReqs",
+        }
+    ],
 }
