@@ -112,7 +112,8 @@ class NetSuiteConnector:
                     })
 
                 if account['acctType'] == '_expense' or account['acctType'] == '_costOfGoodsSold' or \
-                        account['acctType'] == '_otherCurrentAsset' or account['acctType'] == '_otherExpense':
+                        account['acctType'] == '_otherCurrentAsset' or account['acctType'] == '_otherExpense'or \
+                            account['acctType'] == '_fixedAsset':
                     attributes['account'].append({
                         'attribute_type': 'ACCOUNT',
                         'display_name': 'Account',
