@@ -9205,9 +9205,9 @@ COPY public.expense_attributes (id, attribute_type, display_name, value, source_
 -- Data for Name: expense_group_settings; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.expense_group_settings (id, reimbursable_expense_group_fields, corporate_credit_card_expense_group_fields, expense_state, reimbursable_export_date_type, ccc_export_date_type, created_at, updated_at, workspace_id, import_card_credits) FROM stdin;
-1	{employee_email,report_id,claim_number,fund_source}	{employee_email,report_id,claim_number,fund_source}	PAYMENT_PROCESSING	current_date current_date	2021-11-15 14:16:16.069944+05:30	2021-11-15 14:16:16.069986+05:30	1	f
-2	{fund_source,employee_email,settlement_id,spent_at}	{expense_id,fund_source,employee_email,settlement_id,spent_at}	PAID	spent_at spent_at	2021-11-16 09:46:57.847694+05:30	2021-11-16 13:04:26.302812+05:30	2	f
+COPY public.expense_group_settings (id, reimbursable_expense_group_fields, corporate_credit_card_expense_group_fields, expense_state, reimbursable_export_date_type, created_at, updated_at, workspace_id, import_card_credits, ccc_export_date_type) FROM stdin;
+1	{employee_email,report_id,claim_number,fund_source}	{employee_email,report_id,claim_number,fund_source}	PAYMENT_PROCESSING	current_date	2021-11-15 14:16:16.069944+05:30	2021-11-15 14:16:16.069986+05:30	1	f current_date
+2	{fund_source,employee_email,settlement_id,spent_at}	{expense_id,fund_source,employee_email,settlement_id,spent_at}	PAID	spent_at 	2021-11-16 09:46:57.847694+05:30	2021-11-16 13:04:26.302812+05:30	2	f current_date
 \.
 
 
