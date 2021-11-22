@@ -541,9 +541,12 @@ data = {
         "expenses": [1],
     },
     "expense_group_setting_payload": {
+        "reimbursable_expense_group_fields": ["claim_number"],
+        "corporate_credit_card_expense_group_fields": ["expense_id"],
         "expenses_grouped_by": ["claim_number"],
         "expense_state": "PAID",
-        "export_date_type": "spent_at",
+        "reimbursable_export_date_type": "current_date",
+        "ccc_export_date_type": "spent_at"
     },
     "fyle_orgs": [
         {

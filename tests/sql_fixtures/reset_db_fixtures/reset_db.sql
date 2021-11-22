@@ -21,6 +21,19 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
+-- Name: auth_cache; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.auth_cache (
+    cache_key character varying(255) NOT NULL,
+    value text NOT NULL,
+    expires timestamp with time zone NOT NULL
+);
+
+
+ALTER TABLE public.auth_cache OWNER TO postgres;
+
+--
 -- Name: auth_group; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -749,11 +762,12 @@ CREATE TABLE public.expense_group_settings (
     reimbursable_expense_group_fields character varying(100)[] NOT NULL,
     corporate_credit_card_expense_group_fields character varying(100)[] NOT NULL,
     expense_state character varying(100) NOT NULL,
-    export_date_type character varying(100) NOT NULL,
+    reimbursable_export_date_type character varying(100) NOT NULL,
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
     workspace_id integer NOT NULL,
-    import_card_credits boolean NOT NULL
+    import_card_credits boolean NOT NULL,
+    ccc_export_date_type character varying(100) NOT NULL
 );
 
 
@@ -2061,6 +2075,14 @@ ALTER TABLE ONLY public.workspaces ALTER COLUMN id SET DEFAULT nextval('public.w
 --
 
 ALTER TABLE ONLY public.workspaces_user ALTER COLUMN id SET DEFAULT nextval('public.workspaces_workspace_user_id_seq'::regclass);
+
+
+--
+-- Data for Name: auth_cache; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.auth_cache (cache_key, value, expires) FROM stdin;
+\.
 
 
 --
@@ -5824,6 +5846,7 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 110	workspaces	0017_configuration_import_tax_items	2021-11-15 14:14:48.838061+05:30
 111	workspaces	0018_workspace_cluster_domain	2021-11-15 14:14:48.872994+05:30
 112	workspaces	0019_configuration_change_accounting_period	2021-11-15 14:14:48.896048+05:30
+113	fyle	0014_auto_20211119_0513	2021-11-19 15:28:50.476179+05:30
 \.
 
 
@@ -5987,6 +6010,7 @@ COPY public.expense_attributes (id, attribute_type, display_name, value, source_
 94	CATEGORY	Category	Commissions & fees	135719	2021-11-15 14:25:50.107778+05:30	2021-11-15 14:25:50.107794+05:30	1	\N	\N	f	f
 95	CATEGORY	Category	Common Stock	135631	2021-11-15 14:25:50.107862+05:30	2021-11-15 14:25:50.10794+05:30	1	\N	\N	f	f
 605	PROJECT	Project	Connectus	247059	2021-11-15 14:25:55.278455+05:30	2021-11-15 14:25:55.278464+05:30	1	\N	\N	f	f
+2621	PROJECT	Project	Kino Inc	283797	2021-11-16 09:47:43.500541+05:30	2021-11-16 09:47:43.500549+05:30	2	\N	\N	f	f
 97	CATEGORY	Category	Company Credit Card Offset	135581	2021-11-15 14:25:50.108053+05:30	2021-11-15 14:25:50.108063+05:30	1	\N	\N	f	f
 98	CATEGORY	Category	Consulting & Accounting	135993	2021-11-15 14:25:50.108099+05:30	2021-11-15 14:25:50.108108+05:30	1	\N	\N	f	f
 99	CATEGORY	Category	Contributions	135883	2021-11-15 14:25:50.108143+05:30	2021-11-15 14:25:50.108152+05:30	1	\N	\N	f	f
@@ -7363,6 +7387,7 @@ COPY public.expense_attributes (id, attribute_type, display_name, value, source_
 1470	PROJECT	Project	Turso Catering Agency	247829	2021-11-15 14:25:55.649387+05:30	2021-11-15 14:25:55.649395+05:30	1	\N	\N	f	f
 1471	PROJECT	Project	Tuy and Sinha Construction Manufacturing	247830	2021-11-15 14:25:55.649429+05:30	2021-11-15 14:25:55.649437+05:30	1	\N	\N	f	f
 1472	PROJECT	Project	TWC Financial	247776	2021-11-15 14:25:55.649471+05:30	2021-11-15 14:25:55.64948+05:30	1	\N	\N	f	f
+2838	PROJECT	Project	Ponniah	284003	2021-11-16 09:47:43.531485+05:30	2021-11-16 09:47:43.531492+05:30	2	\N	\N	f	f
 1473	PROJECT	Project	Twigg Attorneys Company	247831	2021-11-15 14:25:55.649513+05:30	2021-11-15 14:25:55.649522+05:30	1	\N	\N	f	f
 1474	PROJECT	Project	Twine Title Group	247832	2021-11-15 14:25:55.649556+05:30	2021-11-15 14:25:55.649564+05:30	1	\N	\N	f	f
 1475	PROJECT	Project	Udoh Publishing Manufacturing	247834	2021-11-15 14:25:55.649598+05:30	2021-11-15 14:25:55.649607+05:30	1	\N	\N	f	f
@@ -8079,6 +8104,7 @@ COPY public.expense_attributes (id, attribute_type, display_name, value, source_
 2185	PROJECT	Project	Bolder Construction Inc.	283398	2021-11-16 09:47:43.352192+05:30	2021-11-16 09:47:43.352199+05:30	2	\N	\N	f	f
 2186	PROJECT	Project	Bollman Attorneys Company	283399	2021-11-16 09:47:43.352231+05:30	2021-11-16 09:47:43.352239+05:30	2	\N	\N	f	f
 2187	PROJECT	Project	Bona Source	283400	2021-11-16 09:47:43.35227+05:30	2021-11-16 09:47:43.352278+05:30	2	\N	\N	f	f
+3131	PROJECT	Project	ugkas	284354	2021-11-16 09:47:43.569116+05:30	2021-11-16 09:47:43.569124+05:30	2	\N	\N	f	f
 2188	PROJECT	Project	Boney Electric Dynamics	283401	2021-11-16 09:47:43.352309+05:30	2021-11-16 09:47:43.352317+05:30	2	\N	\N	f	f
 2189	PROJECT	Project	Borowski Catering Management	283402	2021-11-16 09:47:43.352348+05:30	2021-11-16 09:47:43.352355+05:30	2	\N	\N	f	f
 2190	PROJECT	Project	Botero Electric Co.	283403	2021-11-16 09:47:43.352386+05:30	2021-11-16 09:47:43.352394+05:30	2	\N	\N	f	f
@@ -8512,7 +8538,6 @@ COPY public.expense_attributes (id, attribute_type, display_name, value, source_
 2618	PROJECT	Project	Killian Construction Networking	283794	2021-11-16 09:47:43.500423+05:30	2021-11-16 09:47:43.500431+05:30	2	\N	\N	f	f
 2619	PROJECT	Project	Kim Wilson	283795	2021-11-16 09:47:43.500462+05:30	2021-11-16 09:47:43.50047+05:30	2	\N	\N	f	f
 2620	PROJECT	Project	Kingman Antiques Corporation	283796	2021-11-16 09:47:43.500501+05:30	2021-11-16 09:47:43.500509+05:30	2	\N	\N	f	f
-2621	PROJECT	Project	Kino Inc	283797	2021-11-16 09:47:43.500541+05:30	2021-11-16 09:47:43.500549+05:30	2	\N	\N	f	f
 2622	PROJECT	Project	Kirkville Builders -	283798	2021-11-16 09:47:43.500579+05:30	2021-11-16 09:47:43.500587+05:30	2	\N	\N	f	f
 2623	PROJECT	Project	Kittel Hardware Dynamics	283799	2021-11-16 09:47:43.500619+05:30	2021-11-16 09:47:43.500626+05:30	2	\N	\N	f	f
 2624	PROJECT	Project	Knoop Telecom Agency	283800	2021-11-16 09:47:43.500658+05:30	2021-11-16 09:47:43.500666+05:30	2	\N	\N	f	f
@@ -8728,7 +8753,6 @@ COPY public.expense_attributes (id, attribute_type, display_name, value, source_
 2835	PROJECT	Project	Poland and Burrus Plumbing	284000	2021-11-16 09:47:43.531369+05:30	2021-11-16 09:47:43.531377+05:30	2	\N	\N	f	f
 2836	PROJECT	Project	Polard Windows	284001	2021-11-16 09:47:43.531408+05:30	2021-11-16 09:47:43.531416+05:30	2	\N	\N	f	f
 2837	PROJECT	Project	Pomona Hardware Leasing	284002	2021-11-16 09:47:43.531447+05:30	2021-11-16 09:47:43.531454+05:30	2	\N	\N	f	f
-2838	PROJECT	Project	Ponniah	284003	2021-11-16 09:47:43.531485+05:30	2021-11-16 09:47:43.531492+05:30	2	\N	\N	f	f
 2839	PROJECT	Project	Port Angeles Telecom Networking	284004	2021-11-16 09:47:43.531523+05:30	2021-11-16 09:47:43.531531+05:30	2	\N	\N	f	f
 2840	PROJECT	Project	Port Townsend Title Corporation	284005	2021-11-16 09:47:43.531562+05:30	2021-11-16 09:47:43.531569+05:30	2	\N	\N	f	f
 2841	PROJECT	Project	Pote Leasing Rentals	284006	2021-11-16 09:47:43.5316+05:30	2021-11-16 09:47:43.531608+05:30	2	\N	\N	f	f
@@ -9021,7 +9045,6 @@ COPY public.expense_attributes (id, attribute_type, display_name, value, source_
 3128	PROJECT	Project	Twigg Attorneys Company	284252	2021-11-16 09:47:43.568998+05:30	2021-11-16 09:47:43.569006+05:30	2	\N	\N	f	f
 3129	PROJECT	Project	Twine Title Group	284253	2021-11-16 09:47:43.569037+05:30	2021-11-16 09:47:43.569045+05:30	2	\N	\N	f	f
 3130	PROJECT	Project	Udoh Publishing Manufacturing	284255	2021-11-16 09:47:43.569076+05:30	2021-11-16 09:47:43.569084+05:30	2	\N	\N	f	f
-3131	PROJECT	Project	ugkas	284354	2021-11-16 09:47:43.569116+05:30	2021-11-16 09:47:43.569124+05:30	2	\N	\N	f	f
 3132	PROJECT	Project	Uimari Antiques Agency	284256	2021-11-16 09:47:43.569155+05:30	2021-11-16 09:47:43.569163+05:30	2	\N	\N	f	f
 3133	PROJECT	Project	UK Customer	284254	2021-11-16 09:47:43.569194+05:30	2021-11-16 09:47:43.569202+05:30	2	\N	\N	f	f
 3134	PROJECT	Project	Umali Publishing Distributors	284257	2021-11-16 09:47:43.569233+05:30	2021-11-16 09:47:43.569241+05:30	2	\N	\N	f	f
@@ -9204,9 +9227,9 @@ COPY public.expense_attributes (id, attribute_type, display_name, value, source_
 -- Data for Name: expense_group_settings; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.expense_group_settings (id, reimbursable_expense_group_fields, corporate_credit_card_expense_group_fields, expense_state, export_date_type, created_at, updated_at, workspace_id, import_card_credits) FROM stdin;
-1	{employee_email,report_id,claim_number,fund_source}	{employee_email,report_id,claim_number,fund_source}	PAYMENT_PROCESSING	current_date	2021-11-15 14:16:16.069944+05:30	2021-11-15 14:16:16.069986+05:30	1	f
-2	{fund_source,employee_email,settlement_id,spent_at}	{expense_id,fund_source,employee_email,settlement_id,spent_at}	PAID	spent_at	2021-11-16 09:46:57.847694+05:30	2021-11-16 13:04:26.302812+05:30	2	f
+COPY public.expense_group_settings (id, reimbursable_expense_group_fields, corporate_credit_card_expense_group_fields, expense_state, reimbursable_export_date_type, created_at, updated_at, workspace_id, import_card_credits, ccc_export_date_type) FROM stdin;
+1	{employee_email,report_id,claim_number,fund_source}	{employee_email,report_id,claim_number,fund_source}	PAYMENT_PROCESSING	current_date	2021-11-15 14:16:16.069944+05:30	2021-11-15 14:16:16.069986+05:30	1	f	current_date
+2	{fund_source,employee_email,settlement_id,spent_at}	{expense_id,fund_source,employee_email,settlement_id,spent_at}	PAID	spent_at	2021-11-16 09:46:57.847694+05:30	2021-11-16 13:04:26.302812+05:30	2	f	spent_at
 \.
 
 
@@ -9451,14 +9474,14 @@ SELECT pg_catalog.setval('public.auth_permission_id_seq', 164, true);
 -- Name: bill_lineitems_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.bill_lineitems_id_seq', 2, true);
+SELECT pg_catalog.setval('public.bill_lineitems_id_seq', 17, true);
 
 
 --
 -- Name: bills_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.bills_id_seq', 2, true);
+SELECT pg_catalog.setval('public.bills_id_seq', 17, true);
 
 
 --
@@ -9507,21 +9530,21 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 41, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 112, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 113, true);
 
 
 --
 -- Name: django_q_ormq_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_q_ormq_id_seq', 16, true);
+SELECT pg_catalog.setval('public.django_q_ormq_id_seq', 30, true);
 
 
 --
 -- Name: django_q_schedule_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_q_schedule_id_seq', 1, true);
+SELECT pg_catalog.setval('public.django_q_schedule_id_seq', 47, true);
 
 
 --
@@ -9535,28 +9558,28 @@ SELECT pg_catalog.setval('public.employee_mappings_id_seq', 2, true);
 -- Name: expense_report_lineitems_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.expense_report_lineitems_id_seq', 7, true);
+SELECT pg_catalog.setval('public.expense_report_lineitems_id_seq', 21, true);
 
 
 --
 -- Name: expense_reports_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.expense_reports_id_seq', 7, true);
+SELECT pg_catalog.setval('public.expense_reports_id_seq', 21, true);
 
 
 --
 -- Name: fyle_accounting_mappings_destinationattribute_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.fyle_accounting_mappings_destinationattribute_id_seq', 3318, true);
+SELECT pg_catalog.setval('public.fyle_accounting_mappings_destinationattribute_id_seq', 3333, true);
 
 
 --
 -- Name: fyle_accounting_mappings_expenseattribute_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.fyle_accounting_mappings_expenseattribute_id_seq', 3306, true);
+SELECT pg_catalog.setval('public.fyle_accounting_mappings_expenseattribute_id_seq', 3515, true);
 
 
 --
@@ -9570,35 +9593,35 @@ SELECT pg_catalog.setval('public.fyle_accounting_mappings_mapping_id_seq', 26, t
 -- Name: fyle_accounting_mappings_mappingsetting_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.fyle_accounting_mappings_mappingsetting_id_seq', 1, true);
+SELECT pg_catalog.setval('public.fyle_accounting_mappings_mappingsetting_id_seq', 29, true);
 
 
 --
 -- Name: fyle_expense_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.fyle_expense_id_seq', 4, true);
+SELECT pg_catalog.setval('public.fyle_expense_id_seq', 172, true);
 
 
 --
 -- Name: fyle_expensegroup_expenses_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.fyle_expensegroup_expenses_id_seq', 4, true);
+SELECT pg_catalog.setval('public.fyle_expensegroup_expenses_id_seq', 118, true);
 
 
 --
 -- Name: fyle_expensegroup_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.fyle_expensegroup_id_seq', 4, true);
+SELECT pg_catalog.setval('public.fyle_expensegroup_id_seq', 46, true);
 
 
 --
 -- Name: fyle_expensegroupsettings_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.fyle_expensegroupsettings_id_seq', 2, true);
+SELECT pg_catalog.setval('public.fyle_expensegroupsettings_id_seq', 73, true);
 
 
 --
@@ -9619,21 +9642,21 @@ SELECT pg_catalog.setval('public.general_mappings_id_seq', 2, true);
 -- Name: journal_entries_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.journal_entries_id_seq', 1, true);
+SELECT pg_catalog.setval('public.journal_entries_id_seq', 2, true);
 
 
 --
 -- Name: journal_entry_lineitems_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.journal_entry_lineitems_id_seq', 1, true);
+SELECT pg_catalog.setval('public.journal_entry_lineitems_id_seq', 2, true);
 
 
 --
 -- Name: reimbursements_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.reimbursements_id_seq', 1, false);
+SELECT pg_catalog.setval('public.reimbursements_id_seq', 546, true);
 
 
 --
@@ -9647,14 +9670,14 @@ SELECT pg_catalog.setval('public.subsidiary_mappings_id_seq', 2, true);
 -- Name: tasks_tasklog_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.tasks_tasklog_id_seq', 7, true);
+SELECT pg_catalog.setval('public.tasks_tasklog_id_seq', 140, true);
 
 
 --
 -- Name: users_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.users_user_id_seq', 1, true);
+SELECT pg_catalog.setval('public.users_user_id_seq', 29, true);
 
 
 --
@@ -9675,28 +9698,28 @@ SELECT pg_catalog.setval('public.vendor_payments_id_seq', 1, false);
 -- Name: workspaces_fylecredential_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.workspaces_fylecredential_id_seq', 2, true);
+SELECT pg_catalog.setval('public.workspaces_fylecredential_id_seq', 45, true);
 
 
 --
 -- Name: workspaces_netsuitecredentials_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.workspaces_netsuitecredentials_id_seq', 2, true);
+SELECT pg_catalog.setval('public.workspaces_netsuitecredentials_id_seq', 28, true);
 
 
 --
 -- Name: workspaces_workspace_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.workspaces_workspace_id_seq', 2, true);
+SELECT pg_catalog.setval('public.workspaces_workspace_id_seq', 48, true);
 
 
 --
 -- Name: workspaces_workspace_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.workspaces_workspace_user_id_seq', 2, true);
+SELECT pg_catalog.setval('public.workspaces_workspace_user_id_seq', 65, true);
 
 
 --
@@ -9711,6 +9734,14 @@ SELECT pg_catalog.setval('public.workspaces_workspacegeneralsettings_id_seq', 2,
 --
 
 SELECT pg_catalog.setval('public.workspaces_workspaceschedule_id_seq', 1, false);
+
+
+--
+-- Name: auth_cache auth_cache_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.auth_cache
+    ADD CONSTRAINT auth_cache_pkey PRIMARY KEY (cache_key);
 
 
 --
@@ -10367,6 +10398,13 @@ ALTER TABLE ONLY public.workspace_schedules
 
 ALTER TABLE ONLY public.workspace_schedules
     ADD CONSTRAINT workspaces_workspaceschedule_workspace_id_key UNIQUE (workspace_id);
+
+
+--
+-- Name: auth_cache_expires; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX auth_cache_expires ON public.auth_cache USING btree (expires);
 
 
 --
@@ -11161,4 +11199,6 @@ ALTER TABLE ONLY public.workspace_schedules
 
 
 --
--- Name
+-- PostgreSQL database dump complete
+--
+
