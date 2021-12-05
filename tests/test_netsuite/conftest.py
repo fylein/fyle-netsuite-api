@@ -19,3 +19,12 @@ def create_task_logs(db):
             'status': 'READY'
         }
     )
+
+    TaskLog.objects.update_or_create(
+        workspace_id=49,
+        type='FETCHING_EXPENSES',
+        defaults={
+            'status': 'READY'
+        }
+    )
+
