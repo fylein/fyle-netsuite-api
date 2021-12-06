@@ -21,4 +21,4 @@ def test_netsutie_fields_view(api_client, test_connection):
    assert response.status_code == 200
    response = json.loads(response.content)
 
-   assert len(response) == 5
+   assert len(response) == 4
