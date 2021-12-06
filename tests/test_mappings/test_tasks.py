@@ -9,7 +9,7 @@ def test_remove_duplicates(db):
     assert len(attributes) == 35
 
     attributes = remove_duplicates(attributes)
-    assert len(attributes) == 35
+    assert len(attributes) == 22
 
 
 def test_create_fyle_category_payload(db):
