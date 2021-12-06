@@ -7,10 +7,10 @@ from typing import List, Dict
 from datetime import datetime
 
 from django.contrib.postgres.aggregates import ArrayAgg
-from django.contrib.postgres.fields import JSONField, ArrayField
+from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.fields.jsonb import KeyTextTransform
 from django.db import models
-from django.db.models import Count, Q
+from django.db.models import Count, Q, JSONField
 
 from fyle_accounting_mappings.models import ExpenseAttribute
 
