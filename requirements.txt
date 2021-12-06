@@ -18,7 +18,7 @@ djangorestframework==3.11.2
 enum34==1.1.10
 future==0.18.2
 fyle==0.9.0
-fyle-accounting-mappings==1.5.0
+fyle-accounting-mappings==1.7.0
 fyle-rest-auth==0.8.1
 fylesdk==2.3.1
 gunicorn==20.0.4
