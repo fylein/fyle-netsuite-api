@@ -1,13 +1,14 @@
 import pytest
 import random
 import string
+from datetime import datetime
 from django.urls import reverse
 from apps.fyle.models import Expense, ExpenseGroup
 from apps.netsuite.models import CreditCardCharge, ExpenseReport, Bill, JournalEntry
 from apps.workspaces.models import Configuration
 from tests.helper import dict_compare_keys
 from apps.tasks.models import TaskLog
-from apps.netsuite.tasks import __validate_general_mapping, __validate_subsidiary_mapping, create_credit_card_charge, create_journal_entry, get_or_create_credit_card_vendor, create_bill, create_expense_report
+from apps.netsuite.tasks import __validate_general_mapping, __validate_subsidiary_mapping, check_expenses_reimbursement_status, check_netsuite_object_status, create_credit_card_charge, create_journal_entry, get_all_internal_ids, get_or_create_credit_card_vendor, create_bill, create_expense_report
 from apps.mappings.models import GeneralMapping
 from fyle_accounting_mappings.models import DestinationAttribute, EmployeeMapping, CategoryMapping
 from .fixtures import data
@@ -147,6 +148,41 @@ def test_post_bill_mapping_error(create_task_logs, add_netsuite_credentials, add
     assert task_log.status == 'FAILED'
 
 @pytest.mark.django_db()
+def test_accounting_period_working(create_task_logs, add_netsuite_credentials, add_fyle_credentials):
+    task_log = TaskLog.objects.filter(workspace_id=1).first()
+
+    expense_group = ExpenseGroup.objects.filter(workspace_id=1).last()
+    expenses = expense_group.expenses.all()
+
+    expense_group.id = random.randint(100, 1500000)
+    expense_group.save()
+
+    for expense in expenses:
+        expense.expense_group_id = expense_group.id
+        expense.save()
+
+    expense_group.expenses.set(expenses)
+
+    spent_at = {'spent_at': '2012-09-14T00:00:00'}
+    expense_group.description.update(spent_at)
+    create_expense_report(expense_group, task_log.id)
+
+    task_log = TaskLog.objects.filter(workspace_id=1).first()
+    assert task_log.detail[0]['message'] == 'An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'
+
+    configuration = Configuration.objects.get(workspace_id=1)
+    configuration.change_accounting_period = True
+    configuration.save()
+
+    create_expense_report(expense_group, task_log.id)
+    expense_report = ExpenseReport.objects.get(expense_group_id=expense_group.id)
+
+    assert expense_report.account_id=='118'
+    assert expense_report.entity_id=='1676'
+    assert expense_report.expense_group_id==expense_group.id
+    assert expense_report.subsidiary_id == '3'
+
+@pytest.mark.django_db()
 def test_create_expense_report(create_task_logs, add_netsuite_credentials, add_fyle_credentials):
 
     task_log = TaskLog.objects.filter(workspace_id=1).first()
@@ -187,11 +223,14 @@ def test_post_journal_entry(create_task_logs, add_netsuite_credentials, add_fyle
         expense.save()
 
     expense_group.expenses.set(expenses)
-    journal_entry_object = create_journal_entry(expense_group, task_log.id)
+    create_journal_entry(expense_group, task_log.id)
 
-    journal_entry = JournalEntry.objects.filter(expense_group_id=expense_group.id)
-    print(journal_entry)
-    assert 1==1
+    journal_entry = JournalEntry.objects.filter(expense_group_id=expense_group.id).first()
+
+    assert journal_entry.currency == '1'
+    assert journal_entry.location_id == '10'
+    assert journal_entry.memo == 'Reimbursable expenses by admin1@fyleforintacct.in'
+
 
 @pytest.mark.django_db()
 def test_post_credit_charge(create_task_logs, add_netsuite_credentials, add_fyle_credentials):
@@ -214,8 +253,27 @@ def test_post_credit_charge(create_task_logs, add_netsuite_credentials, add_fyle
         expense.save()
 
     expense_group.expenses.set(expenses)
-    credit_card_charge_object = create_credit_card_charge(expense_group, task_log.id)
+    create_credit_card_charge(expense_group, task_log.id)
 
-    credit_card_charge = CreditCardCharge.objects.filter(expense_group_id=expense_group.id)
-    assert 1==1
+    credit_card_charge = CreditCardCharge.objects.filter(expense_group_id=expense_group.id).first()
+    assert credit_card_charge.credit_card_account_id == '228'
+    assert credit_card_charge.memo == 'Credit card expenses by admin1@fyleforintacct.in'
 
+@pytest.mark.django_db()
+def test_get_all_internal_ids(create_expense_report, create_task_logs):
+    expense_reports = ExpenseReport.objects.all()
+    internal_ids = get_all_internal_ids(expense_reports)
+    
+    assert internal_ids[1]['internal_id'] == 10913
+
+@pytest.mark.django_db()
+def test_check_netsuite_object_status(create_expense_report, create_task_logs):
+    expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
+
+    expense_report = ExpenseReport.objects.filter(expense_group__id=expense_group.id).first()
+    assert expense_report.paid_on_netsuite == False
+
+    check_netsuite_object_status(1)
+
+    expense_report = ExpenseReport.objects.filter(expense_group__id=expense_group.id).first()
+    assert expense_report.paid_on_netsuite == True
