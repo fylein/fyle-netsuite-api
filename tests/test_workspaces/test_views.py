@@ -1,6 +1,7 @@
 import pytest
 import json
 from django.urls import reverse
+from apps.workspaces.models import WorkspaceSchedule
 from tests.conftest import api_client
 from fyle_rest_auth.models import AuthToken, User
 from .fixtures import create_netsuite_credential_object_payload, create_configurations_object_payload
@@ -94,3 +95,27 @@ def test_post_workspace_configurations(api_client, test_connection):
     )
 
     assert response.status_code==201
+
+
+def test_get_workspace_schedule(api_client, test_connection):
+    url = reverse(
+        'workspace-schedule', kwargs={
+            'workspace_id': 1
+        }
+    )
+
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+
+    response = api_client.get(url)
+    response = json.loads(response.content)
+
+    assert response['message'] == 'Schedule settings does not exist in workspace'
+
+    WorkspaceSchedule.objects.get_or_create(
+        workspace_id=1
+    )
+
+    response = api_client.get(url)
+    response = json.loads(response.content)
+
+    assert response == {'id': 1, 'enabled': False, 'start_datetime': None, 'interval_hours': None, 'workspace': 1, 'schedule': None}
