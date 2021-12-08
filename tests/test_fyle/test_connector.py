@@ -114,7 +114,7 @@ def test_sync_categories(add_fyle_credentials):
     fyle_connector.sync_categories()
 
     new_category_count = ExpenseAttribute.objects.filter(attribute_type='CATEGORY').count()
-    assert new_category_count == 763
+    assert new_category_count == 785
 
 
 @pytest.mark.django_db()
