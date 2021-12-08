@@ -79,7 +79,7 @@ class NetSuiteFieldsView(generics.ListAPIView):
             ~Q(attribute_type='EXPENSE_CATEGORY') & ~Q(attribute_type='BANK_ACCOUNT') &
             ~Q(attribute_type='CREDIT_CARD_ACCOUNT') & ~Q(attribute_type='BANK_ACCOUNT') &
             ~Q(attribute_type='SUBSIDIARY') & ~Q(attribute_type='CURRENCY') &
-            ~Q(attribute_type='CCC_ACCOUNT') & ~Q(display_name='Customer'),
+            ~Q(attribute_type='CCC_ACCOUNT') & ~Q(display_name='Customer') & ~Q(attribute_type='TAX_ITEM'),
             workspace_id=self.kwargs['workspace_id']
         ).values('attribute_type', 'display_name').distinct()
 
