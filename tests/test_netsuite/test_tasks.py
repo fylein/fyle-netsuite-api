@@ -8,7 +8,7 @@ from apps.netsuite.models import CreditCardCharge, ExpenseReport, Bill, JournalE
 from apps.workspaces.models import Configuration
 from tests.helper import dict_compare_keys
 from apps.tasks.models import TaskLog
-from apps.netsuite.tasks import __validate_general_mapping, __validate_subsidiary_mapping, check_expenses_reimbursement_status, check_netsuite_object_status, create_credit_card_charge, create_journal_entry, get_all_internal_ids, get_or_create_credit_card_vendor, create_bill, create_expense_report
+from apps.netsuite.tasks import __validate_general_mapping, __validate_subsidiary_mapping, check_expenses_reimbursement_status, check_netsuite_object_status, create_credit_card_charge, create_journal_entry, create_netsuite_payment_objects, get_all_internal_ids, get_or_create_credit_card_vendor, create_bill, create_expense_report
 from apps.mappings.models import GeneralMapping
 from fyle_accounting_mappings.models import DestinationAttribute, EmployeeMapping, CategoryMapping
 from .fixtures import data

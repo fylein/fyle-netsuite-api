@@ -50,7 +50,6 @@ def create_expense_report(db, add_netsuite_credentials, add_fyle_credentials):
 
     return expense_report, expense_report_lineitems
 
-
 @pytest.fixture
 def create_bill(db, add_netsuite_credentials, add_fyle_credentials):
 

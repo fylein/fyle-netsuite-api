@@ -159,11 +159,7 @@ def test_post_reimbursement(add_fyle_credentials):
     fyle_credentials = FyleCredential.objects.get(workspace_id=1)
     fyle_connector = FyleConnector(fyle_credentials.refresh_token, 1)
     fyle_connector.sync_reimbursements()
-    reimbursements = Reimbursement.objects.filter(state='PENDING', workspace_id=1).all()
 
-    #post_reimbursement = fyle_connector.post_reimbursement(reimbursement.reimbursement_id)
-
+    #post_reimbursement = fyle_connector.post_reimbursement('reimcfBxUUS6L8')
     assert 1==1
-
-
 

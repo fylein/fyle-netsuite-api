@@ -792,5 +792,290 @@ data = {
             }],
             'externalId': 'cc-charge 48 - admin1@fyleforintacct.in',
         }
+    ],
+    'get_bill_response': [
+        {
+            'nullFieldList': None,
+            'createdDate': "datetime.datetime(2017, 10, 3, 14, 34, 19, tzinfo=<FixedOffset '-07:00'>)",
+            'lastModifiedDate': "datetime.datetime(2019, 6, 14, 6, 35, 47, tzinfo=<FixedOffset '-07:00'>)",
+            'nexus': None,
+            'subsidiaryTaxRegNum': None,
+            'taxRegOverride': None,
+            'taxDetailsOverride': None,
+            'customForm': {
+                'name': 'Z - Vendor Bill',
+                'internalId': '153',
+                'externalId': None,
+                'type': None
+            },
+            'billAddressList': None,
+            'account': {
+                'name': '2000 Accounts Payable',
+                'internalId': '25',
+                'externalId': None,
+                'type': None
+            },
+            'entity': {
+                'name': 'UPS',
+                'internalId': '32',
+                'externalId': None,
+                'type': None
+            },
+            'subsidiary': {
+                'name': 'Honeycomb Mfg.',
+                'internalId': '1',
+                'externalId': None,
+                'type': None
+            },
+            'approvalStatus': {
+                'name': 'Approved',
+                'internalId': '2',
+                'externalId': None,
+                'type': None
+            },
+            'nextApprover': None,
+            'vatRegNum': None,
+            'postingPeriod': None,
+            'tranDate': "datetime.datetime(2017, 8, 1, 0, 0, tzinfo=<FixedOffset '-07:00'>)",
+            'currencyName': 'USA',
+            'billingAddress': None,
+            'exchangeRate': 1.0,
+            'entityTaxRegNum': None,
+            'taxPointDate': None,
+            'terms': {
+                'name': 'Net 15',
+                'internalId': '1',
+                'externalId': None,
+                'type': None
+            },
+            'dueDate': "datetime.datetime(2019, 4, 11, 0, 0, tzinfo=<FixedOffset '-07:00'>)",
+            'discountDate': None,
+            'tranId': None,
+            'userTotal': 344.25,
+            'discountAmount': None,
+            'taxTotal': None,
+            'paymentHold': False,
+            'memo': '913465',
+            'tax2Total': None,
+            'creditLimit': None,
+            'availableVendorCredit': None,
+            'currency': {
+                'name': 'USA',
+                'internalId': '1',
+                'externalId': None,
+                'type': None
+            },
+            'class': None,
+            'department': None,
+            'location': None,
+            'status': 'Open',
+            'landedCostMethod': '_weight',
+            'landedCostPerLine': False,
+            'transactionNumber': None,
+            'expenseList': {
+                'expense': [
+                    {
+                        'orderDoc': None,
+                        'orderLine': None,
+                        'line': 1,
+                        'category': None,
+                        'account': {
+                            'name': '6170 Postage & Delivery',
+                            'internalId': '86',
+                            'externalId': None,
+                            'type': None
+                        },
+                        'amount': 344.25,
+                        'taxAmount': None,
+                        'tax1Amt': None,
+                        'memo': None,
+                        'grossAmt': None,
+                        'taxDetailsReference': None,
+                        'department': None,
+                        'class': None,
+                        'location': None,
+                        'customer': None,
+                        'isBillable': False,
+                        'projectTask': None,
+                        'taxCode': None,
+                        'taxRate1': None,
+                        'taxRate2': None,
+                        'amortizationSched': None,
+                        'amortizStartDate': None,
+                        'amortizationEndDate': None,
+                        'amortizationResidual': None,
+                        'customFieldList': None
+                    }
+                ],
+                'replaceAll': 'true'
+            },
+            'accountingBookDetailList': None,
+            'itemList': None,
+            'landedCostsList': {
+                'landedCost': [
+                    {
+                        'category': {
+                            'name': 'Landed Cost - Duty',
+                            'internalId': '1',
+                            'externalId': None,
+                            'type': None
+                        },
+                        'amount': None,
+                        'source': None,
+                        'transaction': None
+                    },
+                    {
+                        'category': {
+                            'name': 'Landed Cost - Freight',
+                            'internalId': '2',
+                            'externalId': None,
+                            'type': None
+                        },
+                        'amount': None,
+                        'source': None,
+                        'transaction': None
+                    }
+                ],
+                'replaceAll': 'true'
+            },
+            'purchaseOrderList': None,
+            'taxDetailsList': None,
+            'customFieldList': {
+                'customField': [
+                    {
+                        'value': False,
+                        'internalId': '223',
+                        'scriptId': 'custbody_powf_se_ok'
+                    },
+                    {
+                        'value': False,
+                        'internalId': '220',
+                        'scriptId': 'custbody_powf_ctrl_ok'
+                    }
+                ]
+            },
+            'internalId': '238',
+            'externalId': 'tran1311'
+        }
+    ],
+    'get_expense_report_response': [
+        {
+            'nullFieldList': None,
+            'createdDate': "datetime.datetime(2021, 7, 29, 5, 19, 52, tzinfo= < FixedOffset '-07:00' > )",
+            'lastModifiedDate': "datetime.datetime(2021, 7, 29, 5, 19, 52, tzinfo= < FixedOffset '-07:00' > )",
+            'status': 'Approved by Accounting',
+            'customForm': {
+                'name': 'Custom flocatio Report',
+                'internalId': '250',
+                'externalId': None,
+                'type': None
+            },
+            'account': {
+                'name': '2000 Accounts Payable',
+                'internalId': '25',
+                'externalId': None,
+                'type': None
+            },
+            'entity': {
+                'name': 'Ashwin',
+                'internalId': '3780',
+                'externalId': None,
+                'type': None
+            },
+            'expenseReportCurrency': {
+                'name': 'USA',
+                'internalId': '1',
+                'externalId': None,
+                'type': None
+            },
+            'expenseReportExchangeRate': 1.0,
+            'subsidiary': {
+                'name': 'Honeycomb Mfg.',
+                'internalId': '1',
+                'externalId': None,
+                'type': None
+            },
+            'taxPointDate': None,
+            'tranId': 'EXP00002819',
+            'acctCorpCardExp': None,
+            'postingPeriod': None,
+            'tranDate': "datetime.datetime(2002, 1, 9, 0, 0, tzinfo= < FixedOffset '-08:00' > )",
+            'dueDate': "datetime.datetime(2002, 1, 9, 0, 0, tzinfo= < FixedOffset '-08:00' > )",
+            'approvalStatus': None,
+            'total': 667.0,
+            'nextApprover': None,
+            'advance': None,
+            'tax1Amt': None,
+            'amount': 667.0,
+            'memo': 'Reimbursable expenses by ashwin.t@fyle.in',
+            'complete': True,
+            'supervisorApproval': None,
+            'accountingApproval': True,
+            'useMultiCurrency': True,
+            'tax2Amt': None,
+            'department': None,
+            'class': None,
+            'location': None,
+            'expenseList': {
+                'expense': [
+                    {
+                        'line': 1,
+                        'expenseDate': "datetime.datetime(2002, 1, 9, 0, 0, tzinfo= < FixedOffset '-08:00' > )",
+                        'category': {
+                            'name': 'Airfare',
+                            'internalId': '6',
+                            'externalId': None,
+                            'type': None
+                        },
+                        'quantity': None,
+                        'rate': None,
+                        'foreignAmount': 667.0,
+                        'currency': {
+                            'name': 'USA',
+                            'internalId': '1',
+                            'externalId': None,
+                            'type': None
+                        },
+                        'exchangeRate': 1.0,
+                        'amount': 667.0,
+                        'taxCode': None,
+                        'memo': 'Expense by ashwin.t@fyle.in against category Accounts Payable spent on 2002-01-09 with claim number - C/2021/07/R/6',
+                        'taxRate1': None,
+                        'tax1Amt': None,
+                        'department': None,
+                        'grossAmt': None,
+                        'taxRate2': None,
+                        'class': None,
+                        'customer': None,
+                        'location': {
+                            'name': '01: San Francisco',
+                            'internalId': '2',
+                            'externalId': None,
+                            'type': None
+                        },
+                        'isBillable': False,
+                        'expMediaItem': None,
+                        'isNonReimbursable': False,
+                        'corporateCreditCard': False,
+                        'receipt': None,
+                        'refNumber': 1,
+                        'customFieldList': {
+                            'customField': [
+                                {
+                                    'value': 'https://staging.fyle.tech/app/main/#/enterprise/view_expense/tx7b3e705y5p?org_id=or7m5SVD9Rv1',
+                                    'internalId': '4584',
+                                    'scriptId': 'custcolfyle_expense_url'
+                                }
+                            ]
+                        }
+                    }
+                ],
+                'replaceAll': 'true'
+            },
+            'accountingBookDetailList': None,
+            'customFieldList': None,
+            'internalId': '85327',
+            'externalId': 'report 1255 - ashwin.t@fyle.in'
+        }
     ]
 }

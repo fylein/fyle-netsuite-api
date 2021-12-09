@@ -2898,7 +2898,6 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 539	VENDOR_PAYMENT_ACCOUNT	Vendor Payment Account	new account	229	2021-11-15 14:26:05.494098+05:30	2021-11-15 14:26:05.494115+05:30	1	\N	\N	f
 540	VENDOR_PAYMENT_ACCOUNT	Vendor Payment Account	UK Credit Card Account	233	2021-11-15 14:26:05.494176+05:30	2021-11-15 14:26:05.494192+05:30	1	\N	\N	f
 541	VENDOR_PAYMENT_ACCOUNT	Vendor Payment Account	UK Bank account	236	2021-11-15 14:26:05.494251+05:30	2021-11-15 14:26:05.494267+05:30	1	\N	\N	f
-542	PROJECT	Project	Installation FP	1497	2021-11-15 14:26:08.316805+05:30	2021-11-15 14:26:08.316842+05:30	1	\N	\N	f
 543	PROJECT	Project	Support T&M	1498	2021-11-15 14:26:08.316908+05:30	2021-11-15 14:26:08.316926+05:30	1	\N	\N	f
 544	PROJECT	Project	Service Job	1499	2021-11-15 14:26:08.317005+05:30	2021-11-15 14:26:08.317023+05:30	1	\N	\N	f
 545	PROJECT	Project	Installation 2	1501	2021-11-15 14:26:08.317081+05:30	2021-11-15 14:26:08.317097+05:30	1	\N	\N	f
@@ -5771,7 +5770,6 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 3426	DEPARTMENT	Department	Inspection	9	2021-12-03 16:33:57.226312+05:30	2021-12-03 16:33:57.226321+05:30	49	\N	\N	f
 3427	DEPARTMENT	Department	Fabrication	10	2021-12-03 16:33:57.226358+05:30	2021-12-03 16:33:57.226367+05:30	49	\N	\N	f
 3428	DEPARTMENT	Department	Engineering	11	2021-12-03 16:33:57.226404+05:30	2021-12-03 16:33:57.226413+05:30	49	\N	\N	f
-3431	EMPLOYEE	Employee	Nilesh Pant Aus	10491	2021-12-03 16:34:01.168683+05:30	2021-12-03 16:34:01.168693+05:30	49	\N	{"email": null, "class_id": null, "location_id": null, "department_id": null}	f
 3432	EMPLOYEE	Employee	Brenda Hawkins	10693	2021-12-03 16:34:01.168706+05:30	2021-12-03 16:34:01.168709+05:30	49	\N	{"email": "user34@fyleforjatinorg.com", "class_id": null, "location_id": null, "department_id": null}	f
 3433	EMPLOYEE	Employee	Mr. Mark Sanchez MD	10694	2021-12-03 16:34:01.16872+05:30	2021-12-03 16:34:01.168723+05:30	49	\N	{"email": "user30@fyleforjatinorg.com", "class_id": null, "location_id": null, "department_id": null}	f
 3434	EMPLOYEE	Employee	Nicole Burgess	10695	2021-12-03 16:34:01.168733+05:30	2021-12-03 16:34:01.168735+05:30	49	\N	{"email": "user15@fyleforjatinorg.com", "class_id": null, "location_id": null, "department_id": null}	f
