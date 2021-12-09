@@ -6,7 +6,7 @@ from .fixtures import data
 def test_remove_duplicates(db):
 
     attributes = DestinationAttribute.objects.filter(attribute_type='EMPLOYEE')
-    assert len(attributes) == 35
+    assert len(attributes) == 34
 
     attributes = remove_duplicates(attributes)
     assert len(attributes) == 22

@@ -108,4 +108,4 @@ def test_sync_employee(add_netsuite_credentials):
     netsuite_connection.sync_employees()
 
     new_employee_count = DestinationAttribute.objects.filter(workspace_id=49, attribute_type='EMPLOYEE').count()
-    assert employee_count == 13
+    assert employee_count == 12

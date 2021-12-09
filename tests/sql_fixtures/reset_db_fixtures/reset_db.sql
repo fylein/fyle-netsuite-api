@@ -5770,6 +5770,7 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 3426	DEPARTMENT	Department	Inspection	9	2021-12-03 16:33:57.226312+05:30	2021-12-03 16:33:57.226321+05:30	49	\N	\N	f
 3427	DEPARTMENT	Department	Fabrication	10	2021-12-03 16:33:57.226358+05:30	2021-12-03 16:33:57.226367+05:30	49	\N	\N	f
 3428	DEPARTMENT	Department	Engineering	11	2021-12-03 16:33:57.226404+05:30	2021-12-03 16:33:57.226413+05:30	49	\N	\N	f
+3431	EMPLOYEE	Employee	Nilesh Pant Aus	10491	2021-12-03 16:34:01.168683+05:30	2021-12-03 16:34:01.168693+05:30	49	\N	{"email": null, "class_id": null, "location_id": null, "department_id": null}	f
 3432	EMPLOYEE	Employee	Brenda Hawkins	10693	2021-12-03 16:34:01.168706+05:30	2021-12-03 16:34:01.168709+05:30	49	\N	{"email": "user34@fyleforjatinorg.com", "class_id": null, "location_id": null, "department_id": null}	f
 3433	EMPLOYEE	Employee	Mr. Mark Sanchez MD	10694	2021-12-03 16:34:01.16872+05:30	2021-12-03 16:34:01.168723+05:30	49	\N	{"email": "user30@fyleforjatinorg.com", "class_id": null, "location_id": null, "department_id": null}	f
 3434	EMPLOYEE	Employee	Nicole Burgess	10695	2021-12-03 16:34:01.168733+05:30	2021-12-03 16:34:01.168735+05:30	49	\N	{"email": "user15@fyleforjatinorg.com", "class_id": null, "location_id": null, "department_id": null}	f
@@ -5777,7 +5778,6 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 3436	EMPLOYEE	Employee	Mr. Manuel Lyons	10893	2021-12-03 16:34:01.168759+05:30	2021-12-03 16:34:01.168761+05:30	49	\N	{"email": "user92@fyleforjatinorg.com", "class_id": null, "location_id": null, "department_id": null}	f
 3437	EMPLOYEE	Employee	Rachel Meyer	10993	2021-12-03 16:34:01.168771+05:30	2021-12-03 16:34:01.168774+05:30	49	\N	{"email": "admin9@fyleforjatinorg.com", "class_id": null, "location_id": null, "department_id": null}	f
 3438	EMPLOYEE	Employee	Nilesh Austrilia	11095	2021-12-03 16:34:01.168784+05:30	2021-12-03 16:34:01.168786+05:30	49	\N	{"email": null, "class_id": null, "location_id": null, "department_id": null}	f
-3439	EMPLOYEE	Employee	Shwetabh Ji	11404	2021-12-03 16:34:01.168797+05:30	2021-12-03 16:34:01.168799+05:30	49	\N	{"email": "user7@fylefordashboard3.com", "class_id": null, "location_id": null, "department_id": null}	f
 3440	EMPLOYEE	Employee	expensify@thatharmansingh.com	12406	2021-12-03 16:34:01.168809+05:30	2021-12-03 16:34:01.168812+05:30	49	\N	{"email": "expensify@thatharmansingh.com", "class_id": null, "location_id": null, "department_id": null}	f
 3441	EMPLOYEE	Employee	Harman Singh New	12508	2021-12-03 16:34:01.168822+05:30	2021-12-03 16:34:01.168824+05:30	49	\N	{"email": "expensify@thatharmansingh.com", "class_id": null, "location_id": null, "department_id": null}	f
 3442	EMPLOYEE	Employee	testuser	12509	2021-12-03 16:34:01.168835+05:30	2021-12-03 16:34:01.168837+05:30	49	\N	{"email": "admin1@fyleforironmen.in", "class_id": null, "location_id": null, "department_id": null}	f
