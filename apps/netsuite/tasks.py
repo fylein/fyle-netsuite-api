@@ -312,11 +312,18 @@ def create_credit_card_charge(expense_group, task_log_id):
         return
 
     configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
+    general_mappings: GeneralMapping = GeneralMapping.objects.filter(workspace_id=expense_group.workspace_id).first()
 
     try:
         netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
 
         netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
+
+        if general_mappings and general_mappings.use_employee_department and expense_group.fund_source == 'CCC' \
+                and configuration.auto_map_employees and configuration.auto_create_destination_entity:
+            create_or_update_employee_mapping(
+                expense_group, netsuite_connection, configuration.auto_map_employees,
+                configuration.employee_field_mapping)
 
         merchant = expense_group.expenses.first().vendor
         auto_create_merchants = configuration.auto_create_merchants
