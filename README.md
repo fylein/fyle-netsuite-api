@@ -89,10 +89,16 @@ Django Rest Framework API for Fyle Netsuite Integration
     ```
 * Run the following commands
 
-    1. docker-compose -f docker-compose-pipeline.yml build
-    2. docker-compose -f docker-compose-pipeline.yml up -d
-    3. docker-compose -f docker-compose-pipeline.yml exec api pytest tests/
+    ```
+    docker-compose -f docker-compose-pipeline.yml build
+    docker-compose -f docker-compose-pipeline.yml up -d
+    docker-compose -f docker-compose-pipeline.yml exec api pytest tests/
+    ```
 
+* Run the following command to update tests SQL fixture (`tests/sql_fixtures/reset_db_fixtures/reset_db.sql`)
+    ```
+    docker-compose -f docker-compose-pipeline.yml exec api /bin/bash tests/sql_fixtures/migration_fixtures/create_migration.sh 
+    ```
 
 * You should see output like this
 
