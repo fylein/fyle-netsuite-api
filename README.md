@@ -87,11 +87,12 @@ Django Rest Framework API for Fyle Netsuite Integration
     export NS_CONSUMER_KEY=<netsuite_consumer_key>
     export NS_CONSUMER_SECRET=<netsuite_consumer_secret>
     ```
-* Run the following command
+* Run the following commands
 
-    ```
-    pytest apps/users/tests/ 
-    ``` 
+    1. docker-compose -f docker-compose-pipeline.yml build
+    2. docker-compose -f docker-compose-pipeline.yml up -d
+    3. docker-compose -f docker-compose-pipeline.yml exec api pytest tests/
+
 
 * You should see output like this
 

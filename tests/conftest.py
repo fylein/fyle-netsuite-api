@@ -33,7 +33,6 @@ def test_connection(db):
     )
 
     user_profile = fyle_connection.Employees.get_my_profile()['data']
-
     user = User(
         password='', last_login=datetime.now(tz=timezone.utc), id=1, email=user_profile['employee_email'],
         user_id=user_profile['user_id'], full_name='', active='t', staff='f', admin='t'
@@ -53,30 +52,24 @@ def test_connection(db):
 
 @pytest.fixture()
 def add_netsuite_credentials(db):
-    count=1
 
-    while count<3:
+    workspaces = [1,2,49]
+    for workspace_id in workspaces:
         NetSuiteCredentials.objects.create(
-            id=count,
             ns_account_id=settings.NS_ACCOUNT_ID,
             ns_consumer_key=settings.NS_CONSUMER_KEY,
             ns_consumer_secret=settings.NS_CONSUMER_SECRET,
             ns_token_id=settings.NS_TOKEN_ID,
             ns_token_secret=settings.NS_TOKEN_SECRET,
-            workspace_id=count
+            workspace_id=workspace_id
         )
-
-        count+=1
 
 @pytest.fixture()
 def add_fyle_credentials(db):
-    count=1
+    workspaces = [1,2,49]
 
-    while count<3:
+    for workspace_id in workspaces:
         FyleCredential.objects.create(
-            id=count,
             refresh_token=settings.FYLE_REFRESH_TOKEN,
-            workspace_id=count
+            workspace_id=workspace_id
         )
-
-        count+=1
