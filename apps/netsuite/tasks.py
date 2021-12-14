@@ -951,7 +951,7 @@ def check_expenses_reimbursement_status(expenses):
     for expense in expenses:
         reimbursement = Reimbursement.objects.filter(settlement_id=expense.settlement_id).first()
 
-        if reimbursement.state != 'COMPLETE':
+        if (reimbursement and reimbursement.state != 'COMPLETE') or not reimbursement:
             all_expenses_paid = False
 
     return all_expenses_paid
