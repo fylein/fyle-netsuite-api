@@ -946,10 +946,13 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
 
 
 def check_expenses_reimbursement_status(expenses):
+    print('Check Reimbursement Status Function - ')
     all_expenses_paid = True
 
     for expense in expenses:
+        print('Expense Settlement ID - ', expense.settlement_id)
         reimbursement = Reimbursement.objects.filter(settlement_id=expense.settlement_id).first()
+        print('Reimbursement State - ', reimbursement.state)
 
         if reimbursement.state != 'COMPLETE':
             all_expenses_paid = False
@@ -966,6 +969,9 @@ def create_netsuite_payment_objects(netsuite_objects, object_type, workspace_id)
 
     for netsuite_object in netsuite_objects:
         entity_id = netsuite_object.entity_id
+        print('NetSuite object - ', netsuite_object)
+        print('NetSuite object ExpenseGroup - ', netsuite_object.expense_group)
+        print('Netsuite object Expensegroup Expenses - ', netsuite_object.expense_group.expenses.all())
 
         expense_group_reimbursement_status = check_expenses_reimbursement_status(
             netsuite_object.expense_group.expenses.all())
@@ -1118,6 +1124,7 @@ def create_vendor_payment(workspace_id):
 
     if bills:
         bill_entity_map = create_netsuite_payment_objects(bills, 'BILL', workspace_id)
+        print('Bill Entity Map - ', bill_entity_map)
 
         for entity_object_key in bill_entity_map:
             entity_id = entity_object_key
