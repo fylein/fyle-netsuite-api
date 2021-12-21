@@ -1,7 +1,7 @@
 import logging
 from typing import List
 import traceback
-from datetime import date, datetime
+from datetime import datetime
 
 from django.db import transaction
 from django_q.tasks import async_task
