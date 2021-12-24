@@ -241,7 +241,7 @@ def create_bill(expense_group, task_log_id):
 
             bill_object = Bill.create_bill(expense_group)
 
-            bill_lineitems_objects = BillLineitem.create_bill_lineitems(expense_group)
+            bill_lineitems_objects = BillLineitem.create_bill_lineitems(expense_group, configuration)
 
             attachment_links = {}
 
@@ -335,7 +335,7 @@ def create_credit_card_charge(expense_group, task_log_id):
             credit_card_charge_object = CreditCardCharge.create_credit_card_charge(expense_group)
 
             credit_card_charge_lineitems_object = CreditCardChargeLineItem.create_credit_card_charge_lineitem(
-                expense_group
+                expense_group, configuration
             )
             attachment_links = {}
 
@@ -422,7 +422,9 @@ def create_expense_report(expense_group, task_log_id):
 
             expense_report_object = ExpenseReport.create_expense_report(expense_group)
 
-            expense_report_lineitems_objects = ExpenseReportLineItem.create_expense_report_lineitems(expense_group)
+            expense_report_lineitems_objects = ExpenseReportLineItem.create_expense_report_lineitems(
+                expense_group, configuration
+            )
 
             attachment_links = {}
 
@@ -510,7 +512,9 @@ def create_journal_entry(expense_group, task_log_id):
 
             journal_entry_object = JournalEntry.create_journal_entry(expense_group)
 
-            journal_entry_lineitems_objects = JournalEntryLineItem.create_journal_entry_lineitems(expense_group)
+            journal_entry_lineitems_objects = JournalEntryLineItem.create_journal_entry_lineitems(
+                expense_group, configuration
+            )
 
             attachment_links = {}
 
@@ -665,6 +669,7 @@ def __validate_subsidiary_mapping(expense_group: ExpenseGroup) -> List[BulkError
         })
 
     return bulk_errors
+
 
 def __validate_tax_group_mapping(expense_group: ExpenseGroup, configuration: Configuration) -> List[BulkError]:
     row = 0

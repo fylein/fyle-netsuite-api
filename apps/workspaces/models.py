@@ -3,6 +3,7 @@ Workspace Models
 """
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.contrib.postgres.fields import ArrayField
 
 from django_q.models import Schedule
 
@@ -102,6 +103,10 @@ AUTO_MAP_EMPLOYEE_CHOICES = (
 )
 
 
+def get_default_memo_fields():
+    return ['employee_email', 'category', 'spent_on', 'report_number', 'purpose']
+
+
 class Configuration(models.Model):
     """
     Workspace General Settings
@@ -133,6 +138,10 @@ class Configuration(models.Model):
     auto_map_employees = models.CharField(
         max_length=50, choices=AUTO_MAP_EMPLOYEE_CHOICES,
         help_text='Auto Map Employees type from NetSuite to Fyle', null=True
+    )
+    memo_structure = ArrayField(
+        base_field=models.CharField(max_length=100), default=get_default_memo_fields,
+        help_text='list of system fields for creating custom memo'
     )
     auto_create_destination_entity = models.BooleanField(default=False, help_text='Auto create vendor / employee')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
