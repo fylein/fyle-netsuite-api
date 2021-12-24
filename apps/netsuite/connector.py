@@ -1370,7 +1370,7 @@ class NetSuiteConnector:
                 )
 
             tax_inclusive_amount = line.amount - line.tax_amount if (line.tax_amount is not None and line.tax_item_id ) else line.amount
-            line.tax_item_id = 1023
+
             lineitem = {
                 'account': {
                     'name': None,
