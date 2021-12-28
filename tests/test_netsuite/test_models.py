@@ -1,9 +1,11 @@
 from datetime import datetime
 import pytest
-import json
+
 from apps.fyle.models import Expense, ExpenseGroup
 from apps.netsuite.models import BillLineitem, ExpenseReport, ExpenseReportLineItem, get_department_id_or_none, get_transaction_date, get_expense_purpose, \
     get_location_id_or_none, get_customer_id_or_none, Bill
+from apps.workspaces.models import Configuration
+
 
 @pytest.mark.django_db(databases=['default'])
 def test_get_department_id_or_none(test_connection):
@@ -36,10 +38,11 @@ def test_get_expense_purpose():
     for lineitem in expenses:
         category = lineitem.category if lineitem.category == lineitem.sub_category else '{0} / {1}'.format(
                 lineitem.category, lineitem.sub_category)
+
+        configuration = Configuration.objects.get(workspace_id=1)
+        expense_purpose = get_expense_purpose(lineitem, category, configuration)
         
-        expense_purpose = get_expense_purpose(lineitem, category)
-        
-        assert expense_purpose == 'Expense by ashwin.t@fyle.in against category Accounts Payable spent on 2021-11-15 with report number - C/2021/11/R/5'
+        assert expense_purpose == 'ashwin.t@fyle.in - Accounts Payable - 2021-11-15 - C/2021/11/R/5'
 
 
 @pytest.mark.django_db(databases=['default'])
@@ -66,11 +69,12 @@ def test_create_bill(db):
 
     expense_group = ExpenseGroup.objects.get(id=2)
     bill = Bill.create_bill(expense_group)
-    bill_lineitems = BillLineitem.create_bill_lineitems(expense_group)
+    configuration = Configuration.objects.get(workspace_id=1)
+    bill_lineitems = BillLineitem.create_bill_lineitems(expense_group, configuration)
 
     for bill_lineitem in bill_lineitems:
         assert bill_lineitem.amount == 100.00
-        assert bill_lineitem.memo == 'Expense by ashwin.t@fyle.in against category Accounts Payable spent on 2021-11-15 with report number - C/2021/11/R/6'
+        assert bill_lineitem.memo == 'ashwin.t@fyle.in - Accounts Payable - 2021-11-15 - C/2021/11/R/6'
         assert bill_lineitem.billable == None
 
     assert bill.currency == '1'
@@ -82,13 +86,14 @@ def test_create_expense_report(db):
     expense_group = ExpenseGroup.objects.get(id=1)
     expense_report = ExpenseReport.create_expense_report(expense_group)
 
-    expense_report_lineitems = ExpenseReportLineItem.create_expense_report_lineitems(expense_group)
+    configuration = Configuration.objects.get(workspace_id=1)
+    expense_report_lineitems = ExpenseReportLineItem.create_expense_report_lineitems(expense_group, configuration)
 
     for expense_report_lineitem in expense_report_lineitems:
         assert expense_report_lineitem.category == '13'
         assert expense_report_lineitem.amount == 50.0
         assert expense_report_lineitem.currency == '1'
-        assert expense_report_lineitem.memo == 'Expense by ashwin.t@fyle.in against category Accounts Payable spent on 2021-11-15 with report number - C/2021/11/R/5'
+        assert expense_report_lineitem.memo == 'ashwin.t@fyle.in - Accounts Payable - 2021-11-15 - C/2021/11/R/5'
         assert expense_report_lineitem.transaction_date >= '2021-11-29T13:51:20'
 
     assert expense_report.currency == '1'
