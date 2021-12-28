@@ -85,6 +85,9 @@ class ConfigurationSerializer(serializers.ModelSerializer):
         :param attrs: Non-validated data
         :return: upserted general settings object
         """
+        if self.partial:
+            return attrs
+
         if not attrs['auto_map_employees'] and attrs['auto_create_destination_entity']:
             raise serializers.ValidationError(
                 'Cannot set auto_create_destination_entity value if auto map employees is disabled')

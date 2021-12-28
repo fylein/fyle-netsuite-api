@@ -83,6 +83,7 @@ def get_class_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
             class_id = mapping.destination.destination_id
     return class_id
 
+
 def get_tax_item_id_or_none(expense_group: ExpenseGroup, lineitem: Expense = None):
     tax_code = None
     mapping: Mapping = Mapping.objects.filter(
@@ -95,6 +96,7 @@ def get_tax_item_id_or_none(expense_group: ExpenseGroup, lineitem: Expense = Non
         tax_code = mapping.destination.destination_id
 
     return tax_code
+
 
 def get_customer_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
     project_setting: MappingSetting = MappingSetting.objects.filter(
@@ -208,13 +210,25 @@ def get_transaction_date(expense_group: ExpenseGroup) -> str:
     return datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
 
 
-def get_expense_purpose(lineitem, category) -> str:
-    expense_purpose = ', purpose - {0}'.format(lineitem.purpose) if lineitem.purpose else ''
-    spent_at = ' spent on {0} '.format(lineitem.spent_at.date()) if lineitem.spent_at else ''
-    vendor = ', merchant {0}'.format(lineitem.vendor) if lineitem.vendor else ''
+def get_expense_purpose(lineitem, category, configuration) -> str:
+    memo_structure = configuration.memo_structure
 
-    purpose = 'Expense by {0} against category {1}{2}{3}with report number - {4}{5}'.format(
-        lineitem.employee_email, category, vendor, spent_at, lineitem.claim_number, expense_purpose)
+    details = {
+        'employee_email': lineitem.employee_email,
+        'merchant': '{0}'.format(lineitem.vendor) if lineitem.vendor else '',
+        'category': '{0}'.format(category) if lineitem.category else '',
+        'purpose': '{0}'.format(lineitem.purpose) if lineitem.purpose else '',
+        'report_number': '{0}'.format(lineitem.claim_number),
+        'spent_on': '{0}'.format(lineitem.spent_at.date()) if lineitem.spent_at else ''
+    }
+
+    purpose = ''
+
+    for id, field in enumerate(memo_structure):
+        if field in details:
+            purpose += details[field]
+            if id + 1 != len(memo_structure):
+                purpose = '{0} - '.format(purpose)
 
     purpose = purpose.replace('<', '')
     purpose = purpose.replace('>', '')
@@ -332,10 +346,11 @@ class BillLineitem(models.Model):
         db_table = 'bill_lineitems'
 
     @staticmethod
-    def create_bill_lineitems(expense_group: ExpenseGroup):
+    def create_bill_lineitems(expense_group: ExpenseGroup, configuration: Configuration):
         """
         Create bill lineitems
         :param expense_group: expense group
+        :param configuration: Workspace Configuration Settings
         :return: lineitems objects
         """
         expenses = expense_group.expenses.all()
@@ -415,7 +430,7 @@ class BillLineitem(models.Model):
                     'tax_item_id': get_tax_item_id_or_none(expense_group, lineitem),
                     'tax_amount': lineitem.tax_amount,
                     'billable': billable,
-                    'memo': get_expense_purpose(lineitem, category),
+                    'memo': get_expense_purpose(lineitem, category, configuration),
                     'netsuite_custom_segments': custom_segments
                 }
             )
@@ -529,10 +544,11 @@ class CreditCardChargeLineItem(models.Model):
         db_table = 'credit_card_charge_lineitems'
 
     @staticmethod
-    def create_credit_card_charge_lineitem(expense_group: ExpenseGroup):
+    def create_credit_card_charge_lineitem(expense_group: ExpenseGroup, configuration: Configuration):
         """
         Create credit card charge lineitems
         :param expense_group: expense group
+        :param configuration: Workspace Configuration Settings
         :return: credit card charge lineitems objects
         """
         lineitem = expense_group.expenses.first()
@@ -610,7 +626,7 @@ class CreditCardChargeLineItem(models.Model):
                 'tax_item_id': get_tax_item_id_or_none(expense_group, lineitem),
                 'tax_amount': lineitem.tax_amount,
                 'billable': billable,
-                'memo': get_expense_purpose(lineitem, category),
+                'memo': get_expense_purpose(lineitem, category, configuration),
                 'netsuite_custom_segments': custom_segments
             }
         )
@@ -747,10 +763,11 @@ class ExpenseReportLineItem(models.Model):
         db_table = 'expense_report_lineitems'
 
     @staticmethod
-    def create_expense_report_lineitems(expense_group: ExpenseGroup):
+    def create_expense_report_lineitems(expense_group: ExpenseGroup, configuration: Configuration):
         """
         Create expense report lineitems
         :param expense_group: expense group
+        :param configuration: Workspace Configuration Settings
         :return: lineitems objects
         """
         expenses = expense_group.expenses.all()
@@ -830,7 +847,7 @@ class ExpenseReportLineItem(models.Model):
                     'tax_item_id': get_tax_item_id_or_none(expense_group, lineitem),
                     'tax_amount': lineitem.tax_amount,
                     'transaction_date': get_transaction_date(expense_group),
-                    'memo': get_expense_purpose(lineitem, category),
+                    'memo': get_expense_purpose(lineitem, category, configuration),
                     'netsuite_custom_segments': custom_segments
                 }
             )
@@ -941,10 +958,11 @@ class JournalEntryLineItem(models.Model):
         db_table = 'journal_entry_lineitems'
 
     @staticmethod
-    def create_journal_entry_lineitems(expense_group: ExpenseGroup):
+    def create_journal_entry_lineitems(expense_group: ExpenseGroup, configuration: Configuration):
         """
         Create Journal Entry Lineitems
         :param expense_group: expense group
+        :param configuration: Workspace Configuration Settings
         :return: lineitem objects
         """
         expenses = expense_group.expenses.all()
@@ -1033,7 +1051,7 @@ class JournalEntryLineItem(models.Model):
                     'amount': lineitem.amount,
                     'tax_item_id': get_tax_item_id_or_none(expense_group, lineitem),
                     'tax_amount': lineitem.tax_amount,
-                    'memo': get_expense_purpose(lineitem, category),
+                    'memo': get_expense_purpose(lineitem, category, configuration),
                     'netsuite_custom_segments': custom_segments
                 }
             )
