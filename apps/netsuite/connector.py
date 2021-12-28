@@ -739,7 +739,7 @@ class NetSuiteConnector:
                     'externalId': None,
                     'type': 'account'
                 },
-                'amount': line.amount - line.tax_amount if (line.tax_item_id and line.tax_amount) else line.amount,
+                'amount': line.amount - line.tax_amount if (line.tax_item_id and line.tax_amount is not None) else line.amount,
                 'memo': line.memo,
                 'grossAmt': line.amount,
                 'taxDetailsReference': None,
@@ -771,12 +771,12 @@ class NetSuiteConnector:
                 'isBillable': line.billable,
                 'projectTask': None,
                 'tax1Amt': None,
-                'taxAmount': line.tax_amount if (line.tax_item_id and line.tax_amount) else None,
+                'taxAmount': line.tax_amount if (line.tax_item_id and line.tax_amount is not None) else None,
                 'taxCode':{
                     'name': None,
-                    'internalId': line.tax_item_id if (line.tax_item_id and line.tax_amount) else None,
+                    'internalId': line.tax_item_id if (line.tax_item_id and line.tax_amount is not None) else None,
                     'externalId': None,
-                    'type': 'classification'
+                    'type': 'taxGroup'
                 },                
                 'taxRate1': None,
                 'taxRate2': None,
@@ -975,7 +975,7 @@ class NetSuiteConnector:
                 'name': None,
                 'internalId': None,
                 'externalId': None,
-                'type': 'classification'
+                'type': 'taxGroup'
             },     
         }
         lines.append(line)
@@ -1122,7 +1122,7 @@ class NetSuiteConnector:
             )
 
             lineitem = {
-                'amount': line.amount - line.tax_amount if (line.tax_item_id and line.tax_amount) else line.amount,
+                'amount': line.amount - line.tax_amount if (line.tax_item_id and line.tax_amount is not None) else line.amount,
                 'category': {
                     'name': None,
                     'internalId': line.category,
@@ -1174,12 +1174,12 @@ class NetSuiteConnector:
                 'rate': None,
                 'receipt': None,
                 'refNumber': None,
-                'tax1Amt': line.tax_amount if (line.tax_item_id and line.tax_amount) else None,
+                'tax1Amt': line.tax_amount if (line.tax_item_id and line.tax_amount is not None) else None,
                 'taxCode': {
                     'name': None,
-                    'internalId': line.tax_item_id if (line.tax_item_id and line.tax_amount) else None,
+                    'internalId': line.tax_item_id if (line.tax_item_id and line.tax_amount is not None) else None,
                     'externalId': None,
-                    'type': 'classification'
+                    'type': 'taxGroup'
                 },
                 'taxRate1': None,
                 'taxRate2': None
@@ -1325,6 +1325,7 @@ class NetSuiteConnector:
         expense_report = self.connection.expense_reports.get(internal_id)
         return expense_report
 
+
     @staticmethod
     def __construct_journal_entry_lineitems(journal_entry_lineitems: List[JournalEntryLineItem], org_id: str,
                                             credit=None, debit=None, attachment_links: Dict = None,
@@ -1368,7 +1369,7 @@ class NetSuiteConnector:
                     }
                 )
 
-            tax_inclusive_amount = line.amount - line.tax_amount if (line.tax_item_id and line.tax_amount) else line.amount
+            tax_inclusive_amount = line.amount - line.tax_amount if (line.tax_amount is not None and line.tax_item_id ) else line.amount
 
             lineitem = {
                 'account': {
@@ -1408,7 +1409,7 @@ class NetSuiteConnector:
                 'debitTax': None,
                 'eliminate': None,
                 'endDate': None,
-                'grossAmt': line.amount if (line.tax_item_id and line.tax_amount) else None,
+                'grossAmt': line.amount if (line.tax_amount is not None and line.tax_item_id ) else None,
                 'line': None,
                 'lineTaxCode': None,
                 'lineTaxRate': None,
@@ -1421,12 +1422,12 @@ class NetSuiteConnector:
                 'tax1Acct': None,
                 'taxAccount': None,
                 'taxBasis': None,
-                'tax1Amt': line.tax_amount if (line.tax_item_id and line.tax_amount) else None,
-                'taxCode':{
-                    'name':None,
-                    'internalId': line.tax_item_id if (line.tax_item_id and line.tax_amount) else None,
-                    'externalId':None,
-                    'type':'classification'
+                'tax1Amt': line.tax_amount if (line.tax_amount is not None and line.tax_item_id ) else None,
+                'taxCode': {
+                    'name': None,
+                    'internalId': line.tax_item_id if (line.tax_amount is not None and line.tax_item_id ) else None,
+                    'externalId': None,
+                    'type': 'taxGroup'
                 },
                 'taxRate1': None,
                 'totalAmount': None,
