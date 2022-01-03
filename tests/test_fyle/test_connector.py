@@ -87,7 +87,7 @@ def test_get_attachments(add_fyle_credentials):
     fyle_connector = FyleConnector(fyle_credentials.refresh_token, 1)
 
     attachment = fyle_connector.get_attachment(1)
-    assert attachment==None   #later will create an expense with attachments
+    assert attachment==None
 
 @pytest.mark.django_db()
 def test_sync_employees(add_fyle_credentials):
