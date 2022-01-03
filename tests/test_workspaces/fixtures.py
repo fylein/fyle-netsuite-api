@@ -1,10 +1,12 @@
 """
 Contains various tests Payloads
 """
-import pytest
 import random
+<<<<<<< HEAD
 from datetime import datetime
 
+=======
+>>>>>>> d7957642524698208db368582e7166a9f392e439
 from fyle_netsuite_api.tests import settings
 from fyle_rest_auth.utils import AuthUtils
 from fyle_rest_auth.models import AuthToken
@@ -12,6 +14,7 @@ from fyle_rest_auth.models import AuthToken
 from apps.workspaces.models import Workspace
 
 auth_utils = AuthUtils()
+
 
 def create_netsuite_credential_object_payload(workspace_id):
     netsuite_credentials = {
@@ -32,6 +35,7 @@ def create_workspace():
 def create_configurations_object_payload(workspace_id):
     reimbursable_expenses_objects = ['JOURNAL ENTRY', 'BILL']
     corporate_credit_card_expenses_object = ['BILL', 'CREDIT CARD CHARGE', 'JOURNAL ENTRY']
+    memo_structure = ["employee_email", "category", "report_number"]
 
     workspace_general_settings_payload = {
         'workspace': workspace_id,
@@ -44,7 +48,8 @@ def create_configurations_object_payload(workspace_id):
         'auto_map_employees': '',
         'auto_create_destination_entity': False,
         'auto_create_merchants': False,
-        'employee_field_mapping': 'VENDOR'
+        'employee_field_mapping': 'VENDOR',
+        'memo_structure': memo_structure
     }
 
     return workspace_general_settings_payload
