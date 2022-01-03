@@ -228,7 +228,8 @@ def get_expense_purpose(lineitem, category, configuration) -> str:
         if field in details:
             purpose += details[field]
             if id + 1 != len(memo_structure):
-                purpose = '{0} - '.format(purpose)
+                if details[field]:
+                    purpose = '{0} - '.format(purpose)
 
     purpose = purpose.replace('<', '')
     purpose = purpose.replace('>', '')
