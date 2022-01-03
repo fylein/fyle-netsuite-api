@@ -2,11 +2,6 @@
 Contains various tests Payloads
 """
 import random
-<<<<<<< HEAD
-from datetime import datetime
-
-=======
->>>>>>> d7957642524698208db368582e7166a9f392e439
 from fyle_netsuite_api.tests import settings
 from fyle_rest_auth.utils import AuthUtils
 from fyle_rest_auth.models import AuthToken
