@@ -4,7 +4,14 @@ Contains various tests Payloads
 import pytest
 import random
 from datetime import datetime
+
 from fyle_netsuite_api.tests import settings
+from fyle_rest_auth.utils import AuthUtils
+from fyle_rest_auth.models import AuthToken
+
+from apps.workspaces.models import Workspace
+
+auth_utils = AuthUtils()
 
 def create_netsuite_credential_object_payload(workspace_id):
     netsuite_credentials = {
@@ -14,6 +21,13 @@ def create_netsuite_credential_object_payload(workspace_id):
         'ns_token_secret': settings.NS_TOKEN_SECRET
     }
     return netsuite_credentials
+
+def create_workspace():
+    auth_tokens = AuthToken.objects.get(user__user_id='usezCopk4qdF')
+    fyle_user = auth_utils.get_fyle_user(auth_tokens.refresh_token, origin_address=None)
+    org_name = fyle_user['org_name']
+    org_id = fyle_user['org_id']
+    Workspace.objects.create(name=org_name, fyle_org_id=org_id)
 
 def create_configurations_object_payload(workspace_id):
     reimbursable_expenses_objects = ['JOURNAL ENTRY', 'BILL']
