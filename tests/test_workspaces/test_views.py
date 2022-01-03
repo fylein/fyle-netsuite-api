@@ -20,7 +20,9 @@ def test_get_workspace(api_client, test_connection):
 
     api_client.get(url, {
         'org_id': 'orf6t6jWUnpx'
-    })    
+    })
+
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
 
     response = api_client.get(url)
     assert response.status_code == 200
@@ -187,7 +189,7 @@ def test_get_workspace_schedule(api_client, test_connection):
     response = api_client.get(url)
     response = json.loads(response.content)
 
-    assert response == {'id': 1, 'enabled': False, 'start_datetime': None, 'interval_hours': None, 'workspace': 1, 'schedule': None}
+    assert response == {'id': 2, 'enabled': False, 'start_datetime': None, 'interval_hours': None, 'workspace': 1, 'schedule': None}
 
 @pytest.mark.django_db(databases=['default'])
 def test_ready_view(api_client, test_connection):
