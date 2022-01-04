@@ -104,7 +104,7 @@ AUTO_MAP_EMPLOYEE_CHOICES = (
 
 
 def get_default_memo_fields():
-    return ['employee_email', 'category', 'spent_on', 'report_number', 'purpose']
+    return ['employee_email', 'category', 'merchant', 'spent_on', 'report_number', 'purpose']
 
 
 class Configuration(models.Model):
