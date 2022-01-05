@@ -108,4 +108,30 @@ def test_sync_employee(add_netsuite_credentials):
     netsuite_connection.sync_employees()
 
     new_employee_count = DestinationAttribute.objects.filter(workspace_id=49, attribute_type='EMPLOYEE').count()
-    assert employee_count == 12
+    assert new_employee_count == 14
+
+@pytest.mark.django_db()
+def test_sync_accounts(add_netsuite_credentials):
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
+
+    accounts_count = DestinationAttribute.objects.filter(attribute_type='ACCOUNT', workspace_id=1).count()
+    assert accounts_count == 123
+
+    netsuite_connection.sync_accounts()
+
+    new_account_counts = DestinationAttribute.objects.filter(attribute_type='ACCOUNT', workspace_id=1).count()
+    assert new_account_counts == 164
+
+@pytest.mark.django_db()
+def test_sync_expense_categories(add_netsuite_credentials):
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
+
+    expense_categories_count = DestinationAttribute.objects.filter(attribute_type='EXPENSE_CATEGORY', workspace_id=1).count()
+    assert expense_categories_count == 34
+
+    netsuite_connection.sync_expense_categories()
+
+    new_expense_categories_count = DestinationAttribute.objects.filter(attribute_type='EXPENSE_CATEGORY', workspace_id=1).count()
+    assert new_expense_categories_count == 38

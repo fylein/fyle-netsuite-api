@@ -2397,7 +2397,6 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 39	EXPENSE_CATEGORY	Expense Category	New Category	33	2021-11-15 08:55:49.060184+00	2021-11-15 08:55:49.060193+00	1	\N	{"account_name": "6010 Advertising", "account_internal_id": "65"}	f
 40	EXPENSE_CATEGORY	Expense Category	Aus Category	34	2021-11-15 08:55:49.060263+00	2021-11-15 08:55:49.060275+00	1	\N	{"account_name": "6010 Advertising", "account_internal_id": "65"}	f
 41	EXPENSE_CATEGORY	Expense Category	Travel - Automobile	35	2021-11-15 08:55:49.06031+00	2021-11-15 08:55:49.06032+00	1	\N	{"account_name": "6020 Automobile Expense", "account_internal_id": "67"}	f
-42	EXPENSE_CATEGORY	Expense Category	UK Expense Category	36	2021-11-15 08:55:49.060355+00	2021-11-15 08:55:49.060364+00	1	\N	{"account_name": "1234112212 UK Expense Acct : UK EXP Account", "account_internal_id": "237"}	f
 43	LOCATION	Location	02: Boston	1	2021-11-15 08:55:50.532769+00	2021-11-15 08:55:50.532805+00	1	\N	\N	f
 44	LOCATION	Location	01: San Francisco	2	2021-11-15 08:55:50.532872+00	2021-11-15 08:55:50.532891+00	1	\N	\N	f
 45	LOCATION	Location	Overstock	3	2021-11-15 08:55:50.532953+00	2021-11-15 08:55:50.532969+00	1	\N	\N	f
@@ -2886,7 +2885,6 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 526	ACCOUNT	Account	Pay As You Go Withholding	225	2021-11-15 08:56:05.410666+00	2021-11-15 08:56:05.410682+00	1	\N	\N	f
 527	ACCOUNT	Account	VAT on Purchases	231	2021-11-15 08:56:05.410739+00	2021-11-15 08:56:05.410755+00	1	\N	\N	f
 528	ACCOUNT	Account	UK Expense Acct	235	2021-11-15 08:56:05.410811+00	2021-11-15 08:56:05.410828+00	1	\N	\N	f
-529	ACCOUNT	Account	UK EXP Account	237	2021-11-15 08:56:05.414262+00	2021-11-15 08:56:05.414297+00	1	\N	\N	f
 530	VENDOR_PAYMENT_ACCOUNT	Vendor Payment Account	Checking	1	2021-11-15 08:56:05.492892+00	2021-11-15 08:56:05.492931+00	1	\N	\N	f
 531	VENDOR_PAYMENT_ACCOUNT	Vendor Payment Account	Savings	2	2021-11-15 08:56:05.492999+00	2021-11-15 08:56:05.493019+00	1	\N	\N	f
 532	VENDOR_PAYMENT_ACCOUNT	Vendor Payment Account	Payroll	3	2021-11-15 08:56:05.493084+00	2021-11-15 08:56:05.493103+00	1	\N	\N	f
@@ -7347,6 +7345,9 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 5006	TAX_ITEM	Tax Item	ABN: dfvdfvf @20.0%	1027	2021-12-03 11:04:27.843034+00	2021-12-03 11:04:27.843036+00	49	\N	{"tax_rate": 20.0}	f
 5007	TAX_ITEM	Tax Item	ABN: Nilesh @54.0%	1029	2021-12-03 11:04:27.843046+00	2021-12-03 11:04:27.843048+00	49	\N	{"tax_rate": 54.0}	f
 5008	TAX_ITEM	Tax Item	ABN: Ashwin Tax Group @6.0%	1035	2021-12-03 11:04:27.843058+00	2021-12-03 11:04:27.84306+00	49	\N	{"tax_rate": 6.0}	f
+5010	ASHWINTEST1	ashwintest1	value1	1036	2021-12-03 11:04:27.843058+00	2021-12-03 11:04:27.84306+00	49	\N	\N	f
+5011	ASHWINTEST1	ashwintest1	value2	1037	2021-12-03 11:04:27.843058+00	2021-12-03 11:04:27.84306+00	49	\N	\N	f
+5012	ASHWINTEST1	ashwintest1	value3	1038	2021-12-03 11:04:27.843058+00	2021-12-03 11:04:27.84306+00	49	\N	\N	f
 \.
 
 

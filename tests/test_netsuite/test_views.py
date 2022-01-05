@@ -28,7 +28,7 @@ def test_netsutie_fields_view(api_client, test_connection):
 
 @pytest.mark.parametrize(
     "test_input, expected",
-    [("EMPLOYEE", 9), ("ACCOUNT", 124), ['PROJECT', 1087]],
+    [("EMPLOYEE", 9), ("ACCOUNT", 123), ['PROJECT', 1087]],
 )
 @pytest.mark.django_db(databases=['default'])
 def test_destination_attribute_count_view(test_input, expected, api_client, test_connection):

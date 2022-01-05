@@ -1,6 +1,6 @@
-from django.http import response
 import pytest
 import json
+from django.http import response
 from fyle_netsuite_api.tests import settings
 from django.urls import reverse
 from apps.workspaces.models import Configuration, FyleCredential, NetSuiteCredentials, Workspace, WorkspaceSchedule
@@ -189,7 +189,7 @@ def test_get_workspace_schedule(api_client, test_connection):
     response = api_client.get(url)
     response = json.loads(response.content)
 
-    assert response == {'id': 2, 'enabled': False, 'start_datetime': None, 'interval_hours': None, 'workspace': 1, 'schedule': None}
+    assert response == {'id': 3, 'enabled': False, 'start_datetime': None, 'interval_hours': None, 'workspace': 1, 'schedule': None}
 
 @pytest.mark.django_db(databases=['default'])
 def test_ready_view(api_client, test_connection):
