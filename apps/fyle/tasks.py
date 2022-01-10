@@ -91,7 +91,7 @@ def create_expense_groups(workspace_id: int, fund_source: List[str], task_log: T
             expenses = platform.expenses.get(
                 source_account_type, expense_group_settings.expense_state, last_synced_at, True
             )
-            print('expenses', expenses)
+            # TODO: Remember to remove this function later
             compare_tpa_and_platform_expenses(tpa_expenses, expenses, workspace_id)            
 
             if expenses:

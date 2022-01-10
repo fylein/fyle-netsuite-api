@@ -4,7 +4,6 @@ from django.conf import settings
 from fyle_integrations_platform_connector import PlatformConnector as PlatformIntegrationsConnector
 
 from apps.workspaces.models import FyleCredential
-from apps.workspaces.models import FyleCredential
 from .connector import FyleConnector
 
 logger = logging.getLogger(__name__)

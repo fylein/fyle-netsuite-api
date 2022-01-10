@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
 def compare_tpa_and_platform_expenses(tpa_expenses: List[dict], platform_expenses: List[dict], workspace_id: int) -> None:
+    # TODO: Remember to remove this function later
     """
     Compare TPA expenses and platform expenses.
     """
