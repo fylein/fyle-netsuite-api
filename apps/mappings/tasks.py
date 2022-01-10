@@ -13,7 +13,7 @@ from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttr
 from fyle_accounting_mappings.helpers import EmployeesAutoMappingHelper
 
 from apps.fyle.connector import FyleConnector
-from apps.fyle.platform_connector import FylePlatformConnector
+from apps.fyle.platform_connector import PlatformConnector
 from apps.mappings.models import GeneralMapping
 from apps.netsuite.connector import NetSuiteConnector
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configuration
@@ -272,7 +272,7 @@ def auto_create_tax_group_mappings(workspace_id):
     try:
         fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
 
-        fyle_connection = FylePlatformConnector(
+        fyle_connection = PlatformConnector(
             refresh_token=fyle_credentials.refresh_token,
             workspace_id=workspace_id
         )
@@ -322,7 +322,7 @@ def schedule_tax_groups_creation(import_tax_items, workspace_id):
         if schedule:
             schedule.delete()
 
-def post_tax_groups_in_batches(platform_connection: FylePlatformConnector, workspace_id: int):    
+def post_tax_groups_in_batches(platform_connection: PlatformConnector, workspace_id: int):
     existing_tax_items_name = ExpenseAttribute.objects.filter(
         attribute_type='TAX_GROUP', workspace_id=workspace_id).values_list('value', flat=True)
 

@@ -7,9 +7,10 @@ from django.utils.module_loading import import_string
 
 from apps.fyle.models import ExpenseGroupSettings
 from apps.mappings.models import GeneralMapping
-from apps.workspaces.models import Workspace
+from apps.workspaces.models import FyleCredential, Workspace
 
 from apps.fyle.connector import FyleConnector
+from fyle_integrations_platform_connector import PlatformConnector
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -113,7 +114,8 @@ def check_interval_and_sync_dimension(workspace: Workspace, refresh_token: str) 
 
 def sync_dimensions(refresh_token: str, workspace_id: int) -> None:
     fyle_connection = import_string('apps.fyle.connector.FyleConnector')(refresh_token, workspace_id)
-    fyle_platform_connection = import_string('apps.fyle.platform_connector.FylePlatformConnector')(refresh_token, workspace_id)
+    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+    fyle_platform_connection = PlatformConnector(fyle_credentials)
     dimensions = [
         'employees', 'categories', 'cost_centers',
         'projects', 'expense_custom_fields'
@@ -130,7 +132,7 @@ def sync_dimensions(refresh_token: str, workspace_id: int) -> None:
 
     for platform_dimension in platform_dimensions:
         try:
-            sync_platform = getattr(fyle_platform_connection, 'sync_{}'.format(platform_dimension))
+            sync_platform = getattr(fyle_platform_connection, '{}.sync'.format(platform_dimension))
             sync_platform()
         except Exception as exception:
             logger.exception(exception)
