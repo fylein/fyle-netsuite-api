@@ -99,42 +99,52 @@ class Expense(models.Model):
         Bulk create expense objects
         """
         expense_objects = []
+        eliminated_expenses = []
 
         for expense in expenses:
-            expense_object, _ = Expense.objects.update_or_create(
-                expense_id=expense['id'],
-                defaults={
-                    'employee_email': expense['employee_email'],
-                    'category': expense['category'],
-                    'sub_category': expense['sub_category'],
-                    'project': expense['project'],
-                    'expense_number': expense['expense_number'],
-                    'org_id': expense['org_id'],
-                    'claim_number': expense['claim_number'],
-                    'amount': expense['amount'],
-                    'currency': expense['currency'],
-                    'foreign_amount': expense['foreign_amount'],
-                    'foreign_currency': expense['foreign_currency'],
-                    'settlement_id': expense['settlement_id'],
-                    'reimbursable': expense['reimbursable'],
-                    'state': expense['state'],
-                    'vendor': expense['vendor'][:250] if expense['vendor'] else None,
-                    'cost_center': expense['cost_center'],
-                    'purpose': expense['purpose'],
-                    'report_id': expense['report_id'],
-                    'file_ids': expense['file_ids'],
-                    'spent_at': expense['spent_at'],
-                    'approved_at': expense['approved_at'],
-                    'expense_created_at': expense['expense_created_at'],
-                    'expense_updated_at': expense['expense_updated_at'],
-                    'fund_source': SOURCE_ACCOUNT_MAP[expense['source_account_type']],
-                    'verified_at': expense['verified_at'],
-                    'custom_properties': expense['custom_properties']
-                }
-            )
+            cutoff_date = _format_date('2021-08-01T00:00:00.000Z')
+            expense_created_at = _format_date(expense['expense_created_at'])
 
-            if not ExpenseGroup.objects.filter(expenses__id=expense_object.id).first():
-                expense_objects.append(expense_object)
+            if expense_created_at > cutoff_date:
+                expense_object, _ = Expense.objects.update_or_create(
+                    expense_id=expense['id'],
+                    defaults={
+                        'employee_email': expense['employee_email'],
+                        'category': expense['category'],
+                        'sub_category': expense['sub_category'],
+                        'project': expense['project'],
+                        'expense_number': expense['expense_number'],
+                        'org_id': expense['org_id'],
+                        'claim_number': expense['claim_number'],
+                        'amount': expense['amount'],
+                        'currency': expense['currency'],
+                        'foreign_amount': expense['foreign_amount'],
+                        'foreign_currency': expense['foreign_currency'],
+                        'settlement_id': expense['settlement_id'],
+                        'reimbursable': expense['reimbursable'],
+                        'state': expense['state'],
+                        'vendor': expense['vendor'][:250] if expense['vendor'] else None,
+                        'cost_center': expense['cost_center'],
+                        'purpose': expense['purpose'],
+                        'report_id': expense['report_id'],
+                        'file_ids': expense['file_ids'],
+                        'spent_at': expense['spent_at'],
+                        'approved_at': expense['approved_at'],
+                        'expense_created_at': expense['expense_created_at'],
+                        'expense_updated_at': expense['expense_updated_at'],
+                        'fund_source': SOURCE_ACCOUNT_MAP[expense['source_account_type']],
+                        'verified_at': expense['verified_at'],
+                        'custom_properties': expense['custom_properties']
+                    }
+                )
+
+                if not ExpenseGroup.objects.filter(expenses__id=expense_object.id).first():
+                    expense_objects.append(expense_object)
+            else:
+                eliminated_expenses.append(expense['id'])
+        
+        if eliminated_expenses:
+            logger.error('Expenses with ids {} are not eligible for import'.format(eliminated_expenses))
 
         return expense_objects
 
