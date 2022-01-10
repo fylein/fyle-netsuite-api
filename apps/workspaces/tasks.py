@@ -59,7 +59,6 @@ def run_sync_schedule(workspace_id):
     )
 
     configuration = Configuration.objects.get(workspace_id=workspace_id)
-
     fund_source = ['PERSONAL']
     if configuration.corporate_credit_card_expenses_object:
         fund_source.append('CCC')
@@ -69,9 +68,7 @@ def run_sync_schedule(workspace_id):
         )
 
     if task_log.status == 'COMPLETE':
-
         if configuration.reimbursable_expenses_object:
-
             expense_group_ids = ExpenseGroup.objects.filter(fund_source='PERSONAL',
                                                             workspace_id=workspace_id).values_list('id', flat=True)
 

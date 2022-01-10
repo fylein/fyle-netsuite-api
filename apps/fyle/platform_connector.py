@@ -1,62 +1,48 @@
-import json
-from typing import List
-import logging
-
 from django.conf import settings
-
-from fyle.platform import Platform
+from fyle_integrations_platform_connector import PlatformConnector as PlatformIntegrationsConnector
 from fyle_accounting_mappings.models import ExpenseAttribute
 
-import requests
-from apps.fyle.models import Reimbursement, ExpenseGroupSettings
+from apps.workspaces.models import FyleCredential
 from apps.workspaces.models import FyleCredential, Workspace
 from .connector import FyleConnector
 
-logger = logging.getLogger(__name__)
 
 class FylePlatformConnector:
     """
-    Fyle Platform Utility Function
+    This class is responsible for connecting to Fyle Platform and fetching data from Fyle Platform and syncing to db.
     """
 
-    def __init__(self, refresh_token, workspace_id=None):
-        self.workspace_id = workspace_id
-        cluster_domain = self.get_or_store_cluster_domain()
+    def __init__(self, fyle_credentials: FyleCredential, workspace_id=None):
+        """
+        Initialize the Platform Integration Connector
+        """
+        if not fyle_credentials.cluster_domain:
+            fyle_credentials = self.__store_cluster_domain(fyle_credentials)
 
-        client_id = settings.FYLE_CLIENT_ID
-        client_secret = settings.FYLE_CLIENT_SECRET
-        token_url = settings.FYLE_TOKEN_URI
-        server_url = '{}/platform/v1'.format(cluster_domain)
-
-        self.connection = Platform(
-            server_url=server_url,
-            token_url=token_url,
-            client_id=client_id,
-            client_secret=client_secret,
-            refresh_token=refresh_token
+        self.connector = PlatformIntegrationsConnector(
+            cluster_domain=fyle_credentials.cluster_domain, token_url=settings.FYLE_TOEKN_URI,
+            client_id=settings.FYLE_CLIENT_ID, client_secret=settings.FYLE_CLIENT_SECRET,
+            refresh_token=fyle_credentials.refresh_token, workspace_id=workspace_id
         )
 
-    def get_or_store_cluster_domain(self):
-        workspace = Workspace.objects.filter(pk=self.workspace_id).first()
-        if workspace.cluster_domain:
-            return workspace.cluster_domain
-        else:
-            fyle_credentials = FyleCredential.objects.get(workspace_id=self.workspace_id)
-            fyle_connector = FyleConnector(fyle_credentials.refresh_token, self.workspace_id)
-
+        @staticmethod
+        def __store_cluster_domain(fyle_credentials: FyleCredential) -> FyleCredential:
+            """
+            Get or store cluster domain
+            """
+            fyle_connector = FyleConnector(fyle_credentials.refresh_token)
             cluster_domain = fyle_connector.get_cluster_domain()['cluster_domain']
-            workspace.cluster_domain = cluster_domain
-            workspace.save()
+            fyle_credentials.cluster_domain = cluster_domain
+            fyle_credentials.save()
 
-            return cluster_domain
+            return fyle_credentials
+
 
     def sync_tax_groups(self):
         """
         Get Tax Groups From Fyle
         """
-        generator = self.connection.v1.admin.tax_groups.list_all(query_params={
-            'order': 'id.asc'
-        })
+        generator = self.connector.tax_groups.get_all_generator()
 
         tax_attributes = []
 
