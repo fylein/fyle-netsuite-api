@@ -384,3 +384,19 @@ class ConfigurationsView(generics.ListCreateAPIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+    def patch(self, request, **kwargs):
+        """
+        PATCH workspace configuration settings
+        """
+        configurations_object = Configuration.objects.get(workspace_id=kwargs['workspace_id'])
+        serializer = ConfigurationSerializer(
+            configurations_object, data=request.data, partial=True
+        )
+
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            return Response(
+                data=serializer.data,
+                status=status.HTTP_200_OK
+            )

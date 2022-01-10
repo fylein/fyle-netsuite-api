@@ -70,6 +70,7 @@ def create_expense_groups(workspace_id: int, fund_source: List[str], task_log: T
             if import_state[0] == 'PAYMENT_PROCESSING' and last_synced_at is not None:
                 import_state.append('PAID')
 
+            last_synced_at = datetime.now()
             expenses = fyle_connector.get_expenses(
                 state=import_state,
                 fund_source=fund_source,
@@ -79,7 +80,7 @@ def create_expense_groups(workspace_id: int, fund_source: List[str], task_log: T
             )
 
             if expenses:
-                workspace.last_synced_at = datetime.now()
+                workspace.last_synced_at = last_synced_at
                 workspace.save()
 
             expense_objects = Expense.create_expense_objects(expenses, workspace_id)
@@ -89,6 +90,7 @@ def create_expense_groups(workspace_id: int, fund_source: List[str], task_log: T
             )
 
             task_log.status = 'COMPLETE'
+            task_log.detail = None
             task_log.save()
 
     except FyleCredential.DoesNotExist:
