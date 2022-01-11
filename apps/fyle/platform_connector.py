@@ -1,14 +1,14 @@
 from django.conf import settings
 import logging
 from django.conf import settings
-from fyle_integrations_platform_connector import PlatformConnector as PlatformIntegrationsConnector
+from fyle_integrations_platform_connector import PlatformConnector
 
 from apps.workspaces.models import FyleCredential
 from .connector import FyleConnector
 
 logger = logging.getLogger(__name__)
 
-class PlatformConnector:
+class FylePlatformConnector:
     """
     This class is responsible for connecting to Fyle Platform and fetching data from Fyle Platform and syncing to db.
     """
@@ -17,14 +17,11 @@ class PlatformConnector:
         """
         Initialize the Platform Integration connector
         """
+        print(fyle_credentials.cluster_domain)
         if not fyle_credentials.cluster_domain:
             fyle_credentials = self.__store_cluster_domain(fyle_credentials)
 
-        self.connector = PlatformIntegrationsConnector(
-            cluster_domain=fyle_credentials.cluster_domain, token_url=settings.FYLE_TOKEN_URI,
-            client_id=settings.FYLE_CLIENT_ID, client_secret=settings.FYLE_CLIENT_SECRET,
-            refresh_token=fyle_credentials.refresh_token, workspace_id=workspace_id
-        )
+        self.connector = PlatformConnector(fyle_credentials)
 
 
     @staticmethod
