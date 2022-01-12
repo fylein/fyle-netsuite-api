@@ -136,13 +136,13 @@ def test_sync_cost_centers(add_fyle_credentials):
     fyle_credentials = FyleCredential.objects.get(workspace_id=1)
     fyle_connector = FyleConnector(fyle_credentials.refresh_token, 1)
 
-    project_count = ExpenseAttribute.objects.filter(attribute_type='COST_CENTER').count()
-    assert project_count == 30
+    cost_centers_count = ExpenseAttribute.objects.filter(attribute_type='COST_CENTER').count()
+    assert cost_centers_count == 30
 
     fyle_connector.sync_cost_centers()
 
-    new_project_count = ExpenseAttribute.objects.filter(attribute_type='COST_CENTER').count()
-    assert new_project_count == 35
+    new_cost_centers_count = ExpenseAttribute.objects.filter(attribute_type='COST_CENTER').count()
+    assert new_cost_centers_count == 35
 
 @pytest.mark.django_db()
 def test_sync_expense_custom_fields(add_fyle_credentials):
