@@ -19,6 +19,21 @@ CUSTOM_SEGMENT_CHOICES = (
     ('CUSTOM_LIST', 'CUSTOM_LIST')
 )
 
+def get_filtered_mapping(
+    source_field: str, destination_type: str, workspace_id: int, source_value: str, source_id: str) -> Mapping:
+    filters = {
+        'source_type': source_field,
+        'destination_type': destination_type,
+        'workspace_id': workspace_id
+    }
+
+    if source_id:
+        filters['source__source_id'] = source_id
+    else:
+        filters['source__value'] = source_value
+
+    return Mapping.objects.filter(**filters).first()
+
 
 def get_department_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
     department_setting: MappingSetting = MappingSetting.objects.filter(
@@ -27,10 +42,12 @@ def get_department_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
     ).first()
 
     department_id = None
+    source_id = None
 
     if department_setting:
         if lineitem:
             if department_setting.source_field == 'PROJECT':
+                source_id = lineitem.project_id
                 source_value = lineitem.project
             elif department_setting.source_field == 'COST_CENTER':
                 source_value = lineitem.cost_center
@@ -40,12 +57,9 @@ def get_department_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
         else:
             source_value = expense_group.description[department_setting.source_field.lower()]
 
-        mapping: Mapping = Mapping.objects.filter(
-            source_type=department_setting.source_field,
-            destination_type='DEPARTMENT',
-            source__value=source_value,
-            workspace_id=expense_group.workspace_id
-        ).first()
+        mapping: Mapping = get_filtered_mapping(
+            department_setting.source_field, 'DEPARTMENT', expense_group.workspace_id, source_value, source_id
+        )
 
         if mapping:
             department_id = mapping.destination.destination_id
@@ -59,11 +73,13 @@ def get_class_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
     ).first()
 
     class_id = None
+    source_id = None
 
     if class_setting:
         if lineitem:
             if class_setting.source_field == 'PROJECT':
                 source_value = lineitem.project
+                source_id = lineitem.project_id
             elif class_setting.source_field == 'COST_CENTER':
                 source_value = lineitem.cost_center
             else:
@@ -72,12 +88,9 @@ def get_class_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
         else:
             source_value = expense_group.description[class_setting.source_field.lower()]
 
-        mapping: Mapping = Mapping.objects.filter(
-            source_type=class_setting.source_field,
-            destination_type='CLASS',
-            source__value=source_value,
-            workspace_id=expense_group.workspace_id
-        ).first()
+        mapping: Mapping = get_filtered_mapping(
+            class_setting.source_field, 'CLASS', expense_group.workspace_id, source_value, source_id
+        )
 
         if mapping:
             class_id = mapping.destination.destination_id
@@ -106,17 +119,16 @@ def get_customer_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
 
     customer_id = None
     source_value = None
+    source_id = None
 
     if project_setting:
         if lineitem and project_setting.source_field == 'PROJECT':
             source_value = lineitem.project
+            source_id = lineitem.project_id
 
-        mapping: Mapping = Mapping.objects.filter(
-            source_type=project_setting.source_field,
-            destination_type='PROJECT',
-            source__value=source_value,
-            workspace_id=expense_group.workspace_id
-        ).first()
+        mapping: Mapping = get_filtered_mapping(
+            project_setting.source_field, 'PROJECT', expense_group.workspace_id, source_value, source_id
+        )
 
         if mapping:
             customer_id = mapping.destination.destination_id
@@ -130,11 +142,13 @@ def get_location_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
     ).first()
 
     location_id = None
+    source_id = None
 
     if location_setting:
         if lineitem:
             if location_setting.source_field == 'PROJECT':
                 source_value = lineitem.project
+                source_id = lineitem.project_id
             elif location_setting.source_field == 'COST_CENTER':
                 source_value = lineitem.cost_center
             else:
@@ -143,12 +157,9 @@ def get_location_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
         else:
             source_value = expense_group.description[location_setting.source_field.lower()]
 
-        mapping: Mapping = Mapping.objects.filter(
-            source_type=location_setting.source_field,
-            destination_type='LOCATION',
-            source__value=source_value,
-            workspace_id=expense_group.workspace_id
-        ).first()
+        mapping: Mapping = get_filtered_mapping(
+            location_setting.source_field, 'LOCATION', expense_group.workspace_id, source_value, source_id
+        )
 
         if mapping:
             location_id = mapping.destination.destination_id
@@ -159,6 +170,7 @@ def get_custom_segments(expense_group: ExpenseGroup, lineitem: Expense):
     mapping_settings = MappingSetting.objects.filter(workspace_id=expense_group.workspace_id).all()
 
     custom_segments = []
+    source_id = None
     default_expense_attributes = ['CATEGORY', 'EMPLOYEE']
     default_destination_attributes = ['DEPARTMENT', 'LOCATION', 'CLASS', 'PROJECT']
 
@@ -167,6 +179,7 @@ def get_custom_segments(expense_group: ExpenseGroup, lineitem: Expense):
                 setting.destination_field not in default_destination_attributes:
             if setting.source_field == 'PROJECT':
                 source_value = lineitem.project
+                source_id = lineitem.project_id
             elif setting.source_field == 'COST_CENTER':
                 source_value = lineitem.cost_center
             else:
@@ -176,12 +189,10 @@ def get_custom_segments(expense_group: ExpenseGroup, lineitem: Expense):
                 ).first()
                 source_value = lineitem.custom_properties.get(attribute.display_name, None)
 
-            mapping: Mapping = Mapping.objects.filter(
-                source_type=setting.source_field,
-                destination_type=setting.destination_field,
-                source__value=source_value,
-                workspace_id=expense_group.workspace_id
-            ).first()
+            mapping: Mapping = get_filtered_mapping(
+               setting.source_field, setting.destination_field, expense_group.workspace_id, source_value, source_id
+            )
+
             if mapping:
                 cus_list = CustomSegment.objects.filter(
                     name=setting.destination_field,
