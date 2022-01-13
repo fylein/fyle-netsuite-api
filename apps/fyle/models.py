@@ -115,7 +115,7 @@ class Expense(models.Model):
                         'project': expense['project'],
                         'expense_number': expense['expense_number'],
                         'org_id': expense['org_id'],
-                        'tax_amount': expense['tax'],
+                        'tax_amount': expense['tax_amount'],
                         'tax_group_id': expense['tax_group_id'],
                         'claim_number': expense['claim_number'],
                         'amount': expense['amount'],
