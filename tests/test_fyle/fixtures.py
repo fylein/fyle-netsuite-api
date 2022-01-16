@@ -121,7 +121,7 @@ data = {
             "created_at": "2021-11-08T04:37:24.840Z",
             "updated_at": "2021-11-08T04:43:35.669Z",
             "approved_at": "2021-11-08T04:42:41.123Z",
-            "settled_at": "2021-11-08T04:43:35.669Z",
+            "settled_at": "2021-06-15T00:00:00.000Z",
             "verified": False,
             "verified_at": None,
             "reimbursed_at": None,
@@ -158,7 +158,7 @@ data = {
             "activity_policy_pending": None,
             "activity_details": None,
             "locations": [],
-            "custom_properties": [{"name": "Custom Expense Field", "value": None}],
+            "custom_properties": [{"name": "User Dimension", "value": "Nilesh"}],
         },
         {
             "id": "txlHKf7pg8ok",

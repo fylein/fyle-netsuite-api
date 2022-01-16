@@ -8,11 +8,11 @@ from .fixtures import data
 def test_create_expense(create_temp_workspace):
     mock_expenes = data['expenses']
     Expense.create_expense_objects(
-        mock_expenes, 3
+        mock_expenes, 1
     )
 
     expense = Expense.objects.filter(org_id='orf6t6jWUnpx')
-    assert len(expense) == 6
+    assert len(expense) == 5
 
     expense = expense.last()
     assert expense.employee_email == 'admin1@fylefornt.com'

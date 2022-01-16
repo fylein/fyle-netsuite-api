@@ -1,4 +1,24 @@
 data = {
+    "general_mapping_payload": {
+        'accounts_payable_id': '25',
+        'accounts_payable_name': 'Accounts Payable',
+        'default_ccc_account_id': '',
+        'default_ccc_account_name': '',
+        'default_ccc_vendor_id': "1674",
+        'default_ccc_vendor_name': "Ashwin Vendor",
+        'department_level': 'null',
+        'location_id': "8",
+        'location_level': "TRANSACTION_LINE",
+        'location_name': "hubajuba",
+        'reimbursable_account_id': "118",
+        'reimbursable_account_name': "Unapproved Expense Reports",
+        'use_employee_class': True,
+        'use_employee_department': True,
+        'use_employee_location': False,
+        'vendor_payment_account_id': '',
+        'vendor_payment_account_name': '',
+        'workspace': 1
+    },
     "fyle_category_payload": [
         {"name": "Allowance for Doubtful Accounts", "code": "8", "enabled": None},
         {"name": "VAT on Purchases", "code": "231", "enabled": None},
