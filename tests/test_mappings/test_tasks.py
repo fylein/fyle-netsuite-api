@@ -10,10 +10,10 @@ from .fixtures import data
 def test_remove_duplicates(db):
 
     attributes = DestinationAttribute.objects.filter(attribute_type='EMPLOYEE')
-    assert len(attributes) == 34
+    assert len(attributes) == 32
 
     attributes = remove_duplicates(attributes)
-    assert len(attributes) == 22
+    assert len(attributes) == 20
 
 
 def test_create_fyle_category_payload(db):
@@ -100,7 +100,7 @@ def test_sync_expense_categories_and_accounts(db, add_netsuite_credentials):
     existing_accounts = DestinationAttribute.objects.filter(
         attribute_type='ACCOUNT', workspace_id=1).count()
 
-    assert existing_expense_category == 34
+    assert existing_expense_category == 33
     assert existing_accounts == 123
 
     sync_expense_categories_and_accounts('EXPENSE REPORT', 'EXPENSE REPORT', netsuite_connection)
@@ -122,7 +122,7 @@ def test_upload_categories_to_fyle(db, add_fyle_credentials, add_netsuite_creden
 
     expense_category_count = DestinationAttribute.objects.filter(
         attribute_type='EXPENSE_CATEGORY', workspace_id=1).count()
-    assert expense_category_count == 34
+    assert expense_category_count == 33
 
     count_of_accounts = DestinationAttribute.objects.filter(
         attribute_type='ACCOUNT', workspace_id=1).count()

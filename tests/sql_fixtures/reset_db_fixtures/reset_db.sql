@@ -2396,7 +2396,6 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 37	EXPENSE_CATEGORY	Expense Category	Training	31	2021-11-15 08:55:49.060093+00	2021-11-15 08:55:49.060102+00	1	\N	{"account_name": "6010 Advertising", "account_internal_id": "65"}	f
 38	EXPENSE_CATEGORY	Expense Category	Utility	32	2021-11-15 08:55:49.060138+00	2021-11-15 08:55:49.060147+00	1	\N	{"account_name": "6010 Advertising", "account_internal_id": "65"}	f
 39	EXPENSE_CATEGORY	Expense Category	New Category	33	2021-11-15 08:55:49.060184+00	2021-11-15 08:55:49.060193+00	1	\N	{"account_name": "6010 Advertising", "account_internal_id": "65"}	f
-40	EXPENSE_CATEGORY	Expense Category	Aus Category	34	2021-11-15 08:55:49.060263+00	2021-11-15 08:55:49.060275+00	1	\N	{"account_name": "6010 Advertising", "account_internal_id": "65"}	f
 41	EXPENSE_CATEGORY	Expense Category	Travel - Automobile	35	2021-11-15 08:55:49.06031+00	2021-11-15 08:55:49.06032+00	1	\N	{"account_name": "6020 Automobile Expense", "account_internal_id": "67"}	f
 43	LOCATION	Location	02: Boston	1	2021-11-15 08:55:50.532769+00	2021-11-15 08:55:50.532805+00	1	\N	\N	f
 44	LOCATION	Location	01: San Francisco	2	2021-11-15 08:55:50.532872+00	2021-11-15 08:55:50.532891+00	1	\N	\N	f
@@ -2454,8 +2453,6 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 96	EMPLOYEE	Employee	Jan Bucoy	1640	2021-11-15 08:56:02.248006+00	2021-11-15 08:56:02.248025+00	1	\N	{"email": "jbucoy@netsuite.com", "class_id": null, "location_id": null, "department_id": null}	f
 97	EMPLOYEE	Employee	Terry Chan	1644	2021-11-15 08:56:02.248097+00	2021-11-15 08:56:02.248114+00	1	\N	{"email": "Siva@fyle.in", "class_id": null, "location_id": null, "department_id": null}	f
 98	EMPLOYEE	Employee	Shwetabh  Kumar	1676	2021-11-15 08:56:02.248184+00	2021-11-15 08:56:02.248201+00	1	\N	{"email": null, "class_id": null, "location_id": null, "department_id": null}	f
-99	EMPLOYEE	Employee	Ashwinnnnnn	3081	2021-11-15 08:56:02.248271+00	2021-11-15 08:56:02.248289+00	1	\N	{"email": "user5@fyleforxyzcorp.in", "class_id": null, "location_id": null, "department_id": null}	f
-100	EMPLOYEE	Employee	Nillesh Pant	3281	2021-11-15 08:56:02.248357+00	2021-11-15 08:56:02.248374+00	1	\N	{"email": "user2@fyleforxyzcorp.in", "class_id": null, "location_id": null, "department_id": null}	f
 101	EMPLOYEE	Employee	James Bond	11104	2021-11-15 08:56:02.248442+00	2021-11-15 08:56:02.248459+00	1	\N	{"email": "user2@fylefornileshfyle.in", "class_id": null, "location_id": null, "department_id": null}	f
 102	EMPLOYEE	Employee	Nil Sun	13812	2021-11-15 08:56:02.248527+00	2021-11-15 08:56:02.248544+00	1	\N	{"email": null, "class_id": null, "location_id": null, "department_id": null}	f
 103	BANK_ACCOUNT	Bank Account	Checking	1	2021-11-15 08:56:05.153711+00	2021-11-15 08:56:05.153751+00	1	\N	\N	f
@@ -3982,7 +3979,6 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 1626	PROJECT	Customer	St. Francis Yacht Club	1603	2021-11-15 08:56:40.737948+00	2021-11-15 08:56:40.737957+00	1	\N	\N	f
 1627	PROJECT	Customer	Company 1618550408	5282	2021-11-15 08:56:40.737989+00	2021-11-15 08:56:40.737998+00	1	\N	\N	f
 1628	PROJECT	Customer	Company 1618566776	5382	2021-11-15 08:56:40.738368+00	2021-11-15 08:56:40.738396+00	1	\N	\N	f
-1629	PROJECT	Customer	Nilesh Pant	13815	2021-11-15 08:56:40.738434+00	2021-11-15 08:56:40.738445+00	1	\N	\N	f
 1630	TAX_ITEM	Tax Item	City: New York City @0.5%	635	2021-11-15 08:56:43.687288+00	2021-11-15 08:56:43.687327+00	1	\N	{"tax_rate": 0.5}	f
 1631	TAX_ITEM	Tax Item	County: New York County @1.5%	636	2021-11-15 08:56:43.687411+00	2021-11-15 08:56:43.687431+00	1	\N	{"tax_rate": 1.5}	f
 1632	TAX_ITEM	Tax Item	State: New York State @6.5%	637	2021-11-15 08:56:43.687502+00	2021-11-15 08:56:43.687519+00	1	\N	{"tax_rate": 6.5}	f
@@ -7346,9 +7342,9 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 5006	TAX_ITEM	Tax Item	ABN: dfvdfvf @20.0%	1027	2021-12-03 11:04:27.843034+00	2021-12-03 11:04:27.843036+00	49	\N	{"tax_rate": 20.0}	f
 5007	TAX_ITEM	Tax Item	ABN: Nilesh @54.0%	1029	2021-12-03 11:04:27.843046+00	2021-12-03 11:04:27.843048+00	49	\N	{"tax_rate": 54.0}	f
 5008	TAX_ITEM	Tax Item	ABN: Ashwin Tax Group @6.0%	1035	2021-12-03 11:04:27.843058+00	2021-12-03 11:04:27.84306+00	49	\N	{"tax_rate": 6.0}	f
-5010	ASHWINTEST1	ashwintest1	value1	1036	2021-12-03 11:04:27.843058+00	2021-12-03 11:04:27.84306+00	49	\N	\N	f
-5011	ASHWINTEST1	ashwintest1	value2	1037	2021-12-03 11:04:27.843058+00	2021-12-03 11:04:27.84306+00	49	\N	\N	f
-5012	ASHWINTEST1	ashwintest1	value3	1038	2021-12-03 11:04:27.843058+00	2021-12-03 11:04:27.84306+00	49	\N	\N	f
+6010	ASHWINTEST1	ashwintest1	value1	1036	2021-12-03 11:04:27.843058+00	2021-12-03 11:04:27.84306+00	49	\N	\N	f
+6011	ASHWINTEST1	ashwintest1	value2	1037	2021-12-03 11:04:27.843058+00	2021-12-03 11:04:27.84306+00	49	\N	\N	f
+6012	ASHWINTEST1	ashwintest1	value3	1038	2021-12-03 11:04:27.843058+00	2021-12-03 11:04:27.84306+00	49	\N	\N	f
 \.
 
 

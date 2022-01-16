@@ -17,7 +17,7 @@ expense_groups_paths = [
 
 fyle_dimension_paths = [
     path('sync_dimensions/', SyncFyleDimensionView.as_view(), name='sync-fyle-dimensions'),
-    path('refresh_dimensions/', RefreshFyleDimensionView.as_view(), name='sync-netsuite-dimensions')
+    path('refresh_dimensions/', RefreshFyleDimensionView.as_view(), name='refresh-fyle-dimensions')
 ]
 
 other_paths = [

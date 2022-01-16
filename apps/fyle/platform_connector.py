@@ -54,7 +54,7 @@ class FylePlatformConnector:
         """
         Get Tax Groups From Fyle
         """
-        generator = self.connection.v1.admin.tax_groups.list_all(query_params={
+        generator = self.connection.v1beta.admin.tax_groups.list_all(query_params={
             'order': 'id.asc'
         })
 

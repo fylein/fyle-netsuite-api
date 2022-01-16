@@ -91,12 +91,12 @@ def test_sync_project(add_netsuite_credentials):
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
     project_count = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='PROJECT').count()
-    assert project_count == 1087
+    assert project_count == 1086
 
     netsuite_connection.sync_projects()
 
     new_project_count = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='PROJECT').count()
-    assert new_project_count == 1088
+    assert new_project_count == 1087
 
 def test_sync_employee(add_netsuite_credentials):
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)
@@ -129,7 +129,7 @@ def test_sync_expense_categories(add_netsuite_credentials):
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
     expense_categories_count = DestinationAttribute.objects.filter(attribute_type='EXPENSE_CATEGORY', workspace_id=1).count()
-    assert expense_categories_count == 34
+    assert expense_categories_count == 33
 
     netsuite_connection.sync_expense_categories()
 
