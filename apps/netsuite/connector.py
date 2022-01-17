@@ -1513,10 +1513,9 @@ class NetSuiteConnector:
             'toSubsidiary': None,
             'tranDate': journal_entry.transaction_date,
             'tranId': None,
-            'externalId': '9324f9384bf938b398rb'
+            'externalId': journal_entry.external_id
         }
         
-        print('journal paylad', journal_entry_payload)
         return journal_entry_payload
 
     def post_journal_entry(self, journal_entry: JournalEntry,
