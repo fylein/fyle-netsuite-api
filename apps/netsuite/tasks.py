@@ -1230,6 +1230,7 @@ def check_netsuite_object_status(workspace_id):
                     expense_report.save()
             except NetSuiteRequestError as exception:
                 logger.exception({'error': exception})
+                pass
 
 
 def schedule_netsuite_objects_status_sync(sync_netsuite_to_fyle_payments, workspace_id):
