@@ -1515,7 +1515,7 @@ class NetSuiteConnector:
             'tranId': None,
             'externalId': journal_entry.external_id
         }
-        
+
         return journal_entry_payload
 
     def post_journal_entry(self, journal_entry: JournalEntry,
