@@ -13,8 +13,6 @@ from apps.tasks.models import TaskLog
 
 from .models import SOURCE_ACCOUNT_MAP, Expense, ExpenseGroup, ExpenseGroupSettings
 from .serializers import ExpenseGroupSerializer
-from .connector import FyleConnector
-from .helpers import compare_tpa_and_platform_expenses
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -58,30 +56,11 @@ def create_expense_groups(workspace_id: int, fund_source: List[str], task_log: T
     """
     try:
         with transaction.atomic():
-
             expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=workspace_id)
             workspace = Workspace.objects.get(pk=workspace_id)
             last_synced_at = workspace.last_synced_at
             fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
 
-            updated_at_fyle_tpa = []
-            if last_synced_at:
-                updated_at_fyle_tpa.append(
-                    'gte:{0}'.format(datetime.strftime(last_synced_at, '%Y-%m-%dT%H:%M:%S.000Z'))
-                )
-
-            fyle_connector = FyleConnector(fyle_credentials.refresh_token, workspace_id)
-
-            tpa_import_state = [expense_group_settings.expense_state]
-            if tpa_import_state[0] == 'PAYMENT_PROCESSING' and last_synced_at is not None:
-                tpa_import_state.append('PAID')
-
-
-            tpa_expenses = fyle_connector.get_expenses(
-                state=tpa_import_state,
-                updated_at=updated_at_fyle_tpa,
-                fund_source=fund_source
-            )
             platform = PlatformConnector(fyle_credentials)
             source_account_type = []
 
@@ -91,21 +70,18 @@ def create_expense_groups(workspace_id: int, fund_source: List[str], task_log: T
             expenses = platform.expenses.get(
                 source_account_type, expense_group_settings.expense_state, last_synced_at, True
             )
-            # TODO: Remember to remove this function later
-            compare_tpa_and_platform_expenses(tpa_expenses, expenses, workspace_id)            
-
+    
             if expenses:
                 workspace.last_synced_at = datetime.now()
                 workspace.save()
 
             expense_objects = Expense.create_expense_objects(expenses, workspace_id)
 
-            expense_group_objects = ExpenseGroup.create_expense_groups_by_report_id_fund_source(
+            ExpenseGroup.create_expense_groups_by_report_id_fund_source(
                 expense_objects, workspace_id
             )
 
             task_log.status = 'COMPLETE'
-            task_log.detail = ExpenseGroupSerializer(expense_group_objects, many=True).data
 
             task_log.save()
 

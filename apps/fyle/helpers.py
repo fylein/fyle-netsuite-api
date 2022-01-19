@@ -1,43 +1,14 @@
 from datetime import datetime, timezone
 import logging
-from typing import List
 
-from sentry_sdk import capture_message
 from django.utils.module_loading import import_string
 
 from apps.fyle.models import ExpenseGroupSettings
 from apps.mappings.models import GeneralMapping
 from apps.workspaces.models import FyleCredential, Workspace
-
-from apps.fyle.connector import FyleConnector
 from fyle_integrations_platform_connector import PlatformConnector
 
 logger = logging.getLogger(__name__)
-logger.level = logging.INFO
-
-def compare_tpa_and_platform_expenses(tpa_expenses: List[dict], platform_expenses: List[dict], workspace_id: int) -> None:
-    # TODO: Remember to remove this function later
-    """
-    Compare TPA expenses and platform expenses.
-    """
-    if len(tpa_expenses) != len(platform_expenses):
-        # POST to sentry
-        logger.error('count is different {} - {}'.format(len(tpa_expenses), len(platform_expenses)))
-        capture_message(
-            'PLATFORM MIGRATION\nCount is different - {} - {}\nWorkspace ID - {}'.format(
-                len(tpa_expenses), len(platform_expenses), workspace_id
-            )
-        )
-    tpa_expenses_ids = [expense['id'] for expense in tpa_expenses]
-    platform_expenses_ids = [expense['id'] for expense in platform_expenses]
-
-    missed_expense_ids = list(set(tpa_expenses_ids).difference(platform_expenses_ids))
-    if missed_expense_ids:
-        # POST to sentry
-        capture_message('PLATFORM MIGRATION\nMissed_expense_ids - {}\nWorkspace ID - {}'.format(
-            missed_expense_ids, workspace_id
-        ))
-        logger.error('missed_expense_ids {}'.format(missed_expense_ids))
 
 
 def add_expense_id_to_expense_group_settings(workspace_id: int):
@@ -117,7 +88,6 @@ def sync_dimensions(refresh_token: str, workspace_id: int) -> None:
     fyle_connection = import_string('apps.fyle.connector.FyleConnector')(refresh_token, workspace_id)
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
     platform = PlatformConnector(fyle_credentials)
-
     dimensions = [
         'employees', 'categories', 'cost_centers',
         'projects', 'expense_custom_fields'
