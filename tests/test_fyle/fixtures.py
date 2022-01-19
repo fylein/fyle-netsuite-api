@@ -541,12 +541,26 @@ data = {
         "expenses": [1],
     },
     "expense_group_setting_payload": {
-        "reimbursable_expense_group_fields": ["claim_number"],
-        "corporate_credit_card_expense_group_fields": ["expense_id"],
-        "expenses_grouped_by": ["claim_number"],
-        "expense_state": "PAID",
-        "reimbursable_export_date_type": "current_date",
-        "ccc_export_date_type": "spent_at"
+        "id":1,
+        "reimbursable_expense_group_fields":[
+            "employee_email",
+            "report_id",
+            "claim_number",
+            "fund_source"
+        ],
+        "corporate_credit_card_expense_group_fields":[
+            "employee_email",
+            "report_id",
+            "claim_number",
+            "fund_source"
+        ],
+        "expense_state":"PAYMENT_PROCESSING",
+        "reimbursable_export_date_type":"current_date",
+        "ccc_export_date_type":"current_date",
+        "import_card_credits":"false",
+        "created_at":"2021-11-15T08:46:16.069944Z",
+        "updated_at":"2021-11-15T08:46:16.069986Z",
+        "workspace":1
     },
     "fyle_orgs": [
         {

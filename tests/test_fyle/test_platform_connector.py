@@ -17,7 +17,7 @@ def test_sync_tax_groups(add_fyle_credentials, test_connection):
 
     tax_group = ExpenseAttribute.objects.get(attribute_type='TAX_GROUP', value='Netsuite Test Group')
 
-    assert tax_group.value == 'Netsuite Test Grou'
+    assert tax_group.value == 'Netsuite Test Group'
     assert tax_group.attribute_type == 'TAX_GROUP'
     assert tax_group.detail == {'tax_rate': 0.28}
 

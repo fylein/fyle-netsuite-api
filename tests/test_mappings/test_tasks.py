@@ -1,10 +1,10 @@
 import pytest
 from django_q.models import Schedule
-from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute
-
+from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute, CategoryMapping, Mapping, MappingSetting
+import fylesdk
 from apps.netsuite.connector import NetSuiteConnector
 from apps.workspaces.models import NetSuiteCredentials
-from apps.mappings.tasks import create_fyle_cost_centers_payload, create_fyle_expense_custom_field_payload, create_fyle_projects_payload, create_fyle_tax_group_payload, remove_duplicates, create_fyle_categories_payload, construct_filter_based_on_destination, schedule_categories_creation, schedule_cost_centers_creation, schedule_fyle_attributes_creation, sync_expense_categories_and_accounts, upload_categories_to_fyle
+from apps.mappings.tasks import auto_create_category_mappings, auto_create_cost_center_mappings, auto_create_project_mappings, create_fyle_cost_centers_payload, create_fyle_expense_custom_field_payload, create_fyle_projects_payload, create_fyle_tax_group_payload, filter_unmapped_destinations, remove_duplicates, create_fyle_categories_payload, construct_filter_based_on_destination, schedule_categories_creation, schedule_cost_centers_creation, schedule_fyle_attributes_creation, sync_expense_categories_and_accounts, upload_categories_to_fyle
 from .fixtures import data
 
 def test_remove_duplicates(db):
@@ -116,17 +116,36 @@ def test_sync_expense_categories_and_accounts(db, add_netsuite_credentials):
     assert count_of_accounts == 164
 
 
-def test_upload_categories_to_fyle(db, add_fyle_credentials, add_netsuite_credentials):
-    # will uncomment after post of categories is fixed
-    # netsuite_attributes = upload_categories_to_fyle(1, 'EXPENSE REPORT', 'BILL')
+def test_upload_categories_to_fyle(mocker, db, add_fyle_credentials, add_netsuite_credentials):
+
+    mocker.patch(
+        'fylesdk.apis.fyle_v1.categories.Categories.post',
+        return_value='nilesh'
+    )
+
+    netsuite_attributes = upload_categories_to_fyle(1, 'EXPENSE REPORT', 'BILL')
 
     expense_category_count = DestinationAttribute.objects.filter(
         attribute_type='EXPENSE_CATEGORY', workspace_id=1).count()
-    assert expense_category_count == 33
+    assert expense_category_count == 38
+    assert len(netsuite_attributes) == expense_category_count
 
     count_of_accounts = DestinationAttribute.objects.filter(
         attribute_type='ACCOUNT', workspace_id=1).count()
-    assert count_of_accounts == 123
+    assert count_of_accounts == 164
+
+
+def test_filter_unmapped_destinations(db, mocker, add_fyle_credentials, add_netsuite_credentials):
+
+    mocker.patch(
+        'fylesdk.apis.fyle_v1.categories.Categories.post',
+        return_value='nilesh'
+    )
+
+    netsutie_attribtues = upload_categories_to_fyle(workspace_id=1, reimbursable_expenses_object='EXPENSE REPORT', corporate_credit_card_expenses_object='BILL')
+
+    destination_attributes = filter_unmapped_destinations('EXPENSE_CATEGORY', netsutie_attribtues)
+    assert len(destination_attributes) == 37
 
 
 def test_schedule_creation(db, add_fyle_credentials):
@@ -138,3 +157,36 @@ def test_schedule_creation(db, add_fyle_credentials):
     schedule_cost_centers_creation(True, 1)
     schedule = Schedule.objects.last()
     assert schedule.func == 'apps.mappings.tasks.auto_create_cost_center_mappings'
+
+def test_auto_create_category_mappings(db, mocker, add_fyle_credentials, add_netsuite_credentials):
+
+    mocker.patch(
+            'fylesdk.apis.fyle_v1.categories.Categories.post',
+            return_value=[]
+        )
+
+    old_mappings = CategoryMapping.objects.filter(workspace_id=1).count()
+
+    response = auto_create_category_mappings(workspace_id=1)
+    assert response == []
+
+    categories = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='EXPENSE_CATEGORY').count()
+    mappings = CategoryMapping.objects.filter(workspace_id=1)
+    assert len(mappings) == categories - old_mappings
+
+
+def test_auto_create_project_mappings(db, mocker, add_fyle_credentials, add_netsuite_credentials):
+
+    mocker.patch(
+            'fylesdk.apis.fyle_v1.projects.Projects.post',
+            return_value=[]
+        )
+    
+    response = auto_create_project_mappings(workspace_id=1)
+    assert response == None
+
+    projects = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='PROJECT').count()
+    mappings = Mapping.objects.filter(workspace_id=1, destination_type='PROJECT').count()
+
+    assert mappings == projects - 1
+

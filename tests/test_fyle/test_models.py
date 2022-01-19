@@ -38,5 +38,5 @@ def test_expense_group_settings(create_temp_workspace):
 
     settings = ExpenseGroupSettings.objects.last()
 
-    assert settings.expense_state == 'PAID'
+    assert settings.expense_state == 'PAYMENT_PROCESSING'
     assert settings.ccc_export_date_type == 'spent_at'
