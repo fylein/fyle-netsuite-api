@@ -281,7 +281,7 @@ def auto_create_tax_group_mappings(workspace_id):
         )
 
         sync_netsuite_attribute(mapping_setting.destination_field, workspace_id)
-        post_tax_groups_in_batches(fyle_connection, workspace_id)
+        post_tax_groups(fyle_connection, workspace_id)
 
     except WrongParamsError as exception:
         logger.error(
@@ -319,7 +319,7 @@ def schedule_tax_groups_creation(import_tax_items, workspace_id):
         if schedule:
             schedule.delete()
 
-def post_tax_groups_in_batches(platform_connection: PlatformConnector, workspace_id: int):
+def post_tax_groups(platform_connection: PlatformConnector, workspace_id: int):
     existing_tax_items_name = ExpenseAttribute.objects.filter(
         attribute_type='TAX_GROUP', workspace_id=workspace_id).values_list('value', flat=True)
 
@@ -331,8 +331,8 @@ def post_tax_groups_in_batches(platform_connection: PlatformConnector, workspace
     fyle_payload: List[Dict] = create_fyle_tax_group_payload(
         netsuite_attributes, existing_tax_items_name)
     
-    print(fyle_payload)
-    platform_connection.tax_groups.post_bulk(fyle_payload)
+    if fyle_payload:
+        platform_connection.tax_groups.post_bulk(fyle_payload)
 
     platform_connection.tax_groups.sync()
     Mapping.bulk_create_mappings(netsuite_attributes, 'TAX_GROUP', 'TAX_ITEM', workspace_id)
@@ -408,24 +408,16 @@ def create_fyle_tax_group_payload(netsuite_attributes: List[DestinationAttribute
     :param netsuite_attributes: Netsuite Objects Objects
     :return: Fyle Tax Group Payload
     """
-    fyle_tax_group_payload = [
-        {
-        'name': 'hero moto corp',
-        'is_enabled': True,
-        'percentage': 0.20
-        }
-    ]
-    print(netsuite_attributes)
-    #for netsuite_attribute in netsuite_attributes:
-    #    if netsuite_attribute.value not in existing_fyle_tax_groups:
-    #        fyle_tax_group_payload.append({
-    #            {
-    #                'name': netsuite_attribute.value,
-    #                'is_enabled': True,
-    #                'percentage': round((netsuite_attribute.detail['tax_rate']/100), 2)
-    #            }
-    #        })
-
+    fyle_tax_group_payload = []
+    for netsuite_attribute in netsuite_attributes:
+        if netsuite_attribute.value not in existing_fyle_tax_groups:
+            fyle_tax_group_payload.append(
+                {
+                    'name': netsuite_attribute.value,
+                    'is_enabled': True,
+                    'percentage': round((netsuite_attribute.detail['tax_rate']/100), 2)
+                }
+            )
     return fyle_tax_group_payload
 
 def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_project_names: list):
