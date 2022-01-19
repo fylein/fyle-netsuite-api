@@ -1369,8 +1369,7 @@ class NetSuiteConnector:
                     }
                 )
 
-            tax_inclusive_amount = line.amount - line.tax_amount if (line.tax_amount is not None and line.tax_item_id ) else line.amount
-
+            tax_inclusive_amount = round((line.amount - line.tax_amount), 2) if (line.tax_amount is not None and line.tax_item_id ) else line.amount
             lineitem = {
                 'account': {
                     'name': None,
@@ -1402,14 +1401,14 @@ class NetSuiteConnector:
                     'externalId': None,
                     'type': 'vendor'
                 },
-                'credit': tax_inclusive_amount if credit is not None else None,
+                'credit': line.amount if credit is not None else None,
                 'creditTax': None,
                 'customFieldList': netsuite_custom_segments,
                 'debit': tax_inclusive_amount if debit is not None else None,
                 'debitTax': None,
                 'eliminate': None,
                 'endDate': None,
-                'grossAmt': line.amount if (line.tax_amount is not None and line.tax_item_id ) else None,
+                'grossAmt': line.amount if (line.tax_amount is not None and line.tax_item_id and debit is not None) else None,
                 'line': None,
                 'lineTaxCode': None,
                 'lineTaxRate': None,
@@ -1422,13 +1421,13 @@ class NetSuiteConnector:
                 'tax1Acct': None,
                 'taxAccount': None,
                 'taxBasis': None,
-                'tax1Amt': line.tax_amount if (line.tax_amount is not None and line.tax_item_id ) else None,
+                'tax1Amt': line.tax_amount if (line.tax_amount is not None and line.tax_item_id and debit is not None) else None,
                 'taxCode': {
                     'name': None,
                     'internalId': line.tax_item_id if (line.tax_amount is not None and line.tax_item_id ) else None,
                     'externalId': None,
                     'type': 'taxGroup'
-                },
+                } if debit is not None else None,
                 'taxRate1': None,
                 'totalAmount': None,
             }
