@@ -118,7 +118,6 @@ class Expense(models.Model):
                         'tax_amount': expense['tax_amount'],
                         'tax_group_id': expense['tax_group_id'],
                         'claim_number': expense['claim_number'],
-                        'amount': round(expense['amount'], 2),
                         'amount': expense['amount'],
                         'currency': expense['currency'],
                         'foreign_amount': expense['foreign_amount'],
