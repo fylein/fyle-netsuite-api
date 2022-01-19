@@ -282,6 +282,9 @@ class FyleConnector:
         project_attributes = []
 
         for project in projects:
+            if project['sub_project']:
+                project['name'] = '{0} / {1}'.format(project['name'], project['sub_project'])
+
             project_attributes.append({
                 'attribute_type': 'PROJECT',
                 'display_name': 'Project',
