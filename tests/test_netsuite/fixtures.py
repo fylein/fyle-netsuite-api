@@ -634,12 +634,7 @@ data = {
                 'taxAccount': None,
                 'taxBasis': None,
                 'tax1Amt': None,
-                'taxCode': {
-                    'name': None,
-                    'internalId': None,
-                    'externalId': None,
-                    'type': 'taxGroup',
-                },
+                'taxCode': None,
                 'taxRate1': None,
                 'totalAmount': None,
             }, {
