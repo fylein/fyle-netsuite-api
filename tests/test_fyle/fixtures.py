@@ -544,7 +544,7 @@ data = {
         "description": {
             "report_id": "rpuN3bgphxbK",
             "fund_source": "PERSONAL",
-            "claim_number": "C/2021/11/R/5 - ",
+            "claim_number": "C/2021/11/R/5",
             "employee_email": "ashwin.t@fyle.in",
         },
         "response_logs": {
