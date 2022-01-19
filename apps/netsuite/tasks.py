@@ -1197,36 +1197,44 @@ def check_netsuite_object_status(workspace_id):
         internal_ids = get_all_internal_ids(bills)
 
         for bill in bills:
-            bill_object = netsuite_connection.get_bill(internal_ids[bill.expense_group.id]['internal_id'])
+            try:
+                bill_object = netsuite_connection.get_bill(internal_ids[bill.expense_group.id]['internal_id'])
 
-            if bill_object['status'] == netsuite_paid_state:
-                line_items = BillLineitem.objects.filter(bill_id=bill.id)
-                for line_item in line_items:
-                    expense = line_item.expense
-                    expense.paid_on_netsuite = True
-                    expense.save()
+                if bill_object['status'] == netsuite_paid_state:
+                    line_items = BillLineitem.objects.filter(bill_id=bill.id)
+                    for line_item in line_items:
+                        expense = line_item.expense
+                        expense.paid_on_netsuite = True
+                        expense.save()
 
-                bill.paid_on_netsuite = True
-                bill.payment_synced = True
-                bill.save()
+                    bill.paid_on_netsuite = True
+                    bill.payment_synced = True
+                    bill.save()
+            except NetSuiteRequestError as exception:
+                logger.exception({'error': exception})
+                pass
 
     if expense_reports:
         internal_ids = get_all_internal_ids(expense_reports)
 
         for expense_report in expense_reports:
-            expense_report_object = netsuite_connection.get_expense_report(
-                internal_ids[expense_report.expense_group.id]['internal_id'])
+            try:
+                expense_report_object = netsuite_connection.get_expense_report(
+                    internal_ids[expense_report.expense_group.id]['internal_id'])
 
-            if expense_report_object['status'] == netsuite_paid_state:
-                line_items = ExpenseReportLineItem.objects.filter(expense_report_id=expense_report.id)
-                for line_item in line_items:
-                    expense = line_item.expense
-                    expense.paid_on_netsuite = True
-                    expense.save()
+                if expense_report_object['status'] == netsuite_paid_state:
+                    line_items = ExpenseReportLineItem.objects.filter(expense_report_id=expense_report.id)
+                    for line_item in line_items:
+                        expense = line_item.expense
+                        expense.paid_on_netsuite = True
+                        expense.save()
 
-                expense_report.paid_on_netsuite = True
-                expense_report.payment_synced = True
-                expense_report.save()
+                    expense_report.paid_on_netsuite = True
+                    expense_report.payment_synced = True
+                    expense_report.save()
+            except NetSuiteRequestError as exception:
+                logger.exception({'error': exception})
+                pass
 
 
 def schedule_netsuite_objects_status_sync(sync_netsuite_to_fyle_payments, workspace_id):
