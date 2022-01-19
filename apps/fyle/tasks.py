@@ -12,15 +12,10 @@ from apps.workspaces.models import FyleCredential, Workspace, Configuration
 from apps.tasks.models import TaskLog
 
 from .models import SOURCE_ACCOUNT_MAP, Expense, ExpenseGroup, ExpenseGroupSettings
-from .serializers import ExpenseGroupSerializer
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
-SOURCE_ACCOUNT_MAP = {
-    'PERSONAL': 'PERSONAL_CASH_ACCOUNT',
-    'CCC': 'PERSONAL_CORPORATE_CREDIT_CARD_ACCOUNT'
-}
 
 def schedule_expense_group_creation(workspace_id: int):
     """

@@ -3,7 +3,7 @@ from apps.fyle.helpers import add_expense_id_to_expense_group_settings, update_i
     update_use_employee_attributes_flag, check_interval_and_sync_dimension
 from apps.fyle.models import ExpenseGroupSettings
 from apps.mappings.models import GeneralMapping
-from apps.workspaces.models import Workspace
+from apps.workspaces.models import FyleCredential, Workspace
 from fyle_netsuite_api.tests import settings
 
 @pytest.mark.django_db()
@@ -47,6 +47,7 @@ def test_update_use_employee_attributes_flag():
 def test_check_interval_and_sync_dimension(test_connection, add_fyle_credentials):
     
     workspace = Workspace.objects.get(id=1)
-    response = check_interval_and_sync_dimension(workspace, settings.FYLE_REFRESH_TOKEN)
+    fyle_credentials = FyleCredential.objects.get(workspace_id=1)
+    response = check_interval_and_sync_dimension(workspace, fyle_credentials)
 
     assert response == True

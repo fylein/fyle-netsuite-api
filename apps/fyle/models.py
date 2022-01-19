@@ -104,7 +104,7 @@ class Expense(models.Model):
         eliminated_expenses = []
 
         for expense in expenses:
-            cutoff_date = _format_date('2021-08-01T00:00:00.000Z')
+            cutoff_date = _format_date('2021-06-15T00:00:00.000Z')
             expense_created_at = _format_date(expense['expense_created_at'])
 
             if expense_created_at > cutoff_date:
@@ -121,7 +121,7 @@ class Expense(models.Model):
                         'tax_amount': expense['tax_amount'],
                         'tax_group_id': expense['tax_group_id'],
                         'claim_number': expense['claim_number'],
-                        'amount': expense['amount'],
+                        'amount': round(expense['amount'], 2),
                         'currency': expense['currency'],
                         'foreign_amount': expense['foreign_amount'],
                         'foreign_currency': expense['foreign_currency'],
