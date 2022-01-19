@@ -60,6 +60,7 @@ class Expense(models.Model):
     category = models.CharField(max_length=255, null=True, blank=True, help_text='Fyle Expense Category')
     sub_category = models.CharField(max_length=255, null=True, blank=True, help_text='Fyle Expense Sub-Category')
     project = models.CharField(max_length=255, null=True, blank=True, help_text='Project')
+    project_id = models.CharField(max_length=255, null=True, blank=True, help_text='Project ID')
     org_id = models.CharField(max_length=255, null=True, help_text='Organization ID')
     expense_id = models.CharField(max_length=255, unique=True, help_text='Expense ID')
     expense_number = models.CharField(max_length=255, help_text='Expense Number')
