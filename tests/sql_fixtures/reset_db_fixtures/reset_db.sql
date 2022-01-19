@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 13.3 (Debian 13.3-1.pgdg100+1)
+-- Dumped from database version 14.1 (Debian 14.1-1.pgdg110+1)
 -- Dumped by pg_dump version 14.1 (Debian 14.1-1.pgdg100+1)
 
 SET statement_timeout = 0;
@@ -1082,7 +1082,8 @@ CREATE TABLE public.fyle_credentials (
     refresh_token text NOT NULL,
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
-    workspace_id integer NOT NULL
+    workspace_id integer NOT NULL,
+    cluster_domain character varying(255)
 );
 
 
@@ -7533,6 +7534,7 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 118	tasks	0007_auto_20211206_0856	2021-12-13 10:40:23.669409+00
 119	workspaces	0020_configuration_memo_structure	2021-12-28 07:34:49.166932+00
 120	fyle	0016_expense_project_id	2022-01-13 06:21:47.507258+00
+121	workspaces	0021_fylecredential_cluster_domain	2022-01-13 11:32:09.928314+00
 \.
 
 
@@ -11154,7 +11156,7 @@ COPY public.expenses (id, employee_email, category, sub_category, project, expen
 -- Data for Name: fyle_credentials; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.fyle_credentials (id, refresh_token, created_at, updated_at, workspace_id) FROM stdin;
+COPY public.fyle_credentials (id, refresh_token, created_at, updated_at, workspace_id, cluster_domain) FROM stdin;
 \.
 
 
@@ -11401,7 +11403,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 41, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 120, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 121, true);
 
 
 --
