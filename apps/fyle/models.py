@@ -99,6 +99,7 @@ class Expense(models.Model):
         """
         Bulk create expense objects
         """
+
         expense_objects = []
         eliminated_expenses = []
 
