@@ -335,7 +335,7 @@ def post_tax_groups_in_batches(platform_connection: FylePlatformConnector, works
         netsuite_attributes, existing_tax_items_name)
         
     for payload in fyle_payload:
-        platform_connection.connection.v1.admin.tax_groups.post(payload)
+        platform_connection.connection.v1beta.admin.tax_groups.post(payload)
 
     platform_connection.sync_tax_groups()
     Mapping.bulk_create_mappings(netsuite_attributes, 'TAX_GROUP', 'TAX_ITEM', workspace_id)
