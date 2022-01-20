@@ -26,7 +26,7 @@ class FylePlatformConnector:
         client_id = settings.FYLE_CLIENT_ID
         client_secret = settings.FYLE_CLIENT_SECRET
         token_url = settings.FYLE_TOKEN_URI
-        server_url = '{}/platform/v1'.format(cluster_domain)
+        server_url = '{}/platform/v1beta'.format(cluster_domain)
 
         self.connection = Platform(
             server_url=server_url,
