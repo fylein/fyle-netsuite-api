@@ -44,8 +44,8 @@ def test_update_use_employee_attributes_flag():
     assert general_mapping.use_employee_location == False
 
 @pytest.mark.django_db
-def test_check_interval_and_sync_dimension(test_connection, add_fyle_credentials):
-    
+def test_check_interval_and_sync_dimension(test_connection):
+    # Todo: To be utilized later
     workspace = Workspace.objects.get(id=1)
     fyle_credentials = FyleCredential.objects.get(workspace_id=1)
     response = check_interval_and_sync_dimension(workspace, fyle_credentials)

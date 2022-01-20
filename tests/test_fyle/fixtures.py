@@ -515,7 +515,7 @@ data = {
             "currency": "USD",
             "foreign_amount": None,
             "foreign_currency": None,
-            "tax_amount": None,
+            "tax_amount": None,   # Todo : cleanup and fix the keys later
             "tax_group_id": None,
             "settlement_id": "setZp4pb4VhBu",
             "reimbursable": True,

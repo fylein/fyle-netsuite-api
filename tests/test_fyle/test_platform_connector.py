@@ -1,7 +1,8 @@
-from fyle_accounting_mappings.models import ExpenseAttribute
 import pytest
-from apps.workspaces.models import FyleCredential, Workspace
 from fyle_integrations_platform_connector import PlatformConnector
+from fyle_accounting_mappings.models import ExpenseAttribute
+
+from apps.workspaces.models import FyleCredential, Workspace
 
 @pytest.mark.django_db()
 def test_sync_tax_groups(add_fyle_credentials, test_connection):
