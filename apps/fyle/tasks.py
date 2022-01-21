@@ -11,11 +11,15 @@ from fyle_integrations_platform_connector import PlatformConnector
 from apps.workspaces.models import FyleCredential, Workspace, Configuration
 from apps.tasks.models import TaskLog
 
-from .models import SOURCE_ACCOUNT_MAP, Expense, ExpenseGroup, ExpenseGroupSettings
+from .models import Expense, ExpenseGroup, ExpenseGroupSettings
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
+SOURCE_ACCOUNT_MAP = {
+    'PERSONAL': 'PERSONAL_CASH_ACCOUNT',
+    'CCC': 'PERSONAL_CORPORATE_CREDIT_CARD_ACCOUNT'
+}
 
 def schedule_expense_group_creation(workspace_id: int):
     """
@@ -63,7 +67,7 @@ def create_expense_groups(workspace_id: int, fund_source: List[str], task_log: T
                 source_account_type.append(SOURCE_ACCOUNT_MAP[source])
 
             expenses = platform.expenses.get(
-                source_account_type, expense_group_settings.expense_state, last_synced_at, True
+                source_account_type, expense_group_settings.expense_state, last_synced_at, False
             )
     
             if expenses:
@@ -77,6 +81,7 @@ def create_expense_groups(workspace_id: int, fund_source: List[str], task_log: T
             )
 
             task_log.status = 'COMPLETE'
+            task_log.detail = None
 
             task_log.save()
 
