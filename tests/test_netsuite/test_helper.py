@@ -35,5 +35,5 @@ def test_sync_dimensions(add_netsuite_credentials):
     categoty_count = DestinationAttribute.objects.filter(attribute_type='EXPENSE_CATEGORY', workspace_id=1).count()
 
     assert employee_count == 9
-    assert project_count == 1088
+    assert project_count == 1089
     assert categoty_count == 38

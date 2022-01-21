@@ -188,5 +188,5 @@ def test_auto_create_project_mappings(db, mocker, add_fyle_credentials, add_nets
     projects = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='PROJECT').count()
     mappings = Mapping.objects.filter(workspace_id=1, destination_type='PROJECT').count()
 
-    assert mappings == projects - 1
+    assert mappings == projects - 2
 
