@@ -105,7 +105,7 @@ class Expense(models.Model):
 
         for expense in expenses:
             cutoff_date = _format_date('2021-06-15T00:00:00.000Z')
-            expense_settled_at = _format_date(expense['expense_created_at'])
+            expense_settled_at = _format_date(expense['settled_at'])
 
             if expense_settled_at > cutoff_date:
                 expense_object, _ = Expense.objects.update_or_create(
