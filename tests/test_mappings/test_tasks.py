@@ -4,7 +4,8 @@ from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribu
 import fylesdk
 from apps.netsuite.connector import NetSuiteConnector
 from apps.workspaces.models import NetSuiteCredentials
-from apps.mappings.tasks import auto_create_category_mappings, auto_create_cost_center_mappings, auto_create_project_mappings, create_fyle_cost_centers_payload, create_fyle_expense_custom_field_payload, create_fyle_projects_payload, create_fyle_tax_group_payload, filter_unmapped_destinations, remove_duplicates, create_fyle_categories_payload, construct_filter_based_on_destination, schedule_categories_creation, schedule_cost_centers_creation, schedule_fyle_attributes_creation, sync_expense_categories_and_accounts, upload_categories_to_fyle
+from apps.mappings.tasks import auto_create_category_mappings, auto_create_cost_center_mappings, auto_create_project_mappings, create_fyle_cost_centers_payload, create_fyle_expense_custom_field_payload, create_fyle_projects_payload, create_fyle_tax_group_payload, filter_unmapped_destinations, remove_duplicates, create_fyle_categories_payload, \
+    construct_filter_based_on_destination, schedule_categories_creation, schedule_cost_centers_creation, schedule_fyle_attributes_creation, sync_expense_categories_and_accounts, upload_categories_to_fyle
 from .fixtures import data
 
 def test_remove_duplicates(db):
@@ -190,3 +191,15 @@ def test_auto_create_project_mappings(db, mocker, add_fyle_credentials, add_nets
 
     assert mappings == projects - 2
 
+def test_auto_create_cost_center_mappings(db, mocker, add_fyle_credentials, add_netsuite_credentials):
+    
+    mocker.patch(
+            'fylesdk.apis.fyle_v1.cost_centers.CostCenters.post',
+            return_value=[]
+        )
+    
+    response = auto_create_cost_center_mappings(workspace_id=1)
+    assert response == None
+
+    cost_center = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='COST_CENTER').count()
+    mappings = Mapping.objects.filter(workspace_id=1, destination_type='COST_CENTER').count()
