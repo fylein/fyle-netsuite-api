@@ -11191,7 +11191,7 @@ COPY public.journal_entry_lineitems (id, debit_account_id, account_id, departmen
 COPY public.mapping_settings (id, source_field, destination_field, created_at, updated_at, workspace_id, import_to_fyle, is_custom) FROM stdin;
 1	TAX_GROUP	TAX_ITEM	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	2	f	f
 5	PROJECT	PROJECT	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	1	f	f
-6   COST_CENTER COST_CENTER 2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	1	f	f
+6	COST_CENTER	COST_CENTER	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	1	f	f
 \.
 
 
