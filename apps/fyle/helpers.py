@@ -1,11 +1,12 @@
 from datetime import datetime, timezone
+from fyle_integrations_platform_connector import PlatformConnector
 import logging
 
 from django.utils.module_loading import import_string
 
 from apps.fyle.models import ExpenseGroupSettings
 from apps.mappings.models import GeneralMapping
-from apps.workspaces.models import Workspace
+from apps.workspaces.models import FyleCredential, Workspace
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +66,7 @@ def update_use_employee_attributes_flag(workspace_id: int) -> None:
         general_mapping.save()
 
 
-def check_interval_and_sync_dimension(workspace: Workspace, refresh_token: str) -> bool:
+def check_interval_and_sync_dimension(workspace: Workspace, fyle_credentials: FyleCredential) -> bool:
     """
     Check sync interval and sync dimension
     :param workspace: Workspace Instance
@@ -77,21 +78,19 @@ def check_interval_and_sync_dimension(workspace: Workspace, refresh_token: str) 
         time_interval = datetime.now(timezone.utc) - workspace.source_synced_at
 
     if workspace.source_synced_at is None or time_interval.days > 0:
-        sync_dimensions(refresh_token, workspace.id)
+        sync_dimensions(fyle_credentials, workspace.id)
         return True
 
     return False
 
 
-def sync_dimensions(refresh_token: str, workspace_id: int) -> None:
-    fyle_connection = import_string('apps.fyle.connector.FyleConnector')(refresh_token, workspace_id)
-    fyle_platform_connection = import_string('apps.fyle.platform_connector.FylePlatformConnector')(refresh_token, workspace_id)
+def sync_dimensions(fyle_credentials: FyleCredential, workspace_id: int) -> None:
+    fyle_connection = import_string('apps.fyle.connector.FyleConnector')(fyle_credentials.refresh_token, workspace_id)
+    platform = PlatformConnector(fyle_credentials)
     dimensions = [
         'employees', 'categories', 'cost_centers',
         'projects', 'expense_custom_fields'
     ]
-
-    platform_dimensions = ['tax_groups']
 
     for dimension in dimensions:
         try:
@@ -100,9 +99,4 @@ def sync_dimensions(refresh_token: str, workspace_id: int) -> None:
         except Exception as exception:
             logger.exception(exception)
 
-    for platform_dimension in platform_dimensions:
-        try:
-            sync_platform = getattr(fyle_platform_connection, 'sync_{}'.format(platform_dimension))
-            sync_platform()
-        except Exception as exception:
-            logger.exception(exception)
+    platform.tax_groups.sync()

@@ -71,5 +71,6 @@ def add_fyle_credentials(db):
     for workspace_id in workspaces:
         FyleCredential.objects.create(
             refresh_token=settings.FYLE_REFRESH_TOKEN,
-            workspace_id=workspace_id
+            workspace_id=workspace_id,
+            cluster_domain='https://staging.fyle.tech/'
         )
