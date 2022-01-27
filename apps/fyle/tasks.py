@@ -66,10 +66,14 @@ def create_expense_groups(workspace_id: int, fund_source: List[str], task_log: T
             for source in fund_source:
                 source_account_type.append(SOURCE_ACCOUNT_MAP[source])
 
+            filter_credit_expenses = True
+            if expense_group_settings.import_card_credits:
+                filter_credit_expenses = False
+
             expenses = platform.expenses.get(
-                source_account_type, expense_group_settings.expense_state, last_synced_at, False
+                source_account_type, expense_group_settings.expense_state, last_synced_at, filter_credit_expenses
             )
-    
+
             if expenses:
                 workspace.last_synced_at = datetime.now()
                 workspace.save()
