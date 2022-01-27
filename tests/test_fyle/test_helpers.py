@@ -24,7 +24,7 @@ def test_update_import_card_credits_flag():
     expense_group_setting = ExpenseGroupSettings.objects.get(id=1)
     assert expense_group_setting.import_card_credits == False
 
-    update_import_card_credits_flag('EXPENSE REPORT', 'EXPENSE REPORT' 1)
+    update_import_card_credits_flag('EXPENSE REPORT', 'EXPENSE REPORT', 1)
     expense_group_setting = ExpenseGroupSettings.objects.get(id=1)
 
     assert expense_group_setting.import_card_credits == True
