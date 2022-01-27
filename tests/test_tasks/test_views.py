@@ -19,6 +19,3 @@ def test_task_view(api_client, test_connection, create_task_logs):
        'status': 'IN_PROGRESS'
    })
    assert response.status_code == 500
-   #response = json.loads(response.content)
-
-   #assert response['count'] == 1

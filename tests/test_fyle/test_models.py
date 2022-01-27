@@ -12,7 +12,7 @@ def test_create_expense(create_temp_workspace):
     )
 
     expense = Expense.objects.filter(org_id='orf6t6jWUnpx')
-    assert len(expense) == 5
+    assert len(expense) == 6
 
     expense = expense.last()
     assert expense.employee_email == 'admin1@fylefornt.com'
