@@ -390,6 +390,7 @@ class Reimbursement(models.Model):
         attributes_to_be_updated = []
 
         for reimbursement in reimbursements:
+            reimbursement['state'] = 'COMPLETE' if reimbursement['is_paid'] else 'PENDING'
             if reimbursement['id'] not in existing_reimbursement_ids:
                 attributes_to_be_created.append(
                     Reimbursement(
