@@ -325,7 +325,7 @@ class ExpenseGroup(models.Model):
         expense_groups = _group_expenses(reimbursable_expenses, reimbursable_expense_group_fields, workspace_id)
 
         corporate_credit_card_expense_group_field = expense_group_settings.corporate_credit_card_expense_group_fields
-        corporate_credit_card_expenses = list(filter(lambda expense: expense.fund_source == 'CCC' and expense.amount > 0, expense_objects))
+        corporate_credit_card_expenses = list(filter(lambda expense: expense.fund_source == 'CCC', expense_objects))
 
         corporate_credit_card_expense_groups = _group_expenses(
             corporate_credit_card_expenses, corporate_credit_card_expense_group_field, workspace_id)
