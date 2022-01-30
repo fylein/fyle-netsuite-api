@@ -42,10 +42,10 @@ def schedule_expense_group_creation(workspace_id: int):
     if configuration.corporate_credit_card_expenses_object is not None:
         fund_source.append('CCC')
 
-    async_task('apps.fyle.tasks.create_expense_groups', workspace_id, fund_source, task_log)
+    async_task('apps.fyle.tasks.create_expense_groups', workspace_id, configuration, fund_source, task_log)
 
 
-def create_expense_groups(workspace_id: int, fund_source: List[str], task_log: TaskLog):
+def create_expense_groups(workspace_id: int, configuration: Configuration, fund_source: List[str], task_log: TaskLog):
     """
     Create expense groups
     :param task_log: Task log object
@@ -85,7 +85,7 @@ def create_expense_groups(workspace_id: int, fund_source: List[str], task_log: T
             expense_objects = Expense.create_expense_objects(expenses, workspace_id)
 
             ExpenseGroup.create_expense_groups_by_report_id_fund_source(
-                expense_objects, workspace_id
+                expense_objects, configuration, workspace_id
             )
 
             task_log.status = 'COMPLETE'
