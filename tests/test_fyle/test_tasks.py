@@ -4,6 +4,7 @@ from fyle_integrations_platform_connector import PlatformConnector
 from apps.fyle.models import ExpenseGroup, Expense
 from apps.tasks.models import TaskLog
 from apps.fyle.tasks import create_expense_groups, schedule_expense_group_creation
+from apps.workspaces.models import Configuration
 from .fixtures import data
 
 
@@ -18,12 +19,14 @@ def test_create_expense_group(mocker, add_fyle_credentials):
         }
     )
 
+    configuration = Configuration.objects.get(workspace_id=1)
+
     mocker.patch(
         'fyle_integrations_platform_connector.PlatformConnector',
         return_value=data['expenses']
     )
 
-    create_expense_groups(1, ['PERSONAL', 'CCC'], task_log)
+    create_expense_groups(1, configuration, ['PERSONAL', 'CCC'], task_log)
 
     expense_group = ExpenseGroup.objects.filter(workspace_id=1)
     expenses = Expense.objects.filter(org_id='or79Cob97KSh')
