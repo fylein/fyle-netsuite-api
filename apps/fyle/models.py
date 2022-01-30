@@ -303,7 +303,7 @@ class ExpenseGroup(models.Model):
         db_table = 'expense_groups'
 
     @staticmethod
-    def create_expense_groups_by_report_id_fund_source(expense_objects: List[Expense], workspace_id):
+    def create_expense_groups_by_report_id_fund_source(expense_objects: List[Expense], configuration: Configuration, workspace_id):
         """
         Group expense by report_id and fund_source
         """
