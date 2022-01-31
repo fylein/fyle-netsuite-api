@@ -7605,10 +7605,10 @@ COPY public.employee_mappings (id, created_at, updated_at, destination_card_acco
 COPY public.expense_attributes (id, attribute_type, display_name, value, source_id, created_at, updated_at, workspace_id, active, detail, auto_mapped, auto_created) FROM stdin;
 1	EMPLOYEE	Employee	approver1@fyleforgotham.in	ouMvD0iJ0pXK	2021-11-15 08:55:47.714918+00	2021-11-15 08:55:47.714944+00	1	\N	{"user_id": "usAsCHVckAu8", "location": null, "full_name": "Ryan Gallagher", "department": null, "department_id": null, "employee_code": null, "department_code": null}	f	f
 2	EMPLOYEE	Employee	owner@fyleforgotham.in	ouT4EarnaThA	2021-11-15 08:55:47.714989+00	2021-11-15 08:55:47.715+00	1	\N	{"user_id": "uspg0D51Nts1", "location": null, "full_name": "Fyle For Arkham Asylum", "department": null, "department_id": null, "employee_code": null, "department_code": null}	f	f
-3	EMPLOYEE	Employee	admin1@fyleforgotham.in	ouECRFhw3AjY	2021-11-15 08:55:47.715039+00	2021-11-15 08:55:47.715049+00	1	\N	{"user_id": "usnplBhNoBFN", "location": null, "full_name": "Theresa Brown", "department": null, "department_id": null, "employee_code": null, "department_code": null}	f	f
+3	EMPLOYEE	Employee	Paul Blancaflor	ouECRFhw3AjY	2021-11-15 08:55:47.715039+00	2021-11-15 08:55:47.715049+00	1	\N	{"user_id": "usnplBhNoBFN", "location": null, "full_name": "Theresa Brown", "department": null, "department_id": null, "employee_code": null, "department_code": null}	f	f
 4	EMPLOYEE	Employee	user10@fyleforgotham.in	ou7yyjvEaliS	2021-11-15 08:55:47.715087+00	2021-11-15 08:55:47.715096+00	1	\N	{"user_id": "usH1U6GUQgbT", "location": null, "full_name": "Matthew Estrada", "department": "Department 4", "department_id": "depttugt5POp4K", "employee_code": null, "department_code": null}	f	f
 5	EMPLOYEE	Employee	user1@fyleforgotham.in	ouVT4YfloipJ	2021-11-15 08:55:47.715134+00	2021-11-15 08:55:47.715144+00	1	\N	{"user_id": "usRKNmaNoXTy", "location": null, "full_name": "Joshua Wood", "department": "Department 2", "department_id": "deptgZF9aUB0tH", "employee_code": null, "department_code": null}	f	f
-6	EMPLOYEE	Employee	user2@fyleforgotham.in	ou8TYuw4AxVG	2021-11-15 08:55:47.715183+00	2021-11-15 08:55:47.715193+00	1	\N	{"user_id": "usBlCjf2LQFc", "location": null, "full_name": "Brian Foster", "department": "Department 1", "department_id": "deptDhMjvs45aT", "employee_code": null, "department_code": null}	f	f
+6	EMPLOYEE	Employee	user2@fyleforxyzcorp.in	ou8TYuw4AxVG	2021-11-15 08:55:47.715183+00	2021-11-15 08:55:47.715193+00	1	\N	{"user_id": "usBlCjf2LQFc", "location": null, "full_name": "Brian Foster", "department": "Department 1", "department_id": "deptDhMjvs45aT", "employee_code": null, "department_code": null}	f	f
 7	EMPLOYEE	Employee	user3@fyleforgotham.in	ounUmTSUyiHX	2021-11-15 08:55:47.715232+00	2021-11-15 08:55:47.715241+00	1	\N	{"user_id": "usYH6d98zJGT", "location": null, "full_name": "Natalie Pope", "department": "Department 1", "department_id": "deptDhMjvs45aT", "employee_code": null, "department_code": null}	f	f
 8	EMPLOYEE	Employee	user4@fyleforgotham.in	ouEetwpFkf3F	2021-11-15 08:55:47.715279+00	2021-11-15 08:55:47.715288+00	1	\N	{"user_id": "usXk2TVwvJCf", "location": null, "full_name": "Samantha Washington", "department": "Department 3", "department_id": "dept0DswoMIby7", "employee_code": null, "department_code": null}	f	f
 9	EMPLOYEE	Employee	user5@fyleforgotham.in	ouwVEj13iF6S	2021-11-15 08:55:47.715326+00	2021-11-15 08:55:47.715336+00	1	\N	{"user_id": "usJNh5yEotAI", "location": null, "full_name": "Chris Curtis", "department": "Department 1", "department_id": "deptDhMjvs45aT", "employee_code": null, "department_code": null}	f	f
@@ -11078,6 +11078,7 @@ COPY public.expense_attributes (id, attribute_type, display_name, value, source_
 3683	PROJECT	Project	Wedding Planning by Whitney	253935	2021-12-03 11:03:52.184396+00	2021-12-03 11:03:52.184399+00	49	\N	\N	f	f
 3684	PROJECT	Project	Weiskopf Consulting	253936	2021-12-03 11:03:52.184409+00	2021-12-03 11:03:52.184412+00	49	\N	\N	f	f
 3518	EMPLOYEE	Employee	admin1@fyleforintacct.in	ou2PxC3ZXTod	2021-12-03 11:03:50.389746+00	2021-12-03 11:24:32.423242+00	49	\N	{"user_id": "usew3kRJEgcR", "location": null, "full_name": "Theresa Brown", "department": null, "department_id": null, "employee_code": null, "department_code": null}	f	f
+4230	DUMMY	Dummy	Custom Field	253236345	2021-12-03 11:03:52.184409+00	2021-12-03 11:03:52.184412+00	49	\N	\N	f	f
 \.
 
 
@@ -11097,10 +11098,10 @@ COPY public.expense_group_settings (id, reimbursable_expense_group_fields, corpo
 --
 
 COPY public.expense_groups (id, description, created_at, updated_at, workspace_id, fund_source, exported_at, response_logs) FROM stdin;
-1	{"report_id": "rpuN3bgphxbK", "fund_source": "PERSONAL", "claim_number": "C/2021/11/R/5", "employee_email": "ashwin.t@fyle.in"}	2021-11-15 10:29:07.618062+00	2021-11-15 11:02:55.125634+00	1	PERSONAL	2021-11-15 11:02:55.125205+00	{"name": null, "type": "expenseReport", "externalId": "03294720937402397402937", "internalId": "116142"}
-2	{"report_id": "rpHLA9Dfp9hN", "fund_source": "CCC", "claim_number": "C/2021/11/R/6", "employee_email": "ashwin.t@fyle.in"}	2021-11-15 13:12:12.275539+00	2021-11-15 13:27:27.538211+00	1	CCC	2021-11-15 13:27:27.537955+00	{"name": null, "type": "vendorBill", "externalId": "1209340fibhnase9rfghwq9e8ug", "internalId": "116242"}
+1	{"report_id": "rpuN3bgphxbK", "fund_source": "PERSONAL", "claim_number": "C/2021/11/R/5", "employee_email": "ashwin.t@fyle.in"}	2021-11-15 10:29:07.618062+00	2021-11-15 11:02:55.125634+00	1	PERSONAL	\N	\N
+2	{"report_id": "rpHLA9Dfp9hN", "fund_source": "CCC", "claim_number": "C/2021/11/R/6", "employee_email": "ashwin.t@fyle.in"}	2021-11-15 13:12:12.275539+00	2021-11-15 13:27:27.538211+00	1	CCC	\N	\N
 3	{"report_id": "rpu5W0LYrk6e", "fund_source": "PERSONAL", "claim_number": "C/2021/11/R/2", "employee_email": "ashwin.t@fyle.in"}	2021-11-16 04:25:49.206777+00	2021-11-16 04:25:49.206809+00	2	PERSONAL	\N	\N
-4	{"spent_at": "2021-11-16", "report_id": "rprqDvARHUnv", "expense_id": "txMLGb6Xy8m8", "fund_source": "CCC", "claim_number": "C/2021/11/R/1", "employee_email": "ashwin.t@fyle.in"}	2021-11-16 04:25:49.226855+00	2021-11-16 04:48:07.295895+00	2	CCC	2021-11-16 04:48:07.295667+00	{"success": true, "internalId": 116343}
+4	{"spent_at": "2021-11-16", "report_id": "rprqDvARHUnv", "expense_id": "txMLGb6Xy8m8", "fund_source": "CCC", "claim_number": "C/2021/11/R/1", "employee_email": "ashwin.t@fyle.in"}	2021-11-16 04:25:49.226855+00	2021-11-16 04:25:49.226855+00	2	CCC	\N	\N
 47	{"report_id": "rpXqCutQj85N", "fund_source": "PERSONAL", "claim_number": "C/2021/12/R/1", "employee_email": "admin1@fyleforintacct.in"}	2021-12-03 11:26:58.731339+00	2021-12-03 11:26:58.731398+00	49	PERSONAL	\N	\N
 48	{"report_id": "rpXqCutQj85N", "expense_id": "txcKVVELn1Vl", "fund_source": "CCC", "claim_number": "C/2021/12/R/1", "employee_email": "admin1@fyleforintacct.in"}	2021-12-03 11:26:58.746214+00	2021-12-03 11:26:58.746248+00	49	CCC	\N	\N
 \.
@@ -11192,11 +11193,11 @@ COPY public.journal_entry_lineitems (id, debit_account_id, account_id, departmen
 COPY public.mapping_settings (id, source_field, destination_field, created_at, updated_at, workspace_id, import_to_fyle, is_custom) FROM stdin;
 1	TAX_GROUP	TAX_ITEM	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	2	f	f
 5	PROJECT	PROJECT	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	1	f	f
-6	COST_CENTER	COST_CENTER	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	1	f	f
+6	COST_CENTER	DEPARTMENT	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	1	t	f
+10	DUMMY	ASHWINTEST1	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	49	t	t
 \.
 
-
---
+--f
 -- Data for Name: mappings; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 

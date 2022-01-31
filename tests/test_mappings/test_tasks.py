@@ -1,11 +1,12 @@
 import pytest
 from django_q.models import Schedule
-from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute, CategoryMapping, Mapping, MappingSetting
+from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute, CategoryMapping, \
+     Mapping, MappingSetting, EmployeeMapping
 import fylesdk
 from apps.netsuite.connector import NetSuiteConnector
-from apps.workspaces.models import NetSuiteCredentials
-from apps.mappings.tasks import auto_create_category_mappings, auto_create_cost_center_mappings, auto_create_project_mappings, create_fyle_cost_centers_payload, create_fyle_expense_custom_field_payload, create_fyle_projects_payload, create_fyle_tax_group_payload, filter_unmapped_destinations, remove_duplicates, create_fyle_categories_payload, \
-    construct_filter_based_on_destination, schedule_categories_creation, schedule_cost_centers_creation, schedule_fyle_attributes_creation, sync_expense_categories_and_accounts, upload_categories_to_fyle
+from apps.workspaces.models import Configuration, NetSuiteCredentials
+from apps.mappings.tasks import async_auto_create_custom_field_mappings, async_auto_map_employees, auto_create_category_mappings, auto_create_cost_center_mappings, auto_create_project_mappings, create_fyle_cost_centers_payload, create_fyle_expense_custom_field_payload, create_fyle_projects_payload, create_fyle_tax_group_payload, filter_unmapped_destinations, remove_duplicates, create_fyle_categories_payload, \
+    construct_filter_based_on_destination, schedule_auto_map_employees, schedule_categories_creation, schedule_cost_centers_creation, schedule_fyle_attributes_creation, sync_expense_categories_and_accounts, upload_categories_to_fyle
 from .fixtures import data
 
 def test_remove_duplicates(db):
@@ -201,5 +202,44 @@ def test_auto_create_cost_center_mappings(db, mocker, add_fyle_credentials, add_
     response = auto_create_cost_center_mappings(workspace_id=1)
     assert response == None
 
-    cost_center = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='COST_CENTER').count()
-    mappings = Mapping.objects.filter(workspace_id=1, destination_type='COST_CENTER').count()
+    cost_center = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='DEPARTMENT').count()
+    mappings = Mapping.objects.filter(workspace_id=1, source_type='COST_CENTER').count()
+
+    assert cost_center == 12
+    assert mappings == 1
+
+
+def test_schedule_fyle_attributes_creation(db, mocker, add_netsuite_credentials, add_fyle_credentials):
+
+    schedule_fyle_attributes_creation(49)
+
+    mocker.patch(
+            'fylesdk.apis.fyle_v1.expenses_custom_fields.ExpensesCustomFields.post',
+            return_value=[]
+    )
+    schedule = Schedule.objects.last()
+    assert schedule.func == 'apps.mappings.tasks.async_auto_create_custom_field_mappings'
+
+    async_auto_create_custom_field_mappings(49)
+
+    custom_fields = DestinationAttribute.objects.filter(attribute_type='ASHWINTEST1').count()
+    custom_fields_mappings = Mapping.objects.filter(source_type='DUMMY').count()
+
+    assert custom_fields == custom_fields_mappings
+
+
+def test_schedule_auto_map_employees(db, add_netsuite_credentials, add_fyle_credentials):
+
+    configuration = Configuration.objects.get(workspace_id=1)
+    configuration.auto_map_employees = 'NAME'
+    configuration.save()
+
+    schedule_auto_map_employees(employee_mapping_preference='NAME', workspace_id=1)
+
+    schedule = Schedule.objects.last()
+    assert schedule.func == 'apps.mappings.tasks.async_auto_map_employees'
+
+    async_auto_map_employees(1)
+
+    employee_mappings = EmployeeMapping.objects.filter(workspace_id=1).count()
+    assert employee_mappings == 1  #Todo: Will Fix this Later

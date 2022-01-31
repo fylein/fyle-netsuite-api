@@ -1,5 +1,3 @@
-from os import access
-from urllib import response
 import pytest
 import json
 
@@ -34,7 +32,7 @@ def test_expense_group_view(api_client, test_connection):
       'state': 'READY'
    })
    response = json.loads(response.content)
-   assert response == {'count': 1, 'next': None, 'previous': None, 'results': [{'id': 1, 'fund_source': 'PERSONAL', 'description': {'report_id': 'rpuN3bgphxbK', 'fund_source': 'PERSONAL', 'claim_number': 'C/2021/11/R/5', 'employee_email': 'ashwin.t@fyle.in'}, 'response_logs': {'name': None, 'type': 'expenseReport', 'externalId': '03294720937402397402937', 'internalId': '116142'}, 'created_at': '2021-11-15T10:29:07.618062Z', 'exported_at': '2021-11-15T11:02:55.125205Z', 'updated_at': '2021-11-15T11:02:55.125634Z', 'workspace': 1, 'expenses': [1]}]}
+   assert response == {'count': 1, 'next': None, 'previous': None, 'results': [{'id': 1, 'fund_source': 'PERSONAL', 'description': {'report_id': 'rpuN3bgphxbK', 'fund_source': 'PERSONAL', 'claim_number': 'C/2021/11/R/5', 'employee_email': 'ashwin.t@fyle.in'}, 'response_logs': None, 'created_at': '2021-11-15T10:29:07.618062Z', 'exported_at': None, 'updated_at': '2021-11-15T11:02:55.125634Z', 'workspace': 1, 'expenses': [1]}]}
 
 
 
