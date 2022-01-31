@@ -47,7 +47,7 @@ def test_destination_attribute_view(api_client, test_connection):
    assert response.status_code == 200
    response = json.loads(response.content)
 
-   assert response == data['destination_attributes']
+   assert response[0] == data['destination_attributes'][0]
 
 
 @pytest.mark.parametrize(

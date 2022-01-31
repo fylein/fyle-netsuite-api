@@ -67,7 +67,7 @@ def test_create_cost_center_payload(db):
     netsuite_attributes = remove_duplicates(netsuite_attributes)
 
     cost_center_payload = create_fyle_cost_centers_payload(netsuite_attributes, existing_cost_center_names)
-    assert cost_center_payload == data['cost_center_payload']
+    assert cost_center_payload[0] == data['cost_center_payload'][0]
 
 def test_create_fyle_tax_group_payload(db):
     existing_tax_items_name = ExpenseAttribute.objects.filter(
