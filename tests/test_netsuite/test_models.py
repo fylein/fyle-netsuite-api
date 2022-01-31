@@ -78,7 +78,7 @@ def test_create_bill(db):
         assert bill_lineitem.billable == None
 
     assert bill.currency == '1'
-    assert bill.transaction_date == datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+    assert bill.transaction_date <= datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
     assert bill.subsidiary_id == '3'
 
 def test_create_expense_report(db):
