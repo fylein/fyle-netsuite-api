@@ -1,5 +1,4 @@
 import logging
-from sys import platform
 import traceback
 from datetime import datetime, timedelta
 
