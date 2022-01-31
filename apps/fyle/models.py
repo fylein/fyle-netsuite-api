@@ -14,7 +14,7 @@ from django.db.models import Count, Q, JSONField
 
 from fyle_accounting_mappings.models import ExpenseAttribute
 
-from apps.workspaces.models import Workspace
+from apps.workspaces.models import Configuration, Workspace
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -303,19 +303,37 @@ class ExpenseGroup(models.Model):
         db_table = 'expense_groups'
 
     @staticmethod
-    def create_expense_groups_by_report_id_fund_source(expense_objects: List[Expense], workspace_id):
+    def create_expense_groups_by_report_id_fund_source(expense_objects: List[Expense], configuration: Configuration, workspace_id):
         """
         Group expense by report_id and fund_source
         """
         expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=workspace_id)
 
         reimbursable_expense_group_fields = expense_group_settings.reimbursable_expense_group_fields
+
         reimbursable_expenses = list(filter(lambda expense: expense.fund_source == 'PERSONAL', expense_objects))
+
+        if configuration.reimbursable_expenses_object == 'EXPENSE REPORT':
+            total_amount = 0
+            for expense in reimbursable_expenses:
+                total_amount += expense.amount
+
+            if total_amount < 0:
+                reimbursable_expenses = list(filter(lambda expense: expense.amount > 0, reimbursable_expenses))
+        
+        else:
+            reimbursable_expenses = list(filter(lambda expense: expense.amount > 0, reimbursable_expenses))
 
         expense_groups = _group_expenses(reimbursable_expenses, reimbursable_expense_group_fields, workspace_id)
 
         corporate_credit_card_expense_group_field = expense_group_settings.corporate_credit_card_expense_group_fields
+
         corporate_credit_card_expenses = list(filter(lambda expense: expense.fund_source == 'CCC', expense_objects))
+
+        if configuration.corporate_credit_card_expenses_object != 'EXPENSE REPORT':
+            corporate_credit_card_expenses = list(filter(lambda expense: expense.amount > 0, corporate_credit_card_expenses))
+
+
         corporate_credit_card_expense_groups = _group_expenses(
             corporate_credit_card_expenses, corporate_credit_card_expense_group_field, workspace_id)
 
