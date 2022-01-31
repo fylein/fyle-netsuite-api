@@ -15,15 +15,6 @@ def test_get_profile_view(api_client, test_connection):
     response = api_client.get(url)
     assert response.status_code == 200
 
-@pytest.mark.django_db(databases=['default'])
-def test_get_cluster_domain_view(api_client, test_connection):
-    access_token = test_connection.access_token
-    url = reverse('domain')
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
-
-    response = api_client.get(url)
-    assert response.status_code == 200
-    assert response.content == b'"https://staging.fyle.tech"'
 
 @pytest.mark.django_db(databases=['default'])
 def test_get_fyle_orgs_view(api_client, test_connection):

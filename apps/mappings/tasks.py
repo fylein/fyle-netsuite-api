@@ -79,7 +79,6 @@ def upload_categories_to_fyle(workspace_id: int, reimbursable_expenses_object: s
     netsuite_credentials: NetSuiteCredentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
     fyle_connection = FyleConnector(
         refresh_token=fyle_credentials.refresh_token,
-        workspace_id=workspace_id
     )
     
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
@@ -479,7 +478,6 @@ def auto_create_project_mappings(workspace_id):
 
         fyle_connection = FyleConnector(
             refresh_token=fyle_credentials.refresh_token,
-            workspace_id=workspace_id
         )
 
         platform = PlatformConnector(fyle_credentials=fyle_credentials)
@@ -692,7 +690,6 @@ def auto_create_cost_center_mappings(workspace_id):
 
         fyle_connection = FyleConnector(
             refresh_token=fyle_credentials.refresh_token,
-            workspace_id=workspace_id
         )
 
         platform = PlatformConnector(fyle_credentials=fyle_credentials)
@@ -789,7 +786,7 @@ def upload_attributes_to_fyle(workspace_id: int, netsuite_attribute_type: str, f
     """
     fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
 
-    fyle_connection = FyleConnector(refresh_token=fyle_credentials.refresh_token, workspace_id=workspace_id)
+    fyle_connection = FyleConnector(refresh_token=fyle_credentials.refresh_token)
 
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
