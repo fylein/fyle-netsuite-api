@@ -313,7 +313,7 @@ class ExpenseGroup(models.Model):
 
         reimbursable_expenses = list(filter(lambda expense: expense.fund_source == 'PERSONAL', expense_objects))
 
-        if configuration.reimbursable_expenses_object == 'EXPENSE REPORT':
+        if configuration.reimbursable_expenses_object == 'EXPENSE REPORT' and 'expense_id' not in reimbursable_expense_group_fields:
             total_amount = 0
             for expense in reimbursable_expenses:
                 total_amount += expense.amount
