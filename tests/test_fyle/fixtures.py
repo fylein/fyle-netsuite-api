@@ -165,7 +165,7 @@ data = {
             "activity_policy_pending": None,
             "activity_details": None,
             "locations": [],
-            "custom_properties": [{"name": "Custom Expense Field", "value": None}],
+            "custom_properties": [{"name": "User Dimension", "value": "Nilesh"}],
         },
         {
             "id": "txlHKf7pg8ok",
@@ -560,12 +560,26 @@ data = {
         "expenses": [1],
     },
     "expense_group_setting_payload": {
-        "reimbursable_expense_group_fields": ["claim_number"],
-        "corporate_credit_card_expense_group_fields": ["expense_id"],
-        "expenses_grouped_by": ["claim_number"],
-        "expense_state": "PAID",
-        "reimbursable_export_date_type": "current_date",
-        "ccc_export_date_type": "spent_at"
+        "id":1,
+        "reimbursable_expense_group_fields":[
+            "employee_email",
+            "report_id",
+            "claim_number",
+            "fund_source"
+        ],
+        "corporate_credit_card_expense_group_fields":[
+            "employee_email",
+            "report_id",
+            "claim_number",
+            "fund_source"
+        ],
+        "expense_state":"PAYMENT_PROCESSING",
+        "reimbursable_export_date_type":"current_date",
+        "ccc_export_date_type":"current_date",
+        "import_card_credits":"false",
+        "created_at":"2021-11-15T08:46:16.069944Z",
+        "updated_at":"2021-11-15T08:46:16.069986Z",
+        "workspace":1
     },
     "fyle_orgs": [
         {
@@ -589,4 +603,58 @@ data = {
             "dwolla_customers_metadata_id": "dcmFudU7eReqs",
         }
     ],
+    'expense_attributes':
+    [{
+        'id': 3235,
+        'attribute_type': 'FYLE_CATEGORY',
+        'display_name': 'Fyle Category',
+        'value': 'Category 1',
+        'source_id': 'expense_custom_field.fyle category.1',
+        'auto_mapped': False,
+        'auto_created': False,
+        'active': None,
+        'detail': {'custom_field_id': 104346},
+        'created_at': '2021-11-16T04:17:43.787712Z',
+        'updated_at': '2021-11-16T04:17:43.787737Z',
+        'workspace': 2,
+    }, {
+        'id': 3236,
+        'attribute_type': 'FYLE_CATEGORY',
+        'display_name': 'Fyle Category',
+        'value': 'Category 2',
+        'source_id': 'expense_custom_field.fyle category.2',
+        'auto_mapped': False,
+        'auto_created': False,
+        'active': None,
+        'detail': {'custom_field_id': 104346},
+        'created_at': '2021-11-16T04:17:43.787784Z',
+        'updated_at': '2021-11-16T04:17:43.787793Z',
+        'workspace': 2,
+    }, {
+        'id': 3237,
+        'attribute_type': 'FYLE_CATEGORY',
+        'display_name': 'Fyle Category',
+        'value': 'Category 3',
+        'source_id': 'expense_custom_field.fyle category.3',
+        'auto_mapped': False,
+        'auto_created': False,
+        'active': None,
+        'detail': {'custom_field_id': 104346},
+        'created_at': '2021-11-16T04:17:43.787828Z',
+        'updated_at': '2021-11-16T04:17:43.787836Z',
+        'workspace': 2,
+    }, {
+        'id': 3238,
+        'attribute_type': 'FYLE_CATEGORY',
+        'display_name': 'Fyle Category',
+        'value': 'Category 4',
+        'source_id': 'expense_custom_field.fyle category.4',
+        'auto_mapped': False,
+        'auto_created': False,
+        'active': None,
+        'detail': {'custom_field_id': 104346},
+        'created_at': '2021-11-16T04:17:43.787870Z',
+        'updated_at': '2021-11-16T04:17:43.787878Z',
+        'workspace': 2,
+    }]
 }
