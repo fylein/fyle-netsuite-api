@@ -67,7 +67,6 @@ def add_netsuite_credentials(db):
 @pytest.fixture()
 def add_fyle_credentials(db):
     workspaces = [1,2,49]
-
     for workspace_id in workspaces:
         FyleCredential.objects.create(
             refresh_token=settings.FYLE_REFRESH_TOKEN,

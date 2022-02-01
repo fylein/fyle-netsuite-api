@@ -1,5 +1,5 @@
 import pytest
-from apps.fyle.models import Reimbursement, Expense
+from apps.fyle.models import ExpenseGroupSettings, Reimbursement, Expense
 
 from apps.workspaces.models import FyleCredential
 from apps.fyle.connector import FyleConnector
@@ -20,6 +20,14 @@ def test_get_of_expenses(add_fyle_credentials):
 
     assert len(personal_expenses) == 4
     assert len(ccc_expenses) == 2
+
+    expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=1)
+    expense_group_settings.import_card_credits = False
+
+    personal_expenses = fyle_connector.get_expenses(
+        state=['PAYMENT_PROCESSING'], settled_at=[], updated_at=[], fund_source=['PERSONAL']
+    )
+    assert len(personal_expenses) == 4
 
 @pytest.mark.django_db()
 def test_sync_reimbursements(add_fyle_credentials):
@@ -86,8 +94,8 @@ def test_get_attachments(add_fyle_credentials):
     fyle_credentials = FyleCredential.objects.get(workspace_id=1)
     fyle_connector = FyleConnector(fyle_credentials.refresh_token, 1)
 
-    attachment = fyle_connector.get_attachment(1)
-    assert attachment==None   #later will create an expense with attachments
+    attachment = fyle_connector.get_attachment('tx3asPlm9wyF')
+    assert attachment['filename'] == 'Accidentals.pdf'
 
 @pytest.mark.django_db()
 def test_sync_employees(add_fyle_credentials):

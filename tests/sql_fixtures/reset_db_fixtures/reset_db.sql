@@ -2397,9 +2397,7 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 37	EXPENSE_CATEGORY	Expense Category	Training	31	2021-11-15 08:55:49.060093+00	2021-11-15 08:55:49.060102+00	1	\N	{"account_name": "6010 Advertising", "account_internal_id": "65"}	f
 38	EXPENSE_CATEGORY	Expense Category	Utility	32	2021-11-15 08:55:49.060138+00	2021-11-15 08:55:49.060147+00	1	\N	{"account_name": "6010 Advertising", "account_internal_id": "65"}	f
 39	EXPENSE_CATEGORY	Expense Category	New Category	33	2021-11-15 08:55:49.060184+00	2021-11-15 08:55:49.060193+00	1	\N	{"account_name": "6010 Advertising", "account_internal_id": "65"}	f
-40	EXPENSE_CATEGORY	Expense Category	Aus Category	34	2021-11-15 08:55:49.060263+00	2021-11-15 08:55:49.060275+00	1	\N	{"account_name": "6010 Advertising", "account_internal_id": "65"}	f
 41	EXPENSE_CATEGORY	Expense Category	Travel - Automobile	35	2021-11-15 08:55:49.06031+00	2021-11-15 08:55:49.06032+00	1	\N	{"account_name": "6020 Automobile Expense", "account_internal_id": "67"}	f
-42	EXPENSE_CATEGORY	Expense Category	UK Expense Category	36	2021-11-15 08:55:49.060355+00	2021-11-15 08:55:49.060364+00	1	\N	{"account_name": "1234112212 UK Expense Acct : UK EXP Account", "account_internal_id": "237"}	f
 43	LOCATION	Location	02: Boston	1	2021-11-15 08:55:50.532769+00	2021-11-15 08:55:50.532805+00	1	\N	\N	f
 44	LOCATION	Location	01: San Francisco	2	2021-11-15 08:55:50.532872+00	2021-11-15 08:55:50.532891+00	1	\N	\N	f
 45	LOCATION	Location	Overstock	3	2021-11-15 08:55:50.532953+00	2021-11-15 08:55:50.532969+00	1	\N	\N	f
@@ -2456,8 +2454,6 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 96	EMPLOYEE	Employee	Jan Bucoy	1640	2021-11-15 08:56:02.248006+00	2021-11-15 08:56:02.248025+00	1	\N	{"email": "jbucoy@netsuite.com", "class_id": null, "location_id": null, "department_id": null}	f
 97	EMPLOYEE	Employee	Terry Chan	1644	2021-11-15 08:56:02.248097+00	2021-11-15 08:56:02.248114+00	1	\N	{"email": "Siva@fyle.in", "class_id": null, "location_id": null, "department_id": null}	f
 98	EMPLOYEE	Employee	Shwetabh  Kumar	1676	2021-11-15 08:56:02.248184+00	2021-11-15 08:56:02.248201+00	1	\N	{"email": null, "class_id": null, "location_id": null, "department_id": null}	f
-99	EMPLOYEE	Employee	Ashwinnnnnn	3081	2021-11-15 08:56:02.248271+00	2021-11-15 08:56:02.248289+00	1	\N	{"email": "user5@fyleforxyzcorp.in", "class_id": null, "location_id": null, "department_id": null}	f
-100	EMPLOYEE	Employee	Nillesh Pant	3281	2021-11-15 08:56:02.248357+00	2021-11-15 08:56:02.248374+00	1	\N	{"email": "user2@fyleforxyzcorp.in", "class_id": null, "location_id": null, "department_id": null}	f
 101	EMPLOYEE	Employee	James Bond	11104	2021-11-15 08:56:02.248442+00	2021-11-15 08:56:02.248459+00	1	\N	{"email": "user2@fylefornileshfyle.in", "class_id": null, "location_id": null, "department_id": null}	f
 102	EMPLOYEE	Employee	Nil Sun	13812	2021-11-15 08:56:02.248527+00	2021-11-15 08:56:02.248544+00	1	\N	{"email": null, "class_id": null, "location_id": null, "department_id": null}	f
 103	BANK_ACCOUNT	Bank Account	Checking	1	2021-11-15 08:56:05.153711+00	2021-11-15 08:56:05.153751+00	1	\N	\N	f
@@ -2888,7 +2884,6 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 526	ACCOUNT	Account	Pay As You Go Withholding	225	2021-11-15 08:56:05.410666+00	2021-11-15 08:56:05.410682+00	1	\N	\N	f
 527	ACCOUNT	Account	VAT on Purchases	231	2021-11-15 08:56:05.410739+00	2021-11-15 08:56:05.410755+00	1	\N	\N	f
 528	ACCOUNT	Account	UK Expense Acct	235	2021-11-15 08:56:05.410811+00	2021-11-15 08:56:05.410828+00	1	\N	\N	f
-529	ACCOUNT	Account	UK EXP Account	237	2021-11-15 08:56:05.414262+00	2021-11-15 08:56:05.414297+00	1	\N	\N	f
 530	VENDOR_PAYMENT_ACCOUNT	Vendor Payment Account	Checking	1	2021-11-15 08:56:05.492892+00	2021-11-15 08:56:05.492931+00	1	\N	\N	f
 531	VENDOR_PAYMENT_ACCOUNT	Vendor Payment Account	Savings	2	2021-11-15 08:56:05.492999+00	2021-11-15 08:56:05.493019+00	1	\N	\N	f
 532	VENDOR_PAYMENT_ACCOUNT	Vendor Payment Account	Payroll	3	2021-11-15 08:56:05.493084+00	2021-11-15 08:56:05.493103+00	1	\N	\N	f
@@ -3985,7 +3980,6 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 1626	PROJECT	Customer	St. Francis Yacht Club	1603	2021-11-15 08:56:40.737948+00	2021-11-15 08:56:40.737957+00	1	\N	\N	f
 1627	PROJECT	Customer	Company 1618550408	5282	2021-11-15 08:56:40.737989+00	2021-11-15 08:56:40.737998+00	1	\N	\N	f
 1628	PROJECT	Customer	Company 1618566776	5382	2021-11-15 08:56:40.738368+00	2021-11-15 08:56:40.738396+00	1	\N	\N	f
-1629	PROJECT	Customer	Nilesh Pant	13815	2021-11-15 08:56:40.738434+00	2021-11-15 08:56:40.738445+00	1	\N	\N	f
 1630	TAX_ITEM	Tax Item	City: New York City @0.5%	635	2021-11-15 08:56:43.687288+00	2021-11-15 08:56:43.687327+00	1	\N	{"tax_rate": 0.5}	f
 1631	TAX_ITEM	Tax Item	County: New York County @1.5%	636	2021-11-15 08:56:43.687411+00	2021-11-15 08:56:43.687431+00	1	\N	{"tax_rate": 1.5}	f
 1632	TAX_ITEM	Tax Item	State: New York State @6.5%	637	2021-11-15 08:56:43.687502+00	2021-11-15 08:56:43.687519+00	1	\N	{"tax_rate": 6.5}	f
@@ -7349,6 +7343,9 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 5006	TAX_ITEM	Tax Item	ABN: dfvdfvf @20.0%	1027	2021-12-03 11:04:27.843034+00	2021-12-03 11:04:27.843036+00	49	\N	{"tax_rate": 20.0}	f
 5007	TAX_ITEM	Tax Item	ABN: Nilesh @54.0%	1029	2021-12-03 11:04:27.843046+00	2021-12-03 11:04:27.843048+00	49	\N	{"tax_rate": 54.0}	f
 5008	TAX_ITEM	Tax Item	ABN: Ashwin Tax Group @6.0%	1035	2021-12-03 11:04:27.843058+00	2021-12-03 11:04:27.84306+00	49	\N	{"tax_rate": 6.0}	f
+6010	ASHWINTEST1	ashwintest1	value1	1036	2021-12-03 11:04:27.843058+00	2021-12-03 11:04:27.84306+00	49	\N	\N	f
+6011	ASHWINTEST1	ashwintest1	value2	1037	2021-12-03 11:04:27.843058+00	2021-12-03 11:04:27.84306+00	49	\N	\N	f
+6012	ASHWINTEST1	ashwintest1	value3	1038	2021-12-03 11:04:27.843058+00	2021-12-03 11:04:27.84306+00	49	\N	\N	f
 \.
 
 
@@ -7608,10 +7605,10 @@ COPY public.employee_mappings (id, created_at, updated_at, destination_card_acco
 COPY public.expense_attributes (id, attribute_type, display_name, value, source_id, created_at, updated_at, workspace_id, active, detail, auto_mapped, auto_created) FROM stdin;
 1	EMPLOYEE	Employee	approver1@fyleforgotham.in	ouMvD0iJ0pXK	2021-11-15 08:55:47.714918+00	2021-11-15 08:55:47.714944+00	1	\N	{"user_id": "usAsCHVckAu8", "location": null, "full_name": "Ryan Gallagher", "department": null, "department_id": null, "employee_code": null, "department_code": null}	f	f
 2	EMPLOYEE	Employee	owner@fyleforgotham.in	ouT4EarnaThA	2021-11-15 08:55:47.714989+00	2021-11-15 08:55:47.715+00	1	\N	{"user_id": "uspg0D51Nts1", "location": null, "full_name": "Fyle For Arkham Asylum", "department": null, "department_id": null, "employee_code": null, "department_code": null}	f	f
-3	EMPLOYEE	Employee	admin1@fyleforgotham.in	ouECRFhw3AjY	2021-11-15 08:55:47.715039+00	2021-11-15 08:55:47.715049+00	1	\N	{"user_id": "usnplBhNoBFN", "location": null, "full_name": "Theresa Brown", "department": null, "department_id": null, "employee_code": null, "department_code": null}	f	f
+3	EMPLOYEE	Employee	Paul Blancaflor	ouECRFhw3AjY	2021-11-15 08:55:47.715039+00	2021-11-15 08:55:47.715049+00	1	\N	{"user_id": "usnplBhNoBFN", "location": null, "full_name": "Theresa Brown", "department": null, "department_id": null, "employee_code": null, "department_code": null}	f	f
 4	EMPLOYEE	Employee	user10@fyleforgotham.in	ou7yyjvEaliS	2021-11-15 08:55:47.715087+00	2021-11-15 08:55:47.715096+00	1	\N	{"user_id": "usH1U6GUQgbT", "location": null, "full_name": "Matthew Estrada", "department": "Department 4", "department_id": "depttugt5POp4K", "employee_code": null, "department_code": null}	f	f
 5	EMPLOYEE	Employee	user1@fyleforgotham.in	ouVT4YfloipJ	2021-11-15 08:55:47.715134+00	2021-11-15 08:55:47.715144+00	1	\N	{"user_id": "usRKNmaNoXTy", "location": null, "full_name": "Joshua Wood", "department": "Department 2", "department_id": "deptgZF9aUB0tH", "employee_code": null, "department_code": null}	f	f
-6	EMPLOYEE	Employee	user2@fyleforgotham.in	ou8TYuw4AxVG	2021-11-15 08:55:47.715183+00	2021-11-15 08:55:47.715193+00	1	\N	{"user_id": "usBlCjf2LQFc", "location": null, "full_name": "Brian Foster", "department": "Department 1", "department_id": "deptDhMjvs45aT", "employee_code": null, "department_code": null}	f	f
+6	EMPLOYEE	Employee	user2@fyleforxyzcorp.in	ou8TYuw4AxVG	2021-11-15 08:55:47.715183+00	2021-11-15 08:55:47.715193+00	1	\N	{"user_id": "usBlCjf2LQFc", "location": null, "full_name": "Brian Foster", "department": "Department 1", "department_id": "deptDhMjvs45aT", "employee_code": null, "department_code": null}	f	f
 7	EMPLOYEE	Employee	user3@fyleforgotham.in	ounUmTSUyiHX	2021-11-15 08:55:47.715232+00	2021-11-15 08:55:47.715241+00	1	\N	{"user_id": "usYH6d98zJGT", "location": null, "full_name": "Natalie Pope", "department": "Department 1", "department_id": "deptDhMjvs45aT", "employee_code": null, "department_code": null}	f	f
 8	EMPLOYEE	Employee	user4@fyleforgotham.in	ouEetwpFkf3F	2021-11-15 08:55:47.715279+00	2021-11-15 08:55:47.715288+00	1	\N	{"user_id": "usXk2TVwvJCf", "location": null, "full_name": "Samantha Washington", "department": "Department 3", "department_id": "dept0DswoMIby7", "employee_code": null, "department_code": null}	f	f
 9	EMPLOYEE	Employee	user5@fyleforgotham.in	ouwVEj13iF6S	2021-11-15 08:55:47.715326+00	2021-11-15 08:55:47.715336+00	1	\N	{"user_id": "usJNh5yEotAI", "location": null, "full_name": "Chris Curtis", "department": "Department 1", "department_id": "deptDhMjvs45aT", "employee_code": null, "department_code": null}	f	f
@@ -11081,6 +11078,7 @@ COPY public.expense_attributes (id, attribute_type, display_name, value, source_
 3683	PROJECT	Project	Wedding Planning by Whitney	253935	2021-12-03 11:03:52.184396+00	2021-12-03 11:03:52.184399+00	49	\N	\N	f	f
 3684	PROJECT	Project	Weiskopf Consulting	253936	2021-12-03 11:03:52.184409+00	2021-12-03 11:03:52.184412+00	49	\N	\N	f	f
 3518	EMPLOYEE	Employee	admin1@fyleforintacct.in	ou2PxC3ZXTod	2021-12-03 11:03:50.389746+00	2021-12-03 11:24:32.423242+00	49	\N	{"user_id": "usew3kRJEgcR", "location": null, "full_name": "Theresa Brown", "department": null, "department_id": null, "employee_code": null, "department_code": null}	f	f
+4230	DUMMY	Dummy	Custom Field	253236345	2021-12-03 11:03:52.184409+00	2021-12-03 11:03:52.184412+00	49	\N	\N	f	f
 \.
 
 
@@ -11100,10 +11098,10 @@ COPY public.expense_group_settings (id, reimbursable_expense_group_fields, corpo
 --
 
 COPY public.expense_groups (id, description, created_at, updated_at, workspace_id, fund_source, exported_at, response_logs) FROM stdin;
-1	{"report_id": "rpuN3bgphxbK", "fund_source": "PERSONAL", "claim_number": "C/2021/11/R/5", "employee_email": "ashwin.t@fyle.in"}	2021-11-15 10:29:07.618062+00	2021-11-15 11:02:55.125634+00	1	PERSONAL	2021-11-15 11:02:55.125205+00	{"name": null, "type": "expenseReport", "externalId": "03294720937402397402937", "internalId": "116142"}
-2	{"report_id": "rpHLA9Dfp9hN", "fund_source": "CCC", "claim_number": "C/2021/11/R/6", "employee_email": "ashwin.t@fyle.in"}	2021-11-15 13:12:12.275539+00	2021-11-15 13:27:27.538211+00	1	CCC	2021-11-15 13:27:27.537955+00	{"name": null, "type": "vendorBill", "externalId": "1209340fibhnase9rfghwq9e8ug", "internalId": "116242"}
+1	{"report_id": "rpuN3bgphxbK", "fund_source": "PERSONAL", "claim_number": "C/2021/11/R/5", "employee_email": "ashwin.t@fyle.in"}	2021-11-15 10:29:07.618062+00	2021-11-15 11:02:55.125634+00	1	PERSONAL	\N	\N
+2	{"report_id": "rpHLA9Dfp9hN", "fund_source": "CCC", "claim_number": "C/2021/11/R/6", "employee_email": "ashwin.t@fyle.in"}	2021-11-15 13:12:12.275539+00	2021-11-15 13:27:27.538211+00	1	CCC	\N	\N
 3	{"report_id": "rpu5W0LYrk6e", "fund_source": "PERSONAL", "claim_number": "C/2021/11/R/2", "employee_email": "ashwin.t@fyle.in"}	2021-11-16 04:25:49.206777+00	2021-11-16 04:25:49.206809+00	2	PERSONAL	\N	\N
-4	{"spent_at": "2021-11-16", "report_id": "rprqDvARHUnv", "expense_id": "txMLGb6Xy8m8", "fund_source": "CCC", "claim_number": "C/2021/11/R/1", "employee_email": "ashwin.t@fyle.in"}	2021-11-16 04:25:49.226855+00	2021-11-16 04:48:07.295895+00	2	CCC	2021-11-16 04:48:07.295667+00	{"success": true, "internalId": 116343}
+4	{"spent_at": "2021-11-16", "report_id": "rprqDvARHUnv", "expense_id": "txMLGb6Xy8m8", "fund_source": "CCC", "claim_number": "C/2021/11/R/1", "employee_email": "ashwin.t@fyle.in"}	2021-11-16 04:25:49.226855+00	2021-11-16 04:25:49.226855+00	2	CCC	\N	\N
 47	{"report_id": "rpXqCutQj85N", "fund_source": "PERSONAL", "claim_number": "C/2021/12/R/1", "employee_email": "admin1@fyleforintacct.in"}	2021-12-03 11:26:58.731339+00	2021-12-03 11:26:58.731398+00	49	PERSONAL	\N	\N
 48	{"report_id": "rpXqCutQj85N", "expense_id": "txcKVVELn1Vl", "fund_source": "CCC", "claim_number": "C/2021/12/R/1", "employee_email": "admin1@fyleforintacct.in"}	2021-12-03 11:26:58.746214+00	2021-12-03 11:26:58.746248+00	49	CCC	\N	\N
 \.
@@ -11194,10 +11192,12 @@ COPY public.journal_entry_lineitems (id, debit_account_id, account_id, departmen
 
 COPY public.mapping_settings (id, source_field, destination_field, created_at, updated_at, workspace_id, import_to_fyle, is_custom) FROM stdin;
 1	TAX_GROUP	TAX_ITEM	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	2	f	f
+5	PROJECT	PROJECT	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	1	f	f
+6	COST_CENTER	DEPARTMENT	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	1	t	f
+10	DUMMY	ASHWINTEST1	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	49	t	t
 \.
 
-
---
+--f
 -- Data for Name: mappings; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
