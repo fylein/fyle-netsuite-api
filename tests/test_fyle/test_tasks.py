@@ -1,9 +1,12 @@
 import pytest
+from fyle_integrations_platform_connector import PlatformConnector
+
 from apps.fyle.models import ExpenseGroup, Expense
 from apps.tasks.models import TaskLog
 from apps.fyle.tasks import create_expense_groups, schedule_expense_group_creation
 from apps.workspaces.models import Configuration
 from .fixtures import data
+
 
 @pytest.mark.django_db()
 def test_create_expense_group(mocker, add_fyle_credentials):
@@ -19,7 +22,7 @@ def test_create_expense_group(mocker, add_fyle_credentials):
     configuration = Configuration.objects.get(workspace_id=1)
 
     mocker.patch(
-        'apps.fyle.connector.FyleConnector.get_expenses',
+        'fyle_integrations_platform_connector.PlatformConnector',
         return_value=data['expenses']
     )
 
@@ -33,8 +36,9 @@ def test_create_expense_group(mocker, add_fyle_credentials):
 
 @pytest.mark.django_db()
 def test_schedule_expense_group_creation(mocker, add_fyle_credentials):
+
     mocker.patch(
-        'apps.fyle.connector.FyleConnector.get_expenses',
+        'fyle_integrations_platform_connector.PlatformConnector',
         return_value=data['expenses']
     )
     schedule_expense_group_creation(workspace_id=1)

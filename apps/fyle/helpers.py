@@ -85,18 +85,8 @@ def check_interval_and_sync_dimension(workspace: Workspace, fyle_credentials: Fy
 
 
 def sync_dimensions(fyle_credentials: FyleCredential, workspace_id: int) -> None:
-    fyle_connection = import_string('apps.fyle.connector.FyleConnector')(fyle_credentials.refresh_token, workspace_id)
     platform = PlatformConnector(fyle_credentials)
-    dimensions = [
-        'employees', 'categories', 'cost_centers',
-        'projects', 'expense_custom_fields'
-    ]
 
-    for dimension in dimensions:
-        try:
-            sync = getattr(fyle_connection, 'sync_{}'.format(dimension))
-            sync()
-        except Exception as exception:
-            logger.exception(exception)
-
-    platform.tax_groups.sync()
+    platform.import_fyle_dimensions(import_taxes=True)
+   
+    

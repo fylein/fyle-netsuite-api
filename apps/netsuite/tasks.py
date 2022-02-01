@@ -14,6 +14,7 @@ from django_q.tasks import Chain
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
 
 from fyle_accounting_mappings.models import ExpenseAttribute, Mapping, DestinationAttribute, CategoryMapping, EmployeeMapping
+from fyle_integrations_platform_connector import PlatformConnector
 
 from fyle_netsuite_api.exceptions import BulkError
 
@@ -1109,7 +1110,9 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
 def create_vendor_payment(workspace_id):
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
     fyle_connector = FyleConnector(fyle_credentials.refresh_token, workspace_id)
-    fyle_connector.sync_reimbursements()
+
+    platform = PlatformConnector(fyle_credentials=fyle_credentials)
+    platform.reimbursements.sync()
 
     bills = Bill.objects.filter(
         payment_synced=False, expense_group__workspace_id=workspace_id,
@@ -1263,8 +1266,8 @@ def process_reimbursements(workspace_id):
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
 
     fyle_connector = FyleConnector(fyle_credentials.refresh_token, workspace_id)
-
-    fyle_connector.sync_reimbursements()
+    platform = PlatformConnector(fyle_credentials=fyle_credentials)
+    platform.reimbursements.sync()
 
     reimbursements = Reimbursement.objects.filter(state='PENDING', workspace_id=workspace_id).all()
 
@@ -1284,7 +1287,7 @@ def process_reimbursements(workspace_id):
 
     if reimbursement_ids:
         fyle_connector.post_reimbursement(reimbursement_ids)
-        fyle_connector.sync_reimbursements()
+        platform.reimbursements.sync_reimbursements()
 
 
 def schedule_reimbursements_sync(sync_netsuite_to_fyle_payments, workspace_id):
