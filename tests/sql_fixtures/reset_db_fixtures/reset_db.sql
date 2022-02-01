@@ -11089,7 +11089,7 @@ COPY public.expense_attributes (id, attribute_type, display_name, value, source_
 COPY public.expense_group_settings (id, reimbursable_expense_group_fields, corporate_credit_card_expense_group_fields, expense_state, reimbursable_export_date_type, created_at, updated_at, workspace_id, import_card_credits, ccc_export_date_type) FROM stdin;
 1	{employee_email,report_id,claim_number,fund_source}	{employee_email,report_id,claim_number,fund_source}	PAYMENT_PROCESSING	current_date	2021-11-15 08:46:16.069944+00	2021-11-15 08:46:16.069986+00	1	f	current_date
 2	{fund_source,employee_email,settlement_id,spent_at}	{expense_id,fund_source,employee_email,settlement_id,spent_at}	PAID	spent_at	2021-11-16 04:16:57.847694+00	2021-11-16 07:34:26.302812+00	2	f	spent_at
-74	{employee_email,report_id,claim_number,fund_source}	{claim_number,employee_email,expense_id,report_id,fund_source}	PAYMENT_PROCESSING	current_date	2021-12-03 11:00:33.637654+00	2021-12-03 11:04:00.206339+00	49	f	spent_at
+74	{employee_email,report_id,claim_number,fund_source}	{claim_number,employee_email,expense_id,report_id,fund_source}	PAYMENT_PROCESSING	last_spent_at	2021-12-03 11:00:33.637654+00	2021-12-03 11:04:00.206339+00	49	f	last_spent_at
 \.
 
 
@@ -11244,6 +11244,7 @@ COPY public.netsuite_credentials (id, ns_account_id, ns_consumer_key, ns_consume
 --
 
 COPY public.reimbursements (id, settlement_id, reimbursement_id, state, created_at, updated_at, workspace_id) FROM stdin;
+1	setqi0eM6HUgZ	reimcfBxUUS6L8	PENDING	2021-11-15 08:55:44.014605+00	2021-11-15 08:55:44.014581+00	1
 \.
 
 

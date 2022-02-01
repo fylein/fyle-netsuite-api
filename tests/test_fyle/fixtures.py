@@ -560,26 +560,26 @@ data = {
         "expenses": [1],
     },
     "expense_group_setting_payload": {
-        "id":1,
-        "reimbursable_expense_group_fields":[
+        "id": 1,
+        "reimbursable_expense_group_fields": [
             "employee_email",
             "report_id",
             "claim_number",
             "fund_source"
         ],
-        "corporate_credit_card_expense_group_fields":[
+        "corporate_credit_card_expense_group_fields": [
             "employee_email",
             "report_id",
             "claim_number",
             "fund_source"
         ],
-        "expense_state":"PAYMENT_PROCESSING",
-        "reimbursable_export_date_type":"current_date",
-        "ccc_export_date_type":"current_date",
-        "import_card_credits":"false",
-        "created_at":"2021-11-15T08:46:16.069944Z",
-        "updated_at":"2021-11-15T08:46:16.069986Z",
-        "workspace":1
+        "expense_state": "PAYMENT_PROCESSING",
+        "reimbursable_export_date_type": "current_date",
+        "ccc_export_date_type": "current_date",
+        "import_card_credits": "false",
+        "created_at": "2021-11-15T08:46:16.069944Z",
+        "updated_at": "2021-11-15T08:46:16.069986Z",
+        "workspace": 1
     },
     "fyle_orgs": [
         {
@@ -656,5 +656,25 @@ data = {
         'created_at': '2021-11-16T04:17:43.787870Z',
         'updated_at': '2021-11-16T04:17:43.787878Z',
         'workspace': 2,
-    }]
+    }],
+    'reimbursements': [
+        {
+            'amount': 76,
+            'code': None,
+            'created_at': '2022-01-20T16:30:44.584100',
+            'creator_user_id': 'usqywo0f3nBY',
+            'currency': 'USD',
+            'id': 'reimgCW1Og0BcM',
+            'is_exported': False,
+            'is_paid': False,
+            'mode': 'OFFLINE',
+            'org_id': 'orsO0VW86WLQ',
+            'paid_at': None,
+            'purpose': 'C/2022/01/R/2;Ashwin',
+            'reimbursement_number': 'P/2022/01/R/2',
+            'settlement_id': 'setgCxsr2vTmZ',
+            'updated_at': '2022-01-20T16:30:44.584100',
+            'user_id': 'usqywo0f3nBY',
+        }
+    ]
 }
