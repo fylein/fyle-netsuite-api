@@ -8,7 +8,7 @@ from .fixtures import data
 def test_create_expense(create_temp_workspace):
     mock_expenes = data['expenses']
     Expense.create_expense_objects(
-        mock_expenes, 3
+        mock_expenes, 1
     )
 
     expense = Expense.objects.filter(org_id='orf6t6jWUnpx')
@@ -38,5 +38,5 @@ def test_expense_group_settings(create_temp_workspace):
 
     settings = ExpenseGroupSettings.objects.last()
 
-    assert settings.expense_state == 'PAID'
-    assert settings.ccc_export_date_type == 'spent_at'
+    assert settings.expense_state == 'PAYMENT_PROCESSING'
+    assert settings.ccc_export_date_type == 'current_date'

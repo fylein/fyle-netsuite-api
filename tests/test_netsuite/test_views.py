@@ -6,6 +6,8 @@ import json
 from django.urls import reverse
 from apps.fyle.models import ExpenseGroup
 
+from .fixtures import data
+
 #  Will use paramaterize decorator of python later
 @pytest.mark.django_db(databases=['default'])
 def test_netsutie_fields_view(api_client, test_connection):
@@ -26,9 +28,31 @@ def test_netsutie_fields_view(api_client, test_connection):
    assert len(response) == 4
 
 
+@pytest.mark.django_db(databases=['default'])
+def test_destination_attribute_view(api_client, test_connection):
+
+   access_token = test_connection.access_token
+   url = reverse('destination-attributes',
+      kwargs={
+         'workspace_id': 1
+      }
+   )
+
+   api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
+
+   response = api_client.get(url, {
+      'attribute_types': 'SUBSIDIARY'
+   })
+
+   assert response.status_code == 200
+   response = json.loads(response.content)
+
+   assert response[0] == data['destination_attributes'][0]
+
+
 @pytest.mark.parametrize(
     "test_input, expected",
-    [("EMPLOYEE", 9), ("ACCOUNT", 124), ['PROJECT', 1087]],
+    [("EMPLOYEE", 7), ("ACCOUNT", 123), ['PROJECT', 1086]],
 )
 @pytest.mark.django_db(databases=['default'])
 def test_destination_attribute_count_view(test_input, expected, api_client, test_connection):

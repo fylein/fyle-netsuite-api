@@ -151,7 +151,7 @@ def test_post_bill_mapping_error(create_task_logs, add_netsuite_credentials, add
 def test_accounting_period_working(create_task_logs, add_netsuite_credentials, add_fyle_credentials):
     task_log = TaskLog.objects.filter(workspace_id=1).first()
 
-    expense_group = ExpenseGroup.objects.filter(workspace_id=1).last()
+    expense_group = ExpenseGroup.objects.get(id=2)
     expenses = expense_group.expenses.all()
 
     expense_group.id = random.randint(100, 1500000)
@@ -160,12 +160,14 @@ def test_accounting_period_working(create_task_logs, add_netsuite_credentials, a
     for expense in expenses:
         expense.expense_group_id = expense_group.id
         expense.save()
-
+    
     expense_group.expenses.set(expenses)
 
     spent_at = {'spent_at': '2012-09-14T00:00:00'}
     expense_group.description.update(spent_at)
-    create_expense_report(expense_group, task_log.id)
+    create_bill(expense_group, task_log.id)
+    
+    task_log = TaskLog.objects.get(pk=task_log.id)
 
     task_log = TaskLog.objects.filter(workspace_id=1).first()
     assert task_log.detail[0]['message'] == 'An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'
@@ -174,13 +176,15 @@ def test_accounting_period_working(create_task_logs, add_netsuite_credentials, a
     configuration.change_accounting_period = True
     configuration.save()
 
-    create_expense_report(expense_group, task_log.id)
-    expense_report = ExpenseReport.objects.get(expense_group_id=expense_group.id)
+    create_bill(expense_group, task_log.id)
+    bill = Bill.objects.get(expense_group_id=expense_group.id)
+    task_log = TaskLog.objects.get(pk=task_log.id)
 
-    assert expense_report.account_id=='118'
-    assert expense_report.entity_id=='1676'
-    assert expense_report.expense_group_id==expense_group.id
-    assert expense_report.subsidiary_id == '3'
+    assert task_log.status=='COMPLETE'
+    assert bill.entity_id=='1674'
+    assert bill.currency=='1'
+    assert bill.location_id=='8'
+    assert bill.accounts_payable_id=='25'
 
 @pytest.mark.django_db()
 def test_create_expense_report(create_task_logs, add_netsuite_credentials, add_fyle_credentials):

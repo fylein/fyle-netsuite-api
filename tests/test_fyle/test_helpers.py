@@ -1,4 +1,5 @@
 import pytest
+from datetime import datetime, timezone
 from apps.fyle.helpers import add_expense_id_to_expense_group_settings, update_import_card_credits_flag, \
     update_use_employee_attributes_flag, check_interval_and_sync_dimension
 from apps.fyle.models import ExpenseGroupSettings
@@ -26,8 +27,11 @@ def test_update_import_card_credits_flag():
 
     update_import_card_credits_flag('EXPENSE REPORT', 'EXPENSE REPORT', 1)
     expense_group_setting = ExpenseGroupSettings.objects.get(id=1)
-
     assert expense_group_setting.import_card_credits == True
+
+    update_import_card_credits_flag('BILL', 'JOURNAL ENTRY', 1)
+    expense_group_setting = ExpenseGroupSettings.objects.get(id=1)
+    assert expense_group_setting.import_card_credits == False
 
 @pytest.mark.django_db()
 def test_update_use_employee_attributes_flag():
@@ -35,6 +39,7 @@ def test_update_use_employee_attributes_flag():
     general_mapping = GeneralMapping.objects.get(id=1)
     general_mapping.use_employee_department = True
     general_mapping.use_employee_location = True
+    general_mapping.use_employee_class = True
     general_mapping.save()
 
     update_use_employee_attributes_flag(1)
@@ -51,3 +56,7 @@ def test_check_interval_and_sync_dimension(test_connection, add_fyle_credentials
     response = check_interval_and_sync_dimension(workspace, fyle_credentials)
 
     assert response == True
+
+    workspace.source_synced_at = datetime.now(timezone.utc)
+    response = check_interval_and_sync_dimension(workspace, settings.FYLE_REFRESH_TOKEN)
+    assert response == False

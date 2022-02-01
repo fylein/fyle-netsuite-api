@@ -10,7 +10,7 @@ def test_run_post_mapping_settings_triggers(test_connection):
     mapping_setting = MappingSetting(
         source_field='PROJECT',
         destination_field='PROJECT',
-        workspace_id=1,
+        workspace_id=2,
         import_to_fyle=True,
         is_custom=False
     )
