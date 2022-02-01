@@ -14,11 +14,11 @@ def test_create_expense(create_temp_workspace):
         mock_expenes, 1
     )
 
-    expense = Expense.objects.filter(org_id='orf6t6jWUnpx')
-    assert len(expense) == 6
+    expense = Expense.objects.filter(org_id='orsO0VW86WLQ')
+    assert len(expense) == 2
 
     expense = expense.last()
-    assert expense.employee_email == 'admin1@fylefornt.com'
+    assert expense.employee_email == 'jhonsnow@fyle.in'
     assert expense.currency == 'USD'
     assert expense.fund_source == 'PERSONAL'
 

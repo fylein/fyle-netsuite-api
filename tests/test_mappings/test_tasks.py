@@ -5,7 +5,7 @@ from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribu
 import fylesdk
 from apps.netsuite.connector import NetSuiteConnector
 from apps.workspaces.models import Configuration, NetSuiteCredentials
-from apps.mappings.tasks import async_auto_create_custom_field_mappings, async_auto_map_employees, auto_create_category_mappings, auto_create_cost_center_mappings, auto_create_project_mappings, create_fyle_cost_centers_payload, create_fyle_expense_custom_field_payload, create_fyle_projects_payload, create_fyle_tax_group_payload, filter_unmapped_destinations, remove_duplicates, create_fyle_categories_payload, \
+from apps.mappings.tasks import async_auto_create_custom_field_mappings, async_auto_map_employees, auto_create_category_mappings, auto_create_cost_center_mappings, auto_create_project_mappings, auto_create_tax_group_mappings, create_fyle_cost_centers_payload, create_fyle_expense_custom_field_payload, create_fyle_projects_payload, create_fyle_tax_group_payload, filter_unmapped_destinations, remove_duplicates, create_fyle_categories_payload, \
     construct_filter_based_on_destination, schedule_auto_map_employees, schedule_categories_creation, schedule_cost_centers_creation, schedule_fyle_attributes_creation, sync_expense_categories_and_accounts, upload_categories_to_fyle
 from .fixtures import data
 
@@ -136,6 +136,10 @@ def test_upload_categories_to_fyle(mocker, db, add_fyle_credentials, add_netsuit
         attribute_type='ACCOUNT', workspace_id=1).count()
     assert count_of_accounts == 164
 
+    netsuite_attributes = upload_categories_to_fyle(1, 'BILL', 'BILL')
+    
+    assert len(netsuite_attributes) == count_of_accounts
+
 
 def test_filter_unmapped_destinations(db, mocker, add_fyle_credentials, add_netsuite_credentials):
 
@@ -176,6 +180,16 @@ def test_auto_create_category_mappings(db, mocker, add_fyle_credentials, add_net
     mappings = CategoryMapping.objects.filter(workspace_id=1)
     assert len(mappings) == categories - old_mappings
 
+    configuration = Configuration.objects.get(workspace_id=1)
+    configuration.reimbursable_expenses_object = 'BILL'
+    configuration.save()
+
+    response = auto_create_category_mappings(workspace_id=1)
+
+    categories = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='ACCOUNT').count()
+    mappings = CategoryMapping.objects.filter(workspace_id=1)
+    assert len(mappings) == 130
+
 
 def test_auto_create_project_mappings(db, mocker, add_fyle_credentials, add_netsuite_credentials):
 
@@ -207,6 +221,24 @@ def test_auto_create_cost_center_mappings(db, mocker, add_fyle_credentials, add_
 
     assert cost_center == 12
     assert mappings == 1
+
+
+def test_auto_create_tax_group_mappings(db, mocker, add_fyle_credentials, add_netsuite_credentials):
+    mocker.patch(
+            'fylesdk.apis.fyle_v1.cost_centers.CostCenters.post',
+            return_value=[]
+        )
+
+    tax_groups = DestinationAttribute.objects.filter(workspace_id=2, attribute_type='TAX_ITEM').count()
+    mappings = Mapping.objects.filter(workspace_id=2, destination_type='TAX_ITEM').count()
+    
+    assert tax_groups == 26
+    assert mappings == 9
+
+    auto_create_tax_group_mappings(workspace_id=2)
+    mappings = Mapping.objects.filter(workspace_id=2, destination_type='TAX_ITEM').count()
+
+    assert mappings == 29
 
 
 def test_schedule_fyle_attributes_creation(db, mocker, add_netsuite_credentials, add_fyle_credentials):
