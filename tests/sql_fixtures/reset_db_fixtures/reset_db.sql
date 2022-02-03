@@ -2322,7 +2322,7 @@ COPY public.category_mappings (id, created_at, updated_at, destination_account_i
 
 COPY public.configurations (id, reimbursable_expenses_object, corporate_credit_card_expenses_object, created_at, updated_at, workspace_id, sync_fyle_to_netsuite_payments, sync_netsuite_to_fyle_payments, import_projects, auto_map_employees, import_categories, auto_create_destination_entity, auto_create_merchants, employee_field_mapping, import_tax_items, change_accounting_period, memo_structure) FROM stdin;
 1	EXPENSE REPORT	BILL	2021-11-15 08:56:07.193743+00	2021-11-15 08:56:07.193795+00	1	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}
-2	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-11-16 04:18:15.836271+00	2021-11-16 04:20:09.969589+00	2	f	f	f	\N	f	f	f	EMPLOYEE	t	f	{employee_email,category,spent_on,report_number,purpose}
+2	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-11-16 04:18:15.836271+00	2021-11-16 04:20:09.969589+00	2	t	t	f	\N	f	f	f	EMPLOYEE	t	f	{employee_email,category,spent_on,report_number,purpose}
 3	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-12-03 11:04:00.194287+00	2021-12-03 11:04:00.1943+00	49	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}
 \.
 
@@ -11098,7 +11098,7 @@ COPY public.expense_group_settings (id, reimbursable_expense_group_fields, corpo
 --
 
 COPY public.expense_groups (id, description, created_at, updated_at, workspace_id, fund_source, exported_at, response_logs) FROM stdin;
-1	{"report_id": "rpuN3bgphxbK", "fund_source": "PERSONAL", "claim_number": "C/2021/11/R/5", "employee_email": "ashwin.t@fyle.in"}	2021-11-15 10:29:07.618062+00	2021-11-15 11:02:55.125634+00	1	PERSONAL	2021-11-16 04:25:49.226855+00	\N
+1	{"report_id": "rpuN3bgphxbK", "fund_source": "PERSONAL", "claim_number": "C/2021/11/R/5", "employee_email": "ashwin.t@fyle.in"}	2021-11-15 10:29:07.618062+00	2021-11-15 11:02:55.125634+00	1	PERSONAL	\N	\N
 2	{"report_id": "rpHLA9Dfp9hN", "fund_source": "CCC", "claim_number": "C/2021/11/R/6", "employee_email": "ashwin.t@fyle.in"}	2021-11-15 13:12:12.275539+00	2021-11-15 13:27:27.538211+00	1	CCC	\N	\N
 3	{"report_id": "rpu5W0LYrk6e", "fund_source": "PERSONAL", "claim_number": "C/2021/11/R/2", "employee_email": "ashwin.t@fyle.in"}	2021-11-16 04:25:49.206777+00	2021-11-16 04:25:49.206809+00	2	PERSONAL	\N	\N
 4	{"spent_at": "2021-11-16", "report_id": "rprqDvARHUnv", "expense_id": "txMLGb6Xy8m8", "fund_source": "CCC", "claim_number": "C/2021/11/R/1", "employee_email": "ashwin.t@fyle.in"}	2021-11-16 04:25:49.226855+00	2021-11-16 04:25:49.226855+00	2	CCC	\N	\N
