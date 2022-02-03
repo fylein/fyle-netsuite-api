@@ -424,6 +424,7 @@ class Reimbursement(models.Model):
         if attributes_to_be_updated:
             Reimbursement.objects.bulk_update(attributes_to_be_updated, fields=['state'], batch_size=50)
 
+
     @staticmethod
     def get_last_synced_at(workspace_id: int):
         """
