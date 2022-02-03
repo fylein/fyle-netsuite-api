@@ -24,8 +24,6 @@ class UserProfileView(generics.RetrieveAPIView):
 
         cluster_domain, _ = get_cluster_domain_and_refresh_token(request.user)
 
-        print(refresh_token, cluster_domain)
-
         fyle_credentials = FyleCredential(
             cluster_domain=cluster_domain,
             refresh_token=refresh_token
@@ -52,10 +50,7 @@ class FyleOrgsView(generics.ListCreateAPIView):
         Get cluster domain from Fyle
         """
         cluster_domain, refresh_token = get_cluster_domain_and_refresh_token(request.user)
-        print('cluster domain', cluster_domain)
-
         fyle_orgs = get_fyle_orgs(refresh_token, cluster_domain)
-        print('fyle', fyle_orgs)
 
         return Response(
             data=fyle_orgs,
