@@ -1,9 +1,12 @@
+from fyle_integrations_platform_connector import PlatformConnector
 import pytest
 from apps.fyle.helpers import get_fyle_orgs
 
 from apps.workspaces.models import FyleCredential
 from apps.fyle.connector import FyleConnector
 
+from .fixtures import data
+from fyle_accounting_mappings.models import ExpenseAttribute
 from .fixtures import data
 
 

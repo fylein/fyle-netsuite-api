@@ -790,6 +790,8 @@ def upload_attributes_to_fyle(workspace_id: int, netsuite_attribute_type: str, f
 
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
+    platform = PlatformConnector(fyle_credentials=fyle_credentials)
+
     netsuite_attributes: List[DestinationAttribute] = DestinationAttribute.objects.filter(
         workspace_id=workspace_id, attribute_type=netsuite_attribute_type
     )
