@@ -47,7 +47,7 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense_id: str, ex
 
     try:
         fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-        fyle_connector = FyleConnector(fyle_credentials.refresh_token, workspace_id)
+        fyle_connector = FyleConnector(fyle_credentials.refresh_token)
         attachment = fyle_connector.get_attachment(expense_id)
 
         folder = netsuite_connection.connection.folders.post({
@@ -1109,7 +1109,6 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
 
 def create_vendor_payment(workspace_id):
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-    fyle_connector = FyleConnector(fyle_credentials.refresh_token, workspace_id)
 
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
     platform.reimbursements.sync()
@@ -1265,7 +1264,7 @@ def schedule_netsuite_objects_status_sync(sync_netsuite_to_fyle_payments, worksp
 def process_reimbursements(workspace_id):
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
 
-    fyle_connector = FyleConnector(fyle_credentials.refresh_token, workspace_id)
+    fyle_connector = FyleConnector(fyle_credentials.refresh_token)
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
     platform.reimbursements.sync()
 

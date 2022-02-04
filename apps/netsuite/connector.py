@@ -797,9 +797,8 @@ class NetSuiteConnector:
         """
 
         fyle_credentials = FyleCredential.objects.get(workspace_id=bill.expense_group.workspace_id)
-        fyle_connector = FyleConnector(fyle_credentials.refresh_token, bill.expense_group.workspace_id)
 
-        cluster_domain = fyle_connector.get_cluster_domain()
+        cluster_domain = fyle_credentials.cluster_domain
         org_id = Workspace.objects.get(id=bill.expense_group.workspace_id).fyle_org_id
 
         bill_payload = {
@@ -869,7 +868,7 @@ class NetSuiteConnector:
             'landedCostPerLine': None,
             'transactionNumber': None,
             'expenseList': self.__construct_bill_lineitems(
-                bill_lineitems, attachment_links, cluster_domain['cluster_domain'], org_id
+                bill_lineitems, attachment_links, cluster_domain, org_id
             ),
             'accountingBookDetailList': None,
             'itemList': None,
@@ -992,9 +991,8 @@ class NetSuiteConnector:
         """
 
         fyle_credentials = FyleCredential.objects.get(workspace_id=credit_card_charge.expense_group.workspace_id)
-        fyle_connector = FyleConnector(fyle_credentials.refresh_token, credit_card_charge.expense_group.workspace_id)
 
-        cluster_domain = fyle_connector.get_cluster_domain()
+        cluster_domain = fyle_credentials.cluster_domain
         org_id = Workspace.objects.get(id=credit_card_charge.expense_group.workspace_id).fyle_org_id
 
         transaction_date = datetime.strptime(credit_card_charge.transaction_date, '%Y-%m-%d').strftime('%m/%d/%Y')
@@ -1018,7 +1016,7 @@ class NetSuiteConnector:
             'tranDate': transaction_date,
             'memo': credit_card_charge.memo,
             'expenses': self.__construct_credit_card_charge_lineitems(
-                credit_card_charge_lineitem, attachment_links, cluster_domain['cluster_domain'], org_id
+                credit_card_charge_lineitem, attachment_links, cluster_domain, org_id
             ),
             'externalId': credit_card_charge.external_id
         }
@@ -1199,9 +1197,8 @@ class NetSuiteConnector:
         """
 
         fyle_credentials = FyleCredential.objects.get(workspace_id=expense_report.expense_group.workspace_id)
-        fyle_connector = FyleConnector(fyle_credentials.refresh_token, expense_report.expense_group.workspace_id)
 
-        cluster_domain = fyle_connector.get_cluster_domain()
+        cluster_domain = fyle_credentials.cluster_domain
         org_id = Workspace.objects.get(id=expense_report.expense_group.workspace_id).fyle_org_id
 
         expense_report_payload = {
@@ -1277,7 +1274,7 @@ class NetSuiteConnector:
                 'type': 'location'
             },
             'expenseList': self.__construct_expense_report_lineitems(
-                expense_report_lineitems, attachment_links, cluster_domain['cluster_domain'], org_id
+                expense_report_lineitems, attachment_links, cluster_domain, org_id
             ),
             'accountingBookDetailList': None,
             'customFieldList': None,
@@ -1445,16 +1442,15 @@ class NetSuiteConnector:
         :return: constructed journal entry
         """
         fyle_credentials = FyleCredential.objects.get(workspace_id=journal_entry.expense_group.workspace_id)
-        fyle_connector = FyleConnector(fyle_credentials.refresh_token, journal_entry.expense_group.workspace_id)
 
-        cluster_domain = fyle_connector.get_cluster_domain()
+        cluster_domain = fyle_credentials.cluster_domain
         org_id = Workspace.objects.get(id=journal_entry.expense_group.workspace_id).fyle_org_id
 
         credit_line = self.__construct_journal_entry_lineitems(journal_entry_lineitems, credit='Credit', org_id=org_id)
         debit_line = self.__construct_journal_entry_lineitems(
             journal_entry_lineitems,
             debit='Debit', attachment_links=attachment_links,
-            cluster_domain=cluster_domain['cluster_domain'], org_id=org_id
+            cluster_domain=cluster_domain, org_id=org_id
         )
         lines = []
         lines.extend(credit_line)
