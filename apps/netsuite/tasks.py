@@ -817,7 +817,8 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str]):
         ).all()
 
         chain = Chain(cached=False)
-
+        
+        print(expense_groups)
         for expense_group in expense_groups:
             task_log, _ = TaskLog.objects.get_or_create(
                 workspace_id=expense_group.workspace_id,
@@ -855,7 +856,7 @@ def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: L
         ).all()
 
         chain = Chain(cached=False)
-
+        
         for expense_group in expense_groups:
             task_log, _ = TaskLog.objects.get_or_create(
                 workspace_id=expense_group.workspace_id,
@@ -1019,8 +1020,6 @@ def create_netsuite_payment_objects(netsuite_objects, object_type, workspace_id)
 
 
 def process_vendor_payment(entity_object, workspace_id, object_type):
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
-    netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
 
     task_log, _ = TaskLog.objects.update_or_create(
         workspace_id=workspace_id,
@@ -1030,8 +1029,13 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
             'type': 'CREATING_VENDOR_PAYMENT'
         }
     )
+
+    print('e0sh0sf s0ifs0f')
     with transaction.atomic():
         try:
+            netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+            netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
+
             vendor_payment_object = VendorPayment.create_vendor_payment(
                 workspace_id, entity_object
             )
@@ -1049,7 +1053,6 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
             created_vendor_payment = netsuite_connection.post_vendor_payment(
                 vendor_payment_object, vendor_payment_lineitems, first_object
             )
-            print('nilesh pant', created_vendor_payment)
             lines = entity_object['line']
             expense_group_ids = [line['expense_group'].id for line in lines]
 
@@ -1083,6 +1086,7 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
             task_log.save()
 
         except NetSuiteRequestError as exception:
+            print('I am here')
             all_details = []
             logger.exception({'error': exception})
             detail = json.dumps(exception.__dict__)
@@ -1142,7 +1146,6 @@ def create_vendor_payment(workspace_id):
         for entity_object_key in expense_report_entity_map:
             entity_id = entity_object_key
             entity_object = expense_report_entity_map[entity_id]
-            print(entity_object)
             process_vendor_payment(entity_object, workspace_id, 'EXPENSE REPORT')
 
 

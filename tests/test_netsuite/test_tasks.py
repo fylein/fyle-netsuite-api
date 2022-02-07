@@ -9,7 +9,7 @@ from apps.netsuite.models import CreditCardCharge, ExpenseReport, Bill, JournalE
 from apps.workspaces.models import Configuration, NetSuiteCredentials
 from apps.tasks.models import TaskLog
 from apps.netsuite.tasks import __validate_general_mapping, __validate_subsidiary_mapping, check_netsuite_object_status, create_credit_card_charge, create_journal_entry, create_or_update_employee_mapping, create_vendor_payment, get_all_internal_ids, \
-     get_or_create_credit_card_vendor, create_bill, create_expense_report, load_attachments, __handle_netsuite_connection_error, process_reimbursements, process_vendor_payment, schedule_netsuite_objects_status_sync, schedule_reimbursements_sync, schedule_vendor_payment_creation
+     get_or_create_credit_card_vendor, create_bill, create_expense_report, load_attachments, __handle_netsuite_connection_error, process_reimbursements, process_vendor_payment, schedule_bills_creation, schedule_credit_card_charge_creation, schedule_expense_reports_creation, schedule_journal_entry_creation, schedule_netsuite_objects_status_sync, schedule_reimbursements_sync, schedule_vendor_payment_creation
 from apps.mappings.models import GeneralMapping
 from fyle_accounting_mappings.models import DestinationAttribute, EmployeeMapping, CategoryMapping
 from .fixtures import data
@@ -258,8 +258,8 @@ def test_post_credit_charge(create_task_logs, add_netsuite_credentials, add_fyle
 
     general_mappings = GeneralMapping.objects.get(workspace_id=49)
 
-    general_mappings.default_ccc_account_name = 'Unapproved Expense Report'
-    general_mappings.default_ccc_account_id = 118
+    general_mappings.default_ccc_account_name = 'Bummy'
+    general_mappings.default_ccc_account_id = 12
     general_mappings.save()
 
     expense_group.id = random.randint(100, 1500000)
@@ -275,6 +275,18 @@ def test_post_credit_charge(create_task_logs, add_netsuite_credentials, add_fyle
     credit_card_charge = CreditCardCharge.objects.filter(expense_group_id=expense_group.id).first()
     assert credit_card_charge.credit_card_account_id == '228'
     assert credit_card_charge.memo == 'Credit card expenses by admin1@fyleforintacct.in'
+
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)
+    netsuite_credentials.delete()
+
+    task_log.status = 'READY'
+    task_log.save()
+
+    create_credit_card_charge(expense_group, task_log.id)
+
+    task_log = TaskLog.objects.get(id=task_log.id)
+    assert task_log.detail['message'] == 'NetSuite Account not connected'
+
 
 @pytest.mark.django_db()
 def test_get_all_internal_ids(create_expense_report, create_task_logs):
@@ -473,3 +485,44 @@ def test_process_vendor_payment(db, mocker):
 
     task_log = TaskLog.objects.get(workspace_id=49, type='CREATING_VENDOR_PAYMENT')
     assert task_log.detail == {'message': 'NetSuite Account not connected'}
+
+
+def test_schedule_netsuite_entity_creation(db):
+
+    expense_group = ExpenseGroup.objects.get(id=1)
+
+    schedule_expense_reports_creation(1, ['1'])
+
+    task_logs = TaskLog.objects.get(workspace_id=1, expense_group=expense_group)
+
+    assert task_logs.status == 'ENQUEUED'
+    assert task_logs.type == 'CREATING_EXPENSE_REPORT'
+
+    expense_group = ExpenseGroup.objects.get(id=3)
+
+    schedule_journal_entry_creation(2, ['3'])
+
+    task_logs = TaskLog.objects.get(workspace_id=2, expense_group=expense_group)
+
+    assert task_logs.status == 'ENQUEUED'
+    assert task_logs.type == 'CREATING_JOURNAL_ENTRY'
+
+
+    expense_group = ExpenseGroup.objects.get(id=2)
+
+    schedule_bills_creation(1, ['2'])
+
+    task_logs = TaskLog.objects.get(workspace_id=1, expense_group=expense_group)
+
+    assert task_logs.status == 'ENQUEUED'
+    assert task_logs.type == 'CREATING_BILL'
+
+    expense_group = ExpenseGroup.objects.get(id=48)
+
+    schedule_credit_card_charge_creation(49, ['48'])
+
+    task_logs = TaskLog.objects.get(workspace_id=49, expense_group=expense_group)
+
+    assert task_logs.status == 'ENQUEUED'
+    assert task_logs.type == 'CREATING_CREDIT_CARD_CHARGE'
+

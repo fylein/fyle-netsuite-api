@@ -2299,7 +2299,6 @@ COPY public.bill_lineitems (id, account_id, location_id, department_id, class_id
 --
 
 COPY public.bills (id, entity_id, accounts_payable_id, subsidiary_id, location_id, currency, memo, external_id, created_at, updated_at, expense_group_id, transaction_date, payment_synced, paid_on_netsuite) FROM stdin;
-2	1674	25	3	8	1	Credit card expenses by ashwin.t@fyle.in	bill 2 - ashwin.t@fyle.in	2021-11-15 13:27:21.693729+00	2021-11-15 13:27:21.693765+00	2	2021-11-15 13:27:21+00	f	f
 \.
 
 
@@ -2332,7 +2331,6 @@ COPY public.configurations (id, reimbursable_expenses_object, corporate_credit_c
 --
 
 COPY public.credit_card_charge_lineitems (id, account_id, location_id, department_id, class_id, customer_id, amount, billable, memo, netsuite_custom_segments, created_at, updated_at, credit_card_charge_id, expense_id, tax_amount, tax_item_id) FROM stdin;
-1	65	\N	\N	\N	\N	100	f	Expense by ashwin.t@fyle.in against category Accounts Payable spent on 2021-11-16 with claim number - C/2021/11/R/1	[]	2021-11-16 04:47:51.955964+00	2021-11-16 04:47:51.956005+00	1	4	16.67	1027
 \.
 
 
@@ -2341,7 +2339,6 @@ COPY public.credit_card_charge_lineitems (id, account_id, location_id, departmen
 --
 
 COPY public.credit_card_charges (id, credit_card_account_id, entity_id, subsidiary_id, location_id, currency, memo, external_id, transaction_date, created_at, updated_at, expense_group_id) FROM stdin;
-1	228	12104	5	\N	1	Credit card expenses by ashwin.t@fyle.in	cc-charge 4 - ashwin.t@fyle.in	2021-11-16 00:00:00+00	2021-11-16 04:47:51.859744+00	2021-11-16 04:47:51.859785+00	4
 \.
 
 
