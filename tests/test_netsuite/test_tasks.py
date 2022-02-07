@@ -5,13 +5,14 @@ from django_q.models import Schedule
 from pytest_mock import mocker
 from apps.fyle.models import ExpenseGroup, Reimbursement
 from apps.netsuite.connector import NetSuiteConnector
-from apps.netsuite.models import CreditCardCharge, ExpenseReport, Bill, JournalEntry
+from apps.netsuite.models import CreditCardCharge, ExpenseReport, Bill, JournalEntry, VendorPayment, VendorPaymentLineitem
 from apps.workspaces.models import Configuration, NetSuiteCredentials
 from apps.tasks.models import TaskLog
 from apps.netsuite.tasks import __validate_general_mapping, __validate_subsidiary_mapping, check_netsuite_object_status, create_credit_card_charge, create_journal_entry, create_or_update_employee_mapping, create_vendor_payment, get_all_internal_ids, \
-     get_or_create_credit_card_vendor, create_bill, create_expense_report, load_attachments, __handle_netsuite_connection_error, process_reimbursements, schedule_netsuite_objects_status_sync, schedule_reimbursements_sync, schedule_vendor_payment_creation
+     get_or_create_credit_card_vendor, create_bill, create_expense_report, load_attachments, __handle_netsuite_connection_error, process_reimbursements, process_vendor_payment, schedule_netsuite_objects_status_sync, schedule_reimbursements_sync, schedule_vendor_payment_creation
 from apps.mappings.models import GeneralMapping
 from fyle_accounting_mappings.models import DestinationAttribute, EmployeeMapping, CategoryMapping
+from .fixtures import data
 
 
 def random_char(char_num):
@@ -389,7 +390,8 @@ def test_schedule_netsuite_objects_status_sync(db):
 def test_schedule_vendor_payment_creation(db):
     
     general_mappings = GeneralMapping.objects.get(workspace_id=1)
-
+    general_mappings.vendor_payment_account_id = 25
+    general_mappings.save()
     schedule = Schedule.objects.filter(func='apps.netsuite.tasks.create_vendor_payment', args=1).count()
     assert schedule == 0
 
@@ -404,8 +406,8 @@ def test_create_vendor_payment(db, mocker, create_task_logs, add_netsuite_creden
     expenses = expense_group.expenses.all()
 
     expense_group.id = random.randint(100, 1500000)
+    expense_group.fund_source = 'PERSONAL'
     expense_group.save()
-    print('expense', expense_group.id)
     task_log = TaskLog.objects.filter(workspace_id=1).first()
     task_log.status = 'READY'
     task_log.expense_group_id = expense_group.id
@@ -413,6 +415,7 @@ def test_create_vendor_payment(db, mocker, create_task_logs, add_netsuite_creden
 
     for expense in expenses:
         expense.expense_group_id = expense_group.id
+        expense.fund_source = 'PERSONAL'
         expense.save()
 
     expense_group.expenses.set(expenses)
@@ -431,6 +434,19 @@ def test_create_vendor_payment(db, mocker, create_task_logs, add_netsuite_creden
         return_value=True
     )
 
+    create_vendor_payment(1)
+
+    task_log = TaskLog.objects.filter(workspace_id=1, status='FAILED').last()
+
+    assert task_log.detail[0]['message'] == 'An error occured in a upsert request: Invalid apacct reference key 118.'
+    assert task_log.status == 'FAILED'
+
+    vendor_payment_lineitems = VendorPaymentLineitem.objects.all()
+    vendor_payment_lineitems.delete()
+    vendor_payment = VendorPayment.objects.all()
+    vendor_payment.delete()
+
+
     mocker.patch(
         'netsuitesdk.api.vendor_payments.VendorPayments.post',
         return_value={'message': 'payment_object'}
@@ -439,9 +455,21 @@ def test_create_vendor_payment(db, mocker, create_task_logs, add_netsuite_creden
     create_vendor_payment(1)
 
     expense_report = ExpenseReport.objects.filter(expense_group_id=expense_group.id).first()
-    print(expense_report.payment_synced)
-    print(expense_report.paid_on_netsuite)
 
     assert expense_report.payment_synced == True
     assert expense_report.paid_on_netsuite == True
-    
+
+
+
+def test_process_vendor_payment(db, mocker):
+
+    entity_object = data['entity_object']
+    expense_group = ExpenseGroup.objects.get(id=1)
+    entity_object['line'][0].update({
+        'expense_group': expense_group
+    })
+
+    process_vendor_payment(entity_object, 49,'EXPENSE_REPORT')
+
+    task_log = TaskLog.objects.get(workspace_id=49, type='CREATING_VENDOR_PAYMENT')
+    assert task_log.detail == {'message': 'NetSuite Account not connected'}
