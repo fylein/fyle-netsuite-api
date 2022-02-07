@@ -1,19 +1,17 @@
 import pytest
 import random
 import string
-from datetime import datetime
-from django.urls import reverse
-from apps.fyle.models import Expense, ExpenseGroup
+from django_q.models import Schedule
+from pytest_mock import mocker
+from apps.fyle.models import ExpenseGroup, Reimbursement
 from apps.netsuite.connector import NetSuiteConnector
 from apps.netsuite.models import CreditCardCharge, ExpenseReport, Bill, JournalEntry
 from apps.workspaces.models import Configuration, NetSuiteCredentials
-from tests.helper import dict_compare_keys
 from apps.tasks.models import TaskLog
-from apps.netsuite.tasks import __validate_general_mapping, __validate_subsidiary_mapping, check_expenses_reimbursement_status, check_netsuite_object_status, create_credit_card_charge, create_journal_entry, create_netsuite_payment_objects, create_or_update_employee_mapping, create_vendor_payment, get_all_internal_ids, \
-     get_or_create_credit_card_vendor, create_bill, create_expense_report, load_attachments, __handle_netsuite_connection_error
+from apps.netsuite.tasks import __validate_general_mapping, __validate_subsidiary_mapping, check_netsuite_object_status, create_credit_card_charge, create_journal_entry, create_or_update_employee_mapping, create_vendor_payment, get_all_internal_ids, \
+     get_or_create_credit_card_vendor, create_bill, create_expense_report, load_attachments, __handle_netsuite_connection_error, process_reimbursements, schedule_netsuite_objects_status_sync, schedule_reimbursements_sync, schedule_vendor_payment_creation
 from apps.mappings.models import GeneralMapping
 from fyle_accounting_mappings.models import DestinationAttribute, EmployeeMapping, CategoryMapping
-from .fixtures import data
 
 
 def random_char(char_num):
@@ -350,3 +348,100 @@ def test_handle_netsuite_connection_error(db):
 
     assert task_log.status == 'FAILED'
     assert task_log.detail['message'] == 'NetSuite Account not connected'
+
+def test_schedule_reimbursements_sync(db):
+
+    schedule = Schedule.objects.filter(func='apps.netsuite.tasks.process_reimbursements', args=49).count()
+    assert schedule == 0
+
+    schedule_reimbursements_sync(sync_netsuite_to_fyle_payments=True, workspace_id=49)
+
+    schedule_count = Schedule.objects.filter(func='apps.netsuite.tasks.process_reimbursements', args=49).count()
+    assert schedule_count == 1
+
+
+def test_process_reimbursements(db, mocker, add_fyle_credentials):
+
+    mocker.patch(
+        'fylesdk.apis.fyle_v1.reimbursements.Reimbursements.post',
+        return_value=[]
+    )
+
+    reimbursement_count = Reimbursement.objects.filter(workspace_id=1).count()
+    assert reimbursement_count == 1
+
+    process_reimbursements(1)
+
+    reimbursement = Reimbursement.objects.filter(workspace_id=1).count()
+
+    assert reimbursement == 1
+
+def test_schedule_netsuite_objects_status_sync(db):
+
+    schedule = Schedule.objects.filter(func='apps.netsuite.tasks.check_netsuite_object_status', args=2).count()
+    assert schedule == 0
+
+    schedule_netsuite_objects_status_sync(sync_netsuite_to_fyle_payments=True, workspace_id=2)
+
+    schedule = Schedule.objects.filter(func='apps.netsuite.tasks.check_netsuite_object_status', args=2).count()
+    assert schedule == 1
+
+def test_schedule_vendor_payment_creation(db):
+    
+    general_mappings = GeneralMapping.objects.get(workspace_id=1)
+
+    schedule = Schedule.objects.filter(func='apps.netsuite.tasks.create_vendor_payment', args=1).count()
+    assert schedule == 0
+
+    schedule_vendor_payment_creation(sync_fyle_to_netsuite_payments=True, workspace_id=1)
+
+    schedule = Schedule.objects.filter(func='apps.netsuite.tasks.create_vendor_payment', args=1).count()
+    assert schedule == 1
+
+def test_create_vendor_payment(db, mocker, create_task_logs, add_netsuite_credentials, add_fyle_credentials):
+
+    expense_group = ExpenseGroup.objects.filter(workspace_id=1).last()
+    expenses = expense_group.expenses.all()
+
+    expense_group.id = random.randint(100, 1500000)
+    expense_group.save()
+    print('expense', expense_group.id)
+    task_log = TaskLog.objects.filter(workspace_id=1).first()
+    task_log.status = 'READY'
+    task_log.expense_group_id = expense_group.id
+    task_log.save()
+
+    for expense in expenses:
+        expense.expense_group_id = expense_group.id
+        expense.save()
+
+    expense_group.expenses.set(expenses)
+
+    create_expense_report(expense_group, task_log.id)
+    
+    new_task_log = TaskLog.objects.get(id=task_log.id)
+
+    mocker.patch(
+        'apps.tasks.models.TaskLog.objects.get',
+        return_value=new_task_log
+    )
+
+    mocker.patch(
+        'apps.netsuite.tasks.check_expenses_reimbursement_status',
+        return_value=True
+    )
+
+    mocker.patch(
+        'netsuitesdk.api.vendor_payments.VendorPayments.post',
+        return_value={'message': 'payment_object'}
+    )
+
+    create_vendor_payment(1)
+
+    expense_report = ExpenseReport.objects.filter(expense_group_id=expense_group.id).first()
+    print(expense_report.payment_synced)
+    print(expense_report.paid_on_netsuite)
+
+    assert expense_report.payment_synced == True
+    assert expense_report.paid_on_netsuite == True
+    

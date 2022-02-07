@@ -956,7 +956,6 @@ def check_expenses_reimbursement_status(expenses):
 
     for expense in expenses:
         reimbursement = Reimbursement.objects.filter(settlement_id=expense.settlement_id).first()
-
         if (reimbursement and reimbursement.state != 'COMPLETE') or not reimbursement:
             all_expenses_paid = False
 
@@ -980,6 +979,7 @@ def create_netsuite_payment_objects(netsuite_objects, object_type, workspace_id)
             expense_group=netsuite_object.expense_group, status='COMPLETE')
 
         # When the record is deleted, netsuite sdk would throw an exception RCRD_DSNT_EXIST
+
         try:
             if object_type == 'BILL':
                 netsuite_entry = netsuite_connection.get_bill(netsuite_object_task_log.detail['internalId'])
@@ -1045,11 +1045,11 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
                 first_object = netsuite_connection.get_bill(first_object_id)
             else:
                 first_object = netsuite_connection.get_expense_report(first_object_id)
-
+            
             created_vendor_payment = netsuite_connection.post_vendor_payment(
                 vendor_payment_object, vendor_payment_lineitems, first_object
             )
-
+            print('nilesh pant', created_vendor_payment)
             lines = entity_object['line']
             expense_group_ids = [line['expense_group'].id for line in lines]
 
@@ -1113,6 +1113,8 @@ def create_vendor_payment(workspace_id):
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
     platform.reimbursements.sync()
 
+    expense_reports = ExpenseReport.objects.filter(expense_group__workspace_id=1).first()
+
     bills = Bill.objects.filter(
         payment_synced=False, expense_group__workspace_id=workspace_id,
         expense_group__fund_source='PERSONAL', expense_group__exported_at__isnull=False
@@ -1123,13 +1125,14 @@ def create_vendor_payment(workspace_id):
         expense_group__fund_source='PERSONAL', expense_group__exported_at__isnull=False
     ).all()
 
+
     if bills:
         bill_entity_map = create_netsuite_payment_objects(bills, 'BILL', workspace_id)
 
         for entity_object_key in bill_entity_map:
             entity_id = entity_object_key
             entity_object = bill_entity_map[entity_id]
-
+            
             process_vendor_payment(entity_object, workspace_id, 'BILL')
 
     if expense_reports:
@@ -1139,7 +1142,7 @@ def create_vendor_payment(workspace_id):
         for entity_object_key in expense_report_entity_map:
             entity_id = entity_object_key
             entity_object = expense_report_entity_map[entity_id]
-
+            print(entity_object)
             process_vendor_payment(entity_object, workspace_id, 'EXPENSE REPORT')
 
 
@@ -1283,10 +1286,10 @@ def process_reimbursements(workspace_id):
 
             if all_expense_paid:
                 reimbursement_ids.append(reimbursement.reimbursement_id)
-
+    
     if reimbursement_ids:
         fyle_connector.post_reimbursement(reimbursement_ids)
-        platform.reimbursements.sync_reimbursements()
+        platform.reimbursements.sync()
 
 
 def schedule_reimbursements_sync(sync_netsuite_to_fyle_payments, workspace_id):
