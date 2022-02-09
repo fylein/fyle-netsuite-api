@@ -8,7 +8,7 @@ from .fixtures import data
 def test_create_expense(create_temp_workspace):
     mock_expenes = data['expenses']
     Expense.create_expense_objects(
-        mock_expenes, 1
+        mock_expenes
     )
 
     expense = Expense.objects.filter(org_id='orf6t6jWUnpx')

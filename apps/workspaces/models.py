@@ -1,6 +1,7 @@
 """
 Workspace Models
 """
+from email.policy import default
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import ArrayField
@@ -140,6 +141,8 @@ class Configuration(models.Model):
         max_length=50, choices=AUTO_MAP_EMPLOYEE_CHOICES,
         help_text='Auto Map Employees type from NetSuite to Fyle', null=True
     )
+    skip_cards_mapping = models.BooleanField(default=False, help_text='Skip cards mapping')
+    map_fyle_cards_netsuite_account = models.BooleanField(default=True, help_text='Map Fyle Cards to Netsuite Account')
     memo_structure = ArrayField(
         base_field=models.CharField(max_length=100), default=get_default_memo_fields,
         help_text='list of system fields for creating custom memo'
