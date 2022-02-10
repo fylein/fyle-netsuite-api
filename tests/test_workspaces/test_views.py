@@ -92,8 +92,6 @@ def test_get_configuration_detail(api_client, test_connection):
     assert response.status_code == 200
     response = json.loads(response.content)
 
-    print(response)
-
     expected_response = get_response_dict('test_workspaces/data.json')
 
     assert dict_compare_keys(response, expected_response['configuration']) == [], 'configuration api returns a diff in keys'
