@@ -1,5 +1,11 @@
+import email
 from datetime import datetime
+from typing import List
 
+from django.core.mail import EmailMessage
+from django.template.loader import get_template
+from django.contrib.auth import get_user_model
+from django.template.loader import render_to_string
 from django_q.models import Schedule
 
 from apps.fyle.models import ExpenseGroup
@@ -7,7 +13,7 @@ from apps.fyle.tasks import create_expense_groups
 from apps.netsuite.tasks import schedule_bills_creation, schedule_journal_entry_creation, \
     schedule_expense_reports_creation, schedule_credit_card_charge_creation
 from apps.tasks.models import TaskLog
-from apps.workspaces.models import WorkspaceSchedule, Configuration
+from apps.workspaces.models import User, Workspace, WorkspaceSchedule, Configuration
 
 
 def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int):
@@ -109,3 +115,40 @@ def run_sync_schedule(workspace_id):
                 schedule_credit_card_charge_creation(
                     workspace_id=workspace_id, expense_group_ids=expense_group_ids
                 )
+
+def run_schedule_email_notification(workspace_id):
+
+    ws_schedule, _ = WorkspaceSchedule.objects.get_or_create(
+        workspace_id=workspace_id
+    )
+
+    admin_emails = []
+    if ws_schedule.enabled:
+        task_logs = TaskLog.objects.filter(workspace_id=workspace_id, status='FAILED')
+        workspace_admins = Workspace.objects.filter(pk=workspace_id).values_list('user', flat=True)
+
+        for admin_id in workspace_admins:
+            user_email = User.objects.get(id=admin_id).email
+            admin_emails.append(user_email)
+
+        if ws_schedule.errors is None or len(task_logs) > ws_schedule.errors:
+            context = {
+                'name': 'Elon Musk',
+                'errors': len(task_logs),
+                'task_log': task_logs[0].detail
+            }
+
+            ws_schedule.errors = len(task_logs)
+            ws_schedule.save()
+
+            message = render_to_string("mail_template.html", context)
+
+            mail = EmailMessage(
+                subject="Export To Netsuite Failed",
+                body=message,
+                from_email='nilesh.p@fyle.in',
+                to=['nileshpant112@gmail.com'],
+            )
+
+            mail.content_subtype = "html"
+            mail.send()

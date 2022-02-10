@@ -73,6 +73,8 @@ class WorkspaceSchedule(models.Model):
     enabled = models.BooleanField(default=False)
     start_datetime = models.DateTimeField(help_text='Datetime for start of schedule', null=True)
     interval_hours = models.IntegerField(null=True)
+    errors = models.IntegerField(null=True)
+    emails = ArrayField(base_field=models.CharField(max_length=255), null=True, help_text='Admin Email')
     schedule = models.OneToOneField(Schedule, on_delete=models.PROTECT, null=True)
 
     class Meta:
