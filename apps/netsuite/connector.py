@@ -1020,7 +1020,8 @@ class NetSuiteConnector:
             ),
             'externalId': credit_card_charge.external_id
         }
-
+        
+        print(credit_card_charge_payload)
         return credit_card_charge_payload
 
     def post_credit_card_charge(self, credit_card_charge: CreditCardCharge,
