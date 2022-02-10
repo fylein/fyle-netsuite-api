@@ -33,7 +33,6 @@ def run_post_mapping_settings_triggers(sender, instance: MappingSetting, **kwarg
         schedule_fyle_attributes_creation(int(instance.workspace_id))
 
     configuration = Configuration.objects.filter(workspace_id=instance.workspace_id).first()
-
     if configuration:
         delete_cards_mapping_settings(configuration)
 
