@@ -247,7 +247,7 @@ def get_expense_purpose(lineitem, category, configuration) -> str:
 
     return purpose
 
-def get_ccc_account_id(configuration, general_mappings, expense, description):
+def get_ccc_account_id(configuration: Configuration, general_mappings: GeneralMapping, expense: Expense, description: str):
     if configuration.map_fyle_cards_netsuite_account:
         ccc_account = Mapping.objects.filter(
             source_type='CORPORATE_CARD',
