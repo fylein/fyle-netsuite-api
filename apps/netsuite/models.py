@@ -703,6 +703,7 @@ class ExpenseReport(models.Model):
 
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
         subsidiary_mappings = SubsidiaryMapping.objects.get(workspace_id=expense_group.workspace_id)
+        configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
 
         currency = DestinationAttribute.objects.filter(value=expense.currency,
                                                        workspace_id=expense_group.workspace_id,
@@ -711,15 +712,7 @@ class ExpenseReport(models.Model):
         debit_account_id = GeneralMapping.objects.get(
             workspace_id=expense_group.workspace_id).reimbursable_account_id
 
-        employee_mapping = EmployeeMapping.objects.filter(
-            source_employee__value=description.get('employee_email'),
-            workspace_id=expense_group.workspace_id
-        ).first()
-
-        if employee_mapping and employee_mapping.destination_card_account:
-            credit_card_account_id = employee_mapping.destination_card_account.destination_id
-        else:
-            credit_card_account_id = general_mappings.default_ccc_account_id
+        credit_card_account_id = get_ccc_account_id(configuration, general_mappings, expense, description)
 
         configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
         employee_field_mapping = configuration.employee_field_mapping
