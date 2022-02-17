@@ -26,6 +26,7 @@ def post_request(url, body, refresh_token=None):
         api_headers['content-type'] = 'application/json'
         api_headers['Authorization'] = 'Bearer {0}'.format(access_token)
 
+    print(url, body, api_headers)
     response = requests.post(
         url,
         headers=api_headers,
