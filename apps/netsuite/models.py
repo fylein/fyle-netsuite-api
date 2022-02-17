@@ -703,6 +703,7 @@ class ExpenseReport(models.Model):
 
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
         subsidiary_mappings = SubsidiaryMapping.objects.get(workspace_id=expense_group.workspace_id)
+        configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
 
         currency = DestinationAttribute.objects.filter(value=expense.currency,
                                                        workspace_id=expense_group.workspace_id,
