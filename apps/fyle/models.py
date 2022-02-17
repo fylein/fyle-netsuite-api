@@ -323,9 +323,10 @@ class ExpenseGroup(models.Model):
 
         corporate_credit_card_expenses = list(filter(lambda expense: expense.fund_source == 'CCC', expense_objects))
 
-        if configuration.corporate_credit_card_expenses_object != 'EXPENSE REPORT':
-            corporate_credit_card_expenses = list(filter(lambda expense: expense.amount > 0, corporate_credit_card_expenses))
-
+        if configuration.corporate_credit_card_expenses_object not in ('EXPENSE REPORT', 'CREDIT CARD CHARGE'):
+            corporate_credit_card_expenses = list(
+                filter(lambda expense: expense.amount > 0, corporate_credit_card_expenses)
+            )
 
         corporate_credit_card_expense_groups = _group_expenses(
             corporate_credit_card_expenses, corporate_credit_card_expense_group_field, workspace_id)

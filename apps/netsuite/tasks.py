@@ -341,13 +341,17 @@ def create_credit_card_charge(expense_group, task_log_id):
             attachment_links = {}
 
             expense = expense_group.expenses.first()
+            refund = False
+            if expense.amount < 0:
+                refund = True
             attachment_link = load_attachments(netsuite_connection, expense.expense_id, expense_group)
 
             if attachment_link:
                 attachment_links[expense.expense_id] = attachment_link
 
             created_credit_card_charge = netsuite_connection.post_credit_card_charge(
-                credit_card_charge_object, credit_card_charge_lineitems_object, attachment_links)
+                credit_card_charge_object, credit_card_charge_lineitems_object, attachment_links, refund
+            )
 
             task_log.detail = created_credit_card_charge
             task_log.credit_card_purchase = credit_card_charge_object

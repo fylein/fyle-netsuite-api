@@ -971,7 +971,7 @@ class NetSuiteConnector:
             'customFieldList': netsuite_custom_segments,
             'isBillable': line.billable,
             'taxAmount': None,
-            'taxCode':{
+            'taxCode': {
                 'name': None,
                 'internalId': None,
                 'externalId': None,
@@ -1024,14 +1024,13 @@ class NetSuiteConnector:
         return credit_card_charge_payload
 
     def post_credit_card_charge(self, credit_card_charge: CreditCardCharge,
-                                credit_card_charge_lineitem: CreditCardChargeLineItem, attachment_links: Dict):
+                                credit_card_charge_lineitem: CreditCardChargeLineItem, attachment_links: Dict,
+                                refund: bool):
         """
         Post vendor credit_card_charges to NetSuite
         """
         
         configuration = Configuration.objects.get(workspace_id=self.workspace_id)
-        credit_card_charges_payload = self.__construct_credit_card_charge(
-            credit_card_charge, credit_card_charge_lineitem, attachment_links)
 
         account = self.__netsuite_credentials.ns_account_id.replace('_', '-')
         consumer_key = self.__netsuite_credentials.ns_consumer_key
@@ -1041,6 +1040,14 @@ class NetSuiteConnector:
 
         url = f"https://{account.lower()}.restlets.api.netsuite.com/app/site/hosting/restlet.nl?" \
             f"script=customscript_cc_charge_fyle&deploy=customdeploy_cc_charge_fyle"
+
+        if refund:
+            credit_card_charge_lineitem.amount = abs(credit_card_charge_lineitem.amount)
+            url = f"https://{account.lower()}.restlets.api.netsuite.com/app/site/hosting/restlet.nl?" \
+                  f"script=customscriptrefund&deploy=customdeployrefund"
+
+        credit_card_charges_payload = self.__construct_credit_card_charge(
+            credit_card_charge, credit_card_charge_lineitem, attachment_links)
 
         oauth = OAuth1Session(
             client_key=consumer_key,
