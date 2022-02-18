@@ -722,8 +722,7 @@ class ExpenseReport(models.Model):
 
         employee_mapping = EmployeeMapping.objects.filter(
             source_employee__value=description.get('employee_email'),
-            workspace_id=expense_group.workspace_id,
-            destination_type='EMPLOYEE'
+            workspace_id=expense_group.workspace_id
         ).first()
 
         if general_mappings.use_employee_department and general_mappings.department_level in (
