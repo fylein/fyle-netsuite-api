@@ -17,7 +17,7 @@ def test_expense_group_view(api_client, test_connection):
                'workspace_id': 1,
             }
          )
-   
+
    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
 
    response = api_client.get(url, {
@@ -187,11 +187,11 @@ def test_fyle_refresh_dimension(api_client, test_connection, add_fyle_credential
     
    access_token = test_connection.access_token
 
-   url = reverse('refresh-fyle-dimensions', 
+   url = reverse('refresh-fyle-dimensions',
       kwargs={
-            'workspace_id':1,
-         }
-      )
+         'workspace_id': 1,
+      }
+   )
    
    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
    
