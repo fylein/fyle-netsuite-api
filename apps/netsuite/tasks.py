@@ -861,17 +861,22 @@ def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: L
         chain = Chain(cached=False)
 
         for expense_group in expense_groups:
+            expense_amount = expense_group.expenses.first().amount
+            export_type = 'CREATING_CREDIT_CARD_CHARGE'
+            if expense_amount < 0:
+                export_type = 'CREATING_CREDIT_CARD_REFUND'
+
             task_log, _ = TaskLog.objects.get_or_create(
                 workspace_id=expense_group.workspace_id,
                 expense_group=expense_group,
                 defaults={
                     'status': 'ENQUEUED',
-                    'type': 'CREATING_CREDIT_CARD_CHARGE'
+                    'type': export_type
                 }
             )
 
             if task_log.status not in ['IN_PROGRESS', 'ENQUEUED']:
-                task_log.type = 'CREATING_CREDIT_CARD_CHARGE'
+                task_log.type = export_type
                 task_log.status = 'ENQUEUED'
                 task_log.save()
 
