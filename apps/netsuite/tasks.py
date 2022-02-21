@@ -817,8 +817,7 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str]):
         ).all()
 
         chain = Chain(cached=False)
-        
-        print(expense_groups)
+
         for expense_group in expense_groups:
             task_log, _ = TaskLog.objects.get_or_create(
                 workspace_id=expense_group.workspace_id,
@@ -856,7 +855,6 @@ def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: L
         ).all()
 
         chain = Chain(cached=False)
-        
         for expense_group in expense_groups:
             task_log, _ = TaskLog.objects.get_or_create(
                 workspace_id=expense_group.workspace_id,
@@ -957,6 +955,7 @@ def check_expenses_reimbursement_status(expenses):
 
     for expense in expenses:
         reimbursement = Reimbursement.objects.filter(settlement_id=expense.settlement_id).first()
+
         if (reimbursement and reimbursement.state != 'COMPLETE') or not reimbursement:
             all_expenses_paid = False
 
@@ -980,7 +979,6 @@ def create_netsuite_payment_objects(netsuite_objects, object_type, workspace_id)
             expense_group=netsuite_object.expense_group, status='COMPLETE')
 
         # When the record is deleted, netsuite sdk would throw an exception RCRD_DSNT_EXIST
-
         try:
             if object_type == 'BILL':
                 netsuite_entry = netsuite_connection.get_bill(netsuite_object_task_log.detail['internalId'])
@@ -1020,6 +1018,8 @@ def create_netsuite_payment_objects(netsuite_objects, object_type, workspace_id)
 
 
 def process_vendor_payment(entity_object, workspace_id, object_type):
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
 
     task_log, _ = TaskLog.objects.update_or_create(
         workspace_id=workspace_id,
@@ -1030,12 +1030,8 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
         }
     )
 
-    print('e0sh0sf s0ifs0f')
     with transaction.atomic():
         try:
-            netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
-            netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
-
             vendor_payment_object = VendorPayment.create_vendor_payment(
                 workspace_id, entity_object
             )
@@ -1049,10 +1045,10 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
                 first_object = netsuite_connection.get_bill(first_object_id)
             else:
                 first_object = netsuite_connection.get_expense_report(first_object_id)
-            
             created_vendor_payment = netsuite_connection.post_vendor_payment(
                 vendor_payment_object, vendor_payment_lineitems, first_object
             )
+
             lines = entity_object['line']
             expense_group_ids = [line['expense_group'].id for line in lines]
 
@@ -1086,7 +1082,6 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
             task_log.save()
 
         except NetSuiteRequestError as exception:
-            print('I am here')
             all_details = []
             logger.exception({'error': exception})
             detail = json.dumps(exception.__dict__)
@@ -1117,8 +1112,6 @@ def create_vendor_payment(workspace_id):
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
     platform.reimbursements.sync()
 
-    expense_reports = ExpenseReport.objects.filter(expense_group__workspace_id=1).first()
-
     bills = Bill.objects.filter(
         payment_synced=False, expense_group__workspace_id=workspace_id,
         expense_group__fund_source='PERSONAL', expense_group__exported_at__isnull=False
@@ -1129,14 +1122,13 @@ def create_vendor_payment(workspace_id):
         expense_group__fund_source='PERSONAL', expense_group__exported_at__isnull=False
     ).all()
 
-
     if bills:
         bill_entity_map = create_netsuite_payment_objects(bills, 'BILL', workspace_id)
 
         for entity_object_key in bill_entity_map:
             entity_id = entity_object_key
             entity_object = bill_entity_map[entity_id]
-            
+
             process_vendor_payment(entity_object, workspace_id, 'BILL')
 
     if expense_reports:
@@ -1146,6 +1138,7 @@ def create_vendor_payment(workspace_id):
         for entity_object_key in expense_report_entity_map:
             entity_id = entity_object_key
             entity_object = expense_report_entity_map[entity_id]
+
             process_vendor_payment(entity_object, workspace_id, 'EXPENSE REPORT')
 
 
@@ -1289,7 +1282,7 @@ def process_reimbursements(workspace_id):
 
             if all_expense_paid:
                 reimbursement_ids.append(reimbursement.reimbursement_id)
-    
+
     if reimbursement_ids:
         fyle_connector.post_reimbursement(reimbursement_ids)
         platform.reimbursements.sync()

@@ -313,6 +313,7 @@ class ExpenseGroup(models.Model):
 
             if total_amount < 0:
                 reimbursable_expenses = list(filter(lambda expense: expense.amount > 0, reimbursable_expenses))
+
         else:
             reimbursable_expenses = list(filter(lambda expense: expense.amount > 0, reimbursable_expenses))
 
