@@ -11,7 +11,7 @@ from .fixtures import data
 def test_create_expense(create_temp_workspace):
     mock_expenes = data['expenses']
     Expense.create_expense_objects(
-        mock_expenes, 1
+        mock_expenes
     )
 
     expense = Expense.objects.filter(org_id='orsO0VW86WLQ')
@@ -49,7 +49,7 @@ def test_expense_group_settings(create_temp_workspace):
 def test_create_expense_groups_by_report_id_fund_source(db):
     expenses = data['expenses']
 
-    expense_objects = Expense.create_expense_objects(expenses, 49)
+    expense_objects = Expense.create_expense_objects(expenses)
 
     configuration = Configuration.objects.get(workspace_id=49)
     workspace = Workspace.objects.get(id=1)

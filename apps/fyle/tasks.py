@@ -82,7 +82,7 @@ def create_expense_groups(workspace_id: int, configuration: Configuration, fund_
                 workspace.last_synced_at = datetime.now()
                 workspace.save()
 
-            expense_objects = Expense.create_expense_objects(expenses, workspace_id)
+            expense_objects = Expense.create_expense_objects(expenses)
 
             ExpenseGroup.create_expense_groups_by_report_id_fund_source(
                 expense_objects, configuration, workspace_id

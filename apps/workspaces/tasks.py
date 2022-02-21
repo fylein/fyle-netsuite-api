@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django_q.models import Schedule
+from fyle_accounting_mappings.models import MappingSetting
 
 from apps.fyle.models import ExpenseGroup
 from apps.fyle.tasks import create_expense_groups
@@ -109,3 +110,16 @@ def run_sync_schedule(workspace_id):
                 schedule_credit_card_charge_creation(
                     workspace_id=workspace_id, expense_group_ids=expense_group_ids
                 )
+
+
+def delete_cards_mapping_settings(configuration: Configuration):
+
+    if not configuration.map_fyle_cards_netsuite_account or not configuration.corporate_credit_card_expenses_object:
+        mapping_setting = MappingSetting.objects.filter(
+            workspace_id=configuration.workspace_id,
+            source_field='CORPORATE_CARD',
+            destination_field='CREDIT_CARD_ACCOUNT'
+        ).first()
+
+        if mapping_setting:
+            mapping_setting.delete()

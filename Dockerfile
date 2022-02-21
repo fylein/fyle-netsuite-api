@@ -2,7 +2,7 @@
 FROM python:3.7.4-slim
 
 # install the requirements from the requirements.txt file via git
-RUN apt-get update && apt-get install git -y --no-install-recommends
+RUN apt-get update && apt-get -y install libpq-dev gcc && apt-get install git -y --no-install-recommends
 
 ARG CI
 RUN if [ "$CI" = "ENABLED" ]; then \
