@@ -1018,9 +1018,6 @@ def create_netsuite_payment_objects(netsuite_objects, object_type, workspace_id)
 
 
 def process_vendor_payment(entity_object, workspace_id, object_type):
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
-    netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
-
     task_log, _ = TaskLog.objects.update_or_create(
         workspace_id=workspace_id,
         task_id='PAYMENT_{}'.format(entity_object['unique_id']),
@@ -1032,6 +1029,9 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
 
     with transaction.atomic():
         try:
+            netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+            netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
+
             vendor_payment_object = VendorPayment.create_vendor_payment(
                 workspace_id, entity_object
             )
