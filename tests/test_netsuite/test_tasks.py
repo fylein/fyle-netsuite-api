@@ -1,6 +1,7 @@
 import pytest
 import random
 import string
+<<<<<<< HEAD
 from django_q.models import Schedule
 from pytest_mock import mocker
 from apps.fyle.models import ExpenseGroup, Reimbursement
@@ -10,6 +11,18 @@ from apps.workspaces.models import Configuration, NetSuiteCredentials
 from apps.tasks.models import TaskLog
 from apps.netsuite.tasks import __validate_general_mapping, __validate_subsidiary_mapping, check_netsuite_object_status, create_credit_card_charge, create_journal_entry, create_or_update_employee_mapping, create_vendor_payment, get_all_internal_ids, \
      get_or_create_credit_card_vendor, create_bill, create_expense_report, load_attachments, __handle_netsuite_connection_error, process_reimbursements, process_vendor_payment, schedule_bills_creation, schedule_credit_card_charge_creation, schedule_expense_reports_creation, schedule_journal_entry_creation, schedule_netsuite_objects_status_sync, schedule_reimbursements_sync, schedule_vendor_payment_creation
+=======
+from datetime import datetime
+from django.urls import reverse
+from apps.fyle.models import Expense, ExpenseGroup
+from apps.netsuite.connector import NetSuiteConnector
+from apps.netsuite.models import CreditCardCharge, ExpenseReport, Bill, JournalEntry
+from apps.workspaces.models import Configuration, NetSuiteCredentials
+from tests.helper import dict_compare_keys
+from apps.tasks.models import TaskLog
+from apps.netsuite.tasks import __validate_general_mapping, __validate_subsidiary_mapping, check_expenses_reimbursement_status, check_netsuite_object_status, create_credit_card_charge, create_journal_entry, create_netsuite_payment_objects, create_or_update_employee_mapping, create_vendor_payment, get_all_internal_ids, \
+     get_or_create_credit_card_vendor, create_bill, create_expense_report, load_attachments, __handle_netsuite_connection_error
+>>>>>>> b5acc10014ca5781d40d692abdf93d3690f0b5ec
 from apps.mappings.models import GeneralMapping
 from fyle_accounting_mappings.models import DestinationAttribute, EmployeeMapping, CategoryMapping
 from .fixtures import data
@@ -361,6 +374,7 @@ def test_handle_netsuite_connection_error(db):
 
     assert task_log.status == 'FAILED'
     assert task_log.detail['message'] == 'NetSuite Account not connected'
+
 
 def test_schedule_reimbursements_sync(db):
 

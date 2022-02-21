@@ -235,17 +235,17 @@ def test_schedule_tax_group_creation(db):
     schedule_tax_groups_creation(import_tax_items=True, workspace_id=workspace_id)
 
     schedule = Schedule.objects.filter(
-            func='apps.mappings.tasks.auto_create_tax_group_mappings',
-            args='{}'.format(workspace_id),
-        ).first()
+        func='apps.mappings.tasks.auto_create_tax_group_mappings',
+        args='{}'.format(workspace_id),
+    ).first()
     
     assert schedule.func == 'apps.mappings.tasks.auto_create_tax_group_mappings'
 
     schedule_tax_groups_creation(import_tax_items=False, workspace_id=workspace_id)
 
     schedule = Schedule.objects.filter(
-            func='apps.mappings.tasks.auto_create_tax_group_mappings',
-            args='{}'.format(workspace_id),
+        func='apps.mappings.tasks.auto_create_tax_group_mappings',
+        args='{}'.format(workspace_id),
     ).first()
 
     assert schedule == None
