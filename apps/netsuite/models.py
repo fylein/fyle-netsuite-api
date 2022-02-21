@@ -720,6 +720,11 @@ class ExpenseReport(models.Model):
         department_id = None
         class_id = None
 
+        employee_mapping = EmployeeMapping.objects.filter(
+            source_employee__value=description.get('employee_email'),
+            workspace_id=expense_group.workspace_id
+        ).first()
+
         if general_mappings.use_employee_department and general_mappings.department_level in (
             'ALL', 'TRANSACTION_BODY') and employee_field_mapping == 'EMPLOYEE':
             department_id = employee_mapping.destination_employee.detail.get('department_id')
