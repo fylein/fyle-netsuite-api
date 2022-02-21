@@ -2302,7 +2302,6 @@ COPY public.bill_lineitems (id, account_id, location_id, department_id, class_id
 --
 
 COPY public.bills (id, entity_id, accounts_payable_id, subsidiary_id, location_id, currency, memo, external_id, created_at, updated_at, expense_group_id, transaction_date, payment_synced, paid_on_netsuite) FROM stdin;
-2	1674	25	3	8	1	Credit card expenses by ashwin.t@fyle.in	bill 2 - ashwin.t@fyle.in	2021-11-15 18:57:21.693729+05:30	2021-11-15 18:57:21.693765+05:30	2	2021-11-15 18:57:21+05:30	f	f
 \.
 
 
@@ -2335,7 +2334,6 @@ COPY public.configurations (id, reimbursable_expenses_object, corporate_credit_c
 --
 
 COPY public.credit_card_charge_lineitems (id, account_id, location_id, department_id, class_id, customer_id, amount, billable, memo, netsuite_custom_segments, created_at, updated_at, credit_card_charge_id, expense_id, tax_amount, tax_item_id) FROM stdin;
-1	65	\N	\N	\N	\N	100	f	Expense by ashwin.t@fyle.in against category Accounts Payable spent on 2021-11-16 with claim number - C/2021/11/R/1	[]	2021-11-16 10:17:51.955964+05:30	2021-11-16 10:17:51.956005+05:30	1	4	16.67	1027
 \.
 
 
@@ -2344,7 +2342,6 @@ COPY public.credit_card_charge_lineitems (id, account_id, location_id, departmen
 --
 
 COPY public.credit_card_charges (id, credit_card_account_id, entity_id, subsidiary_id, location_id, currency, memo, external_id, transaction_date, created_at, updated_at, expense_group_id) FROM stdin;
-1	228	12104	5	\N	1	Credit card expenses by ashwin.t@fyle.in	cc-charge 4 - ashwin.t@fyle.in	2021-11-16 05:30:00+05:30	2021-11-16 10:17:51.859744+05:30	2021-11-16 10:17:51.859785+05:30	4
 \.
 
 
@@ -2455,7 +2452,7 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 94	EMPLOYEE	Employee	Paul Blancaflor	1601	2021-11-15 14:26:02.247774+05:30	2021-11-15 14:26:02.247818+05:30	1	\N	{"email": "pblancaflor@netsuite.com", "class_id": null, "location_id": null, "department_id": null}	f
 95	EMPLOYEE	Employee	Fats Aralar	1626	2021-11-15 14:26:02.247906+05:30	2021-11-15 14:26:02.24793+05:30	1	\N	{"email": "faralar2@netsuite.com", "class_id": null, "location_id": null, "department_id": null}	f
 96	EMPLOYEE	Employee	Jan Bucoy	1640	2021-11-15 14:26:02.248006+05:30	2021-11-15 14:26:02.248025+05:30	1	\N	{"email": "jbucoy@netsuite.com", "class_id": null, "location_id": null, "department_id": null}	f
-97	EMPLOYEE	Employee	Terry Chan	1644	2021-11-15 14:26:02.248097+05:30	2021-11-15 14:26:02.248114+05:30	1	\N	{"email": "Siva@fyle.in", "class_id": null, "location_id": null, "department_id": null}	f
+97	EMPLOYEE	Employee	jhonsnow@gmail.com	1644	2021-11-15 14:26:02.248097+05:30	2021-11-15 14:26:02.248114+05:30	1	\N	{"email": "Siva@fyle.in", "class_id": null, "location_id": null, "department_id": null}	f
 98	EMPLOYEE	Employee	Shwetabh  Kumar	1676	2021-11-15 14:26:02.248184+05:30	2021-11-15 14:26:02.248201+05:30	1	\N	{"email": null, "class_id": null, "location_id": null, "department_id": null}	f
 101	EMPLOYEE	Employee	James Bond	11104	2021-11-15 14:26:02.248442+05:30	2021-11-15 14:26:02.248459+05:30	1	\N	{"email": "user2@fylefornileshfyle.in", "class_id": null, "location_id": null, "department_id": null}	f
 102	EMPLOYEE	Employee	Nil Sun	13812	2021-11-15 14:26:02.248527+05:30	2021-11-15 14:26:02.248544+05:30	1	\N	{"email": null, "class_id": null, "location_id": null, "department_id": null}	f
@@ -7612,7 +7609,7 @@ COPY public.employee_mappings (id, created_at, updated_at, destination_card_acco
 COPY public.expense_attributes (id, attribute_type, display_name, value, source_id, created_at, updated_at, workspace_id, active, detail, auto_mapped, auto_created) FROM stdin;
 1	EMPLOYEE	Employee	approver1@fyleforgotham.in	ouMvD0iJ0pXK	2021-11-15 14:25:47.714918+05:30	2021-11-15 14:25:47.714944+05:30	1	\N	{"user_id": "usAsCHVckAu8", "location": null, "full_name": "Ryan Gallagher", "department": null, "department_id": null, "employee_code": null, "department_code": null}	f	f
 2	EMPLOYEE	Employee	owner@fyleforgotham.in	ouT4EarnaThA	2021-11-15 14:25:47.714989+05:30	2021-11-15 14:25:47.715+05:30	1	\N	{"user_id": "uspg0D51Nts1", "location": null, "full_name": "Fyle For Arkham Asylum", "department": null, "department_id": null, "employee_code": null, "department_code": null}	f	f
-3	EMPLOYEE	Employee	Paul Blancaflor	ouECRFhw3AjY	2021-11-15 14:25:47.715039+05:30	2021-11-15 14:25:47.715049+05:30	1	\N	{"user_id": "usnplBhNoBFN", "location": null, "full_name": "Theresa Brown", "department": null, "department_id": null, "employee_code": null, "department_code": null}	f	f
+3	EMPLOYEE	Employee	jhonsnow@gmail.com	ouECRFhw3AjY	2021-11-15 14:25:47.715039+05:30	2021-11-15 14:25:47.715049+05:30	1	\N	{"user_id": "usnplBhNoBFN", "location": null, "full_name": "Theresa Brown", "department": null, "department_id": null, "employee_code": null, "department_code": null}	f	f
 4	EMPLOYEE	Employee	user10@fyleforgotham.in	ou7yyjvEaliS	2021-11-15 14:25:47.715087+05:30	2021-11-15 14:25:47.715096+05:30	1	\N	{"user_id": "usH1U6GUQgbT", "location": null, "full_name": "Matthew Estrada", "department": "Department 4", "department_id": "depttugt5POp4K", "employee_code": null, "department_code": null}	f	f
 5	EMPLOYEE	Employee	user1@fyleforgotham.in	ouVT4YfloipJ	2021-11-15 14:25:47.715134+05:30	2021-11-15 14:25:47.715144+05:30	1	\N	{"user_id": "usRKNmaNoXTy", "location": null, "full_name": "Joshua Wood", "department": "Department 2", "department_id": "deptgZF9aUB0tH", "employee_code": null, "department_code": null}	f	f
 6	EMPLOYEE	Employee	user2@fyleforxyzcorp.in	ou8TYuw4AxVG	2021-11-15 14:25:47.715183+05:30	2021-11-15 14:25:47.715193+05:30	1	\N	{"user_id": "usBlCjf2LQFc", "location": null, "full_name": "Brian Foster", "department": "Department 1", "department_id": "deptDhMjvs45aT", "employee_code": null, "department_code": null}	f	f
@@ -11094,9 +11091,9 @@ COPY public.expense_attributes (id, attribute_type, display_name, value, source_
 --
 
 COPY public.expense_group_settings (id, reimbursable_expense_group_fields, corporate_credit_card_expense_group_fields, expense_state, reimbursable_export_date_type, created_at, updated_at, workspace_id, import_card_credits, ccc_export_date_type) FROM stdin;
-1	{employee_email,report_id,claim_number,fund_source}	{employee_email,report_id,claim_number,fund_source}	PAYMENT_PROCESSING	current_date	2021-11-15 14:16:16.069944+05:30	2021-11-15 14:16:16.069986+05:30	1	f	current_date
-2	{fund_source,employee_email,settlement_id,spent_at}	{expense_id,fund_source,employee_email,settlement_id,spent_at}	PAID	spent_at	2021-11-16 09:46:57.847694+05:30	2021-11-16 13:04:26.302812+05:30	2	f	spent_at
-74	{employee_email,report_id,claim_number,fund_source}	{claim_number,employee_email,expense_id,report_id,fund_source}	PAYMENT_PROCESSING	current_date	2021-12-03 16:30:33.637654+05:30	2021-12-03 16:34:00.206339+05:30	49	f	spent_at
+1	{employee_email,report_id,claim_number,fund_source}	{employee_email,report_id,claim_number,fund_source}	PAYMENT_PROCESSING	current_date	2021-11-15 08:46:16.069944+00	2021-11-15 08:46:16.069986+00	1	f	current_date
+2	{fund_source,employee_email,settlement_id,spent_at}	{expense_id,fund_source,employee_email,settlement_id,spent_at}	PAID	spent_at	2021-11-16 04:16:57.847694+00	2021-11-16 07:34:26.302812+00	2	f	spent_at
+74	{employee_email,report_id,claim_number,fund_source}	{claim_number,employee_email,expense_id,report_id,fund_source}	PAYMENT_PROCESSING	last_spent_at	2021-12-03 11:00:33.637654+00	2021-12-03 11:04:00.206339+00	49	f	last_spent_at
 \.
 
 
@@ -11148,13 +11145,13 @@ COPY public.expense_reports (id, account_id, entity_id, currency, department_id,
 -- Data for Name: expenses; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.expenses (id, employee_email, category, sub_category, project, expense_id, expense_number, claim_number, amount, currency, foreign_amount, foreign_currency, settlement_id, reimbursable, state, vendor, cost_center, purpose, report_id, spent_at, approved_at, expense_created_at, expense_updated_at, created_at, updated_at, fund_source, custom_properties, verified_at, paid_on_netsuite, billable, org_id, tax_amount, tax_group_id, project_id, file_ids, corporate_card_id) FROM stdin;
-1	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txjvDntD9ZXR	E/2021/11/T/11	C/2021/11/R/5	50	USD	\N	\N	set6GUp6tcEEp	t	PAYMENT_PROCESSING	\N	\N	\N	rpuN3bgphxbK	2021-11-15 05:30:00+05:30	2021-11-15 05:30:00+05:30	2021-11-15 15:57:53.649+05:30	2021-11-15 15:58:46.775+05:30	2021-11-15 15:59:07.597095+05:30	2021-11-15 15:59:07.597111+05:30	PERSONAL	{"Team": "", "Class": "", "Klass": "", "Team 2": "", "Location": "", "Team Copy": "", "Tax Groups": "", "Departments": "", "User Dimension": "", "Location Entity": "", "Operating System": "", "System Operating": "", "User Dimension Copy": ""}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N
-2	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txy6folbrG2j	E/2021/11/T/12	C/2021/11/R/6	100	USD	\N	\N	setNVTcPkZ6on	f	PAYMENT_PROCESSING	\N	\N	\N	rpHLA9Dfp9hN	2021-11-15 05:30:00+05:30	2021-11-15 05:30:00+05:30	2021-11-15 18:41:22.304+05:30	2021-11-15 18:41:58.032+05:30	2021-11-15 18:42:12.250613+05:30	2021-11-15 18:42:12.250638+05:30	CCC	{"Team": "", "Class": "", "Klass": "", "Team 2": "", "Location": "", "Team Copy": "", "Tax Groups": "", "Departments": "", "User Dimension": "", "Location Entity": "", "Operating System": "", "System Operating": "", "User Dimension Copy": ""}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N
-3	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txeLau9Rdu4X	E/2021/11/T/1	C/2021/11/R/2	80	USD	\N	\N	setqgvGQnsAya	t	PAYMENT_PROCESSING	\N	\N	\N	rpu5W0LYrk6e	2021-11-16 05:30:00+05:30	2021-11-16 05:30:00+05:30	2021-11-16 09:54:18.688+05:30	2021-11-16 09:55:21.996+05:30	2021-11-16 09:55:49.174565+05:30	2021-11-16 09:55:49.174584+05:30	PERSONAL	{"Device Type": "", "Fyle Category": ""}	\N	f	\N	oraWFQlEpjbb	4.53	tg31j9m4PoEO	\N	\N	\N
-4	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txMLGb6Xy8m8	E/2021/11/T/2	C/2021/11/R/1	100	USD	\N	\N	setqgvGQnsAya	f	PAYMENT_PROCESSING	\N	\N	\N	rprqDvARHUnv	2021-11-16 05:30:00+05:30	2021-11-16 05:30:00+05:30	2021-11-16 09:54:38.141+05:30	2021-11-16 09:55:21.996+05:30	2021-11-16 09:55:49.192351+05:30	2021-11-16 09:55:49.192367+05:30	CCC	{"Device Type": "", "Fyle Category": ""}	\N	f	\N	oraWFQlEpjbb	16.67	tgSYjXsBCviv	\N	\N	\N
-173	admin1@fyleforintacct.in	Food	Food	Project 2	tx7A5QpesrV5	E/2021/12/T/1	C/2021/12/R/1	120	USD	\N	\N	set15sMvtRIiS	t	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85N	2021-12-03 05:30:00+05:30	2021-12-03 05:30:00+05:30	2021-12-03 16:28:30.076+05:30	2021-12-03 16:30:22.64+05:30	2021-12-03 16:56:58.685597+05:30	2021-12-03 16:56:58.685616+05:30	PERSONAL	{}	\N	f	\N	orHe8CpW2hyN	\N	\N	\N	\N	\N
-174	admin1@fyleforintacct.in	Food	Food	Project 2	txcKVVELn1Vl	E/2021/12/T/2	C/2021/12/R/1	130	USD	\N	\N	set15sMvtRIiS	f	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85N	2021-12-03 05:30:00+05:30	2021-12-03 05:30:00+05:30	2021-12-03 16:28:49.51+05:30	2021-12-03 16:30:22.64+05:30	2021-12-03 16:56:58.702183+05:30	2021-12-03 16:56:58.702209+05:30	CCC	{}	\N	f	\N	orHe8CpW2hyN	\N	\N	\N	\N	\N
+COPY public.expenses (id, employee_email, category, sub_category, project, expense_id, expense_number, claim_number, amount, currency, foreign_amount, foreign_currency, settlement_id, reimbursable, state, vendor, cost_center, purpose, report_id, spent_at, approved_at, expense_created_at, expense_updated_at, created_at, updated_at, fund_source, custom_properties, verified_at, paid_on_netsuite, billable, org_id, tax_amount, tax_group_id, project_id, file_ids) FROM stdin;
+1	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txjvDntD9ZXR	E/2021/11/T/11	C/2021/11/R/5	50	USD	\N	\N	set6GUp6tcEEp	t	PAYMENT_PROCESSING	\N	Treasury	\N	rpuN3bgphxbK	2021-11-15 00:00:00+00	2021-11-15 00:00:00+00	2021-11-15 10:27:53.649+00	2021-11-15 10:28:46.775+00	2021-11-15 10:29:07.597095+00	2021-11-15 10:29:07.597111+00	PERSONAL	{"Team": "", "Class": "", "Klass": "", "Team 2": "", "Location": "", "Team Copy": "", "Tax Groups": "", "Departments": "", "User Dimension": "", "Location Entity": "", "Operating System": "", "System Operating": "", "User Dimension Copy": ""}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N
+2	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txy6folbrG2j	E/2021/11/T/12	C/2021/11/R/6	100	USD	\N	\N	setNVTcPkZ6on	f	PAYMENT_PROCESSING	\N	\N	\N	rpHLA9Dfp9hN	2021-11-15 00:00:00+00	2021-11-15 00:00:00+00	2021-11-15 13:11:22.304+00	2021-11-15 13:11:58.032+00	2021-11-15 13:12:12.250613+00	2021-11-15 13:12:12.250638+00	CCC	{"Team": "", "Class": "", "Klass": "", "Team 2": "", "Location": "", "Team Copy": "", "Tax Groups": "", "Departments": "", "User Dimension": "", "Location Entity": "", "Operating System": "", "System Operating": "", "User Dimension Copy": ""}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N
+3	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txeLau9Rdu4X	E/2021/11/T/1	C/2021/11/R/2	80	USD	\N	\N	setqgvGQnsAya	t	PAYMENT_PROCESSING	\N	\N	\N	rpu5W0LYrk6e	2021-11-16 00:00:00+00	2021-11-16 00:00:00+00	2021-11-16 04:24:18.688+00	2021-11-16 04:25:21.996+00	2021-11-16 04:25:49.174565+00	2021-11-16 04:25:49.174584+00	PERSONAL	{"Device Type": "", "Fyle Category": ""}	\N	f	\N	oraWFQlEpjbb	4.53	tg31j9m4PoEO	\N	\N
+4	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txMLGb6Xy8m8	E/2021/11/T/2	C/2021/11/R/1	100	USD	\N	\N	setqgvGQnsAya	f	PAYMENT_PROCESSING	\N	\N	\N	rprqDvARHUnv	2021-11-16 00:00:00+00	2021-11-16 00:00:00+00	2021-11-16 04:24:38.141+00	2021-11-16 04:25:21.996+00	2021-11-16 04:25:49.192351+00	2021-11-16 04:25:49.192367+00	CCC	{"Device Type": "", "Fyle Category": ""}	\N	f	\N	oraWFQlEpjbb	16.67	tgSYjXsBCviv	\N	\N
+173	admin1@fyleforintacct.in	Food	Food	Project 2	tx7A5QpesrV5	E/2021/12/T/1	C/2021/12/R/1	120	USD	\N	\N	set15sMvtRIiS	t	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85N	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:30.076+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.685597+00	2021-12-03 11:26:58.685616+00	PERSONAL	{}	\N	f	\N	orHe8CpW2hyN	\N	\N	\N	\N
+174	admin1@fyleforintacct.in	Food	Food	Project 2	txcKVVELn1Vl	E/2021/12/T/2	C/2021/12/R/1	130	USD	\N	\N	set15sMvtRIiS	f	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85N	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:49.51+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.702183+00	2021-12-03 11:26:58.702209+00	CCC	{}	\N	f	\N	orHe8CpW2hyN	\N	\N	\N	\N
 \.
 
 
@@ -11210,32 +11207,16 @@ COPY public.mapping_settings (id, source_field, destination_field, created_at, u
 --
 
 COPY public.mappings (id, source_type, destination_type, created_at, updated_at, destination_id, source_id, workspace_id) FROM stdin;
-1	TAX_GROUP	TAX_ITEM	2021-11-16 09:50:49.387264+05:30	2021-11-16 09:50:49.387307+05:30	3318	3264	2
-2	TAX_GROUP	TAX_ITEM	2021-11-16 09:50:49.387487+05:30	2021-11-16 09:50:49.38751+05:30	3317	3271	2
-3	TAX_GROUP	TAX_ITEM	2021-11-16 09:50:49.38764+05:30	2021-11-16 09:50:49.387661+05:30	3316	3298	2
-4	TAX_GROUP	TAX_ITEM	2021-11-16 09:50:49.387722+05:30	2021-11-16 09:50:49.38774+05:30	3293	3292	2
-5	TAX_GROUP	TAX_ITEM	2021-11-16 09:50:49.38783+05:30	2021-11-16 09:50:49.38785+05:30	3294	3286	2
-6	TAX_GROUP	TAX_ITEM	2021-11-16 09:50:49.388068+05:30	2021-11-16 09:50:49.388088+05:30	3298	3267	2
-7	TAX_GROUP	TAX_ITEM	2021-11-16 09:50:49.388149+05:30	2021-11-16 09:50:49.388164+05:30	3303	3297	2
-8	TAX_GROUP	TAX_ITEM	2021-11-16 09:50:49.388221+05:30	2021-11-16 09:50:49.388239+05:30	3305	3288	2
-9	TAX_GROUP	TAX_ITEM	2021-11-16 09:50:49.388296+05:30	2021-11-16 09:50:49.388312+05:30	3304	3296	2
-10	TAX_GROUP	TAX_ITEM	2021-11-16 09:50:49.388371+05:30	2021-11-16 09:50:49.388387+05:30	3302	3282	2
-11	TAX_GROUP	TAX_ITEM	2021-11-16 09:50:49.388443+05:30	2021-11-16 09:50:49.388603+05:30	3300	3262	2
-12	TAX_GROUP	TAX_ITEM	2021-11-16 09:50:49.388705+05:30	2021-11-16 09:50:49.388727+05:30	3309	3274	2
-13	TAX_GROUP	TAX_ITEM	2021-11-16 09:50:49.388785+05:30	2021-11-16 09:50:49.388803+05:30	3306	3303	2
-14	TAX_GROUP	TAX_ITEM	2021-11-16 09:50:49.388864+05:30	2021-11-16 09:50:49.388881+05:30	3308	3284	2
-15	TAX_GROUP	TAX_ITEM	2021-11-16 09:50:49.388942+05:30	2021-11-16 09:50:49.388958+05:30	3307	3265	2
-16	TAX_GROUP	TAX_ITEM	2021-11-16 09:50:49.389016+05:30	2021-11-16 09:50:49.389035+05:30	3301	3283	2
-17	TAX_GROUP	TAX_ITEM	2021-11-16 09:50:49.389094+05:30	2021-11-16 09:50:49.38911+05:30	3299	3290	2
-18	TAX_GROUP	TAX_ITEM	2021-11-16 09:50:49.389171+05:30	2021-11-16 09:50:49.389188+05:30	3297	3263	2
-19	TAX_GROUP	TAX_ITEM	2021-11-16 09:50:49.398157+05:30	2021-11-16 09:50:49.398207+05:30	3314	3280	2
-20	TAX_GROUP	TAX_ITEM	2021-11-16 09:50:49.398335+05:30	2021-11-16 09:50:49.398364+05:30	3315	3281	2
-21	TAX_GROUP	TAX_ITEM	2021-11-16 09:50:49.398432+05:30	2021-11-16 09:50:49.398452+05:30	3310	3268	2
-22	TAX_GROUP	TAX_ITEM	2021-11-16 09:50:49.398515+05:30	2021-11-16 09:50:49.398534+05:30	3296	3273	2
-23	TAX_GROUP	TAX_ITEM	2021-11-16 09:50:49.398596+05:30	2021-11-16 09:50:49.398614+05:30	3295	3291	2
-24	TAX_GROUP	TAX_ITEM	2021-11-16 09:50:49.398676+05:30	2021-11-16 09:50:49.398695+05:30	3313	3295	2
-25	TAX_GROUP	TAX_ITEM	2021-11-16 09:50:49.398758+05:30	2021-11-16 09:50:49.398775+05:30	3312	3302	2
-26	TAX_GROUP	TAX_ITEM	2021-11-16 09:50:49.398834+05:30	2021-11-16 09:50:49.398852+05:30	3311	3276	2
+1	TAX_GROUP	TAX_ITEM	2021-11-16 04:20:49.387264+00	2021-11-16 04:20:49.387307+00	3318	3264	2
+2	TAX_GROUP	TAX_ITEM	2021-11-16 04:20:49.387487+00	2021-11-16 04:20:49.38751+00	3317	3271	2
+3	TAX_GROUP	TAX_ITEM	2021-11-16 04:20:49.38764+00	2021-11-16 04:20:49.387661+00	3316	3298	2
+4	TAX_GROUP	TAX_ITEM	2021-11-16 04:20:49.387722+00	2021-11-16 04:20:49.38774+00	3293	3292	2
+5	TAX_GROUP	TAX_ITEM	2021-11-16 04:20:49.38783+00	2021-11-16 04:20:49.38785+00	3294	3286	2
+6	TAX_GROUP	TAX_ITEM	2021-11-16 04:20:49.388068+00	2021-11-16 04:20:49.388088+00	3298	3267	2
+7	TAX_GROUP	TAX_ITEM	2021-11-16 04:20:49.388149+00	2021-11-16 04:20:49.388164+00	3303	3297	2
+8	TAX_GROUP	TAX_ITEM	2021-11-16 04:20:49.388221+00	2021-11-16 04:20:49.388239+00	3305	3288	2
+9	TAX_GROUP	TAX_ITEM	2021-11-16 04:20:49.388296+00	2021-11-16 04:20:49.388312+00	3304	3296	2
+10	COST_CENTER	DEPARTMENT	2021-11-16 04:20:49.388296+00	2021-11-16 04:20:49.388312+00	3304	3296	2
 \.
 
 
@@ -11252,6 +11233,7 @@ COPY public.netsuite_credentials (id, ns_account_id, ns_consumer_key, ns_consume
 --
 
 COPY public.reimbursements (id, settlement_id, reimbursement_id, state, created_at, updated_at, workspace_id) FROM stdin;
+1	setqi0eM6HUgZ	reimcfBxUUS6L8	PENDING	2021-11-15 08:55:44.014605+00	2021-11-15 08:55:44.014581+00	1
 \.
 
 
