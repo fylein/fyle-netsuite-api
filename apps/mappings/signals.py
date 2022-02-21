@@ -11,6 +11,7 @@ from apps.mappings.tasks import upload_attributes_to_fyle, schedule_cost_centers
     schedule_fyle_attributes_creation, schedule_projects_creation
 from apps.netsuite.helpers import schedule_payment_sync
 from apps.workspaces.models import Configuration
+from apps.workspaces.tasks import delete_cards_mapping_settings
 
 from .models import GeneralMapping
 from .tasks import schedule_auto_map_ccc_employees
@@ -31,6 +32,10 @@ def run_post_mapping_settings_triggers(sender, instance: MappingSetting, **kwarg
     if instance.is_custom:
         schedule_fyle_attributes_creation(int(instance.workspace_id))
 
+    configuration = Configuration.objects.filter(workspace_id=instance.workspace_id).first()
+    if configuration:
+        delete_cards_mapping_settings(configuration)
+
 @receiver(pre_save, sender=MappingSetting)
 def run_pre_mapping_settings_triggers(sender, instance: MappingSetting, **kwargs):
     """
@@ -38,7 +43,7 @@ def run_pre_mapping_settings_triggers(sender, instance: MappingSetting, **kwargs
     :param instance: Row Instance of Sender Class
     :return: None
     """
-    default_attributes = ['EMPLOYEE', 'CATEGORY', 'PROJECT', 'COST_CENTER', 'TAX_GROUP']
+    default_attributes = ['EMPLOYEE', 'CATEGORY', 'PROJECT', 'COST_CENTER', 'TAX_GROUP', 'CORPORATE_CARD']
 
     instance.source_field = instance.source_field.upper().replace(' ', '_')
 

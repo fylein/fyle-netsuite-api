@@ -258,8 +258,8 @@ def test_post_credit_charge(create_task_logs, add_netsuite_credentials, add_fyle
 
     general_mappings = GeneralMapping.objects.get(workspace_id=49)
 
-    general_mappings.default_ccc_account_name = 'Bummy'
-    general_mappings.default_ccc_account_id = 12
+    general_mappings.default_ccc_account_name = 'Aus Account'
+    general_mappings.default_ccc_account_id = 228
     general_mappings.save()
 
     expense_group.id = random.randint(100, 1500000)
