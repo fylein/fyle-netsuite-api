@@ -106,7 +106,7 @@ def run_sync_schedule(workspace_id):
                 schedule_expense_reports_creation(
                     workspace_id=workspace_id, expense_group_ids=expense_group_ids
                 )
-            elif configuration.corporate_credit_card_expenses_object == 'Credit Card Charge':
+            elif configuration.corporate_credit_card_expenses_object == 'CREDIT CARD CHARGE':
                 schedule_credit_card_charge_creation(
                     workspace_id=workspace_id, expense_group_ids=expense_group_ids
                 )
