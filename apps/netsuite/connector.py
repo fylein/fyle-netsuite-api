@@ -1060,7 +1060,7 @@ class NetSuiteConnector:
         print(raw_response, raw_response.status_code)
         status_code = raw_response.status_code
 
-        print(json.loads(raw_response.text))
+        print('debugger log', raw_response.text)
 
         if status_code == 200 and 'success' in json.loads(raw_response.text) and json.loads(raw_response.text)['success']:
             return json.loads(raw_response.text)
