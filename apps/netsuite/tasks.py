@@ -353,6 +353,11 @@ def create_credit_card_charge(expense_group, task_log_id):
                 credit_card_charge_object, credit_card_charge_lineitems_object, attachment_links, refund
             )
 
+            if refund:
+                created_credit_card_charge['type'] = 'chargeCardRefund'
+            else:
+                created_credit_card_charge['type'] = 'chargeCard'
+
             task_log.detail = created_credit_card_charge
             task_log.credit_card_purchase = credit_card_charge_object
             task_log.status = 'COMPLETE'
