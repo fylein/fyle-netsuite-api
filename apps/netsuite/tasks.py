@@ -1280,7 +1280,7 @@ def get_valid_reimbursement_ids(reimbursement_ids: List, platform: PlatformConne
     return valid_reimbursemnt_ids
 
 
-def process_reimbursement(workspace_id):
+def process_reimbursements(workspace_id):
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
 
     fyle_connector = FyleConnector(fyle_credentials.refresh_token)
