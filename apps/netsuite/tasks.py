@@ -1261,7 +1261,7 @@ def schedule_netsuite_objects_status_sync(sync_netsuite_to_fyle_payments, worksp
             schedule.delete()
 
 
-def get_valid_reimbursements(reimbursement_ids: List, platform: PlatformConnector) -> List[str]:
+def get_valid_reimbursement_ids(reimbursement_ids: List, platform: PlatformConnector) -> List[str]:
     chunk_size = 10
     count_of_reimbursements = len(reimbursement_ids)
     valid_reimbursemnt_ids = []
@@ -1280,7 +1280,7 @@ def get_valid_reimbursements(reimbursement_ids: List, platform: PlatformConnecto
     return valid_reimbursemnt_ids
 
 
-def process_reimbursement_ids(workspace_id):
+def process_reimbursement(workspace_id):
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
 
     fyle_connector = FyleConnector(fyle_credentials.refresh_token)
