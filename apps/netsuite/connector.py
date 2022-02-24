@@ -1044,7 +1044,7 @@ class NetSuiteConnector:
         if refund:
             credit_card_charge_lineitem.amount = abs(credit_card_charge_lineitem.amount)
             url = f"https://{account.lower()}.restlets.api.netsuite.com/app/site/hosting/restlet.nl?" \
-                  f"script=customscriptrefund&deploy=customdeployrefund"
+                  f"script=customscript_cc_refund_fyle&deploy=customdeploy_cc_refund_fyle"
 
         credit_card_charges_payload = self.__construct_credit_card_charge(
             credit_card_charge, credit_card_charge_lineitem, attachment_links)
