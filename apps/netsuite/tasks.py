@@ -1271,6 +1271,8 @@ def get_valid_reimbursement_ids(reimbursement_ids: List, platform: PlatformConne
             'id': 'in.{}'.format(tuple(partitioned_list)).replace('\'', '"'),
             'is_paid': 'eq.false'
         }
+
+        print(query_params)
         reimbursements = platform.reimbursements.search_reimbursements(query_params)
 
         for reimbursements_generator in reimbursements:
