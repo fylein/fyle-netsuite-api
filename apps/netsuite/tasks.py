@@ -1261,7 +1261,11 @@ def schedule_netsuite_objects_status_sync(sync_netsuite_to_fyle_payments, worksp
             schedule.delete()
 
 
-def process_reimbursements(workspace_id):
+def get_valid_reimbursements(reimbursement_ids: List) -> List[str]:
+    return []
+
+
+def process_reimbursement_ids(workspace_id):
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
 
     fyle_connector = FyleConnector(fyle_credentials.refresh_token)
@@ -1285,7 +1289,10 @@ def process_reimbursements(workspace_id):
                 reimbursement_ids.append(reimbursement.reimbursement_id)
 
     if reimbursement_ids:
-        fyle_connector.post_reimbursement(reimbursement_ids)
+        # Validating deleted reimbursements
+        count_of_reimbursements = len(reimbursement_ids)
+        valid_reimbursemnt_ids = get_valid_reimbursement_ids(reimbursement_ids)
+        fyle_connector.post_reimbursement(valid_reimbursemnt_ids)
         platform.reimbursements.sync()
 
 
