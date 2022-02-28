@@ -73,7 +73,8 @@ class ConfigurationSerializer(serializers.ModelSerializer):
                 'change_accounting_period': validated_data['change_accounting_period'],
                 'auto_map_employees': validated_data['auto_map_employees'],
                 'auto_create_merchants': validated_data['auto_create_merchants'],
-                'auto_create_destination_entity': validated_data['auto_create_destination_entity']
+                'auto_create_destination_entity': validated_data['auto_create_destination_entity'],
+                'map_fyle_cards_netsuite_account': validated_data['map_fyle_cards_netsuite_account']
             }
         )
 

@@ -79,6 +79,7 @@ class Expense(models.Model):
     cost_center = models.CharField(max_length=255, null=True, blank=True, help_text='Fyle Expense Cost Center')
     purpose = models.TextField(null=True, blank=True, help_text='Purpose')
     report_id = models.CharField(max_length=255, help_text='Report ID')
+    corporate_card_id = models.CharField(max_length=255, null=True, blank=True, help_text='Corporate Card ID')
     file_ids = ArrayField(base_field=models.CharField(max_length=255), null=True, help_text='File IDs')
     spent_at = models.DateTimeField(null=True, help_text='Expense spent at')
     approved_at = models.DateTimeField(null=True, help_text='Expense approved at')
@@ -95,7 +96,7 @@ class Expense(models.Model):
         db_table = 'expenses'
 
     @staticmethod
-    def create_expense_objects(expenses: List[Dict], workspace_id: int):
+    def create_expense_objects(expenses: List[Dict]):
         """
         Bulk create expense objects
         """
@@ -128,6 +129,7 @@ class Expense(models.Model):
                     'cost_center': expense['cost_center'],
                     'purpose': expense['purpose'],
                     'report_id': expense['report_id'],
+                    'corporate_card_id': expense['corporate_card_id'],
                     'file_ids': expense['file_ids'],
                     'spent_at': expense['spent_at'],
                     'approved_at': expense['approved_at'],
@@ -311,7 +313,6 @@ class ExpenseGroup(models.Model):
 
             if total_amount < 0:
                 reimbursable_expenses = list(filter(lambda expense: expense.amount > 0, reimbursable_expenses))
-        
         else:
             reimbursable_expenses = list(filter(lambda expense: expense.amount > 0, reimbursable_expenses))
 
@@ -321,9 +322,10 @@ class ExpenseGroup(models.Model):
 
         corporate_credit_card_expenses = list(filter(lambda expense: expense.fund_source == 'CCC', expense_objects))
 
-        if configuration.corporate_credit_card_expenses_object != 'EXPENSE REPORT':
-            corporate_credit_card_expenses = list(filter(lambda expense: expense.amount > 0, corporate_credit_card_expenses))
-
+        if configuration.corporate_credit_card_expenses_object not in ('EXPENSE REPORT', 'CREDIT CARD CHARGE'):
+            corporate_credit_card_expenses = list(
+                filter(lambda expense: expense.amount > 0, corporate_credit_card_expenses)
+            )
 
         corporate_credit_card_expense_groups = _group_expenses(
             corporate_credit_card_expenses, corporate_credit_card_expense_group_field, workspace_id)

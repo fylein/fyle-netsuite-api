@@ -3,7 +3,7 @@ import json
 
 from django.urls import reverse
 from apps.fyle.models import ExpenseGroup
-from apps.workspaces.models import FyleCredential
+from apps.workspaces.models import FyleCredential, Workspace
 from tests.helper import dict_compare_keys
 
 from .fixtures import data
@@ -17,7 +17,7 @@ def test_expense_group_view(api_client, test_connection):
                'workspace_id': 1,
             }
          )
-   
+
    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
 
    response = api_client.get(url, {
@@ -32,9 +32,14 @@ def test_expense_group_view(api_client, test_connection):
       'state': 'READY'
    })
    response = json.loads(response.content)
-   assert response == {'count': 1, 'next': None, 'previous': None, 'results': [{'id': 1, 'fund_source': 'PERSONAL', 'description': {'report_id': 'rpuN3bgphxbK', 'fund_source': 'PERSONAL', 'claim_number': 'C/2021/11/R/5', 'employee_email': 'ashwin.t@fyle.in'}, 'response_logs': None, 'created_at': '2021-11-15T10:29:07.618062Z', 'exported_at': None, 'updated_at': '2021-11-15T11:02:55.125634Z', 'workspace': 1, 'expenses': [1]}]}
+   assert response['count'] == 2
 
-
+   response = api_client.get(url, {
+      'state': 'FAILED'
+   })
+   response = json.loads(response.content)
+   assert response == {'count': 0, 'next': None, 'previous': None, 'results': []}
+   
 
 @pytest.mark.django_db(databases=['default'])
 def test_expense_view(api_client, test_connection):
@@ -98,11 +103,21 @@ def test_expense_group_settings(api_client, test_connection):
    response = api_client.get(url)
    response = json.loads(response.content)
 
-   assert dict_compare_keys(response, data['expense_group_setting_payload']) == [], 'expense group api return diffs in keys'
+   assert dict_compare_keys(response, data['expense_group_setting_response']) == [], 'expense group api return diffs in keys'
    assert response['reimbursable_expense_group_fields'] == ['employee_email', 'report_id', 'claim_number', 'fund_source']
    assert response['expense_state'] == 'PAYMENT_PROCESSING'
    assert response['reimbursable_export_date_type'] == 'current_date'
    
+   post_response = api_client.post(
+      url,
+      data = data['expense_group_setting_payload']
+   )
+      
+   assert post_response.status_code == 200
+   post_response = json.loads(post_response.content)
+
+   assert dict_compare_keys(post_response, data['expense_group_setting_response']) == [], 'expense group api return diffs in keys'
+
 
 #  Will use paramaterize decorator of python later
 @pytest.mark.django_db(databases=['default'])
@@ -172,11 +187,11 @@ def test_fyle_refresh_dimension(api_client, test_connection, add_fyle_credential
     
    access_token = test_connection.access_token
 
-   url = reverse('refresh-fyle-dimensions', 
+   url = reverse('refresh-fyle-dimensions',
       kwargs={
-            'workspace_id': 1,
-         }
-      )
+         'workspace_id': 1,
+      }
+   )
    
    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
    
@@ -211,4 +226,20 @@ def test_fyle_sync_dimension(api_client, test_connection, add_fyle_credentials):
 
    response = api_client.post(url)
    assert response.status_code == 400
-   assert response.data['message'] == 'Fyle credentials not found in workspace'
+   assert response.data['message'] == 'Fyle credentials not found in workspace'\
+
+
+def test_expense_group_schedule_view(api_client, test_connection):
+
+   access_token = test_connection.access_token
+
+   url = reverse('expense-groups-trigger', 
+      kwargs={
+            'workspace_id': 1,
+         }
+      )
+   
+   api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
+   
+   response = api_client.post(url)
+   assert response.status_code == 200

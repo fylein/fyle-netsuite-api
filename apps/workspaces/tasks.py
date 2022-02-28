@@ -7,6 +7,7 @@ from django.template.loader import get_template
 from django.contrib.auth import get_user_model
 from django.template.loader import render_to_string
 from django_q.models import Schedule
+from fyle_accounting_mappings.models import MappingSetting
 
 from apps.fyle.models import ExpenseGroup
 from apps.fyle.tasks import create_expense_groups
@@ -111,7 +112,7 @@ def run_sync_schedule(workspace_id):
                 schedule_expense_reports_creation(
                     workspace_id=workspace_id, expense_group_ids=expense_group_ids
                 )
-            elif configuration.corporate_credit_card_expenses_object == 'Credit Card Charge':
+            elif configuration.corporate_credit_card_expenses_object == 'CREDIT CARD CHARGE':
                 schedule_credit_card_charge_creation(
                     workspace_id=workspace_id, expense_group_ids=expense_group_ids
                 )
@@ -131,14 +132,14 @@ def run_schedule_email_notification(workspace_id):
             user_email = User.objects.get(id=admin_id).email
             admin_emails.append(user_email)
 
-        if ws_schedule.errors is None or len(task_logs) > ws_schedule.errors:
+        if ws_schedule.total_errors is None or len(task_logs) > ws_schedule.total_errors:
             context = {
                 'name': 'Elon Musk',
                 'errors': len(task_logs),
                 'task_log': task_logs[0].detail
             }
 
-            ws_schedule.errors = len(task_logs)
+            ws_schedule.total_errors = len(task_logs)
             ws_schedule.save()
 
             message = render_to_string("mail_template.html", context)
@@ -152,3 +153,15 @@ def run_schedule_email_notification(workspace_id):
 
             mail.content_subtype = "html"
             mail.send()
+
+def delete_cards_mapping_settings(configuration: Configuration):
+
+    if not configuration.map_fyle_cards_netsuite_account or not configuration.corporate_credit_card_expenses_object:
+        mapping_setting = MappingSetting.objects.filter(
+            workspace_id=configuration.workspace_id,
+            source_field='CORPORATE_CARD',
+            destination_field='CREDIT_CARD_ACCOUNT'
+        ).first()
+
+        if mapping_setting:
+            mapping_setting.delete()

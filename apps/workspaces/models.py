@@ -73,7 +73,7 @@ class WorkspaceSchedule(models.Model):
     enabled = models.BooleanField(default=False)
     start_datetime = models.DateTimeField(help_text='Datetime for start of schedule', null=True)
     interval_hours = models.IntegerField(null=True)
-    errors = models.IntegerField(null=True)
+    total_errors = models.IntegerField(null=True, help_text='Number of errors in export')
     emails = ArrayField(base_field=models.CharField(max_length=255), null=True, help_text='Admin Email')
     schedule = models.OneToOneField(Schedule, on_delete=models.PROTECT, null=True)
 
@@ -142,6 +142,8 @@ class Configuration(models.Model):
         max_length=50, choices=AUTO_MAP_EMPLOYEE_CHOICES,
         help_text='Auto Map Employees type from NetSuite to Fyle', null=True
     )
+    skip_cards_mapping = models.BooleanField(default=False, help_text='Skip cards mapping')
+    map_fyle_cards_netsuite_account = models.BooleanField(default=True, help_text='Map Fyle Cards to Netsuite Account')
     memo_structure = ArrayField(
         base_field=models.CharField(max_length=100), default=get_default_memo_fields,
         help_text='list of system fields for creating custom memo'

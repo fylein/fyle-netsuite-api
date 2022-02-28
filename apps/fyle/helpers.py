@@ -133,6 +133,9 @@ def update_import_card_credits_flag(corporate_credit_card_expenses_object: str, 
     elif (corporate_credit_card_expenses_object != 'EXPENSE REPORT' and reimbursable_expenses_object != 'EXPENSE REPORT') and expense_group_settings.import_card_credits:
         import_card_credits = False
 
+    if corporate_credit_card_expenses_object == 'CREDIT CARD CHARGE':
+        import_card_credits = True
+
     if import_card_credits is not None and import_card_credits != expense_group_settings.import_card_credits:
         expense_group_settings.import_card_credits = import_card_credits
         expense_group_settings.save()
