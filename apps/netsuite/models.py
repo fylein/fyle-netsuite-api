@@ -16,7 +16,8 @@ from apps.workspaces.models import Workspace, Configuration
 
 CUSTOM_SEGMENT_CHOICES = (
     ('CUSTOM_RECORD', 'CUSTOM_RECORD'),
-    ('CUSTOM_LIST', 'CUSTOM_LIST')
+    ('CUSTOM_LIST', 'CUSTOM_LIST'),
+    ('CUSTOM_SEGMENT', 'CUSTOM_SEGMENT')
 )
 
 def get_filtered_mapping(
