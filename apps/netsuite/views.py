@@ -126,21 +126,7 @@ class CustomSegmentView(generics.ListCreateAPIView):
     pagination_class = None
     serializer_class = CustomSegmentSerializer
     queryset = CustomSegment.objects.all()
-    def post(self, request, *args, **kwargs):
-        custom_segment = CustomSegmentSerializer(data=request.data)
 
-        if custom_segment.is_valid():
-            custom_segment.save()
-
-            return Response(
-                data=custom_segment.data,
-                status=status.HTTP_201_CREATED
-            )
-        else:
-            return Response(
-                data=custom_segment.errors,
-                status=status.HTTP_400_BAD_REQUEST
-            )
     def get(self, request, *args, **kwargs):
         custom_lists = CustomSegment.objects.filter(workspace_id=self.kwargs['workspace_id']).all()
 
