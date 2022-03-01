@@ -1,4 +1,3 @@
-from unicodedata import name
 from rest_framework import serializers
 
 from fyle_accounting_mappings.models import DestinationAttribute
