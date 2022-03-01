@@ -1275,6 +1275,30 @@ def schedule_netsuite_objects_status_sync(sync_netsuite_to_fyle_payments, worksp
             schedule.delete()
 
 
+def get_valid_reimbursement_ids(reimbursement_ids: List, platform: PlatformConnector) -> List[str]:
+    chunk_size = 10
+    count_of_reimbursements = len(reimbursement_ids)
+    valid_reimbursemnt_ids = []
+    for index in range(0, count_of_reimbursements, chunk_size):
+        partitioned_list = reimbursement_ids[index:index + chunk_size]
+
+        id_filter = 'in.{}'.format(tuple(partitioned_list)).replace('\'', '"')
+            if len(partitioned_list > 1) else 'eq.{}'.format(partitioned_list[0])
+
+        query_params = {
+            'id': 'in.{}'.format(tuple(partitioned_list)).replace('\'', '"'),
+            'is_paid': 'eq.false'
+        }
+
+        reimbursements = platform.reimbursements.search_reimbursements(query_params)
+
+        for reimbursements_generator in reimbursements:
+            reimbursement_ids = [reimbursement['id'] for reimbursement in reimbursements_generator['data']]
+            valid_reimbursemnt_ids.extend(reimbursement_ids)
+
+    return valid_reimbursemnt_ids
+
+
 def process_reimbursements(workspace_id):
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
 
@@ -1299,7 +1323,11 @@ def process_reimbursements(workspace_id):
                 reimbursement_ids.append(reimbursement.reimbursement_id)
 
     if reimbursement_ids:
-        fyle_connector.post_reimbursement(reimbursement_ids)
+        # Validating deleted reimbursements
+        count_of_reimbursements = len(reimbursement_ids)
+        valid_reimbursemnt_ids = get_valid_reimbursement_ids(reimbursement_ids, platform)
+        if valid_reimbursemnt_ids:
+            fyle_connector.post_reimbursement(valid_reimbursemnt_ids)
         platform.reimbursements.sync()
 
 
