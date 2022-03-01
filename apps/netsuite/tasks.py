@@ -1297,8 +1297,8 @@ def get_valid_reimbursement_ids(reimbursement_ids: List, platform: PlatformConne
         reimbursements = platform.reimbursements.search_reimbursements(query_params)
 
         for reimbursements_generator in reimbursements:
-            reimbursement_ids = [reimbursement['id'] for reimbursement in reimbursements_generator['data']]
-            valid_reimbursement_ids.extend(reimbursement_ids)
+            valid_ids = [reimbursement['id'] for reimbursement in reimbursements_generator['data']]
+            valid_reimbursement_ids.extend(valid_ids)
 
     return valid_reimbursement_ids
 
