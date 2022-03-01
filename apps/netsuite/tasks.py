@@ -1283,7 +1283,7 @@ def get_valid_reimbursement_ids(reimbursement_ids: List, platform: PlatformConne
         partitioned_list = reimbursement_ids[index:index + chunk_size]
 
         id_filter = 'in.{}'.format(tuple(partitioned_list)).replace('\'', '"') \
-            if len(partitioned_list > 1) else 'eq.{}'.format(partitioned_list[0])
+            if len(partitioned_list) > 1 else 'eq.{}'.format(partitioned_list[0])
 
         query_params = {
             'id': id_filter,
