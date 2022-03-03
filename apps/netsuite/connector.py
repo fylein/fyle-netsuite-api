@@ -185,26 +185,6 @@ class NetSuiteConnector:
 
         return custom_segment_attributes
 
-    def get_custom_segment_attributes(self, attribute_type: str, internal_id:str):
-        custom_segment_attributes = []
-        custom_segments = self.connection.custom_segments.get(internal_id)
-
-        record_id = custom_segments['recordType']['internalId']
-
-        custom_records = self.connection.custom_record_types.get_all_by_id(record_id)
-
-        for field in custom_records:
-            custom_segment_attributes.append(
-                {
-                    'attribute_type': attribute_type,
-                    'display_name': custom_records[0]['recType']['name'],
-                    'value': field['name'],
-                    'destination_id': field['internalId']
-                }
-            )
-
-        return custom_segment_attributes
-
     def get_custom_record_attributes(self, attribute_type: str, internal_id: str):
         custom_segment_attributes = []
         custom_records = self.connection.custom_record_types.get_all_by_id(internal_id)
@@ -231,9 +211,6 @@ class NetSuiteConnector:
             attribute_type = custom_segment.name.upper().replace(' ', '_')
             if custom_segment.segment_type == 'CUSTOM_LIST':
                 custom_segment_attributes = self.get_custom_list_attributes(attribute_type, custom_segment.internal_id)
-
-            if custom_segment.segment_type == 'CUSTOM_SEGMENT':
-                custom_segment_attributes = self.get_custom_segment_attributes(attribute_type, custom_segment.internal_id)
 
             elif custom_segment.segment_type == 'CUSTOM_RECORD':
                 custom_segment_attributes = self.get_custom_record_attributes(
