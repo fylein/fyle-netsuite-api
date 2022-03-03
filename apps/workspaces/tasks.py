@@ -17,7 +17,7 @@ from apps.tasks.models import TaskLog
 from apps.workspaces.models import User, Workspace, WorkspaceSchedule, Configuration
 
 
-def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int):
+def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int, added_email: List, selected_email: List):
     ws_schedule, _ = WorkspaceSchedule.objects.get_or_create(
         workspace_id=workspace_id
     )
@@ -26,6 +26,11 @@ def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int):
         ws_schedule.enabled = schedule_enabled
         ws_schedule.start_datetime = datetime.now()
         ws_schedule.interval_hours = hours
+        ws_schedule.selected_email = selected_email
+        
+        if added_email:
+            ws_schedule.added_emails.append(added_email)
+
 
         schedule, _ = Schedule.objects.update_or_create(
             func='apps.workspaces.tasks.run_sync_schedule',

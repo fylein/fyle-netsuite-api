@@ -1,6 +1,6 @@
 from django.urls import path, include
 
-from .views import WorkspaceView, ReadyView, ConnectFyleView, ConnectNetSuiteView, ScheduleView, ConfigurationsView
+from .views import WorkspaceView, WorkspaceAdminsView, ReadyView, ConnectFyleView, ConnectNetSuiteView, ScheduleView, ConfigurationsView
 
 workspaces_app_paths = [
     path('', WorkspaceView.as_view({'get': 'get', 'post': 'post'}), name='workspace'),
@@ -8,7 +8,8 @@ workspaces_app_paths = [
     path('<int:workspace_id>/schedule/', ScheduleView.as_view({'post': 'post', 'get': 'get'}),
          name='workspace-schedule'),
     path('<int:workspace_id>/configuration/', ConfigurationsView.as_view(), name='workspace-configurations'),
-    path('ready/', ReadyView.as_view({'get': 'get'}), name='ready')
+    path('ready/', ReadyView.as_view({'get': 'get'}), name='ready'),
+    path('<int:workspace_id>/admins/', WorkspaceAdminsView.as_view({'get': 'get'}), name='admin')
 ]
 
 fyle_connection_api_paths = [
