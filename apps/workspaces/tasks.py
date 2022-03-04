@@ -137,14 +137,14 @@ def run_schedule_email_notification(workspace_id):
             user_email = User.objects.get(id=admin_id).email
             admin_emails.append(user_email)
 
-        if ws_schedule.total_errors is None or len(task_logs) > ws_schedule.total_errors:
+        if ws_schedule.errors is None or len(task_logs) > ws_schedule.errors:
             context = {
                 'name': 'Elon Musk',
                 'errors': len(task_logs),
                 'task_log': task_logs[0].detail
             }
 
-            ws_schedule.total_errors = len(task_logs)
+            ws_schedule.errors = len(task_logs)
             ws_schedule.save()
 
             message = render_to_string("mail_template.html", context)
