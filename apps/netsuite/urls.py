@@ -1,5 +1,3 @@
-import itertools
-
 from django.urls import path
 
 from .views import NetSuiteFieldsView, DestinationAttributesView, CustomSegmentView, \
@@ -20,4 +18,4 @@ netsuite_dimension_paths = [
     path('refresh_dimensions/', RefreshNetSuiteDimensionView.as_view(), name='refresh-dimensions')
 ]
 
-urlpatterns = list(itertools.chain(netsuite_app_paths, netsuite_dimension_paths))
+urlpatterns = [*netsuite_app_paths, *netsuite_dimension_paths]
