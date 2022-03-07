@@ -44,41 +44,43 @@
             </td>
           </tr>
           <tr>
-            <td style="padding: 40px 25px 0px 25px;">
+            <td style="padding: 35px 25px 0px 15px;">
               <table width="100%" cellspacing="10">
                 <tr align="center">
                   <td>
-                    <img style="height: 150px;" src="images/icon.png"> 
+                    <img style="height: 150px;" src="https://raw.githubusercontent.com/fylein/fyle-netsuite-api/e05abf142208368b88a530f3d8bb25456fef4d26/apps/workspaces/templates/images/icon.png"> 
                   </td>
                 </tr>
                 <tr align="center">
                   <td
                     style="font-size: 20px; padding-bottom: 30px; font-family: Aktiv Grotesk; color: #161528; font-weight: bold; padding-top: 40px;">
-                    10 Expense Group Failed To Export
+                    {{ errors }} Expense Group Failed To Export
                   </td>
                 </tr>
                 <tr>
                   <td>
-                    <table style="padding-left: 10px; background:  #F5F5F5; border-radius: 8px;" width="100%" cellspacing="10">
+                    <table style="font-family: Aktiv Grotesk; padding-left: 10px;  background:#F5F5F5; border-radius: 8px;" width="100%" cellspacing="10">
                       <tr style=
                           "font-style: normal;
                           font-weight: 500;
-                          font-size: 12px;
+                          font-size: 14px;
                           line-height: 15px;
-                          ">
+                          letter-spacing: 0.02em;
+                          color: #5A5D72;"
+                      >
                         <td>FYLE ORGANIZATION</td>
                         <td>NETSUITE SUBSDIARY</td>
                       </tr>
                       <tr style=
-                      "font-family: Aktiv Grotesk;
-                      font-style: normal;
-                      font-weight: 500;
-                      font-size: 14px;
-                      line-height: 20px;                      
-                      color: #161528;
-                      ">
-                        <td>Freshworks India</td>
-                        <td>Freshworks India</td>
+                          "font-family: Aktiv Grotesk;
+                          font-style: normal;
+                          font-weight: 500;
+                          font-size: 14px;
+                          line-height: 20px;   
+                          color: #161528;"
+                        >
+                        <td>{{ fyle_company }}</td>
+                        <td>{{ netsuite_subsidiary }}</td>
                       </tr>
                     </table>
                   </td>
@@ -88,19 +90,19 @@
                     <table style="padding: 24px 0px 24px 0px; font-family: Aktiv Grotesk">
                       <tr align="left">
                         <td style="font-size: 15px; line-height: 18px; color: #2C304E;">
-                          Dear Nilesh Pant,
+                          Dear {{ name }},
                         </td>
                       </tr>
                       <tr>
                         <td style="font-size: 15px; line-height: 18px; padding-top: 5px; color: #2C304E;">
-                          <span style="font-weight: bold">10 expense groups</span> failed to export from your Fyle org
+                          <span style="font-weight: bold">{{ errors }} expense groups</span> failed to export from your Fyle org
                           to Netsuite Subsidiary
                         </td>
                       </tr>
                       <tr>
                         <td
                           style="font-size: 15px; font-weight: bold; padding-top: 5px; line-height: 18px; color: #2C304E;">
-                          Export time - 06 Jan 2022 ( 16:27)
+                          Export time - {{ export_time }}
                         </td>
                       </tr>
                       <tr>
@@ -122,9 +124,9 @@
                     <table style="width: 250px" border="0" cellspacing="0" cellpadding="0">
                       <tr align="center">
                         <td align="center" style="border-radius: 4px;" bgcolor="#ff3366">
-                          <a href="{{cta_button.url}}" target="_blank"
+                          <a href="http://localhost:4200/workspaces/2/expense_groups" target="_blank"
                             style="font-size: 12px; font-family: Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; text-decoration: none;border-radius: 4px; padding: 12px 18px; border: 1px solid #ff3366; display: inline-block;">
-                            <b>Visit Fyle Netsuite Integation</b>
+                            <b>Visit Integation</b>
                           </a>
                         </td>
                       </tr>

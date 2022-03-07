@@ -7,14 +7,15 @@ from django.template.loader import get_template
 from django.contrib.auth import get_user_model
 from django.template.loader import render_to_string
 from django_q.models import Schedule
-from fyle_accounting_mappings.models import MappingSetting
+from fyle_accounting_mappings.models import MappingSetting, ExpenseAttribute
 
 from apps.fyle.models import ExpenseGroup
+from apps.mappings.models import SubsidiaryMapping
 from apps.fyle.tasks import create_expense_groups
 from apps.netsuite.tasks import schedule_bills_creation, schedule_journal_entry_creation, \
     schedule_expense_reports_creation, schedule_credit_card_charge_creation
 from apps.tasks.models import TaskLog
-from apps.workspaces.models import User, Workspace, WorkspaceSchedule, Configuration
+from apps.workspaces.models import User, Workspace, WorkspaceSchedule, Configuration, FyleCredential
 
 
 def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int, added_email: List, selected_email: List):
@@ -46,7 +47,7 @@ def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int, added_e
 
         ws_schedule.save()
 
-    elif not schedule_enabled:
+    elif not schedule_enabled and ws_schedule.schedule:
         schedule = ws_schedule.schedule
         ws_schedule.enabled = schedule_enabled
         ws_schedule.schedule = None
@@ -128,36 +129,45 @@ def run_schedule_email_notification(workspace_id):
         workspace_id=workspace_id
     )
 
-    admin_emails = []
+    task_logs = TaskLog.objects.filter(workspace_id=workspace_id, status='FAILED')
+    workspace = Workspace.objects.get(id=workspace_id)
+    netsuite_subsidiary = SubsidiaryMapping.objects.get(workspace_id=workspace_id).subsidiary_name
+    admin_data = WorkspaceSchedule.objects.get(workspace_id=workspace_id)
+
     if ws_schedule.enabled:
-        task_logs = TaskLog.objects.filter(workspace_id=workspace_id, status='FAILED')
-        workspace_admins = Workspace.objects.filter(pk=workspace_id).values_list('user', flat=True)
+        for admin_email in admin_data.selected_email:
+            attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id, value=admin_email).first()
 
-        for admin_id in workspace_admins:
-            user_email = User.objects.get(id=admin_id).email
-            admin_emails.append(user_email)
+            if attribute:
+                admin_name = attribute.detail['full_name']
+            else:
+                for data in admin_data.added_emails:
+                    if data['email'] == admin_email:
+                        admin_name = data['name']
 
-        if ws_schedule.errors is None or len(task_logs) > ws_schedule.errors:
-            context = {
-                'name': 'Elon Musk',
-                'errors': len(task_logs),
-                'task_log': task_logs[0].detail
-            }
+            if task_logs and (ws_schedule.errors is None or len(task_logs) > ws_schedule.errors):
+                context = {
+                    'name': admin_name,
+                    'errors': len(task_logs),
+                    'fyle_company': workspace.name,
+                    'netsuite_subsidiary': netsuite_subsidiary,
+                    'export_time': workspace.last_synced_at.date(),
+                }
 
-            ws_schedule.errors = len(task_logs)
-            ws_schedule.save()
+                ws_schedule.errors = len(task_logs)
+                ws_schedule.save()
 
-            message = render_to_string("mail_template.html", context)
+                message = render_to_string("mail_template.html", context)
 
-            mail = EmailMessage(
-                subject="Export To Netsuite Failed",
-                body=message,
-                from_email='nilesh.p@fyle.in',
-                to=['nileshpant112@gmail.com'],
-            )
+                mail = EmailMessage(
+                    subject="Export To Netsuite Failed",
+                    body=message,
+                    from_email='nilesh.p@fyle.in',
+                    to=[admin_email],
+                )
 
-            mail.content_subtype = "html"
-            mail.send()
+                mail.content_subtype = "html"
+                mail.send()
 
 def delete_cards_mapping_settings(configuration: Configuration):
 
