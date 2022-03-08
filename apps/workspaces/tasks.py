@@ -1,5 +1,5 @@
 import email
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List
 
 from django.core.mail import EmailMessage
@@ -18,10 +18,33 @@ from apps.tasks.models import TaskLog
 from apps.workspaces.models import User, Workspace, WorkspaceSchedule, Configuration, FyleCredential
 
 
+def schedule_email_notification(workspace_id: int, schedule_enabled: bool):
+    if schedule_enabled:
+        print('hello')
+        schedule, _ = Schedule.objects.update_or_create(
+            func='apps.workspaces.tasks.run_email_notification',
+            args='{}'.format(workspace_id),
+            defaults={
+                'schedule_type': Schedule.MINUTES,
+                'minutes': 24 * 60,
+                'next_run': datetime.now() + timedelta(minutes=5)
+            }
+        )
+    else:
+        schedule: Schedule = Schedule.objects.filter(
+            func='apps.workspaces.tasks.run_email_notification',
+            args='{}'.format(workspace_id)
+        ).first()
+
+        if schedule:
+            schedule.delete()
+
 def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int, added_email: List, selected_email: List):
     ws_schedule, _ = WorkspaceSchedule.objects.get_or_create(
         workspace_id=workspace_id
     )
+
+    schedule_email_notification(workspace_id=workspace_id, schedule_enabled=schedule_enabled)
 
     if schedule_enabled:
         ws_schedule.enabled = schedule_enabled
@@ -123,7 +146,7 @@ def run_sync_schedule(workspace_id):
                     workspace_id=workspace_id, expense_group_ids=expense_group_ids
                 )
 
-def run_schedule_email_notification(workspace_id):
+def run_email_notification(workspace_id):
 
     ws_schedule, _ = WorkspaceSchedule.objects.get_or_create(
         workspace_id=workspace_id
