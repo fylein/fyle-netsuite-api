@@ -20,14 +20,13 @@ from apps.workspaces.models import User, Workspace, WorkspaceSchedule, Configura
 
 def schedule_email_notification(workspace_id: int, schedule_enabled: bool):
     if schedule_enabled:
-        print('hello')
         schedule, _ = Schedule.objects.update_or_create(
             func='apps.workspaces.tasks.run_email_notification',
             args='{}'.format(workspace_id),
             defaults={
                 'schedule_type': Schedule.MINUTES,
                 'minutes': 24 * 60,
-                'next_run': datetime.now() + timedelta(minutes=5)
+                'next_run': datetime.now() + timedelta(minutes=10)
             }
         )
     else:
@@ -157,7 +156,7 @@ def run_email_notification(workspace_id):
     netsuite_subsidiary = SubsidiaryMapping.objects.get(workspace_id=workspace_id).subsidiary_name
     admin_data = WorkspaceSchedule.objects.get(workspace_id=workspace_id)
 
-    if ws_schedule.enabled:
+    if ws_schedule.enabled and len(task_logs) > 0:
         for admin_email in admin_data.selected_email:
             attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id, value=admin_email).first()
 
@@ -174,6 +173,7 @@ def run_email_notification(workspace_id):
                     'errors': len(task_logs),
                     'fyle_company': workspace.name,
                     'netsuite_subsidiary': netsuite_subsidiary,
+                    'workspace_id': workspace_id,
                     'export_time': workspace.last_synced_at.date(),
                 }
 
