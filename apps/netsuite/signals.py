@@ -1,6 +1,7 @@
 """
 NetSuite Signals
 """
+import logging
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
@@ -12,6 +13,10 @@ from apps.workspaces.models import NetSuiteCredentials
 
 from .models import CustomSegment
 from .connector import NetSuiteConnector
+
+
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 
 @receiver(post_save, sender=CustomSegment)
@@ -60,4 +65,5 @@ def validate_custom_segment(sender, instance: CustomSegment, **kwargs):
             custom_segment = ns_connector.connection.custom_segments.get(instance.internal_id)
             instance.name = custom_segment['recordType']['name'].upper().replace(' ', '_')
     except Exception as e:
+        logger.exception(e)
         raise NotFound()
