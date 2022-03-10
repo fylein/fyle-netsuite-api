@@ -347,15 +347,15 @@ class ScheduleView(viewsets.ViewSet):
         hours = request.data.get('hours')
         assert_valid(hours is not None, 'Hours cannot be left empty')
 
-        added_email = request.data.get('added_email')
-        selected_email = request.data.get('selected_email')
+        email_added = request.data.get('added_email')
+        emails_selected = request.data.get('selected_email')
 
         workspace_schedule_settings = schedule_sync(
             workspace_id=kwargs['workspace_id'],
             schedule_enabled=schedule_enabled,
             hours=hours,
-            added_email=added_email,
-            selected_email=selected_email
+            email_added=email_added,
+            emails_selected=emails_selected
         )
 
         return Response(

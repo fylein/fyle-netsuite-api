@@ -38,7 +38,7 @@ def schedule_email_notification(workspace_id: int, schedule_enabled: bool):
         if schedule:
             schedule.delete()
 
-def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int, added_email: List, selected_email: List):
+def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int, email_added: List, emails_selected: List):
     ws_schedule, _ = WorkspaceSchedule.objects.get_or_create(
         workspace_id=workspace_id
     )
@@ -49,10 +49,10 @@ def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int, added_e
         ws_schedule.enabled = schedule_enabled
         ws_schedule.start_datetime = datetime.now()
         ws_schedule.interval_hours = hours
-        ws_schedule.selected_email = selected_email
+        ws_schedule.emails_selected = emails_selected
         
-        if added_email:
-            ws_schedule.added_emails.append(added_email)
+        if email_added:
+            ws_schedule.additional_email_options.append(email_added)
 
 
         schedule, _ = Schedule.objects.update_or_create(
@@ -157,13 +157,13 @@ def run_email_notification(workspace_id):
     admin_data = WorkspaceSchedule.objects.get(workspace_id=workspace_id)
 
     if ws_schedule.enabled and len(task_logs) > 0:
-        for admin_email in admin_data.selected_email:
+        for admin_email in admin_data.emails_selected:
             attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id, value=admin_email).first()
 
             if attribute:
                 admin_name = attribute.detail['full_name']
             else:
-                for data in admin_data.added_emails:
+                for data in admin_data.additional_email_options:
                     if data['email'] == admin_email:
                         admin_name = data['name']
 
