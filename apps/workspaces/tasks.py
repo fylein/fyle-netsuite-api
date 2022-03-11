@@ -1,4 +1,5 @@
 import email
+import time
 from datetime import datetime, timedelta
 from typing import List
 
@@ -26,7 +27,7 @@ def schedule_email_notification(workspace_id: int, schedule_enabled: bool):
             defaults={
                 'schedule_type': Schedule.MINUTES,
                 'minutes': 24 * 60,
-                'next_run': datetime.now() + timedelta(minutes=10)
+                'next_run': datetime.now() + timedelta(minutes=1)
             }
         )
     else:
@@ -158,6 +159,7 @@ def run_email_notification(workspace_id):
 
     if ws_schedule.enabled and len(task_logs) > 0:
         for admin_email in admin_data.emails_selected:
+            print('admin email', admin_email)
             attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id, value=admin_email).first()
 
             if attribute:
@@ -167,7 +169,7 @@ def run_email_notification(workspace_id):
                     if data['email'] == admin_email:
                         admin_name = data['name']
 
-            if task_logs and (ws_schedule.errors is None or len(task_logs) > ws_schedule.errors):
+            if task_logs and (ws_schedule.error_count is None or len(task_logs) > ws_schedule.error_count):
                 context = {
                     'name': admin_name,
                     'errors': len(task_logs),
@@ -177,7 +179,7 @@ def run_email_notification(workspace_id):
                     'export_time': workspace.last_synced_at.date(),
                 }
 
-                ws_schedule.errors = len(task_logs)
+                ws_schedule.error_count = len(task_logs)
                 ws_schedule.save()
 
                 message = render_to_string("mail_template.html", context)
@@ -191,6 +193,8 @@ def run_email_notification(workspace_id):
 
                 mail.content_subtype = "html"
                 mail.send()
+                time.sleep(20)
+
 
 def delete_cards_mapping_settings(configuration: Configuration):
 

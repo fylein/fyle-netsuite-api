@@ -22,7 +22,7 @@
           style="font-family: Helvetica,Arial; border-collapse: collapse; background-color: #ffffff; border-radius: 4px; border: solid 1px #d8d8d8;">
           <tr>
             <td bgcolor="#f3f5f6"
-              background="https://github.com/fylein/fyle-app/blob/master/main/assets/images/email_templates/background_header_fyle_logo.png"
+              background="https://raw.githubusercontent.com/fylein/fyle-netsuite-api/b1ebe6c1db08c4e85cc34244f8bf5a1b3f1219ea/apps/workspaces/templates/images/background.png"
               style="padding: 10px 25px 10px 25px;" width="600" height="50">
 
               <table width="35%">
@@ -48,7 +48,8 @@
               <table width="100%" cellspacing="10">
                 <tr align="center">
                   <td>
-                    <img style="height: 150px;" src="https://raw.githubusercontent.com/fylein/fyle-netsuite-api/e05abf142208368b88a530f3d8bb25456fef4d26/apps/workspaces/templates/images/icon.png"> 
+                    <img style="height: 150px;"
+                      src="https://raw.githubusercontent.com/fylein/fyle-netsuite-api/e05abf142208368b88a530f3d8bb25456fef4d26/apps/workspaces/templates/images/icon.png">
                   </td>
                 </tr>
                 <tr align="center">
@@ -59,26 +60,24 @@
                 </tr>
                 <tr>
                   <td>
-                    <table style="font-family: Aktiv Grotesk; padding-left: 10px;  background:#F5F5F5; border-radius: 8px;" width="100%" cellspacing="10">
-                      <tr style=
-                          "font-style: normal;
+                    <table
+                      style="font-family: Aktiv Grotesk; padding-left: 10px;  background:#F5F5F5; border-radius: 8px;"
+                      width="100%" cellspacing="10">
+                      <tr style="font-style: normal;
                           font-weight: 500;
                           font-size: 14px;
                           line-height: 15px;
                           letter-spacing: 0.02em;
-                          color: #5A5D72;"
-                      >
+                          color: #5A5D72;">
                         <td>FYLE ORGANIZATION</td>
                         <td>NETSUITE SUBSDIARY</td>
                       </tr>
-                      <tr style=
-                          "font-family: Aktiv Grotesk;
+                      <tr style="font-family: Aktiv Grotesk;
                           font-style: normal;
                           font-weight: 500;
                           font-size: 14px;
                           line-height: 20px;   
-                          color: #161528;"
-                        >
+                          color: #161528;">
                         <td>{{ fyle_company }}</td>
                         <td>{{ netsuite_subsidiary }}</td>
                       </tr>
@@ -95,7 +94,8 @@
                       </tr>
                       <tr>
                         <td style="font-size: 15px; line-height: 18px; padding-top: 5px; color: #2C304E;">
-                          <span style="font-weight: bold">{{ errors }} expense groups</span> failed to export from your Fyle org
+                          <span style="font-weight: bold">{{ errors }} expense groups</span> failed to export from your
+                          Fyle org
                           to Netsuite Subsidiary
                         </td>
                       </tr>
@@ -124,7 +124,8 @@
                     <table style="width: 250px" border="0" cellspacing="0" cellpadding="0">
                       <tr align="center">
                         <td align="center" style="border-radius: 4px;" bgcolor="#ff3366">
-                          <a href="https://sage-intacct.fyleapps.tech/{0}/expense_group".format({{ workspace_id }}) target="_blank"
+                          <a href="https://netsuite.fyleapps.tech/{0}/expense_group" .format({{ workspace_id }})
+                            target="_blank"
                             style="font-size: 12px; color: #ffffff; text-decoration: none; text-decoration: none;border-radius: 4px; padding: 12px 18px; border: 1px solid #ff3366; display: inline-block;">
                             <b>Visit Integation</b>
                           </a>
@@ -147,14 +148,13 @@
                         <td style="padding: 0px 5px;">
                           <a href="https://itunes.apple.com/in/app/fyle-track-report-expenses/id1137906166">
                             <img alt="Appstore" title="Appstore"
-                              src="https://ci4.googleusercontent.com/proxy/AgWEdQqk1PTxncbTZL4ziuAKPeKooRTq3FyBCCaVHa555J8BpAmd3cKaZOCIcVAeB32MUkhdU8cDkCPB9mDKdfXtz9dH_gViN8UEHMlYQA0sxtSU3Q6r7MlUIY183g=s0-d-e1-ft#https://app.fyle.tech/app/main/assets/images/email_templates/icon_apple.png"
+                              src="https://raw.githubusercontent.com/fylein/fyle-netsuite-api/b1ebe6c1db08c4e85cc34244f8bf5a1b3f1219ea/apps/workspaces/templates/images/appstore.png"
                               height="18" width="16">
                           </a>
-                        </td>
                         <td style="padding: 0px 5px;">
                           <a href="https://play.google.com/store/apps/details?id=com.ionicframework.fyle595781">
                             <img alt="Playstore" title="Playstore"
-                              src="https://ci5.googleusercontent.com/proxy/4_wAMCPwifjT-HUdIx8jI-EN2J5cYLssv-bw9QQxQnLhW5m09jp0-6V1Tr647x6cfl4FeFztddwjMjKfggs5fPfkpgK4w1kp7lW6MI6-9CTFoDG8ddapj82JLkDG99Bns64=s0-d-e1-ft#https://app.fyle.tech/app/main/assets/images/email_templates/icon_playstore.png"
+                              src="https://raw.githubusercontent.com/fylein/fyle-netsuite-api/b1ebe6c1db08c4e85cc34244f8bf5a1b3f1219ea/apps/workspaces/templates/images/playstore.png"
                               height="16" width="16">
                           </a>
 
@@ -165,7 +165,7 @@
                           <a
                             href="https://chrome.google.com/webstore/detail/fyle-expense-tracking-rep/abggpefphmldapcoknbcaadbpdjjmjgk">
                             <img alt="Gmail" title="Gmail"
-                              src="https://ci6.googleusercontent.com/proxy/Xl7ol0HKmpIDjpJrstJb1E8JsJBRS9U7HmM91ISo_TFQBYUIh-L08BCt23dxLd8jNRqqrSixmrPehW8E9vI4lhHQlkiQXT0B_xokek9-ktM8SL_3Ur1tpACKttWPVg=s0-d-e1-ft#https://app.fyle.tech/app/main/assets/images/email_templates/icon_gmail.png"
+                              src="https://raw.githubusercontent.com/fylein/fyle-netsuite-api/b1ebe6c1db08c4e85cc34244f8bf5a1b3f1219ea/apps/workspaces/templates/images/gmail.png"
                               height="18" width="20">
                           </a>
 
@@ -173,7 +173,7 @@
                         <td style="padding: 0px 5px;">
                           <a href="https://appsource.microsoft.com/en-us/product/office/WA104380673">
                             <img alt="Outlook" title="Outlook"
-                              src="https://ci3.googleusercontent.com/proxy/9qtkcz--FRnlqfjsTzd3GS-rZbo5yezZNRSTBgjhGXI9adIM0qzD6T4oRsLnEBDNd3AMjGxCeIhax4siwcGF2ylzZ_DPZuvxOmFFs_ls-IOB4UvCTJfJgqx8kHMSy_zD=s0-d-e1-ft#https://app.fyle.tech/app/main/assets/images/email_templates/icon_outlook.png"
+                              src="https://raw.githubusercontent.com/fylein/fyle-netsuite-api/b1ebe6c1db08c4e85cc34244f8bf5a1b3f1219ea/apps/workspaces/templates/images/outlool.png"
                               height="18" width="16">
                           </a>
                         </td>
@@ -186,7 +186,7 @@
           </tr>
           <tr>
             <td
-              background="https://github.com/fylein/fyle-app/tree/master/main/assets/images/email_templates/background_footer_fyle_logo.png"
+              background="https://raw.githubusercontent.com/fylein/fyle-netsuite-api/b1ebe6c1db08c4e85cc34244f8bf5a1b3f1219ea/apps/workspaces/templates/images/background.png"
               style="padding: 10px 10px 8px 5px; background-color: #f3f5f6;">
               <table align="center">
                 <tr style="color: #4A4A4A; font-size: 12px; text-align: center; line-height: 20px;">
