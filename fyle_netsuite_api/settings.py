@@ -266,10 +266,14 @@ FYLE_TOKEN_URI = os.environ.get('FYLE_TOKEN_URI')
 FYLE_CLIENT_ID = os.environ.get('FYLE_CLIENT_ID')
 FYLE_CLIENT_SECRET = os.environ.get('FYLE_CLIENT_SECRET')
 FYLE_BASE_URL = os.environ.get('FYLE_BASE_URL')
+FYLE_APP_URL = os.environ.get('APP_URL')
 
 # Netsuite Settings
 NS_CONSUMER_KEY = os.environ.get('NS_CONSUMER_KEY')
 NS_CONSUMER_SECRET = os.environ.get('NS_CONSUMER_SECRET')
+SENDGRID_KEY = os.environ.get('SENDGRID_KEY')
+EMAIL_BACKEND = os.environ.get('SENDGRID_BACKEND')
+
 
 CACHE_EXPIRY = 3600
 
@@ -280,10 +284,6 @@ CORS_ALLOW_HEADERS = [
     'authorization',
     'content-type'
 ]
-
-EMAIL_BACKEND = 'sgbackend.SendGridBackend'
-
-SENDGRID_API_KEY = os.environ.get('SENDGRID_KEY')
 
 # Toggle sandbox mode (when running in DEBUG mode)
 SENDGRID_SANDBOX_MODE_IN_DEBUG=False

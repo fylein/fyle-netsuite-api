@@ -3,6 +3,7 @@ import time
 from datetime import datetime, timedelta
 from typing import List
 
+from django.conf import settings
 from django.core.mail import EmailMessage
 from django.template.loader import get_template
 from django.contrib.auth import get_user_model
@@ -159,7 +160,6 @@ def run_email_notification(workspace_id):
 
     if ws_schedule.enabled and len(task_logs) > 0:
         for admin_email in admin_data.emails_selected:
-            print('admin email', admin_email)
             attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id, value=admin_email).first()
 
             if attribute:
@@ -177,7 +177,8 @@ def run_email_notification(workspace_id):
                     'netsuite_subsidiary': netsuite_subsidiary,
                     'workspace_id': workspace_id,
                     'export_time': workspace.last_synced_at.date(),
-                }
+                    'app_url': settings.FYLE_APP_URL
+                    }
 
                 ws_schedule.error_count = len(task_logs)
                 ws_schedule.save()
