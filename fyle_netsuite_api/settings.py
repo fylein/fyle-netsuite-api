@@ -80,7 +80,7 @@ AUTH_USER_MODEL = 'users.User'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'workspaces/templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -266,10 +266,14 @@ FYLE_TOKEN_URI = os.environ.get('FYLE_TOKEN_URI')
 FYLE_CLIENT_ID = os.environ.get('FYLE_CLIENT_ID')
 FYLE_CLIENT_SECRET = os.environ.get('FYLE_CLIENT_SECRET')
 FYLE_BASE_URL = os.environ.get('FYLE_BASE_URL')
+FYLE_APP_URL = os.environ.get('APP_URL')
 
 # Netsuite Settings
 NS_CONSUMER_KEY = os.environ.get('NS_CONSUMER_KEY')
 NS_CONSUMER_SECRET = os.environ.get('NS_CONSUMER_SECRET')
+SENDGRID_KEY = os.environ.get('SENDGRID_KEY')
+EMAIL_BACKEND = os.environ.get('SENDGRID_BACKEND')
+
 
 CACHE_EXPIRY = 3600
 
@@ -280,3 +284,9 @@ CORS_ALLOW_HEADERS = [
     'authorization',
     'content-type'
 ]
+
+# Toggle sandbox mode (when running in DEBUG mode)
+SENDGRID_SANDBOX_MODE_IN_DEBUG=False
+
+# echo to stdout or any other file-like object that is passed to the backend via the stream kwarg.
+SENDGRID_ECHO_TO_STDOUT=True

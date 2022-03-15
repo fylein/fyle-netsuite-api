@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import ArrayField
 
 from django_q.models import Schedule
+from django.db.models import JSONField
 
 
 User = get_user_model()
@@ -73,6 +74,9 @@ class WorkspaceSchedule(models.Model):
     enabled = models.BooleanField(default=False)
     start_datetime = models.DateTimeField(help_text='Datetime for start of schedule', null=True)
     interval_hours = models.IntegerField(null=True)
+    error_count = models.IntegerField(null=True, help_text='Number of errors in export')
+    additional_email_options = JSONField(default=list, help_text='Email and Name of person to send email', null=True)
+    emails_selected = ArrayField(base_field=models.CharField(max_length=255), null=True, help_text='File IDs')
     schedule = models.OneToOneField(Schedule, on_delete=models.PROTECT, null=True)
 
     class Meta:
