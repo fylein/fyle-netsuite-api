@@ -57,4 +57,4 @@ urllib3==1.26.5
 wcwidth==0.1.8
 wrapt==1.12.1
 zeep==4.1.0
-django-sendgrid-v5
+django-sendgrid-v5==1.2.0
