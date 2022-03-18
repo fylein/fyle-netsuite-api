@@ -155,5 +155,6 @@ cache.db-journal
 test_scripts/
 fyle_accounting_mappings/
 
+#todo will remove this off 
 #connector
 apps/connector
