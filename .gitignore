@@ -154,3 +154,6 @@ cache.db-journal
 # Test scripts
 test_scripts/
 fyle_accounting_mappings/
+
+#connector
+apps/connector
