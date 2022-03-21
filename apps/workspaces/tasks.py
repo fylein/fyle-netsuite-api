@@ -185,7 +185,7 @@ def run_email_notification(workspace_id):
                 mail = EmailMessage(
                     subject="Export To Netsuite Failed",
                     body=message,
-                    from_email='notifications-staging@fylehq.com',
+                    from_email=settings.EMAIL,
                     to=[admin_email],
                 )
 
