@@ -13,13 +13,13 @@ from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttr
     CategoryMapping
 from fyle_accounting_mappings.helpers import EmployeesAutoMappingHelper
 
-#todo will update the import 
+
 from apps.fyle.connector import FyleConnector
-# from fyle_integrations_platform_connector import PlatformConnector
+from fyle_integrations_platform_connector import PlatformConnector
 from apps.mappings.models import GeneralMapping
 from apps.netsuite.connector import NetSuiteConnector
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configuration
-from apps.connector.fyle_integrations_platform_connector import PlatformConnector
+
 
 from .constants import FYLE_EXPENSE_SYSTEM_FIELDS
 
@@ -915,9 +915,7 @@ def auto_create_vendors_as_merchants(workspace_id):
         fyle_connection = PlatformConnector(fyle_credentials)
 
         existing_merchants_name = ExpenseAttribute.objects.filter(attribute_type='MERCHANT', workspace_id=workspace_id)
-        first_run = True
-        if existing_merchants_name:
-            first_run = False
+        first_run = False if existing_merchants_name else True
 
         fyle_connection.merchants.sync(workspace_id)
 
