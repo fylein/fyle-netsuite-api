@@ -177,24 +177,23 @@ def run_email_notification(workspace_id):
                     'netsuite_subsidiary': netsuite_subsidiary,
                     'workspace_id': workspace_id,
                     'export_time': workspace.last_synced_at.date(),
-                    'app_url': settings.FYLE_APP_URL
+                    'app_url': "{0}/workspaces/{1}/expense_groups".format(settings.FYLE_APP_URL, workspace_id)
                     }
-
-                ws_schedule.error_count = len(task_logs)
-                ws_schedule.save()
 
                 message = render_to_string("mail_template.html", context)
 
                 mail = EmailMessage(
                     subject="Export To Netsuite Failed",
                     body=message,
-                    from_email='nilesh.p@fyle.in',
+                    from_email='notifications-staging@fylehq.com',
                     to=[admin_email],
                 )
 
                 mail.content_subtype = "html"
                 mail.send()
-                time.sleep(20)
+
+        ws_schedule.error_count = len(task_logs)
+        ws_schedule.save()
 
 
 def delete_cards_mapping_settings(configuration: Configuration):
