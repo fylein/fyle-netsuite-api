@@ -271,8 +271,9 @@ FYLE_APP_URL = os.environ.get('APP_URL')
 # Netsuite Settings
 NS_CONSUMER_KEY = os.environ.get('NS_CONSUMER_KEY')
 NS_CONSUMER_SECRET = os.environ.get('NS_CONSUMER_SECRET')
-SENDGRID_KEY = os.environ.get('SENDGRID_KEY')
-EMAIL_BACKEND = os.environ.get('SENDGRID_BACKEND')
+SENDGRID_API_KEY = os.environ.get('SENDGRID_KEY')
+EMAIL = os.environ.get('SENDGRID_EMAIL')
+EMAIL_BACKEND = 'sendgrid_backend.SendgridBackend'
 
 
 CACHE_EXPIRY = 3600
