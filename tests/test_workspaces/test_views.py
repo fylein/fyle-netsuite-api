@@ -188,8 +188,9 @@ def test_get_workspace_schedule(api_client, test_connection):
 
     response = api_client.get(url)
     response = json.loads(response.content)
+    expected_response = get_response_dict('test_workspaces/data.json')
 
-    assert response == {'id': 3, 'enabled': False, 'start_datetime': None, 'interval_hours': None, 'workspace': 1, 'schedule': None}
+    assert dict_compare_keys(response, expected_response['workspace_schedule']) == [] , 'workspace-schedule api returns a diff in keys'
 
 @pytest.mark.django_db(databases=['default'])
 def test_ready_view(api_client, test_connection):
