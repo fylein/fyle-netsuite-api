@@ -96,7 +96,7 @@ def test_sync_project(add_netsuite_credentials):
     netsuite_connection.sync_projects()
 
     new_project_count = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='PROJECT').count()
-    assert new_project_count == 1087
+    assert new_project_count == 1088
 
 def test_sync_employee(add_netsuite_credentials):
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)
