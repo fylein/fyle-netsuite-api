@@ -442,6 +442,7 @@ class NetSuiteConnector:
         try:
             vendor_response = self.connection.vendors.post(vendor)
         except NetSuiteRequestError as exception:
+            logger.exception({'error': exception})
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
             if 'representingsubsidiary' in detail['message']:
