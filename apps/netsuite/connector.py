@@ -438,7 +438,17 @@ class NetSuiteConnector:
             'externalId': vendor.detail['user_id'] if vendor else merchant
         }
 
-        return self.connection.vendors.post(vendor)
+        vendor_response = None
+        try:
+            vendor_response = self.connection.vendors.post(vendor)
+        except NetSuiteRequestError as exception:
+            detail = json.dumps(exception.__dict__)
+            detail = json.loads(detail)
+            if 'representingsubsidiary' in detail['message']:
+                vendor['representingSubsidiary']['internalId'] = None
+                vendor_response = self.connection.vendors.post(vendor)
+
+        return vendor_response
 
     def sync_employees(self):
         """
