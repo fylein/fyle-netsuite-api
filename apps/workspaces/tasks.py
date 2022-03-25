@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from typing import List
 
 from django.conf import settings
+from django.db.models import Q
 from django.core.mail import EmailMessage
 from django.template.loader import get_template
 from django.contrib.auth import get_user_model
@@ -153,7 +154,11 @@ def run_email_notification(workspace_id):
         workspace_id=workspace_id
     )
 
-    task_logs = TaskLog.objects.filter(workspace_id=workspace_id, status='FAILED')
+    task_logs = TaskLog.objects.filter(
+        ~Q(type__in=['CREATING_VENDOR_PAYMENT', 'FETCHING_EXPENSES']),
+        workspace_id=workspace_id,
+        status='FAILED'
+    )
     workspace = Workspace.objects.get(id=workspace_id)
     netsuite_subsidiary = SubsidiaryMapping.objects.get(workspace_id=workspace_id).subsidiary_name
     admin_data = WorkspaceSchedule.objects.get(workspace_id=workspace_id)
