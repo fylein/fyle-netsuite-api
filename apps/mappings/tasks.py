@@ -893,10 +893,10 @@ def post_merchants(platform_connection: PlatformConnector, workspace_id: int, fi
             attribute_type='VENDOR', workspace_id=workspace_id).order_by('value', 'id')
     else:
         merchant = platform_connection.merchants.get()
-        merchant_updated_at = parser.isoparse(merchant['updated_at']).strftime('%Y-%m-%d')
-        today_date = datetime.now().strftime('%Y-%m-%d')
+        merchant_updated_at = parser.isoparse(merchant['updated_at']).strftime('%Y-%m-%d %H:%M:%S.%f')
+        today_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
         netsuite_attributes = DestinationAttribute.objects.filter(attribute_type='VENDOR', workspace_id=workspace_id,
-            updated_at__range=[merchant_updated_at,today_date]).order_by('value', 'id')
+            updated_at__range=[merchant_updated_at, today_date]).order_by('value', 'id')
 
     netsuite_attributes = remove_duplicates(netsuite_attributes)
 
