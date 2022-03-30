@@ -447,8 +447,10 @@ class NetSuiteConnector:
             detail = json.loads(detail)
             if 'representingsubsidiary' in detail['message']:
                 vendor['representingSubsidiary']['internalId'] = None
-                vendor_response = self.connection.vendors.post(vendor)
-
+            elif 'isperson' in detail['message']:
+                del vendor['isPerson']
+            vendor_response = self.connection.vendors.post(vendor)
+            
         return vendor_response
 
     def sync_employees(self):
