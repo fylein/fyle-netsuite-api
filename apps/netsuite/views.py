@@ -99,8 +99,7 @@ class NetSuiteFieldsView(generics.ListAPIView):
                 'display_name': 'Project'
             })
         
-        if has_customers and has_projects:
-            attributes = list(filter(lambda attribute: attribute['display_name'] != 'Customer', attributes))
+        attributes = list(filter(lambda attribute: attribute['display_name'] != 'Customer', attributes))
 
         return attributes
 
