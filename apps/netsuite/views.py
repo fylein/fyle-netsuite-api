@@ -88,7 +88,7 @@ class NetSuiteFieldsView(generics.ListAPIView):
         for attribute in attributes:
             if attribute['display_name'] == 'Project':
                 has_projects = True
-            elif attribute['display_name'] == 'Project':
+            elif attribute['display_name'] == 'Customer':
                 has_customers = True
 
         if has_customers and not has_projects:
