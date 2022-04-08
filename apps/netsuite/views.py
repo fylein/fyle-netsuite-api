@@ -83,6 +83,8 @@ class NetSuiteFieldsView(generics.ListAPIView):
             workspace_id=self.kwargs['workspace_id']
         ).values('attribute_type', 'display_name').distinct()
 
+        attributes = list(attributes)
+
         has_projects = False
         has_customers = False
         for attribute in attributes:
