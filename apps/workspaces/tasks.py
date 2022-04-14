@@ -147,6 +147,20 @@ def run_sync_schedule(workspace_id):
                 schedule_credit_card_charge_creation(
                     workspace_id=workspace_id, expense_group_ids=expense_group_ids
                 )
+    
+    ws_schedule, _ = WorkspaceSchedule.objects.get_or_create(
+        workspace_id=workspace_id
+    )
+
+    task_logs = TaskLog.objects.filter(
+        ~Q(type__in=['CREATING_VENDOR_PAYMENT', 'FETCHING_EXPENSES']),
+        workspace_id=workspace_id,
+        status='FAILED'
+    )
+
+    ws_schedule.error_count = len(task_logs)
+    ws_schedule.save()
+
 
 def run_email_notification(workspace_id):
 
