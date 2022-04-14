@@ -147,19 +147,6 @@ def run_sync_schedule(workspace_id):
                 schedule_credit_card_charge_creation(
                     workspace_id=workspace_id, expense_group_ids=expense_group_ids
                 )
-    
-    ws_schedule, _ = WorkspaceSchedule.objects.get_or_create(
-        workspace_id=workspace_id
-    )
-
-    task_logs = TaskLog.objects.filter(
-        ~Q(type__in=['CREATING_VENDOR_PAYMENT', 'FETCHING_EXPENSES']),
-        workspace_id=workspace_id,
-        status='FAILED'
-    )
-
-    ws_schedule.error_count = len(task_logs)
-    ws_schedule.save()
 
 
 def run_email_notification(workspace_id):
@@ -173,11 +160,13 @@ def run_email_notification(workspace_id):
         workspace_id=workspace_id,
         status='FAILED'
     )
+
+    print('sdfsdfsdfsdfdfs', len(task_logs))
     workspace = Workspace.objects.get(id=workspace_id)
     netsuite_subsidiary = SubsidiaryMapping.objects.get(workspace_id=workspace_id).subsidiary_name
     admin_data = WorkspaceSchedule.objects.get(workspace_id=workspace_id)
 
-    if ws_schedule.enabled and len(task_logs) > 0:
+    if ws_schedule.enabled:
         for admin_email in admin_data.emails_selected:
             attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id, value=admin_email).first()
 
@@ -187,7 +176,7 @@ def run_email_notification(workspace_id):
                 for data in admin_data.additional_email_options:
                     if data['email'] == admin_email:
                         admin_name = data['name']
-
+            
             if task_logs and (ws_schedule.error_count is None or len(task_logs) > ws_schedule.error_count):
                 context = {
                     'name': admin_name,
@@ -210,9 +199,12 @@ def run_email_notification(workspace_id):
 
                 mail.content_subtype = "html"
                 mail.send()
-
+        
+    
+        print('fhgfghfg', len(task_logs))
         ws_schedule.error_count = len(task_logs)
         ws_schedule.save()
+            
 
 
 def delete_cards_mapping_settings(configuration: Configuration):
