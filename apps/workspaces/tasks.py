@@ -159,11 +159,12 @@ def run_email_notification(workspace_id):
         workspace_id=workspace_id,
         status='FAILED'
     )
+
     workspace = Workspace.objects.get(id=workspace_id)
     netsuite_subsidiary = SubsidiaryMapping.objects.get(workspace_id=workspace_id).subsidiary_name
     admin_data = WorkspaceSchedule.objects.get(workspace_id=workspace_id)
 
-    if ws_schedule.enabled and len(task_logs) > 0:
+    if ws_schedule.enabled:
         for admin_email in admin_data.emails_selected:
             attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id, value=admin_email).first()
 
