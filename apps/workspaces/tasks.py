@@ -148,7 +148,6 @@ def run_sync_schedule(workspace_id):
                     workspace_id=workspace_id, expense_group_ids=expense_group_ids
                 )
 
-
 def run_email_notification(workspace_id):
 
     ws_schedule, _ = WorkspaceSchedule.objects.get_or_create(
@@ -161,7 +160,6 @@ def run_email_notification(workspace_id):
         status='FAILED'
     )
 
-    print('sdfsdfsdfsdfdfs', len(task_logs))
     workspace = Workspace.objects.get(id=workspace_id)
     netsuite_subsidiary = SubsidiaryMapping.objects.get(workspace_id=workspace_id).subsidiary_name
     admin_data = WorkspaceSchedule.objects.get(workspace_id=workspace_id)
@@ -176,7 +174,7 @@ def run_email_notification(workspace_id):
                 for data in admin_data.additional_email_options:
                     if data['email'] == admin_email:
                         admin_name = data['name']
-            
+
             if task_logs and (ws_schedule.error_count is None or len(task_logs) > ws_schedule.error_count):
                 context = {
                     'name': admin_name,
@@ -199,12 +197,9 @@ def run_email_notification(workspace_id):
 
                 mail.content_subtype = "html"
                 mail.send()
-        
-    
-        print('fhgfghfg', len(task_logs))
+
         ws_schedule.error_count = len(task_logs)
         ws_schedule.save()
-            
 
 
 def delete_cards_mapping_settings(configuration: Configuration):
