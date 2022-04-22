@@ -311,10 +311,14 @@ class NetSuiteConnector:
         classification_attributes = []
 
         for classification in classifications:
+            value = classification['name']
+            if classification['parent']:
+                value = '{0} : {1}'.format(classification['parent']['name'], classification['name'])
+
             classification_attributes.append({
                 'attribute_type': 'CLASS',
                 'display_name': 'Class',
-                'value': classification['name'],
+                'value': value,
                 'destination_id': classification['internalId']
             })
 
