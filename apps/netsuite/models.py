@@ -1055,6 +1055,12 @@ class JournalEntryLineItem(models.Model):
 
             custom_segments = get_custom_segments(expense_group, lineitem)
 
+            merchant = lineitem.vendor if lineitem.vendor else ''
+
+            vendor = DestinationAttribute.objects.filter(
+                value__iexact=merchant, attribute_type='VENDOR', workspace_id=expense_group.workspace_id
+            ).first()
+
             journal_entry_lineitem_object, _ = JournalEntryLineItem.objects.update_or_create(
                 journal_entry=journal_entry,
                 expense_id=lineitem.id,
@@ -1065,8 +1071,7 @@ class JournalEntryLineItem(models.Model):
                     'department_id': department_id,
                     'location_id': location_id,
                     'class_id': class_id if class_id else None,
-                    'entity_id': entity.destination_employee.destination_id if employee_field_mapping == 'EMPLOYEE' \
-                        else entity.destination_vendor.destination_id,
+                    'entity_id': vendor.destination_id if vendor else general_mappings.default_ccc_vendor_id,
                     'amount': lineitem.amount,
                     'tax_item_id': get_tax_item_id_or_none(expense_group, lineitem),
                     'tax_amount': lineitem.tax_amount,

@@ -516,6 +516,9 @@ def create_journal_entry(expense_group, task_log_id):
             expense_group, netsuite_connection, configuration.auto_map_employees,
             configuration.employee_field_mapping)
 
+    merchant = expense_group.expenses.first().vendor
+    get_or_create_credit_card_vendor(expense_group, merchant, False)
+
     try:
         with transaction.atomic():
             __validate_expense_group(expense_group, configuration)
