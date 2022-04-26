@@ -333,7 +333,7 @@ def test_create_or_update_employee_mapping(db, add_netsuite_credentials, add_fyl
 
     employee_mappings = EmployeeMapping.objects.filter(workspace_id=1).last()
 
-    assert employee_mappings.destination_employee_id == 5441
+    assert employee_mappings.destination_employee_id == 5442
 
 
 def test_handle_netsuite_connection_error(db):
