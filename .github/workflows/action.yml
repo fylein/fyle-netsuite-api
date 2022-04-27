@@ -51,9 +51,7 @@ jobs:
       - name: Stop Services
         run: docker compose -f docker-compose-pipeline.yml down
       - name: Evaluate Coverage
-        if: if: ${{ (env.STATUS == 'FAIL') || (env.FAILED > 0) }}
-        run: exit 1
-        if: env.FAILED > 0
+        if: ${{ (env.STATUS == 'FAIL') || (env.FAILED > 0) }}
         run: exit 1
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2
