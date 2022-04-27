@@ -27,7 +27,7 @@ jobs:
         run: |
           docker-compose -f docker-compose-pipeline.yml build
           docker-compose -f docker-compose-pipeline.yml up -d
-          docker-compose -f docker-compose-pipeline.yml exec -T api pytest tests/ --cov=. --junit-xml=test-reports/report.xml --cov-report=term-missing --cov-fail-under=68 | tee pytest-coverage.txt
+          docker-compose -f docker-compose-pipeline.yml exec -T api pytest tests/ --cov=. --junit-xml=test-reports/report.xml --cov-report=term-missing --cov-fail-under=90 | tee pytest-coverage.txt
           echo "STATUS=$(cat pytest-coverage.txt | grep 'Required test' | awk '{ print $1 }')" >> $GITHUB_ENV
         env:
           FYLE_BASE_URL: ${{ secrets.FYLE_BASE_URL }}

@@ -1,0 +1,718 @@
+-------------Populating Test Datebase---------------
+SET
+SET
+SET
+SET
+SET
+ set_config 
+------------
+ 
+(1 row)
+
+SET
+SET
+SET
+SET
+SET
+SET
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+COPY 0
+COPY 0
+COPY 0
+COPY 0
+COPY 0
+COPY 0
+COPY 0
+COPY 0
+COPY 0
+COPY 0
+COPY 0
+COPY 0
+COPY 0
+COPY 0
+COPY 0
+COPY 0
+COPY 0
+COPY 0
+COPY 0
+COPY 0
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+    164
+(1 row)
+
+ setval 
+--------
+     17
+(1 row)
+
+ setval 
+--------
+     17
+(1 row)
+
+ setval 
+--------
+      5
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+     41
+(1 row)
+
+ setval 
+--------
+    130
+(1 row)
+
+ setval 
+--------
+     32
+(1 row)
+
+ setval 
+--------
+     47
+(1 row)
+
+ setval 
+--------
+      3
+(1 row)
+
+ setval 
+--------
+     21
+(1 row)
+
+ setval 
+--------
+     21
+(1 row)
+
+ setval 
+--------
+   5008
+(1 row)
+
+ setval 
+--------
+   3684
+(1 row)
+
+ setval 
+--------
+     26
+(1 row)
+
+ setval 
+--------
+     29
+(1 row)
+
+ setval 
+--------
+    174
+(1 row)
+
+ setval 
+--------
+    121
+(1 row)
+
+ setval 
+--------
+     48
+(1 row)
+
+ setval 
+--------
+     74
+(1 row)
+
+ setval 
+--------
+      2
+(1 row)
+
+ setval 
+--------
+      3
+(1 row)
+
+ setval 
+--------
+      3
+(1 row)
+
+ setval 
+--------
+      3
+(1 row)
+
+ setval 
+--------
+    546
+(1 row)
+
+ setval 
+--------
+      3
+(1 row)
+
+ setval 
+--------
+    143
+(1 row)
+
+ setval 
+--------
+     30
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+     46
+(1 row)
+
+ setval 
+--------
+     29
+(1 row)
+
+ setval 
+--------
+     49
+(1 row)
+
+ setval 
+--------
+     66
+(1 row)
+
+ setval 
+--------
+      3
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+---------------------Testing-------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.7.4, pytest-6.2.5, py-1.11.0, pluggy-1.0.0
+django: settings: fyle_netsuite_api.tests.settings (from ini)
+rootdir: /fyle-netsuite-api, configfile: pytest.ini
+plugins: django-4.4.0, mock-3.6.1, cov-2.12.1
+collected 123 items
+
+tests/test_fyle/test_connector.py::test_get_fyle_orgs PASSED             [  0%]
+tests/test_fyle/test_connector.py::test_get_attachments PASSED           [  1%]
+tests/test_fyle/test_connector.py::test_post_reimbursement FAILED        [  2%]
+tests/test_fyle/test_helpers.py::test_add_expense_id_to_expense_group_settings PASSED [  3%]
+tests/test_fyle/test_helpers.py::test_update_import_card_credits_flag PASSED [  4%]
+tests/test_fyle/test_helpers.py::test_update_use_employee_attributes_flag PASSED [  4%]
+tests/test_fyle/test_helpers.py::test_check_interval_and_sync_dimension PASSED [  5%]
+tests/test_fyle/test_models.py::test_create_expense PASSED               [  6%]
+tests/test_fyle/test_models.py::test_expense_group_settings PASSED       [  7%]
+tests/test_fyle/test_models.py::test_create_expense_groups_by_report_id_fund_source PASSED [  8%]
+tests/test_fyle/test_models.py::test_create_reimbursement PASSED         [  8%]
+tests/test_fyle/test_models.py::test_get_last_synced_at PASSED           [  9%]
+tests/test_fyle/test_platform_connector.py::test_sync_tax_groups PASSED  [ 10%]
+tests/test_fyle/test_tasks.py::test_create_expense_group PASSED          [ 11%]
+tests/test_fyle/test_tasks.py::test_schedule_expense_group_creation PASSED [ 12%]
+tests/test_fyle/test_views.py::test_expense_group_view PASSED            [ 13%]
+tests/test_fyle/test_views.py::test_expense_view PASSED                  [ 13%]
+tests/test_fyle/test_views.py::test_count_expense_view PASSED            [ 14%]
+tests/test_fyle/test_views.py::test_expense_group_settings PASSED        [ 15%]
+tests/test_fyle/test_views.py::test_fyle_fields_view PASSED              [ 16%]
+tests/test_fyle/test_views.py::test_fyle_expense_attribute_view PASSED   [ 17%]
+tests/test_fyle/test_views.py::test_expense_group_id_view PASSED         [ 17%]
+tests/test_fyle/test_views.py::test_fyle_refresh_dimension PASSED        [ 18%]
+tests/test_fyle/test_views.py::test_fyle_sync_dimension PASSED           [ 19%]
+tests/test_fyle/test_views.py::test_expense_group_schedule_view PASSED   [ 20%]
+tests/test_mappings/test_helper.py::test_validate_and_trigger_auto_map_employees PASSED [ 21%]
+tests/test_mappings/test_signals.py::test_run_post_mapping_settings_triggers PASSED [ 21%]
+tests/test_mappings/test_signals.py::test_run_post_general_mapping_triggers PASSED [ 22%]
+tests/test_mappings/test_tasks.py::test_remove_duplicates PASSED         [ 23%]
+tests/test_mappings/test_tasks.py::test_create_fyle_category_payload PASSED [ 24%]
+tests/test_mappings/test_tasks.py::test_create_fyle_project_payload PASSED [ 25%]
+tests/test_mappings/test_tasks.py::test_create_cost_center_payload PASSED [ 26%]
+tests/test_mappings/test_tasks.py::test_create_fyle_tax_group_payload PASSED [ 26%]
+tests/test_mappings/test_tasks.py::test_create_fyle_expense_custom_field_payload PASSED [ 27%]
+tests/test_mappings/test_tasks.py::test_sync_expense_categories_and_accounts PASSED [ 28%]
+tests/test_mappings/test_tasks.py::test_upload_categories_to_fyle PASSED [ 29%]
+tests/test_mappings/test_tasks.py::test_filter_unmapped_destinations PASSED [ 30%]
+tests/test_mappings/test_tasks.py::test_schedule_creation PASSED         [ 30%]
+tests/test_mappings/test_tasks.py::test_auto_create_category_mappings PASSED [ 31%]
+tests/test_mappings/test_tasks.py::test_auto_create_project_mappings PASSED [ 32%]
+tests/test_mappings/test_tasks.py::test_auto_create_cost_center_mappings PASSED [ 33%]
+tests/test_mappings/test_tasks.py::test_schedule_tax_group_creation PASSED [ 34%]
+tests/test_mappings/test_tasks.py::test_auto_create_tax_group_mappings PASSED [ 34%]
+tests/test_mappings/test_tasks.py::test_schedule_fyle_attributes_creation PASSED [ 35%]
+tests/test_mappings/test_tasks.py::test_schedule_auto_map_employees PASSED [ 36%]
+tests/test_mappings/test_views.py::test_subsidiary_mapping_view PASSED   [ 37%]
+tests/test_mappings/test_views.py::test_post_country_view PASSED         [ 38%]
+tests/test_mappings/test_views.py::test_get_general_mappings PASSED      [ 39%]
+tests/test_mappings/test_views.py::test_post_general_mappings PASSED     [ 39%]
+tests/test_mappings/test_views.py::test_auto_map_employee_trigger PASSED [ 40%]
+tests/test_netsuite/test_connector.py::test_construct_expense_report PASSED [ 41%]
+tests/test_netsuite/test_connector.py::test_construct_bill PASSED        [ 42%]
+tests/test_netsuite/test_connector.py::test_construct_journal_entry PASSED [ 43%]
+tests/test_netsuite/test_connector.py::test_contruct_credit_card_charge PASSED [ 43%]
+tests/test_netsuite/test_connector.py::test_post_vendor PASSED           [ 44%]
+tests/test_netsuite/test_connector.py::test_get_bill PASSED              [ 45%]
+tests/test_netsuite/test_connector.py::test_get_expense_report PASSED    [ 46%]
+tests/test_netsuite/test_connector.py::test_sync_project PASSED          [ 47%]
+tests/test_netsuite/test_connector.py::test_sync_employee PASSED         [ 47%]
+tests/test_netsuite/test_connector.py::test_sync_accounts PASSED         [ 48%]
+tests/test_netsuite/test_connector.py::test_sync_expense_categories PASSED [ 49%]
+tests/test_netsuite/test_helper.py::test_check_interval_and_sync_dimension PASSED [ 50%]
+tests/test_netsuite/test_helper.py::test_sync_dimensions PASSED          [ 51%]
+tests/test_netsuite/test_models.py::test_get_department_id_or_none PASSED [ 52%]
+tests/test_netsuite/test_models.py::test_get_transaction_date[1-2022-04-27T06:48:33] PASSED [ 52%]
+tests/test_netsuite/test_models.py::test_get_transaction_date[4-2021-11-16] PASSED [ 53%]
+tests/test_netsuite/test_models.py::test_get_expense_purpose PASSED      [ 54%]
+tests/test_netsuite/test_models.py::test_get_location_id_or_none PASSED  [ 55%]
+tests/test_netsuite/test_models.py::test_get_customer_id_or_none PASSED  [ 56%]
+tests/test_netsuite/test_models.py::test_create_bill PASSED              [ 56%]
+tests/test_netsuite/test_models.py::test_create_expense_report PASSED    [ 57%]
+tests/test_netsuite/test_signals.py::test_sync_custom_segments PASSED    [ 58%]
+tests/test_netsuite/test_tasks.py::test_accounts_payable_missing PASSED  [ 59%]
+tests/test_netsuite/test_tasks.py::test_reimbursable_account_missing PASSED [ 60%]
+tests/test_netsuite/test_tasks.py::test_default_credit_card_account_not_found PASSED [ 60%]
+tests/test_netsuite/test_tasks.py::test_subsidary_mapping_not_found PASSED [ 61%]
+tests/test_netsuite/test_tasks.py::test_get_or_create_credit_card_vendor PASSED [ 62%]
+tests/test_netsuite/test_tasks.py::test_post_bill_success PASSED         [ 63%]
+tests/test_netsuite/test_tasks.py::test_post_bill_mapping_error PASSED   [ 64%]
+tests/test_netsuite/test_tasks.py::test_accounting_period_working PASSED [ 65%]
+tests/test_netsuite/test_tasks.py::test_create_expense_report PASSED     [ 65%]
+tests/test_netsuite/test_tasks.py::test_post_journal_entry PASSED        [ 66%]
+tests/test_netsuite/test_tasks.py::test_post_credit_charge PASSED        [ 67%]
+tests/test_netsuite/test_tasks.py::test_get_all_internal_ids PASSED      [ 68%]
+tests/test_netsuite/test_tasks.py::test_check_netsuite_object_status PASSED [ 69%]
+tests/test_netsuite/test_tasks.py::test_load_attachments PASSED          [ 69%]
+tests/test_netsuite/test_tasks.py::test_create_or_update_employee_mapping PASSED [ 70%]
+tests/test_netsuite/test_tasks.py::test_handle_netsuite_connection_error PASSED [ 71%]
+tests/test_netsuite/test_views.py::test_netsutie_fields_view PASSED      [ 72%]
+tests/test_netsuite/test_views.py::test_destination_attribute_view PASSED [ 73%]
+tests/test_netsuite/test_views.py::test_destination_attribute_count_view[EMPLOYEE-7] PASSED [ 73%]
+tests/test_netsuite/test_views.py::test_destination_attribute_count_view[ACCOUNT-123] PASSED [ 74%]
+tests/test_netsuite/test_views.py::test_destination_attribute_count_view[PROJECT-1086] PASSED [ 75%]
+tests/test_netsuite/test_views.py::test_custom_segment_view PASSED       [ 76%]
+tests/test_netsuite/test_views.py::test_trigger_export_view PASSED       [ 77%]
+tests/test_netsuite/test_views.py::test_trigger_payment_view PASSED      [ 78%]
+tests/test_netsuite/test_views.py::test_sync_netsuite_dimensions PASSED  [ 78%]
+tests/test_netsuite/test_views.py::test_refresh_netsuite_dimensions PASSED [ 79%]
+tests/test_tasks/test_helper.py::test_filter_tasks_by_params PASSED      [ 80%]
+tests/test_tasks/test_views.py::test_task_view PASSED                    [ 81%]
+tests/test_users/test_models.py::test_user_creation PASSED               [ 82%]
+tests/test_users/test_models.py::test_get_of_user PASSED                 [ 82%]
+tests/test_users/test_views.py::test_get_profile_view PASSED             [ 83%]
+tests/test_users/test_views.py::test_get_fyle_orgs_view PASSED           [ 84%]
+tests/test_workspaces/test_models.py::test_workspace_creation PASSED     [ 85%]
+tests/test_workspaces/test_tasks.py::test_schedule_sync PASSED           [ 86%]
+tests/test_workspaces/test_tasks.py::test_run_sync_schedule FAILED       [ 86%]
+tests/test_workspaces/test_views.py::test_get_workspace PASSED           [ 87%]
+tests/test_workspaces/test_views.py::test_get_workspace_by_id PASSED     [ 88%]
+tests/test_workspaces/test_views.py::test_post_of_workspace PASSED       [ 89%]
+tests/test_workspaces/test_views.py::test_get_configuration_detail PASSED [ 90%]
+tests/test_workspaces/test_views.py::test_post_netsuite_credentials PASSED [ 91%]
+tests/test_workspaces/test_views.py::test_post_workspace_configurations PASSED [ 91%]
+tests/test_workspaces/test_views.py::test_get_workspace_configuration PASSED [ 92%]
+tests/test_workspaces/test_views.py::test_post_workspace_schedule PASSED [ 93%]
+tests/test_workspaces/test_views.py::test_get_workspace_schedule PASSED  [ 94%]
+tests/test_workspaces/test_views.py::test_ready_view PASSED              [ 95%]
+tests/test_workspaces/test_views.py::test_get_fyle_credentials PASSED    [ 95%]
+tests/test_workspaces/test_views.py::test_delete_fyle_credentials PASSED [ 96%]
+tests/test_workspaces/test_views.py::test_get_and_delete_netsuite_crendentials PASSED [ 97%]
+tests/test_fyle/test_models.py::test_default_fields PASSED               [ 98%]
+tests/test_mappings/test_tasks.py::test_construct_filter_based_on_destination[EXPENSE_CATEGORY-expected0] PASSED [ 99%]
+tests/test_mappings/test_tasks.py::test_construct_filter_based_on_destination[ACCOUNT-expected1] PASSED [100%]
+
+=================================== FAILURES ===================================
+___________________________ test_post_reimbursement ____________________________
+
+add_fyle_credentials = None
+
+    @pytest.mark.django_db()
+    def test_post_reimbursement(add_fyle_credentials):
+    
+        fyle_credentials = FyleCredential.objects.get(workspace_id=1)
+        print(fyle_credentials)
+        fyle_connector = FyleConnector(fyle_credentials.refresh_token)
+        post_reimbursement = fyle_connector.post_reimbursement(reimbursement_ids=[{
+          'id': 'reimgCW1Og0BcM',
+>         'code': None
+        }])
+
+tests/test_fyle/test_connector.py:40: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+apps/fyle/connector.py:49: in post_reimbursement
+    return self.connection.Reimbursements.post(reimbursement_ids)
+/usr/local/lib/python3.7/site-packages/fylesdk/apis/fyle_v1/reimbursements.py:21: in post
+    return self._post_request(data, Reimbursements.POST_REIMBURSEMENTS)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <fylesdk.apis.fyle_v1.reimbursements.Reimbursements object at 0x7f6dec7641d0>
+data = [{'code': None, 'id': 'reimgCW1Og0BcM'}]
+api_url = '/api/tpa/v1/reimbursements/complete'
+
+    def _post_request(self, data, api_url):
+        """Create a HTTP post request.
+    
+        Parameters:
+            data (dict): HTTP POST body data for the wanted API.
+            api_url (str): Url for the wanted API.
+    
+        Returns:
+            A response from the request (dict).
+        """
+    
+        api_headers = {
+            'Authorization': 'Bearer {0}'.format(self.__access_token),
+            'X-Forwarded-For': self.__origin_address
+        }
+        response = requests.post(
+            '{0}{1}'.format(self.__server_url, api_url),
+            headers=api_headers,
+            json=data
+        )
+        if response.status_code == 200:
+            result = json.loads(response.text)
+            return result
+    
+        elif response.status_code == 400:
+>           raise WrongParamsError('Some of the parameters are wrong', response.text)
+E           fylesdk.exceptions.WrongParamsError: 'Some of the parameters are wrong'
+
+/usr/local/lib/python3.7/site-packages/fylesdk/apis/api_base.py:137: WrongParamsError
+----------------------------- Captured stdout call -----------------------------
+FyleCredential object (53)
+____________________________ test_run_sync_schedule ____________________________
+
+db = None, test_connection = <fylesdk.fylesdk.FyleSDK object at 0x7f6deab32210>
+add_fyle_credentials = None, add_netsuite_credentials = None
+
+    def test_run_sync_schedule(db, test_connection, add_fyle_credentials, add_netsuite_credentials):
+        run_sync_schedule(1)
+    
+        expense_group = ExpenseGroup.objects.filter(workspace_id=1)
+        expenses = Expense.objects.filter(org_id='or79Cob97KSh')
+    
+        assert len(expense_group) == 2
+        assert len(expenses) == 2
+    
+        run_sync_schedule(2)
+        expense_group = ExpenseGroup.objects.filter(workspace_id=2)
+        expenses = Expense.objects.filter(org_id='oraWFQlEpjbb')
+    
+>       assert len(expense_group) == 2
+E       assert 62 == 2
+E         +62
+E         -2
+
+tests/test_workspaces/test_tasks.py:34: AssertionError
+----------------------------- Captured stderr call -----------------------------
+07:02:25 [Q] INFO Enqueued 37
+07:02:25 [Q] INFO Enqueued 38
+/usr/local/lib/python3.7/site-packages/django/db/models/fields/__init__.py:1370: RuntimeWarning: DateTimeField Workspace.last_synced_at received a naive datetime (2022-04-27 07:02:27.110087) while time zone support is active.
+  RuntimeWarning)
+07:02:30 [Q] INFO Enqueued 39
+07:02:30 [Q] INFO Enqueued 40
+-------- generated xml file: /fyle-netsuite-api/test-reports/report.xml --------
+
+----------- coverage: platform linux, python 3.7.4-final-0 -----------
+Name                                         Stmts   Miss  Cover   Missing
+--------------------------------------------------------------------------
+apps/fyle/connector.py                          22      1    95%   43
+apps/fyle/helpers.py                            85      7    92%   38, 54-61, 72
+apps/fyle/models.py                            219     17    92%   48-51, 210-212, 216-218, 233, 237, 240, 243, 269-273, 315, 353
+apps/fyle/serializers.py                        19      0   100%
+apps/fyle/tasks.py                              54      0   100%
+apps/fyle/views.py                              93      4    96%   208-209, 243-244
+apps/mappings/constants.py                       1      0   100%
+apps/mappings/helpers.py                        20      0   100%
+apps/mappings/models.py                         36      0   100%
+apps/mappings/serializers.py                    33      7    79%   49, 53, 58, 63, 67, 71, 77
+apps/mappings/signals.py                        34      3    91%   33, 51-57
+apps/mappings/tasks.py                         386     79    80%   291, 339, 372, 406, 418, 496-507, 525-531, 549, 572, 576-583, 590, 606, 618, 628, 634, 712-723, 741-747, 769, 829-839, 872-878, 881-885, 888-909, 912-936, 942, 958
+apps/mappings/views.py                          41      0   100%
+apps/netsuite/connector.py                     439    110    75%   61-66, 189-206, 231-242, 282-286, 371, 404, 444-452, 483, 510-519, 528-529, 546-603, 609-627, 747, 970, 1081-1082, 1108-1128, 1146, 1343-1360, 1392, 1572-1586, 1594-1616, 1625-1710, 1718-1724
+apps/netsuite/helpers.py                        28      2    93%   65-66
+apps/netsuite/models.py                        553     97    82%   32, 51-52, 56-59, 66, 80-97, 110, 135, 149-166, 182-183, 185, 198-203, 216, 218, 220, 261, 265-269, 334, 408-413, 422-427, 433-438, 442, 450-451, 532, 599-604, 612-617, 623-628, 632, 640-641, 731, 735, 741, 830, 837, 846, 852, 858-859, 941, 945, 1023, 1026-1027, 1035, 1042, 1049, 1110-1125, 1148-1159
+apps/netsuite/serializers.py                    12      0   100%
+apps/netsuite/signals.py                        37      6    84%   41, 65-69
+apps/netsuite/tasks.py                         661    294    56%   71-73, 95-96, 104, 119, 134-135, 155-164, 167, 170, 187-192, 218, 230, 236, 253, 268, 296-303, 313, 325, 346, 350, 357, 371-406, 416, 426, 445, 464-496, 506, 515, 535, 551-586, 596-597, 657, 672-673, 685-714, 731, 734, 769, 803, 841-843, 872, 884-886, 922-924, 958-960, 969-977, 981-1032, 1036-1121, 1125-1157, 1163-1164, 1180, 1213-1231, 1251-1253, 1258-1259, 1275, 1279-1300, 1304-1332, 1337-1338, 1354
+apps/netsuite/views.py                         104      8    92%   60, 62-63, 97, 185-186, 224-225
+apps/tasks/helpers.py                           10      2    80%   15-16
+apps/tasks/models.py                            26      0   100%
+apps/tasks/serializers.py                        6      0   100%
+apps/tasks/views.py                             12      0   100%
+apps/users/helpers.py                           12      2    83%   16-17
+apps/users/models.py                            50     22    56%   12-22, 28-35, 41-49, 73, 76, 79, 82, 89, 93, 97
+apps/users/serializers.py                        6      6     0%   1-9
+apps/users/views.py                             23      0   100%
+apps/workspaces/models.py                       82      1    99%   112
+apps/workspaces/permissions.py                  21      1    95%   22
+apps/workspaces/serializers.py                  45      8    82%   91, 94, 98, 102, 107, 113, 119, 124
+apps/workspaces/signals.py                      15      0   100%
+apps/workspaces/tasks.py                        98     28    71%   58, 114, 133, 143, 153-202, 208-215
+apps/workspaces/views.py                       177     47    73%   80-81, 177-185, 191-192, 242-297, 412-419, 431-448
+tests/conftest.py                               32      0   100%
+tests/helper.py                                 29      2    93%   16-17
+tests/test_fyle/conftest.py                      8      0   100%
+tests/test_fyle/fixtures.py                      1      0   100%
+tests/test_fyle/test_connector.py               24      1    96%   42
+tests/test_fyle/test_helpers.py                 40      0   100%
+tests/test_fyle/test_models.py                  49      0   100%
+tests/test_fyle/test_platform_connector.py      12      0   100%
+tests/test_fyle/test_tasks.py                   37      0   100%
+tests/test_fyle/test_views.py                  109      0   100%
+tests/test_mappings/conftest.py                  4      1    75%   9
+tests/test_mappings/fixtures.py                  1      0   100%
+tests/test_mappings/test_helper.py               6      0   100%
+tests/test_mappings/test_models.py               0      0   100%
+tests/test_mappings/test_signals.py             24      0   100%
+tests/test_mappings/test_tasks.py              152      0   100%
+tests/test_mappings/test_views.py               53      0   100%
+tests/test_netsuite/conftest.py                 34      0   100%
+tests/test_netsuite/fixtures.py                  2      0   100%
+tests/test_netsuite/test_connector.py           85      0   100%
+tests/test_netsuite/test_helper.py              28      0   100%
+tests/test_netsuite/test_models.py              61      0   100%
+tests/test_netsuite/test_signals.py             15      0   100%
+tests/test_netsuite/test_tasks.py              222      1    99%   20
+tests/test_netsuite/test_views.py               77      0   100%
+tests/test_tasks/conftest.py                     4      0   100%
+tests/test_tasks/fixtures.py                     0      0   100%
+tests/test_tasks/test_helper.py                  9      0   100%
+tests/test_tasks/test_views.py                   9      0   100%
+tests/test_users/conftest.py                     6      0   100%
+tests/test_users/e2e_test.py                     0      0   100%
+tests/test_users/factories.py                    0      0   100%
+tests/test_users/fixtures.py                     0      0   100%
+tests/test_users/test_models.py                 10      0   100%
+tests/test_users/test_views.py                  16      0   100%
+tests/test_workspaces/conftest.py                0      0   100%
+tests/test_workspaces/fixtures.py               21      5    76%   24-28
+tests/test_workspaces/test_models.py            13      0   100%
+tests/test_workspaces/test_tasks.py             25      1    96%   35
+tests/test_workspaces/test_views.py            126      0   100%
+--------------------------------------------------------------------------
+TOTAL                                         4804    763    84%
+
+FAIL Required test coverage of 90% not reached. Total coverage: 84.12%
+=========================== short test summary info ============================
+FAILED tests/test_fyle/test_connector.py::test_post_reimbursement - fylesdk.e...
+FAILED tests/test_workspaces/test_tasks.py::test_run_sync_schedule - assert 6...
+================== 2 failed, 121 passed in 882.71s (0:14:42) ===================

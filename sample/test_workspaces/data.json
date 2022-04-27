@@ -1,0 +1,50 @@
+{
+    "configuration": {
+        "id":1,
+        "workspace":"Workspace object (1)",
+        "employee_field_mapping":"EMPLOYEE",
+        "reimbursable_expenses_object":"EXPENSE_REPORT",
+        "corporate_credit_card_expenses_object":"EXPENSE_REPORT",
+        "import_categories":true,
+        "import_tax_items":false,
+        "import_projects":true,
+        "import_vendors_as_merchants":true,
+        "change_accounting_period":false,
+        "sync_fyle_to_netsuite_payments":false,
+        "sync_netsuite_to_fyle_payments":false,
+        "auto_create_merchants":false,
+        "auto_map_employees":"NAME",
+        "memo_structure": ["employee_email", "category", "report_number"],
+        "auto_create_destination_entity":false,
+        "skip_cards_mapping": false, 
+        "map_fyle_cards_netsuite_account": true,
+        "created_at":"2021-11-10T20:19:39.312089Z",
+        "updated_at":"2021-11-10T20:19:39.312105Z"
+    },
+    "workspace": {
+        "id":1,
+        "name":"Fyle For NetSuite Testing",
+        "fyle_org_id":"orf6t6jWUnpx",
+        "cluster_domain":null,
+        "ns_account_id":"TSTDRV2089588",
+        "last_synced_at":null,
+        "source_synced_at":null,
+        "destination_synced_at":null,
+        "created_at":"2021-11-10T20:41:37.151680Z",
+        "updated_at":"2021-11-10T20:41:37.151696Z",
+        "user":[
+           1
+        ]
+    },
+    "workspace_schedule": {
+        "id": 1,
+        "enabled": false,
+        "start_datetime": null,
+        "interval_hours": null,
+        "workspace": 1,
+        "schedule": null,
+        "additional_email_options": [],
+        "emails_selected": null,
+        "error_count": null
+    }
+}
