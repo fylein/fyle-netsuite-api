@@ -341,13 +341,22 @@ def create_credit_card_charge(expense_group, task_log_id):
             attachment_links = {}
 
             expense = expense_group.expenses.first()
+            refund = False
+            if expense.amount < 0:
+                refund = True
             attachment_link = load_attachments(netsuite_connection, expense.expense_id, expense_group)
 
             if attachment_link:
                 attachment_links[expense.expense_id] = attachment_link
 
             created_credit_card_charge = netsuite_connection.post_credit_card_charge(
-                credit_card_charge_object, credit_card_charge_lineitems_object, attachment_links)
+                credit_card_charge_object, credit_card_charge_lineitems_object, attachment_links, refund
+            )
+
+            if refund:
+                created_credit_card_charge['type'] = 'chargeCardRefund'
+            else:
+                created_credit_card_charge['type'] = 'chargeCard'
 
             task_log.detail = created_credit_card_charge
             task_log.credit_card_purchase = credit_card_charge_object
@@ -856,17 +865,22 @@ def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: L
 
         chain = Chain(cached=False)
         for expense_group in expense_groups:
+            expense_amount = expense_group.expenses.first().amount
+            export_type = 'CREATING_CREDIT_CARD_CHARGE'
+            if expense_amount < 0:
+                export_type = 'CREATING_CREDIT_CARD_REFUND'
+
             task_log, _ = TaskLog.objects.get_or_create(
                 workspace_id=expense_group.workspace_id,
                 expense_group=expense_group,
                 defaults={
                     'status': 'ENQUEUED',
-                    'type': 'CREATING_CREDIT_CARD_CHARGE'
+                    'type': export_type
                 }
             )
 
             if task_log.status not in ['IN_PROGRESS', 'ENQUEUED']:
-                task_log.type = 'CREATING_CREDIT_CARD_CHARGE'
+                task_log.type = export_type
                 task_log.status = 'ENQUEUED'
                 task_log.save()
 
@@ -1260,6 +1274,31 @@ def schedule_netsuite_objects_status_sync(sync_netsuite_to_fyle_payments, worksp
             schedule.delete()
 
 
+def get_valid_reimbursement_ids(reimbursement_ids: List, platform: PlatformConnector) -> List[str]:
+    chunk_size = 10
+    count_of_reimbursements = len(reimbursement_ids)
+
+    valid_reimbursement_ids = []
+    for index in range(0, count_of_reimbursements, chunk_size):
+        partitioned_list = reimbursement_ids[index:index + chunk_size]
+
+        id_filter = 'in.{}'.format(tuple(partitioned_list)).replace('\'', '"') \
+            if len(partitioned_list) > 1 else 'eq.{}'.format(partitioned_list[0])
+
+        query_params = {
+            'id': id_filter,
+            'is_paid': 'eq.false'
+        }
+
+        reimbursements = platform.reimbursements.search_reimbursements(query_params)
+
+        for reimbursements_generator in reimbursements:
+            valid_ids = [reimbursement['id'] for reimbursement in reimbursements_generator['data']]
+            valid_reimbursement_ids.extend(valid_ids)
+
+    return valid_reimbursement_ids
+
+
 def process_reimbursements(workspace_id):
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
 
@@ -1284,7 +1323,11 @@ def process_reimbursements(workspace_id):
                 reimbursement_ids.append(reimbursement.reimbursement_id)
 
     if reimbursement_ids:
-        fyle_connector.post_reimbursement(reimbursement_ids)
+        # Validating deleted reimbursements
+        count_of_reimbursements = len(reimbursement_ids)
+        valid_reimbursement_ids = get_valid_reimbursement_ids(reimbursement_ids, platform)
+        if valid_reimbursement_ids:
+            fyle_connector.post_reimbursement(valid_reimbursement_ids)
         platform.reimbursements.sync()
 
 

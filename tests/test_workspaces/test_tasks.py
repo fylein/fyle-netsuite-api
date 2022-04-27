@@ -7,13 +7,13 @@ from apps.workspaces.models import WorkspaceSchedule
 from apps.workspaces.tasks import run_sync_schedule, schedule_sync
 
 def test_schedule_sync(db):
-    schedule_sync(2, True,3)
+    schedule_sync(2, True, 3, [], [])
 
     ws_schedule = WorkspaceSchedule.objects.filter(workspace_id=2).last()
     assert ws_schedule.interval_hours == 3
     assert ws_schedule.enabled == True
 
-    schedule_sync(2, False, 0)
+    schedule_sync(2, False, 0, [], [])
 
     ws_schedule = WorkspaceSchedule.objects.filter(workspace_id=2).last()
     assert ws_schedule.enabled == False

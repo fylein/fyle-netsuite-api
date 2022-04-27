@@ -15,13 +15,14 @@ from fylesdk import exceptions as fyle_exc
 from fyle_rest_auth.utils import AuthUtils
 from fyle_rest_auth.models import AuthToken
 from fyle_rest_auth.helpers import get_fyle_admin
-
+from fyle_accounting_mappings.models import ExpenseAttribute
 
 from fyle_netsuite_api.utils import assert_valid
 
 from apps.netsuite.connector import NetSuiteConnection
 from apps.fyle.models import ExpenseGroupSettings
 from apps.fyle.helpers import get_cluster_domain
+from apps.users.models import User
 
 from .models import Workspace, FyleCredential, NetSuiteCredentials, Configuration, \
     WorkspaceSchedule
@@ -346,10 +347,15 @@ class ScheduleView(viewsets.ViewSet):
         hours = request.data.get('hours')
         assert_valid(hours is not None, 'Hours cannot be left empty')
 
+        email_added = request.data.get('added_email')
+        emails_selected = request.data.get('selected_email')
+
         workspace_schedule_settings = schedule_sync(
             workspace_id=kwargs['workspace_id'],
             schedule_enabled=schedule_enabled,
-            hours=hours
+            hours=hours,
+            email_added=email_added,
+            emails_selected=emails_selected
         )
 
         return Response(
@@ -412,5 +418,34 @@ class ConfigurationsView(generics.ListCreateAPIView):
             serializer.save()
             return Response(
                 data=serializer.data,
+                status=status.HTTP_200_OK
+            )
+
+class WorkspaceAdminsView(viewsets.ViewSet):
+
+    def get(self, request, *args, **kwargs):
+        """
+        Get Admins for the workspaces
+        """
+
+        workspace = Workspace.objects.get(pk=kwargs['workspace_id'])
+        
+        admin_email = []
+        users = workspace.user.all()
+        for user in users:
+            admin = User.objects.get(user_id=user)
+            name = ExpenseAttribute.objects.get(
+                value=admin.email, 
+                workspace_id=kwargs['workspace_id'],
+                attribute_type='EMPLOYEE'
+            ).detail['full_name']
+
+            admin_email.append({
+                'name': name,
+                'email': admin.email
+            })
+
+        return Response(
+                data=admin_email,
                 status=status.HTTP_200_OK
             )

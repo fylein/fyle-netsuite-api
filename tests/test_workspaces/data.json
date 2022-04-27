@@ -8,6 +8,7 @@
         "import_categories":true,
         "import_tax_items":false,
         "import_projects":true,
+        "import_vendors_as_merchants":true,
         "change_accounting_period":false,
         "sync_fyle_to_netsuite_payments":false,
         "sync_netsuite_to_fyle_payments":false,
@@ -34,5 +35,16 @@
         "user":[
            1
         ]
+    },
+    "workspace_schedule": {
+        "id": 1,
+        "enabled": false,
+        "start_datetime": null,
+        "interval_hours": null,
+        "workspace": 1,
+        "schedule": null,
+        "additional_email_options": [],
+        "emails_selected": null,
+        "error_count": null
     }
 }

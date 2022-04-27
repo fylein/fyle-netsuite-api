@@ -1,6 +1,7 @@
 """
 NetSuite Signals
 """
+import logging
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
@@ -12,6 +13,10 @@ from apps.workspaces.models import NetSuiteCredentials
 
 from .models import CustomSegment
 from .connector import NetSuiteConnector
+
+
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 
 @receiver(post_save, sender=CustomSegment)
@@ -32,6 +37,8 @@ def sync_custom_segments(sender, instance: CustomSegment, **kwargs):
         custom_segment_attributes = ns_connection.get_custom_list_attributes(attribute_type, instance.internal_id)
     elif instance.segment_type == 'CUSTOM_RECORD':
         custom_segment_attributes = ns_connection.get_custom_record_attributes(attribute_type, instance.internal_id)
+    else:
+        custom_segment_attributes = ns_connection.get_custom_segment_attributes(attribute_type, instance.internal_id)
 
     DestinationAttribute.bulk_create_or_update_destination_attributes(
         custom_segment_attributes, attribute_type, instance.workspace_id, True)
@@ -46,6 +53,7 @@ def validate_custom_segment(sender, instance: CustomSegment, **kwargs):
     """
     ns_credentials = NetSuiteCredentials.objects.get(workspace_id=instance.workspace_id)
     ns_connector = NetSuiteConnector(ns_credentials, workspace_id=instance.workspace_id)
+  
     try:
         if instance.segment_type == 'CUSTOM_LIST':
             custom_list = ns_connector.connection.custom_lists.get(instance.internal_id)
@@ -53,5 +61,9 @@ def validate_custom_segment(sender, instance: CustomSegment, **kwargs):
         elif instance.segment_type == 'CUSTOM_RECORD':
             custom_record = ns_connector.connection.custom_record_types.get_all_by_id(instance.internal_id)
             instance.name = custom_record[0]['recType']['name'].upper().replace(' ', '_')
-    except Exception:
+        else:
+            custom_segment = ns_connector.connection.custom_segments.get(instance.internal_id)
+            instance.name = custom_segment['recordType']['name'].upper().replace(' ', '_')
+    except Exception as e:
+        logger.exception(e)
         raise NotFound()

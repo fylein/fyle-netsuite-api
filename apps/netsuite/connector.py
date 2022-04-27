@@ -184,6 +184,26 @@ class NetSuiteConnector:
 
         return custom_segment_attributes
 
+    def get_custom_segment_attributes(self, attribute_type: str, internal_id:str):
+        custom_segment_attributes = []
+        custom_segments = self.connection.custom_segments.get(internal_id)
+
+        record_id = custom_segments['recordType']['internalId']
+
+        custom_records = self.connection.custom_record_types.get_all_by_id(record_id)
+
+        for field in custom_records:
+            custom_segment_attributes.append(
+                {
+                    'attribute_type': attribute_type,
+                    'display_name': custom_records[0]['recType']['name'],
+                    'value': field['name'],
+                    'destination_id': field['internalId']
+                }
+            )
+
+        return custom_segment_attributes
+
     def get_custom_record_attributes(self, attribute_type: str, internal_id: str):
         custom_segment_attributes = []
         custom_records = self.connection.custom_record_types.get_all_by_id(internal_id)
@@ -210,6 +230,9 @@ class NetSuiteConnector:
             attribute_type = custom_segment.name.upper().replace(' ', '_')
             if custom_segment.segment_type == 'CUSTOM_LIST':
                 custom_segment_attributes = self.get_custom_list_attributes(attribute_type, custom_segment.internal_id)
+
+            if custom_segment.segment_type == 'CUSTOM_SEGMENT':
+                custom_segment_attributes = self.get_custom_segment_attributes(attribute_type, custom_segment.internal_id)
 
             elif custom_segment.segment_type == 'CUSTOM_RECORD':
                 custom_segment_attributes = self.get_custom_record_attributes(
@@ -414,7 +437,20 @@ class NetSuiteConnector:
             'externalId': vendor.detail['user_id'] if vendor else merchant
         }
 
-        return self.connection.vendors.post(vendor)
+        vendor_response = None
+        try:
+            vendor_response = self.connection.vendors.post(vendor)
+        except NetSuiteRequestError as exception:
+            logger.exception({'error': exception})
+            detail = json.dumps(exception.__dict__)
+            detail = json.loads(detail)
+            if 'representingsubsidiary' in detail['message']:
+                vendor['representingSubsidiary']['internalId'] = None
+            elif 'isperson' in detail['message']:
+                del vendor['isPerson']
+            vendor_response = self.connection.vendors.post(vendor)
+            
+        return vendor_response
 
     def sync_employees(self):
         """
@@ -970,7 +1006,7 @@ class NetSuiteConnector:
             'customFieldList': netsuite_custom_segments,
             'isBillable': line.billable,
             'taxAmount': None,
-            'taxCode':{
+            'taxCode': {
                 'name': None,
                 'internalId': None,
                 'externalId': None,
@@ -1023,14 +1059,13 @@ class NetSuiteConnector:
         return credit_card_charge_payload
 
     def post_credit_card_charge(self, credit_card_charge: CreditCardCharge,
-                                credit_card_charge_lineitem: CreditCardChargeLineItem, attachment_links: Dict):
+                                credit_card_charge_lineitem: CreditCardChargeLineItem, attachment_links: Dict,
+                                refund: bool):
         """
         Post vendor credit_card_charges to NetSuite
         """
         
         configuration = Configuration.objects.get(workspace_id=self.workspace_id)
-        credit_card_charges_payload = self.__construct_credit_card_charge(
-            credit_card_charge, credit_card_charge_lineitem, attachment_links)
 
         account = self.__netsuite_credentials.ns_account_id.replace('_', '-')
         consumer_key = self.__netsuite_credentials.ns_consumer_key
@@ -1040,6 +1075,14 @@ class NetSuiteConnector:
 
         url = f"https://{account.lower()}.restlets.api.netsuite.com/app/site/hosting/restlet.nl?" \
             f"script=customscript_cc_charge_fyle&deploy=customdeploy_cc_charge_fyle"
+
+        if refund:
+            credit_card_charge_lineitem.amount = abs(credit_card_charge_lineitem.amount)
+            url = f"https://{account.lower()}.restlets.api.netsuite.com/app/site/hosting/restlet.nl?" \
+                  f"script=customscript_cc_refund_fyle&deploy=customdeploy_cc_refund_fyle"
+
+        credit_card_charges_payload = self.__construct_credit_card_charge(
+            credit_card_charge, credit_card_charge_lineitem, attachment_links)
 
         oauth = OAuth1Session(
             client_key=consumer_key,
