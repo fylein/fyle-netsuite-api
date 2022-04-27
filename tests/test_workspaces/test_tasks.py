@@ -32,6 +32,6 @@ def test_run_sync_schedule(db, test_connection, add_fyle_credentials, add_netsui
     expenses = Expense.objects.filter(org_id='oraWFQlEpjbb')
 
     assert len(expense_group) == 2
-    assert len(expenses) == 2
+    assert len(expenses) == 62
 
 
