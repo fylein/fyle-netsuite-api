@@ -12,6 +12,8 @@ def test_get_department_id_or_none(test_connection):
 
     expense = Expense.objects.get(id=1)
     expense_group = ExpenseGroup.objects.get(id=1)
+    expense_group.workspace_id = 1
+    expense_group.save()
 
     department_id = get_department_id_or_none(expense_group, expense)
     
