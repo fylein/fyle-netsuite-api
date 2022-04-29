@@ -37,20 +37,6 @@ SOURCE_ACCOUNT_MAP = {
     'PERSONAL_CORPORATE_CREDIT_CARD_ACCOUNT': 'CCC'
 }
 
-def _format_date(date_string) -> datetime:
-    """
-    Format date.
-    Args:
-        date_string (str): Date string.
-    Returns:
-        dateime: Formatted date.
-    """
-    if date_string:
-        date_string = parser.parse(date_string)
-
-    return date_string
-
-
 class Expense(models.Model):
     """
     Expense
