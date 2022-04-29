@@ -720,8 +720,7 @@ def __validate_tax_group_mapping(expense_group: ExpenseGroup, configuration: Con
 def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Configuration) -> List[BulkError]:
     bulk_errors = []
     if expense_group.fund_source == 'PERSONAL' or \
-            (expense_group.fund_source == 'CCC' and \
-                configuration.reimbursable_expenses_object in ['EXPENSE REPORT', 'JOURNAL ENTRY']):
+            (expense_group.fund_source == 'CCC' and configuration.corporate_credit_card_expenses_object == 'EXPENSE REPORT'):
         try:
             entity = EmployeeMapping.objects.get(
                 source_employee__value=expense_group.description.get('employee_email'),
