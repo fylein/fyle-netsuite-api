@@ -18,8 +18,7 @@ djangorestframework==3.11.2
 django-sendgrid-v5==1.2.0
 enum34==1.1.10
 future==0.18.2
-fyle==0.26.0
-fyle-integrations-platform-connector==1.11.0
+fyle-integrations-platform-connector==1.13.0
 fyle-accounting-mappings==1.7.0
 fyle-rest-auth==1.1.0
 fylesdk==2.3.1
