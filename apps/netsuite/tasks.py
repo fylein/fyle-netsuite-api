@@ -47,27 +47,45 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense_id: str, ex
 
     try:
         fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-        fyle_connector = FyleConnector(fyle_credentials.refresh_token)
-        attachment = fyle_connector.get_attachment(expense_id)
+        file_ids = expense_group.expenses.values_list('file_ids', flat=True)
+        platform = PlatformConnector(fyle_credentials)
 
         folder = netsuite_connection.connection.folders.post({
             "externalId": workspace.fyle_org_id,
             "name": 'Fyle Attachments - {0}'.format(workspace.name)
         })
-        if attachment:
-            netsuite_connection.connection.files.post({
-                "externalId": expense_id,
-                "name": attachment['filename'],
-                'content': base64.b64decode(attachment['content']),
-                "folder": {
-                    "name": None,
-                    "internalId": folder['internalId'],
-                    "externalId": folder['externalId'],
-                    "type": "folder"
-                }
-            })
-            file = netsuite_connection.connection.files.get(externalId=expense_id)
-            return file['url']
+
+        files_list = []
+        attachments = []
+
+        for file_id in file_ids:
+            if file_id:
+                file_object = {'id': file_id[0]}
+                files_list.append(file_object)
+
+        if len(files_list):
+            payload = {
+                "data": files_list
+            }
+
+            attachments = platform.connection.v1beta.admin.files.bulk_generate_file_urls(payload=payload)['data']
+
+            if attachments:
+                for attachment in attachments:
+                    netsuite_connection.connection.files.post({
+                        "externalId": expense_id,
+                        "name": attachment['name'],
+                        'content': base64.b64decode(attachment['download_url']),
+                        "folder": {
+                            "name": None,
+                            "internalId": folder['internalId'],
+                            "externalId": folder['externalId'],
+                            "type": "folder"
+                        }
+                    })
+
+                file = netsuite_connection.connection.files.get(externalId=expense_id)
+                return file['url']
     except Exception:
         error = traceback.format_exc()
         logger.error(
