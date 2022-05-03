@@ -1302,7 +1302,6 @@ def get_valid_reimbursement_ids(reimbursement_ids: List, platform: PlatformConne
 def process_reimbursements(workspace_id):
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
 
-    fyle_connector = FyleConnector(fyle_credentials.refresh_token)
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
     platform.reimbursements.sync()
 
@@ -1324,11 +1323,10 @@ def process_reimbursements(workspace_id):
 
     if reimbursement_ids:
         # Validating deleted reimbursements
-        count_of_reimbursements = len(reimbursement_ids)
         valid_reimbursement_ids = get_valid_reimbursement_ids(reimbursement_ids, platform)
         if valid_reimbursement_ids:
-            fyle_connector.post_reimbursement(valid_reimbursement_ids)
-        platform.reimbursements.sync()
+            platform.reimbursements.bulk_post(valid_reimbursement_ids)
+            platform.reimbursements.sync()
 
 
 def schedule_reimbursements_sync(sync_netsuite_to_fyle_payments, workspace_id):

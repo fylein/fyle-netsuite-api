@@ -55,8 +55,10 @@ def create_fyle_categories_payload(categories: List[DestinationAttribute], works
         if category.value not in existing_category_names:
             payload.append({
                 'name': category.value,
+                'sub_category': ' ',
                 'code': category.destination_id,
-                'enabled': category.active
+                'is_enabled': category.active,
+                'restricted_project_ids': []
             })
 
     return payload
@@ -109,7 +111,7 @@ def upload_categories_to_fyle(workspace_id: int, reimbursable_expenses_object: s
     fyle_payload: List[Dict] = create_fyle_categories_payload(netsuite_attributes, workspace_id)
 
     if fyle_payload:
-        fyle_connection.connection.Categories.post(fyle_payload)
+        platform.categories.post_bulk(fyle_payload)
         platform.categories.sync()
 
     return netsuite_attributes
@@ -442,13 +444,13 @@ def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_
                     project.value,
                     project.destination_id
                 ),
-                'active': True if project.active is None else project.active
+                'is_enabled': True if project.active is None else project.active
             })
 
     return payload
 
 
-def post_projects_in_batches(fyle_connection: FyleConnector, platform: PlatformConnector, workspace_id: int, destination_field: str):
+def post_projects_in_batches(platform: PlatformConnector, workspace_id: int, destination_field: str):
     existing_project_names = ExpenseAttribute.objects.filter(
         attribute_type='PROJECT', workspace_id=workspace_id).values_list('value', flat=True)
     ns_attributes_count = DestinationAttribute.objects.filter(
@@ -465,7 +467,7 @@ def post_projects_in_batches(fyle_connection: FyleConnector, platform: PlatformC
         fyle_payload: List[Dict] = create_fyle_projects_payload(
             paginated_ns_attributes, existing_project_names)
         if fyle_payload:
-            fyle_connection.connection.Projects.post(fyle_payload)
+            platform.projects.post_bulk(fyle_payload)
             platform.projects.sync()
 
         Mapping.bulk_create_mappings(paginated_ns_attributes, 'PROJECT', destination_field, workspace_id)
@@ -478,10 +480,6 @@ def auto_create_project_mappings(workspace_id):
     try:
         fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
 
-        fyle_connection = FyleConnector(
-            refresh_token=fyle_credentials.refresh_token,
-        )
-
         platform = PlatformConnector(fyle_credentials=fyle_credentials)
         platform.projects.sync()
 
@@ -491,7 +489,7 @@ def auto_create_project_mappings(workspace_id):
 
         sync_netsuite_attribute(mapping_setting.destination_field, workspace_id)
 
-        post_projects_in_batches(fyle_connection, platform, workspace_id, mapping_setting.destination_field)
+        post_projects_in_batches(platform, workspace_id, mapping_setting.destination_field)
 
     except WrongParamsError as exception:
         logger.error(
@@ -650,7 +648,7 @@ def create_fyle_cost_centers_payload(netsuite_attributes: List[DestinationAttrib
         if netsuite_attribute.value not in existing_fyle_cost_centers:
             fyle_cost_centers_payload.append({
                 'name': netsuite_attribute.value,
-                'enabled': True if netsuite_attribute.active is None else netsuite_attribute.active,
+                'is_enabled': True if netsuite_attribute.active is None else netsuite_attribute.active,
                 'description': 'Cost Center - {0}, Id - {1}'.format(
                     netsuite_attribute.value,
                     netsuite_attribute.destination_id
@@ -660,7 +658,7 @@ def create_fyle_cost_centers_payload(netsuite_attributes: List[DestinationAttrib
     return fyle_cost_centers_payload
 
 
-def post_cost_centers_in_batches(fyle_connection: FyleConnector, platform: PlatformConnector, workspace_id: int, netsuite_attribute_type: str):
+def post_cost_centers_in_batches(platform: PlatformConnector, workspace_id: int, netsuite_attribute_type: str):
     existing_cost_center_names = ExpenseAttribute.objects.filter(
         attribute_type='COST_CENTER', workspace_id=workspace_id).values_list('value', flat=True)
 
@@ -680,7 +678,7 @@ def post_cost_centers_in_batches(fyle_connection: FyleConnector, platform: Platf
             paginated_ns_attributes, existing_cost_center_names)
 
         if fyle_payload:
-            fyle_connection.connection.CostCenters.post(fyle_payload)
+            platform.cost_centers.post_bulk(fyle_payload)
             platform.cost_centers.sync()
 
         Mapping.bulk_create_mappings(paginated_ns_attributes, 'COST_CENTER', netsuite_attribute_type, workspace_id)
@@ -693,10 +691,6 @@ def auto_create_cost_center_mappings(workspace_id):
     try:
         fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
 
-        fyle_connection = FyleConnector(
-            refresh_token=fyle_credentials.refresh_token,
-        )
-
         platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
         mapping_setting = MappingSetting.objects.get(
@@ -707,7 +701,7 @@ def auto_create_cost_center_mappings(workspace_id):
 
         sync_netsuite_attribute(mapping_setting.destination_field, workspace_id)
 
-        post_cost_centers_in_batches(fyle_connection, platform, workspace_id, mapping_setting.destination_field)
+        post_cost_centers_in_batches(platform, workspace_id, mapping_setting.destination_field)
 
     except WrongParamsError as exception:
         logger.error(
@@ -771,16 +765,18 @@ def create_fyle_expense_custom_field_payload(netsuite_attributes: List[Destinati
         fyle_attribute = fyle_attribute.replace('_', ' ').title()
 
         expense_custom_field_payload = {
-            'id': custom_field_id,
-            'name': fyle_attribute,
+            'field_name': fyle_attribute,
+            'category_ids': [],
             'type': 'SELECT',
-            'active': True,
-            'mandatory': False,
+            'is_enabled': True,
+            'is_mandatory': False,
             'placeholder': 'Select {0}'.format(fyle_attribute),
-            'default_value': None,
             'options': fyle_expense_custom_field_options,
             'code': None
         }
+
+        if custom_field_id:
+            expense_custom_field_payload['id'] = custom_field_id
 
         return expense_custom_field_payload
 
@@ -790,10 +786,6 @@ def upload_attributes_to_fyle(workspace_id: int, netsuite_attribute_type: str, f
     Upload attributes to Fyle
     """
     fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
-
-    fyle_connection = FyleConnector(refresh_token=fyle_credentials.refresh_token)
-
-    platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
@@ -810,7 +802,7 @@ def upload_attributes_to_fyle(workspace_id: int, netsuite_attribute_type: str, f
     )
 
     if fyle_custom_field_payload:
-        fyle_connection.connection.ExpensesCustomFields.post(fyle_custom_field_payload)
+        platform.expense_custom_fields.post(fyle_custom_field_payload)
         platform.expense_custom_fields.sync()
 
     return netsuite_attributes
