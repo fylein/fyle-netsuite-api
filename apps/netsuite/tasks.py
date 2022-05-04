@@ -1351,3 +1351,7 @@ def schedule_reimbursements_sync(sync_netsuite_to_fyle_payments, workspace_id):
 
         if schedule:
             schedule.delete()
+
+
+
+# insert into expenses (employee_email, category, sub_category, settlement_id, paid_on_netsuite, expense_id, expense_number, claim_number, amount, currency, state, report_id, expense_created_at, expense_updated_at, fund_source, reimbursable,created_at, updated_at) values ('ashwin.t@fyle.in', 'Accounts Payable', 'Accounts Payable', 'setqi0eM6HUgZ', 't', 'txjvDntD9ZXS', 'E/2021/12/T/3', 'C/2021/12/R/1', 1, 'USD', 'PENDING', 'rpXqCutQj85M', now(), now(), 'PERSONAL', 't', now(), now());

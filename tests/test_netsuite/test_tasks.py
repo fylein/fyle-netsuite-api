@@ -9,10 +9,14 @@ from apps.netsuite.models import CreditCardCharge, ExpenseReport, Bill, JournalE
 from apps.workspaces.models import Configuration, NetSuiteCredentials
 from apps.tasks.models import TaskLog
 from apps.netsuite.tasks import __validate_general_mapping, __validate_subsidiary_mapping, check_netsuite_object_status, create_credit_card_charge, create_journal_entry, create_or_update_employee_mapping, create_vendor_payment, get_all_internal_ids, \
-     get_or_create_credit_card_vendor, create_bill, create_expense_report, load_attachments, __handle_netsuite_connection_error, process_reimbursements, process_vendor_payment, schedule_bills_creation, schedule_credit_card_charge_creation, schedule_expense_reports_creation, schedule_journal_entry_creation, schedule_netsuite_objects_status_sync, schedule_reimbursements_sync, schedule_vendor_payment_creation
+     get_or_create_credit_card_vendor, create_bill, create_expense_report, load_attachments, __handle_netsuite_connection_error, process_reimbursements, process_vendor_payment, schedule_bills_creation, schedule_credit_card_charge_creation, schedule_expense_reports_creation, schedule_journal_entry_creation, schedule_netsuite_objects_status_sync, schedule_reimbursements_sync, schedule_vendor_payment_creation, \
+         get_valid_reimbursement_ids
 from apps.mappings.models import GeneralMapping
 from fyle_accounting_mappings.models import DestinationAttribute, EmployeeMapping, CategoryMapping
 from .fixtures import data
+from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configuration
+from fyle_integrations_platform_connector import PlatformConnector
+from apps.fyle.models import ExpenseGroup, Expense, Reimbursement
 
 
 def random_char(char_num):
@@ -374,6 +378,31 @@ def test_schedule_reimbursements_sync(db):
     schedule_count = Schedule.objects.filter(func='apps.netsuite.tasks.process_reimbursements', args=49).count()
     assert schedule_count == 1
 
+
+# def test_get_valid_reimbursement_ids():
+#     fyle_credentials = FyleCredential.objects.get(workspace_id=1)
+
+#     platform = PlatformConnector(fyle_credentials=fyle_credentials)
+#     platform.reimbursements.sync()
+
+#     reimbursements = Reimbursement.objects.filter(state='PENDING', workspace_id=1).all()
+
+#     reimbursement_ids = []
+
+#     if reimbursements:
+#         for reimbursement in reimbursements:
+#             expenses = Expense.objects.filter(settlement_id=reimbursement.settlement_id, fund_source='PERSONAL').all()
+#             paid_expenses = expenses.filter(paid_on_netsuite=True)
+
+#             all_expense_paid = False
+#             if len(expenses):
+#                 all_expense_paid = len(expenses) == len(paid_expenses)
+
+#             if all_expense_paid:
+#                 reimbursement_ids.append(reimbursement.reimbursement_id)
+
+#     if reimbursement_ids:
+#         get_valid_reimbursement_ids(reimbursement_ids=reimbursement_ids, platform=PlatformConnector)
 
 def test_process_reimbursements(db, mocker, add_fyle_credentials):
 
