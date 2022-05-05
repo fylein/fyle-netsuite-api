@@ -79,7 +79,7 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense_id: str, ex
                     attachment['download_url'] = get_as_base64(attachment['download_url'])
                     netsuite_connection.connection.files.post({
                         "externalId": expense_id,
-                        "name": attachment['name'],
+                        "name": '{0}_{1}'.format(expense_id, attachment['filename']),
                         'content': base64.b64decode(attachment['download_url']),
                         "folder": {
                             "name": None,
