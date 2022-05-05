@@ -1139,7 +1139,6 @@ class NetSuiteConnector:
 
         for line in expense_report_lineitems:
             expense = Expense.objects.get(pk=line.expense_id)
-
             netsuite_custom_segments = line.netsuite_custom_segments
             if attachment_links and expense.expense_id in attachment_links:
                 netsuite_custom_segments.append(
@@ -1293,7 +1292,7 @@ class NetSuiteConnector:
             'amount': None,
             'memo': expense_report.memo,
             'complete': None,
-            'supervisorApproval': True,
+            #'supervisorApproval': True,
             'accountingApproval': True,
             'useMultiCurrency': None,
             'tax2Amt': None,

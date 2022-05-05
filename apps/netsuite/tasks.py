@@ -4,6 +4,7 @@ import traceback
 import itertools
 from typing import List
 import base64
+import requests
 from datetime import datetime, timedelta
 
 from django.db import transaction
@@ -34,6 +35,9 @@ logger.level = logging.INFO
 netsuite_paid_state = 'Paid In Full'
 netsuite_error_message = 'NetSuite System Error'
 
+
+def get_as_base64(url):
+    return base64.b64encode(requests.get(url).content).decode('ascii')
 
 def load_attachments(netsuite_connection: NetSuiteConnector, expense_id: str, expense_group: ExpenseGroup):
     """
@@ -72,6 +76,7 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense_id: str, ex
 
             if attachments:
                 for attachment in attachments:
+                    attachment['download_url'] = get_as_base64(attachment['download_url'])
                     netsuite_connection.connection.files.post({
                         "externalId": expense_id,
                         "name": attachment['name'],
@@ -458,7 +463,6 @@ def create_expense_report(expense_group, task_log_id):
 
             for expense_id in expense_group.expenses.values_list('expense_id', flat=True):
                 attachment_link = load_attachments(netsuite_connection, expense_id, expense_group)
-
                 if attachment_link:
                     attachment_links[expense_id] = attachment_link
 
@@ -1342,8 +1346,17 @@ def process_reimbursements(workspace_id):
     if reimbursement_ids:
         # Validating deleted reimbursements
         valid_reimbursement_ids = get_valid_reimbursement_ids(reimbursement_ids, platform)
+        
         if valid_reimbursement_ids:
-            platform.reimbursements.bulk_post(valid_reimbursement_ids)
+            reimbursements_list = []
+            for reimbursement_id in valid_reimbursement_ids:
+                reimbursement_object = {'id': reimbursement_id}
+                reimbursements_list.append(reimbursement_object)
+            
+            payload = {
+                "data": reimbursements_list
+            }
+            platform.connection.v1beta.admin.reimbursements.bulk_post_reimbursements(payload)
             platform.reimbursements.sync()
 
 

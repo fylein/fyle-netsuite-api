@@ -57,7 +57,7 @@ def create_fyle_categories_payload(categories: List[DestinationAttribute], works
                 'name': category.value,
                 'sub_category': ' ',
                 'code': category.destination_id,
-                'is_enabled': category.active,
+                'is_enabled': True if category.active is None else category.active,
                 'restricted_project_ids': []
             })
 
@@ -81,9 +81,6 @@ def upload_categories_to_fyle(workspace_id: int, reimbursable_expenses_object: s
     """
     fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
     netsuite_credentials: NetSuiteCredentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
-    fyle_connection = FyleConnector(
-        refresh_token=fyle_credentials.refresh_token,
-    )
     
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
