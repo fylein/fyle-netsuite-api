@@ -1,6 +1,6 @@
 import email
 import time
-from datetime import datetime, timedelta, data
+from datetime import datetime, timedelta, date
 from typing import List
 
 from django.conf import settings
