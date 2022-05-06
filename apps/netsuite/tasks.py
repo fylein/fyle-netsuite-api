@@ -57,7 +57,7 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense_id: str, ex
         if attachment:
             netsuite_connection.connection.files.post({
                 "externalId": expense_id,
-                "name": attachment['filename'],
+                "name": '{0}_{1}'.format(expense_id, attachment['filename']),
                 'content': base64.b64decode(attachment['content']),
                 "folder": {
                     "name": None,
