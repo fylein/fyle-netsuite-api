@@ -47,27 +47,41 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense_id: str, ex
 
     try:
         fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-        fyle_connector = FyleConnector(fyle_credentials.refresh_token)
-        attachment = fyle_connector.get_attachment(expense_id)
+        file_ids = expense_group.expenses.values_list('file_ids', flat=True)
+        platform = PlatformConnector(fyle_credentials)
 
         folder = netsuite_connection.connection.folders.post({
             "externalId": workspace.fyle_org_id,
             "name": 'Fyle Attachments - {0}'.format(workspace.name)
         })
-        if attachment:
-            netsuite_connection.connection.files.post({
-                "externalId": expense_id,
-                "name": '{0}_{1}'.format(expense_id, attachment['filename']),
-                'content': base64.b64decode(attachment['content']),
-                "folder": {
-                    "name": None,
-                    "internalId": folder['internalId'],
-                    "externalId": folder['externalId'],
-                    "type": "folder"
-                }
-            })
-            file = netsuite_connection.connection.files.get(externalId=expense_id)
-            return file['url']
+
+        files_list = []
+        attachments = []
+
+        for file_id in file_ids:
+            if file_id:
+                file_object = {'id': file_id[0]}
+                files_list.append(file_object)
+
+            if files_list:
+                attachments =platform.files.bulk_generate_file_urls(files_list)
+
+            if attachments:
+                for attachment in attachments:
+                    netsuite_connection.connection.files.post({
+                        "externalId": expense_id,
+                        "name": '{0}_{1}'.format(attachment['id'], attachment['name']),
+                        'content': base64.b64decode(attachment['download_url']),
+                        "folder": {
+                            "name": None,
+                            "internalId": folder['internalId'],
+                            "externalId": folder['externalId'],
+                            "type": "folder"
+                        }
+                    })
+
+                file = netsuite_connection.connection.files.get(externalId=expense_id)
+                return file['url']
     except Exception:
         error = traceback.format_exc()
         logger.error(
@@ -440,7 +454,6 @@ def create_expense_report(expense_group, task_log_id):
 
             for expense_id in expense_group.expenses.values_list('expense_id', flat=True):
                 attachment_link = load_attachments(netsuite_connection, expense_id, expense_group)
-
                 if attachment_link:
                     attachment_links[expense_id] = attachment_link
 
@@ -749,7 +762,7 @@ def __validate_category_mapping(expense_group: ExpenseGroup, configuration: Conf
     expenses = expense_group.expenses.all()
 
     for lineitem in expenses:
-        category = lineitem.category if lineitem.category == lineitem.sub_category else '{0} / {1}'.format(
+        category = lineitem.category if (lineitem.category == lineitem.sub_category or lineitem.sub_category == None) else '{0} / {1}'.format(
             lineitem.category, lineitem.sub_category)
 
         category_mapping = CategoryMapping.objects.filter(
@@ -1301,7 +1314,6 @@ def get_valid_reimbursement_ids(reimbursement_ids: List, platform: PlatformConne
 def process_reimbursements(workspace_id):
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
 
-    fyle_connector = FyleConnector(fyle_credentials.refresh_token)
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
     platform.reimbursements.sync()
 
@@ -1323,11 +1335,16 @@ def process_reimbursements(workspace_id):
 
     if reimbursement_ids:
         # Validating deleted reimbursements
-        count_of_reimbursements = len(reimbursement_ids)
         valid_reimbursement_ids = get_valid_reimbursement_ids(reimbursement_ids, platform)
+        
         if valid_reimbursement_ids:
-            fyle_connector.post_reimbursement(valid_reimbursement_ids)
-        platform.reimbursements.sync()
+            reimbursements_list = []
+            for reimbursement_id in valid_reimbursement_ids:
+                reimbursement_object = {'id': reimbursement_id}
+                reimbursements_list.append(reimbursement_object)
+            
+            platform.reimbursements.bulk_post_reimbursements(reimbursements_list)
+            platform.reimbursements.sync()
 
 
 def schedule_reimbursements_sync(sync_netsuite_to_fyle_payments, workspace_id):

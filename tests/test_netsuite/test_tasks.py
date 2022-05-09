@@ -317,8 +317,7 @@ def test_load_attachments(db, add_netsuite_credentials, add_fyle_credentials):
 
 
     attachment = load_attachments(netsuite_connection, 'tx3asPlm9wyF', expense_group)
-    
-    assert attachment != None
+    assert attachment == None
 
 
 def test_create_or_update_employee_mapping(db, add_netsuite_credentials, add_fyle_credentials):
@@ -377,7 +376,7 @@ def test_schedule_reimbursements_sync(db):
 def test_process_reimbursements(db, mocker, add_fyle_credentials):
 
     mocker.patch(
-        'fylesdk.apis.fyle_v1.reimbursements.Reimbursements.post',
+        'fyle_integrations_platform_connector.apis.Reimbursements.bulk_post_reimbursements',
         return_value=[]
     )
 
