@@ -4,7 +4,6 @@ import traceback
 import itertools
 from typing import List
 import base64
-import requests
 from datetime import datetime, timedelta
 
 from django.db import transaction
@@ -36,9 +35,6 @@ netsuite_paid_state = 'Paid In Full'
 netsuite_error_message = 'NetSuite System Error'
 
 
-def get_as_base64(url):
-    return base64.b64encode(requests.get(url).content).decode('ascii')
-
 def load_attachments(netsuite_connection: NetSuiteConnector, expense_id: str, expense_group: ExpenseGroup):
     """
     Get attachments from Fyle
@@ -67,19 +63,15 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense_id: str, ex
                 file_object = {'id': file_id[0]}
                 files_list.append(file_object)
 
-        if len(files_list):
-            payload = {
-                "data": files_list
-            }
 
-            attachments = platform.connection.v1beta.admin.files.bulk_generate_file_urls(payload=payload)['data']
+            if files_list:
+                attachments = platform.connection.v1beta.admin.files.bulk_generate_file_urls(payload=payload)['data']
 
             if attachments:
                 for attachment in attachments:
-                    attachment['download_url'] = get_as_base64(attachment['download_url'])
                     netsuite_connection.connection.files.post({
                         "externalId": expense_id,
-                        "name": '{0}_{1}'.format(expense_id, attachment['filename']),
+                        "name": '{0}_{1}'.format(attachment['id'], attachment['name']),
                         'content': base64.b64decode(attachment['download_url']),
                         "folder": {
                             "name": None,
@@ -1353,10 +1345,7 @@ def process_reimbursements(workspace_id):
                 reimbursement_object = {'id': reimbursement_id}
                 reimbursements_list.append(reimbursement_object)
             
-            payload = {
-                "data": reimbursements_list
-            }
-            platform.connection.v1beta.admin.reimbursements.bulk_post_reimbursements(payload)
+            platform.reimbursements.bulk_post_reimbursements(reimbursements_list)
             platform.reimbursements.sync()
 
 

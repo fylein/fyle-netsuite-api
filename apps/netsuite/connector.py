@@ -1323,6 +1323,8 @@ class NetSuiteConnector:
             'externalId': expense_report.external_id
         }
 
+
+        print(skfosdihfsodhi)
         return expense_report_payload
 
     def post_expense_report(
