@@ -1,5 +1,4 @@
 import logging
-from sys import platform
 import traceback
 from datetime import datetime, timedelta
 
@@ -13,8 +12,6 @@ from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttr
     CategoryMapping
 from fyle_accounting_mappings.helpers import EmployeesAutoMappingHelper
 
-
-from apps.fyle.connector import FyleConnector
 from fyle_integrations_platform_connector import PlatformConnector
 from apps.mappings.models import GeneralMapping
 from apps.netsuite.connector import NetSuiteConnector
@@ -57,7 +54,7 @@ def create_fyle_categories_payload(categories: List[DestinationAttribute], works
                 'name': category.value,
                 'code': category.destination_id,
                 'is_enabled': True if category.active is None else category.active,
-                'restricted_project_ids': []
+                'restricted_project_ids': None
             })
 
     return payload
