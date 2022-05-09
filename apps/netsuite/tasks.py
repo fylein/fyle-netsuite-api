@@ -764,7 +764,7 @@ def __validate_category_mapping(expense_group: ExpenseGroup, configuration: Conf
     expenses = expense_group.expenses.all()
 
     for lineitem in expenses:
-        category = lineitem.category if lineitem.category == lineitem.sub_category else '{0} / {1}'.format(
+        category = lineitem.category if (lineitem.category == lineitem.sub_category or lineitem.sub_category == None) else '{0} / {1}'.format(
             lineitem.category, lineitem.sub_category)
 
         category_mapping = CategoryMapping.objects.filter(
