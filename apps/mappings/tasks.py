@@ -12,6 +12,7 @@ from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttr
     CategoryMapping
 from fyle_accounting_mappings.helpers import EmployeesAutoMappingHelper
 
+from apps.fyle.connector import FyleConnector
 from fyle_integrations_platform_connector import PlatformConnector
 from apps.mappings.models import GeneralMapping
 from apps.netsuite.connector import NetSuiteConnector
@@ -758,18 +759,16 @@ def create_fyle_expense_custom_field_payload(netsuite_attributes: List[Destinati
         fyle_attribute = fyle_attribute.replace('_', ' ').title()
 
         expense_custom_field_payload = {
-            'field_name': fyle_attribute,
-            'category_ids': [],
+            'id': custom_field_id,
+            'name': fyle_attribute,
             'type': 'SELECT',
-            'is_enabled': True,
-            'is_mandatory': False,
+            'active': True,
+            'mandatory': False,
             'placeholder': 'Select {0}'.format(fyle_attribute),
+            'default_value': None,
             'options': fyle_expense_custom_field_options,
             'code': None
         }
-
-        if custom_field_id:
-            expense_custom_field_payload['id'] = custom_field_id
 
         return expense_custom_field_payload
 
@@ -781,6 +780,10 @@ def upload_attributes_to_fyle(workspace_id: int, netsuite_attribute_type: str, f
     fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
 
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
+
+    fyle_connection = FyleConnector(
+        refresh_token=fyle_credentials.refresh_token
+    )
 
     netsuite_attributes: List[DestinationAttribute] = DestinationAttribute.objects.filter(
         workspace_id=workspace_id, attribute_type=netsuite_attribute_type
@@ -795,7 +798,7 @@ def upload_attributes_to_fyle(workspace_id: int, netsuite_attribute_type: str, f
     )
 
     if fyle_custom_field_payload:
-        platform.expense_custom_fields.post(fyle_custom_field_payload)
+        fyle_connection.connection.ExpensesCustomFields.post(fyle_custom_field_payload)
         platform.expense_custom_fields.sync()
 
     return netsuite_attributes
