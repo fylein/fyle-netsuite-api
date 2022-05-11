@@ -146,6 +146,89 @@ def test_post_workspace_configurations(api_client, test_connection):
 
     assert response.status_code==201
 
+    invalid_data = create_configurations_object_payload(1)
+    invalid_data['auto_create_destination_entity'] = True
+    response = api_client.post(
+        url,
+        data=invalid_data
+    )
+
+    assert response.status_code==400
+    response = json.loads(response.content)
+    assert response['non_field_errors'][0] == 'Cannot set auto_create_destination_entity value if auto map employees is disabled'
+
+    invalid_data['auto_map_employees'] = 'EMPLOYEE_CODE'
+    response = api_client.post(
+        url,
+        data=invalid_data
+    )
+
+    assert response.status_code==400
+    response = json.loads(response.content)
+    assert response['non_field_errors'][0] == 'Cannot enable auto create destination entity for employee code'
+
+    invalid_data = create_configurations_object_payload(1)
+    invalid_data['corporate_credit_card_expenses_object'] = 'BILL'
+    invalid_data['auto_create_merchants'] = True
+    response = api_client.post(
+        url,
+        data=invalid_data
+    )
+
+    assert response.status_code==400
+    response = json.loads(response.content)
+    assert response['non_field_errors'][0] == 'Cannot enable auto create merchants without using CC Charge'
+
+    invalid_data = create_configurations_object_payload(1)
+    invalid_data['employee_field_mapping'] = 'EMPLOYEE'
+    invalid_data['reimbursable_expenses_object'] = 'BILL'
+    response = api_client.post(
+        url,
+        data=invalid_data
+    )
+
+    assert response.status_code==400
+    response = json.loads(response.content)
+    assert response['non_field_errors'][0] == 'Reimbursable expenses should be expense report or journal entry for employee mapped to employee'
+
+    invalid_data = create_configurations_object_payload(1)
+    invalid_data['employee_field_mapping'] = 'VENDOR'
+    invalid_data['reimbursable_expenses_object'] = 'EXPENSE REPORT'
+    response = api_client.post(
+        url,
+        data=invalid_data
+    )
+
+    assert response.status_code==400
+    response = json.loads(response.content)
+    assert response['non_field_errors'][0] == 'Reimbursable expenses should be bill or journal entry for employee mapped to vendor'
+
+    invalid_data = create_configurations_object_payload(1)
+    invalid_data['corporate_credit_card_expenses_object'] = 'EXPENSE REPORT'
+    invalid_data['reimbursable_expenses_object'] = 'BILL'
+    response = api_client.post(
+        url,
+        data=invalid_data
+    )
+
+    assert response.status_code==400
+    response = json.loads(response.content)
+    assert response['non_field_errors'][0] == 'Corporate credit card expenses can be expense report if reimbursable expense object is expense report'
+
+    invalid_data = create_configurations_object_payload(1)
+    invalid_data['sync_fyle_to_netsuite_payments'] = True
+    invalid_data['sync_netsuite_to_fyle_payments'] = True
+    invalid_data['reimbursable_expenses_object'] = 'JOURNAL ENTRY'
+    response = api_client.post(
+        url,
+        data=invalid_data
+    )
+
+    assert response.status_code==400
+    response = json.loads(response.content)
+    assert response['non_field_errors'][0] == 'Cannot enable sync fyle to netsuite if reimbursable expense object is journal entry'
+
+
 @pytest.mark.django_db(databases=['default'])
 def test_get_workspace_configuration(api_client, test_connection):
     url = reverse(
