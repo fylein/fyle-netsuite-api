@@ -371,7 +371,7 @@ def create_credit_card_charge(expense_group, task_log_id):
     except NetSuiteCredentials.DoesNotExist:
         __handle_netsuite_connection_error(expense_group, task_log)
 
-    except NetSuiteRequestError as exception:
+    except NetSuiteRequestError as exception:   #TODO : DOUBT
         all_details = []
         logger.exception({'error': exception})
         detail = json.dumps(exception.__dict__)
@@ -1185,7 +1185,6 @@ def get_all_internal_ids(netsuite_objects):
     expense_group_ids = [netsuite_object.expense_group_id for netsuite_object in netsuite_objects]
 
     task_logs = TaskLog.objects.filter(expense_group_id__in=expense_group_ids).all()
-
     for task_log in task_logs:
         netsuite_objects_details[task_log.expense_group.id] = {
             'expense_group': task_log.expense_group,
@@ -1210,11 +1209,9 @@ def check_netsuite_object_status(workspace_id):
 
     if bills:
         internal_ids = get_all_internal_ids(bills)
-
         for bill in bills:
             try:
                 bill_object = netsuite_connection.get_bill(internal_ids[bill.expense_group.id]['internal_id'])
-
                 if bill_object['status'] == netsuite_paid_state:
                     line_items = BillLineitem.objects.filter(bill_id=bill.id)
                     for line_item in line_items:
@@ -1236,7 +1233,6 @@ def check_netsuite_object_status(workspace_id):
             try:
                 expense_report_object = netsuite_connection.get_expense_report(
                     internal_ids[expense_report.expense_group.id]['internal_id'])
-
                 if expense_report_object['status'] == netsuite_paid_state:
                     line_items = ExpenseReportLineItem.objects.filter(expense_report_id=expense_report.id)
                     for line_item in line_items:
@@ -1354,4 +1350,3 @@ def schedule_reimbursements_sync(sync_netsuite_to_fyle_payments, workspace_id):
 
 
 
-# insert into expenses (employee_email, category, sub_category, settlement_id, paid_on_netsuite, expense_id, expense_number, claim_number, amount, currency, state, report_id, expense_created_at, expense_updated_at, fund_source, reimbursable,created_at, updated_at) values ('ashwin.t@fyle.in', 'Accounts Payable', 'Accounts Payable', 'setqi0eM6HUgZ', 't', 'txjvDntD9ZXS', 'E/2021/12/T/3', 'C/2021/12/R/1', 1, 'USD', 'PENDING', 'rpXqCutQj85M', now(), now(), 'PERSONAL', 't', now(), now());

@@ -67,6 +67,29 @@ def create_bill(db, add_netsuite_credentials, add_fyle_credentials):
 
 
 @pytest.fixture
+def create_bill_task(db, add_netsuite_credentials, add_fyle_credentials):
+
+    TaskLog.objects.update_or_create(
+        workspace_id=1,
+        expense_group_id=1,
+        type='FETCHING_EXPENSES',
+        detail={
+          'internalId': 389508
+        },
+        defaults={
+            'status': 'COMPLETE'
+        }
+    )
+
+    expense_group = ExpenseGroup.objects.get(id=1)
+    configuration = Configuration.objects.get(workspace_id=1)
+    bill = Bill.create_bill(expense_group)
+    bill_lineitem  = BillLineitem.create_bill_lineitems(expense_group, configuration)
+
+    return bill, bill_lineitem
+
+
+@pytest.fixture
 def create_journal_entry(db, add_netsuite_credentials, add_fyle_credentials):
 
     expense_group = ExpenseGroup.objects.filter(workspace_id=49).first()

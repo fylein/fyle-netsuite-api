@@ -79,6 +79,12 @@ def test_get_general_mappings(api_client, test_connection):
     assert response['use_employee_department'] == False
     assert response['default_ccc_vendor_name'] == 'Ashwin Vendor'
 
+    general_mapping = GeneralMapping.objects.get(workspace_id=1)
+    general_mapping.default_ccc_vendor_name = ''
+    general_mapping.use_employee_department = True
+    general_mapping.save()
+    response = api_client.get(url)
+
     GeneralMapping.objects.get(workspace_id=1).delete()
 
     response = api_client.get(url)

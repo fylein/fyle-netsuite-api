@@ -3,8 +3,9 @@ import pytest
 
 from apps.fyle.models import Expense, ExpenseGroup
 from apps.netsuite.models import BillLineitem, ExpenseReport, ExpenseReportLineItem, get_department_id_or_none, get_transaction_date, get_expense_purpose, \
-    get_location_id_or_none, get_customer_id_or_none, Bill
+    get_location_id_or_none, get_customer_id_or_none, Bill, get_class_id_or_none, get_location_id_or_none, get_custom_segments
 from apps.workspaces.models import Configuration
+from fyle_accounting_mappings.models import Mapping, MappingSetting
 
 
 @pytest.mark.django_db(databases=['default'])
@@ -19,6 +20,14 @@ def test_get_department_id_or_none(test_connection):
     
     assert department_id == None
 
+    mapping_setting = MappingSetting.objects.filter(
+        workspace_id=1).first()
+    mapping_setting.destination_field = 'DEPARTMENT'
+    mapping_setting.save()
+
+    department_id = get_department_id_or_none(expense_group, expense)
+    
+    assert department_id == None
 
 @pytest.mark.django_db(databases=['default'])
 @pytest.mark.parametrize(
@@ -102,5 +111,42 @@ def test_create_expense_report(db):
     assert expense_report.account_id == '118'
     assert expense_report.location_id == '8'
     
+
+def test_get_class_id_or_none(db, add_fyle_credentials):
+    expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
+    expenses = expense_group.expenses.all()
+
+    mapping_setting = MappingSetting.objects.filter(
+        workspace_id=1).first()
+    mapping_setting.destination_field = 'CLASS'
+    mapping_setting.save()
+    
+    class_id = get_class_id_or_none(expense_group, expenses[0])
+    assert class_id == None
+
+    mapping_setting.source_field = 'COST_CENTER'
+    mapping_setting.save()
+    
+    class_id = get_class_id_or_none(expense_group, expenses[0])
+    assert class_id == None
+
+
+def test_get_location_id_or_none(db, add_fyle_credentials):
+    expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
+    expenses = expense_group.expenses.all()
+
+    mapping_setting = MappingSetting.objects.filter(
+        workspace_id=1).first()
+    mapping_setting.destination_field = 'LOCATION'
+    mapping_setting.save()
+    
+    location_id = get_location_id_or_none(expense_group, expenses[0])
+    assert location_id == None
+
+    mapping_setting.source_field = 'COST_CENTER'
+    mapping_setting.save()
+    
+    location_id = get_location_id_or_none(expense_group, expenses[0])
+    assert location_id == None
 
 

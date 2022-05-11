@@ -585,7 +585,7 @@ def async_auto_map_ccc_account(workspace_id: int):
 
 def schedule_auto_map_ccc_employees(workspace_id: int):
     configuration = Configuration.objects.get(workspace_id=workspace_id)
-
+    print(configuration.auto_map_employees, configuration.corporate_credit_card_expenses_object)
     if configuration.auto_map_employees and configuration.corporate_credit_card_expenses_object:
         schedule, _ = Schedule.objects.update_or_create(
             func='apps.mappings.tasks.async_auto_map_ccc_account',
@@ -899,11 +899,8 @@ def post_merchants(platform_connection: PlatformConnector, workspace_id: int, fi
             updated_at__range=[merchant_updated_at, today_date]).order_by('value', 'id')
 
     netsuite_attributes = remove_duplicates(netsuite_attributes)
-    print('netsuite_attributes', netsuite_attributes)
     fyle_payload: List[str] = create_fyle_merchants_payload(
         netsuite_attributes, existing_merchants_name)
-
-    print('fyle_payload', fyle_payload)
 
     if fyle_payload:
         platform_connection.merchants.post(fyle_payload)
@@ -917,7 +914,6 @@ def auto_create_vendors_as_merchants(workspace_id):
         fyle_connection = PlatformConnector(fyle_credentials)
 
         existing_merchants_name = ExpenseAttribute.objects.filter(attribute_type='MERCHANT', workspace_id=workspace_id)
-        print('existing_merchants_name', existing_merchants_name)
         
         first_run = False if existing_merchants_name else True
 
@@ -925,7 +921,6 @@ def auto_create_vendors_as_merchants(workspace_id):
         existing_merchants_name = ExpenseAttribute.objects.filter(
         attribute_type='MERCHANT', workspace_id=workspace_id).values_list('value', flat=True)
     
-        print('after marchents sync existing_merchants_name', existing_merchants_name)
         sync_netsuite_attribute('VENDOR', workspace_id)
         post_merchants(fyle_connection, workspace_id, first_run)
 

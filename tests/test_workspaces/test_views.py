@@ -1,13 +1,14 @@
 import pytest
 import json
 from django.http import response
+from apps import fyle
 from fyle_netsuite_api.tests import settings
 from django.urls import reverse
 from apps.workspaces.models import Configuration, FyleCredential, NetSuiteCredentials, Workspace, WorkspaceSchedule
 from tests.conftest import api_client
 from fyle_rest_auth.models import AuthToken, User
-from .fixtures import create_netsuite_credential_object_payload, create_configurations_object_payload, \
-    create_workspace
+from .fixtures import create_netsuite_credential_object_payload, create_configurations_object_payload
+    # create_fyle_credential_object_payload
 
 
 from tests.helper import dict_compare_keys, get_response_dict
@@ -97,7 +98,7 @@ def test_get_configuration_detail(api_client, test_connection):
     assert dict_compare_keys(response, expected_response['configuration']) == [], 'configuration api returns a diff in keys'
 
 @pytest.mark.django_db(databases=['default'])
-def test_post_netsuite_credentials(api_client, test_connection):
+def test_post_netsuite_credentials(api_client, test_connection, add_netsuite_credentials, add_fyle_credentials):
 
     url = reverse(
         'post-netsuite-credentials', kwargs={
@@ -111,6 +112,23 @@ def test_post_netsuite_credentials(api_client, test_connection):
         data=paylaod
     )
     assert response.status_code==200
+
+    netsuite_credentials = NetSuiteCredentials.objects.filter(workspace=1).first() 
+    netsuite_credentials.delete()
+
+    url = reverse(
+        'post-netsuite-credentials', kwargs={
+            'workspace_id': 1
+        }
+    )
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    paylaod = create_netsuite_credential_object_payload(1)
+    response = api_client.post(
+        url,
+        data=paylaod
+    )
+    assert response.status_code==200
+    
  
 @pytest.mark.django_db(databases=['default'])
 def test_post_workspace_configurations(api_client, test_connection):
@@ -153,6 +171,35 @@ def test_get_workspace_configuration(api_client, test_connection):
     response = json.loads(response.content)
 
     assert response == {'message': 'General Settings does not exist in workspace'}
+
+
+# @pytest.mark.django_db(databases=['default'])
+# def test_patch_workspace_configuration(api_client, test_connection):
+
+#     url = reverse(
+#         'workspace-configurations', kwargs={
+#             'workspace_id': 1
+#         }
+#     )
+
+#     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+#     configuration = create_configurations_object_payload(1)
+#     workspace = Workspace.objects.get(id=1)
+#     configuration['workspace'] = workspace.__dict__
+#     # configuration = Configuration.objects.get(workspace_id=1)
+#     # configuration['auto_create_destination_entity'] = True
+
+
+#     response = api_client.patch(
+#         url,
+#         data=configuration
+#     )
+
+#     response = json.loads(response.content)
+#     print(response)
+#     assert response.status_code==201
+
+#     assert 1 == 2
 
 def test_post_workspace_schedule(api_client, test_connection):
     url = reverse(
@@ -235,6 +282,28 @@ def test_delete_fyle_credentials(api_client, test_connection, add_fyle_credentia
     response = json.loads(response.content)
     assert response['message'] == 'Fyle credentials deleted'
 
+# @pytest.mark.django_db(databases=['default'])
+# def test_post_fyle_credentials(api_client, test_connection, add_fyle_credentials):
+#     url = reverse('connect-fyle', kwargs={
+#             'workspace_id': 1
+#         })
+
+#     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+#     paylaod = create_fyle_credential_object_payload(1)
+#     response = api_client.post(
+#         url,
+#         data=paylaod    
+#     )
+#     response = api_client.post(url)
+
+#     print(response)
+#     # response = json.loads(response.content)
+#     # assert response['refresh_token'] == settings.FYLE_REFRESH_TOKEN
+
+#     fyle_credentials = FyleCredential.objects.get(workspace_id=1)
+#     print(fyle_credentials)
+#     assert 1 == 2
+
 @pytest.mark.django_db(databases=['default'])
 def test_get_and_delete_netsuite_crendentials(api_client, test_connection, add_netsuite_credentials):
     url = reverse('get-netsuite-credentials', kwargs={
@@ -263,3 +332,20 @@ def test_get_and_delete_netsuite_crendentials(api_client, test_connection, add_n
     response = json.loads(response.content)
 
     assert response['message'] == 'NetSuite credentials deleted'
+
+# @pytest.mark.django_db(databases=['default'])
+# def test_get_workspace_admin_view(api_client, test_connection):
+#     url = reverse(
+#         'admin', kwargs={
+#             'workspace_id': 49
+#         }
+#     )
+
+#     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+#     response = api_client.get(url)
+#     assert response.status_code == 403
+#     # response = json.loads(response.content)
+
+#     print(response)
+
+#     assert 1 == 2

@@ -219,7 +219,7 @@ def test_fyle_sync_dimension(api_client, test_connection, add_fyle_credentials):
    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
    
    response = api_client.post(url)
-   assert response.status_code == 200
+   assert response.status_code == 200     #TODO doubt
 
    fyle_credentials = FyleCredential.objects.get(workspace_id=1)
    fyle_credentials.delete()

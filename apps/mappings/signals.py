@@ -72,4 +72,5 @@ def run_post_general_mapping_triggers(sender, instance: GeneralMapping, **kwargs
     schedule_payment_sync(configuration)
 
     if instance.default_ccc_account_name:
+        print(instance.__dict__)
         schedule_auto_map_ccc_employees(instance.workspace_id)
