@@ -73,9 +73,9 @@ def create_expense_groups(workspace_id: int, configuration: Configuration, fund_
             expenses = platform.expenses.get(
                 source_account_type=source_account_type,
                 state=expense_group_settings.expense_state,
-                last_synced_at=last_synced_at if expense_group_settings.expense_state == 'PAID' else None,
                 settled_at=last_synced_at if expense_group_settings.expense_state == 'PAYMENT_PROCESSING' else None,
-                filter_credit_expenses=filter_credit_expenses
+                filter_credit_expenses=filter_credit_expenses,
+                last_paid_at=last_synced_at if expense_group_settings.expense_state == 'PAID' else None
             )
 
             if expenses:

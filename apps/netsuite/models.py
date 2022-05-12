@@ -396,7 +396,7 @@ class BillLineitem(models.Model):
         bill_lineitem_objects = []
 
         for lineitem in expenses:
-            category = lineitem.category if lineitem.category == lineitem.sub_category else '{0} / {1}'.format(
+            category = lineitem.category if (lineitem.category == lineitem.sub_category or lineitem.sub_category == None) else '{0} / {1}'.format(
                 lineitem.category, lineitem.sub_category)
 
             account = CategoryMapping.objects.filter(
@@ -587,7 +587,7 @@ class CreditCardChargeLineItem(models.Model):
 
         credit_card_charge_lineitem_objects = []
 
-        category = lineitem.category if lineitem.category == lineitem.sub_category else '{0} / {1}'.format(
+        category = lineitem.category if (lineitem.category == lineitem.sub_category or lineitem.sub_category == None) else '{0} / {1}'.format(
             lineitem.category, lineitem.sub_category)
 
         account = CategoryMapping.objects.filter(
@@ -809,7 +809,7 @@ class ExpenseReportLineItem(models.Model):
         expense_report_lineitem_objects = []
 
         for lineitem in expenses:
-            category = lineitem.category if lineitem.category == lineitem.sub_category else '{0} / {1}'.format(
+            category = lineitem.category if (lineitem.category == lineitem.sub_category or lineitem.sub_category == None) else '{0} / {1}'.format(
                 lineitem.category, lineitem.sub_category)
 
             account = CategoryMapping.objects.filter(
@@ -1015,7 +1015,7 @@ class JournalEntryLineItem(models.Model):
         journal_entry_lineitem_objects = []
 
         for lineitem in expenses:
-            category = lineitem.category if lineitem.category == lineitem.sub_category else '{0} / {1}'.format(
+            category = lineitem.category if (lineitem.category == lineitem.sub_category or lineitem.sub_category == None) else '{0} / {1}'.format(
                 lineitem.category, lineitem.sub_category)
 
             if expense_group.fund_source == 'PERSONAL':
