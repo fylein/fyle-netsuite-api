@@ -300,6 +300,13 @@ class ConnectFyleView(viewsets.ViewSet):
                 },
                 status=status.HTTP_401_UNAUTHORIZED
             )
+        except Exception:
+            return Response(
+                {
+                    'message': 'Signature has expired'
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
 
     def delete(self, request, **kwargs):
         """Delete credentials"""

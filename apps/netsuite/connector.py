@@ -227,7 +227,6 @@ class NetSuiteConnector:
         custom_segments: List[CustomSegment] = CustomSegment.objects.filter(workspace_id=self.workspace_id).all()
 
         for custom_segment in custom_segments:
-            print(custom_segment)
             attribute_type = custom_segment.name.upper().replace(' ', '_')
             if custom_segment.segment_type == 'CUSTOM_LIST':
                 custom_segment_attributes = self.get_custom_list_attributes(attribute_type, custom_segment.internal_id)
@@ -607,7 +606,6 @@ class NetSuiteConnector:
         Sync subsidiaries
         """
         subsidiaries = self.connection.subsidiaries.get_all()
-        print('len(subsidiaries) ', len(subsidiaries))
         subsidiary_attributes = []
 
         for subsidiary in subsidiaries:
@@ -621,7 +619,6 @@ class NetSuiteConnector:
                 }
             })
 
-        print('len(subsidiary_attributes) ', len(subsidiary_attributes))
         DestinationAttribute.bulk_create_or_update_destination_attributes(
             subsidiary_attributes, 'SUBSIDIARY', self.workspace_id, True)
 

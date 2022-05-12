@@ -585,7 +585,6 @@ def async_auto_map_ccc_account(workspace_id: int):
 
 def schedule_auto_map_ccc_employees(workspace_id: int):
     configuration = Configuration.objects.get(workspace_id=workspace_id)
-    print(configuration.auto_map_employees, configuration.corporate_credit_card_expenses_object)
     if configuration.auto_map_employees and configuration.corporate_credit_card_expenses_object:
         schedule, _ = Schedule.objects.update_or_create(
             func='apps.mappings.tasks.async_auto_map_ccc_account',

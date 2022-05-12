@@ -154,7 +154,6 @@ def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_conn
                     destination['destination_employee_id'] = created_entity.id
                 elif existing_employee_mapping and existing_employee_mapping.destination_employee:
                     destination['destination_employee_id'] = existing_employee_mapping.destination_employee.id
-
             else:
                 if created_entity is None:
                     created_entity: DestinationAttribute = netsuite_connection.get_or_create_vendor(

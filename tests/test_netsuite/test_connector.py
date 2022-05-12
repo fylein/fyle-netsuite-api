@@ -190,32 +190,3 @@ def test_get_or_create_vendor(db, add_netsuite_credentials):
 
     vendor = DestinationAttribute.objects.filter(attribute_type='VENDOR', workspace_id=1).count()
     assert vendor == 3
-
-
-@pytest.mark.django_db()
-def test_post_employee(db, add_netsuite_credentials):
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
-    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
-
-    expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
-
-    source_employee = ExpenseAttribute.objects.get(
-        workspace_id=expense_group.workspace_id,
-        attribute_type='EMPLOYEE',
-        value=expense_group.description.get('employee_email')
-    )
-    source_employee.value = 'new_employee@fyle.in'
-    source_employee.detail.update({'full_name': 'Fyle new employee'})
-    source_employee.save()
-
-    expense_group.description.update({'employee_email': 'new_employee@fyle.in'})
-    expense_group.save()
-
-    expenses = expense_group.expenses.all()
-
-    for expense in expenses:
-        expense.employee_email = 'new_employee@fyle.in'
-        expense.save()
-    
-    expense_group.expenses.set(expenses)
-    netsuite_connection.get_or_create_employee(source_employee, expense_group)       #TODO: i am here, code: RCRD_DSNT_EXIST, message: An error occured in a upsert request: That record does not exist. Invalid record: employeeId = 3382

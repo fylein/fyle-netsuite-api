@@ -13,10 +13,9 @@ from apps.netsuite.tasks import __validate_general_mapping, __validate_subsidiar
      get_or_create_credit_card_vendor, create_bill, create_expense_report, load_attachments, __handle_netsuite_connection_error, process_reimbursements, process_vendor_payment, schedule_bills_creation, schedule_credit_card_charge_creation, schedule_expense_reports_creation, schedule_journal_entry_creation, schedule_netsuite_objects_status_sync, schedule_reimbursements_sync, schedule_vendor_payment_creation, \
         __validate_tax_group_mapping, check_expenses_reimbursement_status
 from apps.mappings.models import GeneralMapping
-from fyle_accounting_mappings.models import DestinationAttribute, EmployeeMapping, CategoryMapping
+from fyle_accounting_mappings.models import DestinationAttribute, EmployeeMapping, CategoryMapping, ExpenseAttribute
 from .fixtures import data
-from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configuration
-from fyle_integrations_platform_connector import PlatformConnector
+from apps.workspaces.models import NetSuiteCredentials, Configuration
 
 
 logger = logging.getLogger(__name__)
@@ -111,7 +110,6 @@ def test_get_or_create_credit_card_vendor(add_netsuite_credentials):
 @pytest.mark.django_db()
 def test_post_bill_success(create_task_logs, add_netsuite_credentials, add_fyle_credentials):
 
-
     task_log = TaskLog.objects.filter(workspace_id=1).first()
     task_log.status = 'READY'
     task_log.save()
@@ -137,6 +135,53 @@ def test_post_bill_success(create_task_logs, add_netsuite_credentials, add_fyle_
     assert bill.currency=='1'
     assert bill.location_id=='8'
     assert bill.accounts_payable_id=='25'
+
+    task_log = TaskLog.objects.filter(workspace_id=1).first()
+    task_log.status = 'READY'
+    task_log.save()
+
+    configuration = Configuration.objects.get(workspace_id=1)
+    configuration.auto_map_employees = 'NAME'
+    configuration.auto_create_destination_entity = True
+    configuration.save()
+
+    expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
+
+    source_employee = ExpenseAttribute.objects.get(
+        workspace_id=expense_group.workspace_id,
+        attribute_type='EMPLOYEE',
+        value=expense_group.description.get('employee_email')
+    )
+    source_employee.value = 'new_employeeee@fyle.in'
+    source_employee.detail.update({'full_name': 'Fyle new employeeee'})
+    source_employee.save()
+
+    expense_group.description.update({'employee_email': 'new_employeeee@fyle.in'})
+    expense_group.save()
+
+    expenses = expense_group.expenses.all()
+
+    general_mapping = GeneralMapping.objects.get(workspace_id=1)
+    general_mapping.location_name = "01: San Francisco"
+    general_mapping.location_id = 2
+    general_mapping.save()
+    
+    for expense in expenses:
+        expense.employee_email = 'new_employeeee@fyle.in'
+        expense.save()
+    
+    expense_group.expenses.set(expenses)
+
+    mapping = EmployeeMapping.objects.get(
+        source_employee__value=expense_group.description.get('employee_email'),
+        workspace_id=expense_group.workspace_id
+    )
+    mapping.delete()
+
+    create_bill(expense_group, task_log.id)
+
+    task_log = TaskLog.objects.filter(pk=task_log.id).first()
+    assert task_log.detail[0]['message'] == 'Employee mapping not found'
 
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_credentials.delete()
@@ -538,8 +583,6 @@ def test_create_or_update_employee_mapping(db, add_netsuite_credentials, add_fyl
 
     employee_mappings = EmployeeMapping.objects.filter(workspace_id=1).count()
 
-    print(employee_mappings)
-
     create_or_update_employee_mapping(expense_group, netsuite_connection, 'EMAIL', 'EMPLOYEE')
 
     new_employee_mappings = EmployeeMapping.objects.filter(workspace_id=1).count()
@@ -846,99 +889,6 @@ def test_check_expenses_reimbursement_status(db):
     status = check_expenses_reimbursement_status(expenses)
     assert status == False
 
-# insert into expenses (employee_email, category, sub_category, settlement_id, paid_on_netsuite, expense_id, expense_number, claim_number, amount, currency, state, report_id, expense_created_at, expense_updated_at, fund_source, reimbursable,created_at, updated_at) values ('ashwin.t@fyle.in', 'Accounts Payable', 'Accounts Payable', 'setqi0eM6HUgZ', 't', 'txjvDntD9ZXS', 'E/2021/12/T/3', 'C/2021/12/R/1', 1, 'USD', 'PENDING', 'rpXqCutQj85M', now(), now(), 'PERSONAL', 't', now(), now());
-# insert into bills (expense_group_id, accounts_payable_id, entity_id, subsidiary_id, location_id, currency, memo, external_id, transaction_date, payment_synced, paid_on_netsuite, created_at, updated_at) values (3, 1575, 185, 1, 2, 'INR', 'Report', 'rpTs1zHgCwvv-personal', now(), 'f', 'f', now(), now());
-# insert into expenses (employee_email , category, sub_category, expense_id, expense_number, claim_number, amount, currency, settlement_id, reimbursable, state, report_id, spent_at, approved_at, expense_created_at, expense_updated_at, created_at, updated_at, fund_source, paid_on_netsuite, org_id) values ('sample@fyleforintacct.in', 'Accounts Payable', 'Accounts Payable', 'txcKVVELn2lv', 'E/2021/11/T/13', 'C/2021/12/R/1', 1, 'USD', 'setqi0eM6HUgZ', 'f', 'PENDING', 'rpXqCutQQ856', '2021-11-15', '2021-11-15', '2021-11-15', '2021-11-15', '2021-11-15', '2021-11-15', 'CCC', 'f', 'or79Cob97KSh');
-
-
-
 
 # insert into mapping_settings (source_field, destination_field, created_at, updated_at, workspace_id, import_to_fyle, is_custom) values ('CORPORATE_CARD', 'CREDIT_CARD_ACCOUNT', now(), now(), 49, 't', 'f');
 # insert into workspace_schedules (enabled, start_datetime, interval_hours, workspace_id, emails_selected) values ('t', now(), 1, 49, '{owner@fyleforintacct.in}');
-
-
-
-
-# insert into custom_segments (name, segment_type, script_id, internal_id, created_at, updated_at, workspace_id) values ('sample3', 'CUSTOM_RECORD', 'sample3', 'sample3',now(), now(), 1);
-
-
-
-
-# from django.db import connection
-# db_name = connection.settings_dict['NAME']
-# print(db_name)
-# from apps.netsuite.models import Bill, BillLineitem
-# from apps.netsuite.tasks import create_bill
-# from apps.fyle.models import ExpenseGroup, Reimbursement, Expense
-# from apps.mappings.models import GeneralMapping
-# from apps.workspaces.models import Configuration, NetSuiteCredentials, FyleCredential
-# from apps.tasks.models import TaskLog
-# import random
-# from fyle_netsuite_api.tests import settings
-
-
-# expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
-# print(expense_group)
-# TaskLog.objects.update_or_create(
-#     workspace_id=1,
-#     type='FETCHING_EXPENSES',
-#     defaults={
-#         'status': 'READY'
-#     }
-# )
-# task_log = TaskLog.objects.filter(workspace_id=1).first()
-# task_log.status = 'READY'
-# task_log.save()
-# workspaces = [1,2,49]
-# for workspace_id in workspaces:
-#     NetSuiteCredentials.objects.create(
-#         ns_account_id=settings.NS_ACCOUNT_ID,
-#         ns_consumer_key=settings.NS_CONSUMER_KEY,
-#         ns_consumer_secret=settings.NS_CONSUMER_SECRET,
-#         ns_token_id=settings.NS_TOKEN_ID,
-#         ns_token_secret=settings.NS_TOKEN_SECRET,
-#         workspace_id=workspace_id
-#     )
-
-# workspaces = [1,2,49]
-# for workspace_id in workspaces:
-#     FyleCredential.objects.create(
-#         refresh_token=settings.FYLE_REFRESH_TOKEN,
-#         workspace_id=workspace_id,
-#         cluster_domain='https://staging.fyle.tech'
-#     )
-
-
-# expense_group = ExpenseGroup.objects.get(id=1)
-# expenses = expense_group.expenses.all()
-
-# expense_group.id = random.randint(100, 1500000)
-# expense_group.save()
-
-# for expense in expenses:
-#     expense.expense_group_id = expense_group.id
-#     expense.vendor = 'AMAZON.COM'
-#     expense.save()
-
-
-# expense_group.expenses.set(expenses)
-
-# configuration = Configuration.objects.get(workspace_id=1)
-# configuration.auto_map_employees = True
-# configuration.auto_create_destination_entity = True
-# configuration.save()
-
-# general_mapping = GeneralMapping.objects.get(workspace_id=1)
-# general_mapping.location_name = "01: San Francisco"
-# general_mapping.location_id = 2
-# general_mapping.save()
-
-# create_bill(expense_group, task_log.id)
-
-
-
-#  {'_state': <django.db.models.base.ModelState object at 0x7fc06b1dc950>, 'id': 1, 'source_employee_id': 14, 'destination_employee_id': 98, 'destination_vendor_id': 1674, 'destination_card_account_id': None, 'workspace_id': 1, 'created_at': datetime.datetime(2021, 11, 15, 8, 57, 7, 203049, tzinfo=<UTC>), 'updated_at': datetime.datetime(2021, 11, 15, 10, 52, 18, 150650, tzinfo=<UTC>)}
-# {'subsidiary_id': '3', 'accounts_payable_id': '25', 'entity_id': '12', 'location_id': '2', 'memo': 'Reimbursable expenses by ashwin.t@fyle.in', 'currency': '1', 'transaction_date': '2022-05-10T16:42:37', 'external_id': 'bill 933892 - ashwin.t@fyle.in'}
-
-
-# {'account_id': '65', 'location_id': None, 'class_id': None, 'department_id': None, 'customer_id': None, 'amount': 50.0, 'tax_item_id': None, 'tax_amount': None, 'billable': None, 'memo': 'ashwin.t@fyle.in - Accounts Payable - 2021-11-15 - C/2021/11/R/5 - ', 'netsuite_custom_segments': []} bill line

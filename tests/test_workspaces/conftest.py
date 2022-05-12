@@ -1,5 +1,6 @@
 import pytest
 from apps.tasks.models import TaskLog
+from apps.users.models import User
 
 @pytest.fixture
 def create_task_logs(test_connection):
@@ -9,4 +10,14 @@ def create_task_logs(test_connection):
         defaults={
             'status': 'FAILED'
         }
+    )
+
+@pytest.fixture
+def create_user():
+    User.objects.create(
+        user_id='usezCopk4qdF',
+        email='owner@fyleforgotham.in',
+        active=True,
+        admin=True,
+        staff=True
     )
