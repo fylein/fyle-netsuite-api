@@ -916,10 +916,6 @@ def auto_create_vendors_as_merchants(workspace_id):
         
         first_run = False if existing_merchants_name else True
 
-        fyle_connection.merchants.sync(workspace_id)
-        existing_merchants_name = ExpenseAttribute.objects.filter(
-        attribute_type='MERCHANT', workspace_id=workspace_id).values_list('value', flat=True)
-    
         sync_netsuite_attribute('VENDOR', workspace_id)
         post_merchants(fyle_connection, workspace_id, first_run)
 

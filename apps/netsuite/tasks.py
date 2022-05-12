@@ -1346,6 +1346,3 @@ def schedule_reimbursements_sync(sync_netsuite_to_fyle_payments, workspace_id):
 
         if schedule:
             schedule.delete()
-
-
-
