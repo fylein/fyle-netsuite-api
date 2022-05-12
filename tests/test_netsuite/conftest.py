@@ -3,6 +3,7 @@ from apps.fyle.models import Expense, ExpenseGroup
 from apps.tasks.models import TaskLog
 from apps.netsuite.models import Bill, BillLineitem, CreditCardCharge, CreditCardChargeLineItem, ExpenseReport, ExpenseReportLineItem, JournalEntry, JournalEntryLineItem
 from apps.workspaces.models import Configuration
+from apps.netsuite.models import CustomSegment
 
 
 @pytest.fixture
@@ -113,3 +114,26 @@ def create_credit_card_charge(db, add_netsuite_credentials, add_fyle_credentials
 
     return credit_card_charge_object, credit_card_charge_lineitems_object
 
+@pytest.fixture
+def add_custom_segment(db, add_netsuite_credentials, add_fyle_credentials):
+    CustomSegment.objects.create(
+        name='FAVOURITE_BANDS',
+        segment_type="CUSTOM_RECORD",
+        script_id="custcol780",
+        internal_id="476",
+        workspace_id=49
+    )
+    CustomSegment.objects.create(
+        name='SRAVAN_DEMO',
+        segment_type="CUSTOM_LIST",
+        script_id="custcol780",
+        internal_id="491",
+        workspace_id=49
+    )
+    CustomSegment.objects.create(
+        name='PRODUCTION_LINE',
+        segment_type="CUSTOM_SEGMENT",
+        script_id="custcolauto",
+        internal_id="1",
+        workspace_id=49
+    )

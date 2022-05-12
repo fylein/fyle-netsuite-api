@@ -35,19 +35,18 @@ def test_sync_custom_segments(db, add_netsuite_credentials):
     custom_list = DestinationAttribute.objects.filter(attribute_type='SRAVAN_DEMO').count()
     assert custom_list == 2
 
-    # custom_segment = DestinationAttribute.objects.filter(attribute_type='SAMPLE_SEGMENT').count()
-    # assert custom_segment == 0
+    custom_segment = DestinationAttribute.objects.filter(attribute_type='SAMPLE_SEGMENT').count()
+    assert custom_segment == 0
 
-    # CustomSegment.objects.create(
-    #     name='SAMPLE_SEGMENT',
-    #     segment_type="CUSTOM_SEGMENT",
-    #     script_id="custcol780",
-    #     internal_id="600",
-    #     workspace_id=49
-    # )
+    CustomSegment.objects.create(
+        name='PRODUCTION_LINE',
+        segment_type="CUSTOM_SEGMENT",
+        script_id="custcolauto",
+        internal_id="1",
+        workspace_id=49
+    )
 
-    # custom_segment = DestinationAttribute.objects.filter(attribute_type='SAMPLE_SEGMENT').count()
+    custom_segment = DestinationAttribute.objects.filter(attribute_type='PRODUCTION_LINE').count()
 
-    # assert custom_segment == 2
-    # assert 1 == 2
+    assert custom_segment == 2
     

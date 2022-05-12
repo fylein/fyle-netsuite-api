@@ -56,14 +56,14 @@ def test_get_expense_purpose():
         assert expense_purpose == 'ashwin.t@fyle.in - Accounts Payable - 2021-11-15 - C/2021/11/R/5 - '
 
 
-@pytest.mark.django_db(databases=['default'])
-def test_get_location_id_or_none():
-    expense_group = ExpenseGroup.objects.get(id=4)
-    expenses = expense_group.expenses.all()
+# @pytest.mark.django_db(databases=['default'])
+# def test_get_location_id_or_none():
+#     expense_group = ExpenseGroup.objects.get(id=4)
+#     expenses = expense_group.expenses.all()
 
-    for lineitem in expenses:
-        location_id = get_location_id_or_none(expense_group, lineitem)
-        assert location_id == None
+#     for lineitem in expenses:
+#         location_id = get_location_id_or_none(expense_group, lineitem)
+#         assert location_id == None
 
 
 @pytest.mark.django_db(databases=['default'])
