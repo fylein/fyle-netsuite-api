@@ -1,6 +1,6 @@
 import email
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from typing import List
 
 from django.conf import settings
@@ -29,7 +29,7 @@ def schedule_email_notification(workspace_id: int, schedule_enabled: bool, hours
             defaults={
                 'schedule_type': Schedule.MINUTES,
                 'minutes': hours * 60,
-                'next_run': datetime.now() + timedelta(minutes=1)
+                'next_run': datetime.now() + timedelta(minutes=10)
             }
         )
     else:
@@ -182,6 +182,7 @@ def run_email_notification(workspace_id):
                     'fyle_company': workspace.name,
                     'netsuite_subsidiary': netsuite_subsidiary,
                     'workspace_id': workspace_id,
+                    'year': date.today().year,
                     'export_time': workspace.last_synced_at.date(),
                     'app_url': "{0}/workspaces/{1}/expense_groups".format(settings.FYLE_APP_URL, workspace_id)
                     }

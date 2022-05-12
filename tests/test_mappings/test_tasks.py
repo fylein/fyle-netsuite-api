@@ -3,7 +3,6 @@ import pytest
 from django_q.models import Schedule
 from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute, CategoryMapping, \
      Mapping, MappingSetting, EmployeeMapping
-import fylesdk
 from apps.netsuite.connector import NetSuiteConnector
 from apps.workspaces.models import Configuration, FyleCredential, NetSuiteCredentials
 from apps.mappings.tasks import async_auto_create_custom_field_mappings, async_auto_map_employees, auto_create_category_mappings, auto_create_cost_center_mappings, auto_create_project_mappings, auto_create_tax_group_mappings, create_fyle_cost_centers_payload, create_fyle_expense_custom_field_payload, create_fyle_projects_payload, create_fyle_tax_group_payload, filter_unmapped_destinations, remove_duplicates, create_fyle_categories_payload, \
@@ -140,7 +139,7 @@ def test_sync_expense_categories_and_accounts(db, add_netsuite_credentials):
 def test_upload_categories_to_fyle(mocker, db, add_fyle_credentials, add_netsuite_credentials):
 
     mocker.patch(
-        'fylesdk.apis.fyle_v1.categories.Categories.post',
+        'fyle_integrations_platform_connector.apis.Categories.post_bulk',
         return_value='nilesh'
     )
 
@@ -163,7 +162,7 @@ def test_upload_categories_to_fyle(mocker, db, add_fyle_credentials, add_netsuit
 def test_filter_unmapped_destinations(db, mocker, add_fyle_credentials, add_netsuite_credentials):
 
     mocker.patch(
-        'fylesdk.apis.fyle_v1.categories.Categories.post',
+        'fyle_integrations_platform_connector.apis.Categories.post_bulk',
         return_value='nilesh'
     )
 
@@ -207,18 +206,15 @@ def test_schedule_creation(db, add_fyle_credentials):
 def test_auto_create_category_mappings(db, mocker, add_fyle_credentials, add_netsuite_credentials):
     fyle_credentials = FyleCredential.objects.all()
     mocker.patch(
-            'fylesdk.apis.fyle_v1.categories.Categories.post',
+            'fyle_integrations_platform_connector.apis.Categories.post_bulk',
             return_value=[]
         )
-
-    old_mappings = CategoryMapping.objects.filter(workspace_id=1).count()
 
     response = auto_create_category_mappings(workspace_id=1)
     assert response == []
 
-    categories = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='EXPENSE_CATEGORY').count()
     mappings = CategoryMapping.objects.filter(workspace_id=1)
-    assert len(mappings) == categories - old_mappings
+    assert len(mappings) == 39
 
     configuration = Configuration.objects.get(workspace_id=1)
     configuration.reimbursable_expenses_object = 'BILL'
@@ -226,9 +222,8 @@ def test_auto_create_category_mappings(db, mocker, add_fyle_credentials, add_net
 
     response = auto_create_category_mappings(workspace_id=1)
 
-    categories = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='ACCOUNT').count()
     mappings = CategoryMapping.objects.filter(workspace_id=1)
-    assert len(mappings) == 130
+    assert len(mappings) == 172
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=1)
     fyle_credentials.delete()
@@ -241,7 +236,7 @@ def test_auto_create_category_mappings(db, mocker, add_fyle_credentials, add_net
 def test_auto_create_project_mappings(db, mocker, add_fyle_credentials, add_netsuite_credentials):
 
     mocker.patch(
-            'fylesdk.apis.fyle_v1.projects.Projects.post',
+            'fyle_integrations_platform_connector.apis.Projects.post_bulk',
             return_value=[]
         )
     
@@ -262,7 +257,7 @@ def test_auto_create_project_mappings(db, mocker, add_fyle_credentials, add_nets
 def test_auto_create_cost_center_mappings(db, mocker, add_fyle_credentials, add_netsuite_credentials):
     
     mocker.patch(
-            'fylesdk.apis.fyle_v1.cost_centers.CostCenters.post',
+            'fyle_integrations_platform_connector.apis.CostCenters.post_bulk',
             return_value=[]
         )
     
@@ -330,7 +325,7 @@ def test_schedule_fyle_attributes_creation(db, mocker, add_netsuite_credentials,
     schedule_fyle_attributes_creation(49)
 
     mocker.patch(
-            'fylesdk.apis.fyle_v1.expenses_custom_fields.ExpensesCustomFields.post',
+            'fyle_integrations_platform_connector.apis.ExpenseCustomFields.post',
             return_value=[]
     )
     # schedule = Schedule.objects.last()
