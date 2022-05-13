@@ -51,7 +51,7 @@ def test_run_sync_schedule(db, test_connection, add_fyle_credentials, add_netsui
     expense_group = ExpenseGroup.objects.filter(workspace_id=2).count()
     expenses = Expense.objects.filter(org_id='oraWFQlEpjbb').count()
 
-    assert expense_group == 62
+    assert expense_group == 2
     assert expenses == 2
 
 

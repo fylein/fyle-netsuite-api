@@ -11,13 +11,3 @@ def create_task_logs(test_connection):
             'status': 'FAILED'
         }
     )
-
-@pytest.fixture
-def create_user():
-    User.objects.create(
-        user_id='usezCopk4qdF',
-        email='owner@fyleforgotham.in',
-        active=True,
-        admin=True,
-        staff=True
-    )

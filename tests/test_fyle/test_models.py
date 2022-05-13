@@ -45,7 +45,6 @@ def test_expense_group_settings(create_temp_workspace):
     assert settings.ccc_export_date_type == 'current_date'
 
 
-
 def test_create_expense_groups_by_report_id_fund_source(db):
     expenses = data['expenses']
 

@@ -630,6 +630,11 @@ def test_schedule_reimbursements_sync(db):
     schedule_count = Schedule.objects.filter(func='apps.netsuite.tasks.process_reimbursements', args=49).count()
     assert schedule_count == 1
 
+    schedule_reimbursements_sync(sync_netsuite_to_fyle_payments=False, workspace_id=49)
+
+    schedule_count = Schedule.objects.filter(func='apps.netsuite.tasks.process_reimbursements', args=49).count()
+    assert schedule_count == 0
+
 
 def test_process_reimbursements(db, mocker, add_fyle_credentials):
 
