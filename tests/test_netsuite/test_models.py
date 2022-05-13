@@ -191,7 +191,6 @@ def test_create_credit_card_charge(db):
     configuration = Configuration.objects.get(workspace_id=2)
     credit_card_charge_lineitem = CreditCardChargeLineItem.create_credit_card_charge_lineitem(expense_group, configuration)
 
-    # for credit_card_charge_lineitem in credit_card_charge_lineitems:
     assert credit_card_charge_lineitem.amount == 100.00
     assert credit_card_charge_lineitem.memo == 'ashwin.t@fyle.in - Accounts Payable - 2021-11-16 - C/2021/11/R/1 - '
     assert credit_card_charge_lineitem.billable == False
@@ -214,7 +213,6 @@ def test_create_credit_card_charge(db):
     configuration = Configuration.objects.get(workspace_id=2)
     credit_card_charge_lineitem = CreditCardChargeLineItem.create_credit_card_charge_lineitem(expense_group, configuration)
 
-    # for credit_card_charge_lineitem in credit_card_charge_lineitems:
     assert credit_card_charge_lineitem.amount == 100.00
     assert credit_card_charge_lineitem.memo == 'ashwin.t@fyle.in - Accounts Payable - 2021-11-16 - C/2021/11/R/1 - '
     assert credit_card_charge_lineitem.billable == False

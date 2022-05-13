@@ -663,7 +663,7 @@ class CreditCardChargeLineItem(models.Model):
 
         credit_card_charge_lineitem_objects.append(credit_card_charge_lineitem_object)
 
-        return credit_card_charge_lineitem_object       #TODO: potential error
+        return credit_card_charge_lineitem_object
 
 
 class ExpenseReport(models.Model):

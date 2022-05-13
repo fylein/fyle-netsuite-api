@@ -385,7 +385,7 @@ def create_credit_card_charge(expense_group, task_log_id):
     except NetSuiteCredentials.DoesNotExist:
         __handle_netsuite_connection_error(expense_group, task_log)
 
-    except NetSuiteRequestError as exception:   #TODO : DOUBT
+    except NetSuiteRequestError as exception:
         all_details = []
         logger.exception({'error': exception})
         detail = json.dumps(exception.__dict__)
