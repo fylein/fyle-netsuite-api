@@ -2,8 +2,7 @@ import pytest
 from django_q.models import Schedule
 from apps.workspaces.models import Configuration, Workspace
 from apps.mappings.models import GeneralMapping
-
-from fyle_accounting_mappings.models import MappingSetting
+from fyle_accounting_mappings.models import MappingSetting, ExpenseAttribute
 
 @pytest.mark.django_db()
 def test_run_post_mapping_settings_triggers(test_connection):
@@ -63,3 +62,26 @@ def test_run_post_general_mapping_triggers(db, test_connection):
     
     assert schedule.func == 'apps.mappings.tasks.async_auto_map_ccc_account'
     assert schedule.args == '1'
+
+
+def test_run_pre_mapping_settings_triggers(db, test_connection, add_fyle_credentials, mocker):
+
+    mocker.patch(
+        'apps.mappings.tasks.upload_attributes_to_fyle',
+        return_value=[]
+    )
+    mapping_setting = MappingSetting(
+        source_field='DUMMY2FORTEST223',
+        destination_field='DUMMY2FORTEST223',
+        workspace_id=2,
+        import_to_fyle=True,
+        is_custom=True
+    )
+
+    mapping_setting.save()
+
+    expense_attribute = ExpenseAttribute.objects.filter(attribute_type='DUMMY2FORTEST223').count
+    print(expense_attribute)
+    expense_attribute == 0
+
+    assert 1 == 2

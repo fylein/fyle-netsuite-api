@@ -49,16 +49,16 @@ def get_request(url, params, refresh_token):
     }
     api_params = {}
 
-    # for k in params:
-    #     # ignore all unused params
-    #     if not params[k] is None:
-    #         p = params[k]
+    for k in params:
+        # ignore all unused params
+        if not params[k] is None:
+            p = params[k]
 
-    #         # convert boolean to lowercase string
-    #         if isinstance(p, bool):
-    #             p = str(p).lower()
+            # convert boolean to lowercase string
+            if isinstance(p, bool):
+                p = str(p).lower()
 
-    #         api_params[k] = p
+            api_params[k] = p
 
     response = requests.get(
         url,

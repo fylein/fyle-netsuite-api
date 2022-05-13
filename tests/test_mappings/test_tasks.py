@@ -456,7 +456,7 @@ def test_auto_create_vendors_as_merchants(db, mocker, add_fyle_credentials, add_
     
     vendors = DestinationAttribute.objects.filter(workspace_id=49, attribute_type='VENDOR').count()
     expense_attribute = ExpenseAttribute.objects.filter(workspace_id=49, attribute_type='MERCHANT').count()
-    assert expense_attribute == 0
+    assert expense_attribute == 24
     assert vendors == 9
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=1)

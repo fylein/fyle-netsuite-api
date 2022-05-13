@@ -788,14 +788,17 @@ def upload_attributes_to_fyle(workspace_id: int, netsuite_attribute_type: str, f
         workspace_id=workspace_id, attribute_type=netsuite_attribute_type
     )
 
+    print('netsuite_attributes', netsuite_attributes)
+
     netsuite_attributes = remove_duplicates(netsuite_attributes)
+    print('netsuite_attributes', netsuite_attributes)
 
     fyle_custom_field_payload = create_fyle_expense_custom_field_payload(
         fyle_attribute=fyle_attribute_type,
         netsuite_attributes=netsuite_attributes,
         workspace_id=workspace_id
     )
-
+    print('fyle_custom_field_payload', fyle_custom_field_payload)
     if fyle_custom_field_payload:
         fyle_connection.connection.ExpensesCustomFields.post(fyle_custom_field_payload)
         platform.expense_custom_fields.sync()
@@ -903,6 +906,8 @@ def auto_create_vendors_as_merchants(workspace_id):
         existing_merchants_name = ExpenseAttribute.objects.filter(attribute_type='MERCHANT', workspace_id=workspace_id)
         
         first_run = False if existing_merchants_name else True
+        
+        fyle_connection.merchants.sync(workspace_id)
 
         sync_netsuite_attribute('VENDOR', workspace_id)
         post_merchants(fyle_connection, workspace_id, first_run)
