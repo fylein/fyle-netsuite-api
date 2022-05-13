@@ -12,9 +12,9 @@ def test_sync_custom_segments(db, add_netsuite_credentials):
 
     CustomSegment.objects.create(
         name='FAVOURITE_BANDS',
-        segment_type="CUSTOM_RECORD",
-        script_id="custcol780",
-        internal_id="476",
+        segment_type='CUSTOM_RECORD',
+        script_id='custcol780',
+        internal_id='476',
         workspace_id=1
     )
 
@@ -26,9 +26,9 @@ def test_sync_custom_segments(db, add_netsuite_credentials):
 
     CustomSegment.objects.create(
         name='SRAVAN_DEMO',
-        segment_type="CUSTOM_LIST",
-        script_id="custcol780",
-        internal_id="491",
+        segment_type='CUSTOM_LIST',
+        script_id='custcol780',
+        internal_id='491',
         workspace_id=2
     )
 
@@ -40,9 +40,9 @@ def test_sync_custom_segments(db, add_netsuite_credentials):
 
     CustomSegment.objects.create(
         name='PRODUCTION_LINE',
-        segment_type="CUSTOM_SEGMENT",
-        script_id="custcolauto",
-        internal_id="1",
+        segment_type='CUSTOM_SEGMENT',
+        script_id='custcolauto',
+        internal_id='1',
         workspace_id=49
     )
 

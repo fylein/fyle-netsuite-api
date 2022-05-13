@@ -178,5 +178,3 @@ def test_refresh_netsuite_dimensions(api_client, test_connection, add_netsuite_c
 
    assert response.status_code == 400
    assert response.data['message'] == 'NetSuite credentials not found in workspace'
-
-

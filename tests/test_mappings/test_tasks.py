@@ -526,4 +526,3 @@ def test_post_merchants(db, mocker, add_fyle_credentials, add_netsuite_credentia
 
     expense_attribute = ExpenseAttribute.objects.filter(attribute_type='MERCHANT', workspace_id=49).count()
     assert expense_attribute == 24
-

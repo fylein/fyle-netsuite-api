@@ -72,3 +72,4 @@ def test_run_email_notification(db, mocker, create_task_logs):
         workspace_id=49
     )
     assert ws_schedule.error_count == 1
+    

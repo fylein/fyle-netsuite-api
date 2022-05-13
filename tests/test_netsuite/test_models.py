@@ -219,3 +219,4 @@ def test_create_credit_card_charge(db):
     assert credit_card.currency == '1'
     assert credit_card.transaction_date <= datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
     assert credit_card.subsidiary_id == '5'
+    

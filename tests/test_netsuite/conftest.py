@@ -118,22 +118,22 @@ def create_credit_card_charge(db, add_netsuite_credentials, add_fyle_credentials
 def add_custom_segment(db, add_netsuite_credentials, add_fyle_credentials):
     CustomSegment.objects.create(
         name='FAVOURITE_BANDS',
-        segment_type="CUSTOM_RECORD",
-        script_id="custcol780",
-        internal_id="476",
+        segment_type='CUSTOM_RECORD',
+        script_id='custcol780',
+        internal_id='476',
         workspace_id=49
     )
     CustomSegment.objects.create(
         name='SRAVAN_DEMO',
-        segment_type="CUSTOM_LIST",
-        script_id="custcol780",
-        internal_id="491",
+        segment_type='CUSTOM_LIST',
+        script_id='custcol780',
+        internal_id='491',
         workspace_id=49
     )
     CustomSegment.objects.create(
         name='PRODUCTION_LINE',
-        segment_type="CUSTOM_SEGMENT",
-        script_id="custcolauto",
-        internal_id="1",
+        segment_type='CUSTOM_SEGMENT',
+        script_id='custcolauto',
+        internal_id='1',
         workspace_id=49
     )

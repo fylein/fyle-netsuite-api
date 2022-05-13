@@ -209,7 +209,6 @@ def test_post_bill_mapping_error(create_task_logs, add_netsuite_credentials, add
 
     task_log = TaskLog.objects.filter(pk=task_log.id).first()
 
-    # assert task_log.detail[0]['message'] == 'Employee mapping not found'
     assert task_log.detail[0]['message'] == 'Category Mapping Not Found'
     assert task_log.status == 'FAILED'
 
@@ -334,7 +333,6 @@ def test_create_journal_entry_mapping_error(create_task_logs, add_netsuite_crede
     task_log = TaskLog.objects.filter(pk=task_log.id).first()
 
     assert task_log.detail[0]['message'] == 'Employee mapping not found'
-    # assert task_log.detail[1]['message'] == 'Category Mapping Not Found'
     assert task_log.status == 'FAILED'
 
 
@@ -382,7 +380,6 @@ def test_create_expense_report_mapping_error(create_task_logs, add_netsuite_cred
     task_log = TaskLog.objects.filter(pk=task_log.id).first()
 
     assert task_log.detail[0]['message'] == 'Employee mapping not found'
-    # assert task_log.detail[1]['message'] == 'Category Mapping Not Found'
     assert task_log.status == 'FAILED'
 
 
@@ -470,7 +467,6 @@ def test_create_credit_card_charge_mapping_error(create_task_logs, add_netsuite_
 
     task_log = TaskLog.objects.filter(pk=task_log.id).first()
 
-    # assert task_log.detail[0]['message'] == 'Employee mapping not found'
     assert task_log.detail[0]['message'] == 'Category Mapping Not Found'
     assert task_log.status == 'FAILED'
 
@@ -893,7 +889,3 @@ def test_check_expenses_reimbursement_status(db):
 
     status = check_expenses_reimbursement_status(expenses)
     assert status == False
-
-
-# insert into mapping_settings (source_field, destination_field, created_at, updated_at, workspace_id, import_to_fyle, is_custom) values ('CORPORATE_CARD', 'CREDIT_CARD_ACCOUNT', now(), now(), 49, 't', 'f');
-# insert into workspace_schedules (enabled, start_datetime, interval_hours, workspace_id, emails_selected) values ('t', now(), 1, 49, '{owner@fyleforintacct.in}');
