@@ -209,8 +209,8 @@ def test_post_bill_mapping_error(create_task_logs, add_netsuite_credentials, add
 
     task_log = TaskLog.objects.filter(pk=task_log.id).first()
 
-    assert task_log.detail[0]['message'] == 'Employee mapping not found'
-    assert task_log.detail[1]['message'] == 'Category Mapping Not Found'
+    # assert task_log.detail[0]['message'] == 'Employee mapping not found'
+    assert task_log.detail[0]['message'] == 'Category Mapping Not Found'
     assert task_log.status == 'FAILED'
 
 
@@ -470,8 +470,8 @@ def test_create_credit_card_charge_mapping_error(create_task_logs, add_netsuite_
 
     task_log = TaskLog.objects.filter(pk=task_log.id).first()
 
-    assert task_log.detail[0]['message'] == 'Employee mapping not found'
-    # assert task_log.detail[1]['message'] == 'Category Mapping Not Found'
+    # assert task_log.detail[0]['message'] == 'Employee mapping not found'
+    assert task_log.detail[0]['message'] == 'Category Mapping Not Found'
     assert task_log.status == 'FAILED'
 
 
@@ -590,7 +590,7 @@ def test_create_or_update_employee_mapping(db, add_netsuite_credentials, add_fyl
 
     employee_mappings = EmployeeMapping.objects.filter(workspace_id=1).last()
 
-    assert employee_mappings.destination_employee_id == 5010
+    assert employee_mappings.destination_employee_id == 5464
 
     expense_group.description['employee_email'] = 'ashwin.t@fyle.in'
     expense_group.save()
