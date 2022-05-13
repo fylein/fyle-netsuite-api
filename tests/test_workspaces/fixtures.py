@@ -19,12 +19,6 @@ def create_netsuite_credential_object_payload(workspace_id):
     }
     return netsuite_credentials
 
-# def create_workspace():
-#     auth_tokens = AuthToken.objects.get(user__user_id='usezCopk4qdF')
-#     fyle_user = auth_utils.get_fyle_user(auth_tokens.refresh_token, origin_address=None)
-#     org_name = fyle_user['org_name']
-#     org_id = fyle_user['org_id']
-#     Workspace.objects.create(name=org_name, fyle_org_id=org_id)
 
 def create_configurations_object_payload(workspace_id):
     reimbursable_expenses_objects = ['JOURNAL ENTRY', 'BILL']
@@ -53,4 +47,3 @@ def create_fyle_credential_object_payload(workspace_id):
         'code': 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJjbGllbnRfaWQiOiJ0cGFWVVhtd2FZWGVRIiwicmVzcG9uc2VfdHlwZSI6ImNvZGUiLCJjbHVzdGVyX2RvbWFpbiI6Imh0dHBzOi8vc3RhZ2luZy5meWxlLnRlY2giLCJvcmdfdXNlcl9pZCI6Im91NDV2ekhFWUJGUyIsImV4cCI6MTY1MjI2MzMwMH0.D6WdXnkUcKMU98VjZEMz6OH1kGtRXVj1uLGsTeIo0IQ'
     }
     return fyle_credentials
-    
