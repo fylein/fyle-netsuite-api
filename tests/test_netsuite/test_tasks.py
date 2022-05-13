@@ -604,6 +604,7 @@ def test_create_or_update_employee_mapping(db, add_netsuite_credentials, add_fyl
     employee_mappings = EmployeeMapping.objects.filter(workspace_id=1).count()
     assert new_employee_mappings == employee_mappings
 
+    
 def test_handle_netsuite_connection_error(db):
 
     expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
