@@ -277,7 +277,6 @@ def test_patch_workspace_configuration(api_client, test_connection):
     )
 
     response = json.loads(response.content)
-    print(response)
     assert response['auto_create_destination_entity'] == True
 
 def test_post_workspace_schedule(api_client, test_connection):

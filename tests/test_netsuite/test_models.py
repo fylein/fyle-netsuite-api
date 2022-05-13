@@ -101,7 +101,6 @@ def test_create_bill(db):
         assert bill_lineitem.memo == 'ashwin.t@fyle.in - Accounts Payable - 2021-11-15 - C/2021/11/R/6 - '
         assert bill_lineitem.billable == None
 
-    print(bill.__dict__)
     assert bill.currency == '1'
     assert bill.transaction_date <= datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
     assert bill.subsidiary_id == '3'
@@ -217,7 +216,6 @@ def test_create_credit_card_charge(db):
     assert credit_card_charge_lineitem.memo == 'ashwin.t@fyle.in - Accounts Payable - 2021-11-16 - C/2021/11/R/1 - '
     assert credit_card_charge_lineitem.billable == False
 
-    print(credit_card.__dict__)
     assert credit_card.currency == '1'
     assert credit_card.transaction_date <= datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
     assert credit_card.subsidiary_id == '5'
