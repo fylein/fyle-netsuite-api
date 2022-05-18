@@ -1,9 +1,8 @@
 import pytest
 from django_q.models import Schedule
-from apps.workspaces.models import Workspace
+from apps.workspaces.models import Configuration, Workspace
 from apps.mappings.models import GeneralMapping
-
-from fyle_accounting_mappings.models import MappingSetting
+from fyle_accounting_mappings.models import MappingSetting, ExpenseAttribute
 
 @pytest.mark.django_db()
 def test_run_post_mapping_settings_triggers(test_connection):
@@ -16,9 +15,13 @@ def test_run_post_mapping_settings_triggers(test_connection):
     )
 
     mapping_setting.save()
-    schedule = Schedule.objects.first()
 
-    assert schedule.func == 'apps.mappings.tasks.auto_create_tax_group_mappings'
+    schedule = Schedule.objects.filter(
+        func='apps.mappings.tasks.auto_create_project_mappings',
+        args='{}'.format(2),
+    ).first()
+
+    assert schedule.func == 'apps.mappings.tasks.auto_create_project_mappings'
     assert schedule.args == '2'
 
     mapping_setting = MappingSetting(
@@ -31,19 +34,31 @@ def test_run_post_mapping_settings_triggers(test_connection):
 
     mapping_setting.save()
 
-    schedule = Schedule.objects.first()
-    assert schedule.func == 'apps.mappings.tasks.auto_create_tax_group_mappings'
-    assert schedule.args == '2'
+    schedule = Schedule.objects.filter(
+        func='apps.mappings.tasks.auto_create_cost_center_mappings',
+        args='{}'.format(1),
+    ).first()
+
+    assert schedule.func == 'apps.mappings.tasks.auto_create_cost_center_mappings'
+    assert schedule.args == '1'
 
 
-def test_run_post_general_mapping_triggers(test_connection):
+def test_run_post_general_mapping_triggers(db, test_connection):
 
     workspace = Workspace.objects.filter(id=1).first()
 
-    general_mapping = GeneralMapping.objects.get(id=1)
+    configuration = Configuration.objects.get(workspace_id=1)
+    configuration.auto_map_employees = 'NAME'
+    configuration.save()
+
+    general_mapping = GeneralMapping.objects.get(workspace_id=1)
     general_mapping.default_ccc_account_name = 'Accounts Payable'
     general_mapping.save()
-    schedule = Schedule.objects.first()
+
+    schedule = Schedule.objects.filter(
+        func='apps.mappings.tasks.async_auto_map_ccc_account',
+        args='{}'.format(1),
+    ).first()
     
-    assert schedule.func == 'apps.mappings.tasks.auto_create_tax_group_mappings'
-    assert schedule.args == '2'
+    assert schedule.func == 'apps.mappings.tasks.async_auto_map_ccc_account'
+    assert schedule.args == '1'

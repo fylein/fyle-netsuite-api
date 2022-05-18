@@ -606,7 +606,6 @@ class NetSuiteConnector:
         Sync subsidiaries
         """
         subsidiaries = self.connection.subsidiaries.get_all()
-
         subsidiary_attributes = []
 
         for subsidiary in subsidiaries:

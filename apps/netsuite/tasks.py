@@ -169,7 +169,6 @@ def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_conn
                     destination['destination_employee_id'] = created_entity.id
                 elif existing_employee_mapping and existing_employee_mapping.destination_employee:
                     destination['destination_employee_id'] = existing_employee_mapping.destination_employee.id
-
             else:
                 if created_entity is None:
                     created_entity: DestinationAttribute = netsuite_connection.get_or_create_vendor(
@@ -1198,7 +1197,6 @@ def get_all_internal_ids(netsuite_objects):
     expense_group_ids = [netsuite_object.expense_group_id for netsuite_object in netsuite_objects]
 
     task_logs = TaskLog.objects.filter(expense_group_id__in=expense_group_ids).all()
-
     for task_log in task_logs:
         netsuite_objects_details[task_log.expense_group.id] = {
             'expense_group': task_log.expense_group,
@@ -1223,11 +1221,9 @@ def check_netsuite_object_status(workspace_id):
 
     if bills:
         internal_ids = get_all_internal_ids(bills)
-
         for bill in bills:
             try:
                 bill_object = netsuite_connection.get_bill(internal_ids[bill.expense_group.id]['internal_id'])
-
                 if bill_object['status'] == netsuite_paid_state:
                     line_items = BillLineitem.objects.filter(bill_id=bill.id)
                     for line_item in line_items:
@@ -1249,7 +1245,6 @@ def check_netsuite_object_status(workspace_id):
             try:
                 expense_report_object = netsuite_connection.get_expense_report(
                     internal_ids[expense_report.expense_group.id]['internal_id'])
-
                 if expense_report_object['status'] == netsuite_paid_state:
                     line_items = ExpenseReportLineItem.objects.filter(expense_report_id=expense_report.id)
                     for line_item in line_items:

@@ -2,7 +2,7 @@ import json
 from urllib import response
 import pytest
 from apps.fyle.models import Expense, ExpenseGroup, Reimbursement, get_default_expense_group_fields, get_default_expense_state, \
-    ExpenseGroupSettings
+    ExpenseGroupSettings, _group_expenses
 from apps.workspaces.models import Configuration, Workspace
 from .fixtures import data
 
@@ -45,7 +45,6 @@ def test_expense_group_settings(create_temp_workspace):
     assert settings.ccc_export_date_type == 'current_date'
 
 
-
 def test_create_expense_groups_by_report_id_fund_source(db):
     expenses = data['expenses']
 
@@ -59,6 +58,19 @@ def test_create_expense_groups_by_report_id_fund_source(db):
     expense_groups = ExpenseGroup.objects.filter(workspace=workspace)
 
     assert len(expense_groups) == 2
+
+    expense_group_setting = ExpenseGroupSettings.objects.get(workspace_id=49)
+    corporate_credit_card_expense_group_fields = expense_group_setting.corporate_credit_card_expense_group_fields
+    corporate_credit_card_expense_group_fields.append('dummy')
+    expense_group_setting.corporate_credit_card_expense_group_fields = corporate_credit_card_expense_group_fields
+    expense_group_setting.save()
+
+    ExpenseGroup.create_expense_groups_by_report_id_fund_source(expense_objects, configuration, 49)
+
+    expense_groups = ExpenseGroup.objects.filter(workspace=workspace)
+
+    assert len(expense_groups) == 2
+
 
 
 def test_create_reimbursement(db):
