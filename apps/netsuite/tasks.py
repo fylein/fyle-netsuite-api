@@ -18,7 +18,6 @@ from fyle_integrations_platform_connector import PlatformConnector
 
 from fyle_netsuite_api.exceptions import BulkError
 
-from apps.fyle.connector import FyleConnector
 from apps.fyle.models import ExpenseGroup, Expense, Reimbursement
 from apps.mappings.models import GeneralMapping, SubsidiaryMapping
 from apps.tasks.models import TaskLog
