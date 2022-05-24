@@ -1,4 +1,4 @@
-from fyle_accounting_mappings.models import DestinationAttribute
+from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute
 import pytest
 from apps.fyle.models import ExpenseGroup
 from apps.netsuite.connector import NetSuiteConnector, NetSuiteCredentials
@@ -135,3 +135,58 @@ def test_sync_expense_categories(add_netsuite_credentials):
 
     new_expense_categories_count = DestinationAttribute.objects.filter(attribute_type='EXPENSE_CATEGORY', workspace_id=1).count()
     assert new_expense_categories_count == 38
+
+
+@pytest.mark.django_db()
+def test_sync_custom_segments(db, add_netsuite_credentials, add_custom_segment):
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=49)
+
+    custom_record = DestinationAttribute.objects.filter(attribute_type='FAVOURITE_BANDS', workspace_id=49).count()
+    assert custom_record == 5
+    custom_list = DestinationAttribute.objects.filter(attribute_type='SRAVAN_DEMO', workspace_id=49).count()
+    assert custom_list == 2
+
+    custom_segment = DestinationAttribute.objects.filter(attribute_type='PRODUCTION_LINE', workspace_id=49).count()
+    assert custom_segment == 2
+
+    netsuite_connection.sync_custom_segments()
+
+    custom_record = DestinationAttribute.objects.filter(attribute_type='FAVOURITE_BANDS', workspace_id=49).count()
+    assert custom_record == 5
+    custom_list = DestinationAttribute.objects.filter(attribute_type='SRAVAN_DEMO', workspace_id=49).count()
+    assert custom_list == 2
+    custom_segment = DestinationAttribute.objects.filter(attribute_type='PRODUCTION_LINE', workspace_id=49).count()
+    assert custom_segment == 2
+
+
+def test_sync_subsidiaries(db, add_netsuite_credentials):
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=49)
+
+    subsidiaries = DestinationAttribute.objects.filter(attribute_type='SUBSIDIARY', workspace_id=49).count()
+    assert subsidiaries == 7
+
+    netsuite_connection.sync_subsidiaries()
+
+    subsidiaries = DestinationAttribute.objects.filter(attribute_type='SUBSIDIARY', workspace_id=49).count()
+    assert subsidiaries == 10
+
+
+def test_get_or_create_vendor(db, add_netsuite_credentials):
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
+    expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
+
+    source_employee = ExpenseAttribute.objects.get(
+        workspace_id=expense_group.workspace_id,
+        attribute_type='EMPLOYEE',
+        value=expense_group.description.get('employee_email')
+    )
+    vendor = DestinationAttribute.objects.filter(attribute_type='VENDOR', workspace_id=1).count()
+    assert vendor == 3
+
+    netsuite_connection.get_or_create_vendor(source_employee, expense_group)
+
+    vendor = DestinationAttribute.objects.filter(attribute_type='VENDOR', workspace_id=1).count()
+    assert vendor == 3

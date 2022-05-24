@@ -7604,7 +7604,7 @@ COPY public.django_session (session_key, session_data, expire_date) FROM stdin;
 --
 
 COPY public.employee_mappings (id, created_at, updated_at, destination_card_account_id, destination_employee_id, destination_vendor_id, source_employee_id, workspace_id) FROM stdin;
-1	2021-11-15 08:57:07.203049+00	2021-11-15 10:52:18.15065+00	\N	98	\N	14	1
+1	2021-11-15 08:57:07.203049+00	2021-11-15 10:52:18.15065+00	\N	98	1674	14	1
 2	2021-11-16 04:18:56.210874+00	2021-11-16 04:18:56.210949+00	2056	1753	\N	1701	2
 3	2021-12-03 11:24:32.439596+00	2021-12-03 11:24:32.439622+00	3734	3431	\N	3518	49
 \.
@@ -11207,6 +11207,7 @@ COPY public.mapping_settings (id, source_field, destination_field, created_at, u
 5	PROJECT	PROJECT	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	1	f	f
 6	COST_CENTER	DEPARTMENT	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	1	t	f
 10	DUMMY	ASHWINTEST1	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	49	t	t
+30	CORPORATE_CARD	CREDIT_CARD_ACCOUNT	2022-05-10 11:54:10.731264+00	2022-05-10 11:54:10.731264+00	49	t	f
 \.
 
 
@@ -11296,6 +11297,7 @@ COPY public.vendor_payments (id, accounts_payable_id, account_id, entity_id, cur
 --
 
 COPY public.workspace_schedules (id, enabled, start_datetime, interval_hours, workspace_id, schedule_id, additional_email_options, emails_selected, error_count) FROM stdin;
+1	t	2022-05-10 11:54:10.795285+00	1	49	\N	\N	{owner@fyleforintacct.in}	\N
 \.
 
 
@@ -11416,7 +11418,7 @@ SELECT pg_catalog.setval('public.django_q_ormq_id_seq', 32, true);
 -- Name: django_q_schedule_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_q_schedule_id_seq', 47, true);
+SELECT pg_catalog.setval('public.django_q_schedule_id_seq', 50, true);
 
 
 --
@@ -11465,7 +11467,7 @@ SELECT pg_catalog.setval('public.fyle_accounting_mappings_mapping_id_seq', 26, t
 -- Name: fyle_accounting_mappings_mappingsetting_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.fyle_accounting_mappings_mappingsetting_id_seq', 29, true);
+SELECT pg_catalog.setval('public.fyle_accounting_mappings_mappingsetting_id_seq', 30, true);
 
 
 --
@@ -11493,7 +11495,7 @@ SELECT pg_catalog.setval('public.fyle_expensegroup_id_seq', 48, true);
 -- Name: fyle_expensegroupsettings_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.fyle_expensegroupsettings_id_seq', 74, true);
+SELECT pg_catalog.setval('public.fyle_expensegroupsettings_id_seq', 75, true);
 
 
 --
@@ -11570,28 +11572,28 @@ SELECT pg_catalog.setval('public.vendor_payments_id_seq', 1, false);
 -- Name: workspaces_fylecredential_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.workspaces_fylecredential_id_seq', 46, true);
+SELECT pg_catalog.setval('public.workspaces_fylecredential_id_seq', 56, true);
 
 
 --
 -- Name: workspaces_netsuitecredentials_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.workspaces_netsuitecredentials_id_seq', 29, true);
+SELECT pg_catalog.setval('public.workspaces_netsuitecredentials_id_seq', 36, true);
 
 
 --
 -- Name: workspaces_workspace_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.workspaces_workspace_id_seq', 49, true);
+SELECT pg_catalog.setval('public.workspaces_workspace_id_seq', 50, true);
 
 
 --
 -- Name: workspaces_workspace_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.workspaces_workspace_user_id_seq', 66, true);
+SELECT pg_catalog.setval('public.workspaces_workspace_user_id_seq', 67, true);
 
 
 --
@@ -11605,7 +11607,7 @@ SELECT pg_catalog.setval('public.workspaces_workspacegeneralsettings_id_seq', 3,
 -- Name: workspaces_workspaceschedule_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.workspaces_workspaceschedule_id_seq', 1, false);
+SELECT pg_catalog.setval('public.workspaces_workspaceschedule_id_seq', 3, true);
 
 
 --

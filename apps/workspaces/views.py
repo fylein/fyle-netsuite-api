@@ -10,7 +10,7 @@ from rest_framework import generics
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
-from fylesdk import exceptions as fyle_exc
+from fyle.platform import exceptions as fyle_exc
 
 from fyle_rest_auth.utils import AuthUtils
 from fyle_rest_auth.models import AuthToken
@@ -299,6 +299,13 @@ class ConnectFyleView(viewsets.ViewSet):
                     'message': 'Wrong/Expired Authorization code'
                 },
                 status=status.HTTP_401_UNAUTHORIZED
+            )
+        except Exception:
+            return Response(
+                {
+                    'message': 'Signature has expired'
+                },
+                status=status.HTTP_403_FORBIDDEN
             )
 
     def delete(self, request, **kwargs):

@@ -1,3 +1,4 @@
+from asyncio.log import logger
 import pytest
 from django_q.models import Schedule
 from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute, CategoryMapping, \
@@ -5,8 +6,12 @@ from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribu
 from apps.netsuite.connector import NetSuiteConnector
 from apps.workspaces.models import Configuration, FyleCredential, NetSuiteCredentials
 from apps.mappings.tasks import async_auto_create_custom_field_mappings, async_auto_map_employees, auto_create_category_mappings, auto_create_cost_center_mappings, auto_create_project_mappings, auto_create_tax_group_mappings, create_fyle_cost_centers_payload, create_fyle_expense_custom_field_payload, create_fyle_projects_payload, create_fyle_tax_group_payload, filter_unmapped_destinations, remove_duplicates, create_fyle_categories_payload, \
-    construct_filter_based_on_destination, schedule_auto_map_employees, schedule_categories_creation, schedule_cost_centers_creation, schedule_fyle_attributes_creation, schedule_tax_groups_creation, sync_expense_categories_and_accounts, upload_categories_to_fyle
+    construct_filter_based_on_destination, schedule_auto_map_employees, schedule_categories_creation, schedule_cost_centers_creation, schedule_fyle_attributes_creation, schedule_tax_groups_creation, sync_expense_categories_and_accounts, upload_categories_to_fyle, \
+        create_fyle_merchants_payload, auto_create_vendors_as_merchants, schedule_vendors_as_merchants_creation, async_auto_map_ccc_account, schedule_auto_map_ccc_employees, schedule_projects_creation, auto_create_expense_fields_mappings, \
+            post_merchants
 from .fixtures import data
+from fyle_integrations_platform_connector import PlatformConnector
+from apps.mappings.models import GeneralMapping
 
 def test_remove_duplicates(db):
 
@@ -92,6 +97,20 @@ def test_create_fyle_expense_custom_field_payload(db):
     payload = create_fyle_expense_custom_field_payload(netsuite_attributes, 49, 'ASHWINTEST1')
     assert payload == data['expense_custom_field_payload']
 
+def test_create_fyle_merchants_payload(db):
+    existing_merchants_name = ExpenseAttribute.objects.filter(
+        attribute_type='MERCHANT', workspace_id=2).values_list('value', flat=True)
+
+    netsuite_attributes = DestinationAttribute.objects.filter(
+        attribute_type='VENDOR', workspace_id=2).order_by('value', 'id')
+
+    netsuite_attributes = remove_duplicates(netsuite_attributes)
+
+    fyle_payload = create_fyle_merchants_payload(
+        netsuite_attributes, existing_merchants_name)
+    assert len(fyle_payload) == 7
+
+
 def test_sync_expense_categories_and_accounts(db, add_netsuite_credentials):
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
@@ -156,15 +175,36 @@ def test_filter_unmapped_destinations(db, mocker, add_fyle_credentials, add_nets
 def test_schedule_creation(db, add_fyle_credentials):
 
     schedule_categories_creation(True, 3)
-    schedule = Schedule.objects.last()
-    assert schedule.func == 'apps.mappings.tasks.auto_create_category_mappings'
+    schedule = Schedule.objects.filter(
+        func='apps.mappings.tasks.auto_create_category_mappings',
+        args='{}'.format(3),
+    ).first()
     
+    schedule_categories_creation(False, 3)
+    schedule: Schedule = Schedule.objects.filter(
+        func='apps.mappings.tasks.auto_create_category_mappings',
+        args='{}'.format(3)
+    ).first()
+    assert schedule == None
+
     schedule_cost_centers_creation(True, 1)
-    schedule = Schedule.objects.last()
+
+    schedule = Schedule.objects.filter(
+        func='apps.mappings.tasks.auto_create_cost_center_mappings',
+        args='{}'.format(1),
+    ).first()
     assert schedule.func == 'apps.mappings.tasks.auto_create_cost_center_mappings'
 
-def test_auto_create_category_mappings(db, mocker, add_fyle_credentials, add_netsuite_credentials):
+    schedule_cost_centers_creation(False, 1)
+    schedule: Schedule = Schedule.objects.filter(
+        func='apps.mappings.tasks.auto_create_cost_center_mappings',
+        args='{}'.format(1)
+    ).first()
+    assert schedule == None
 
+
+def test_auto_create_category_mappings(db, mocker, add_fyle_credentials, add_netsuite_credentials):
+    fyle_credentials = FyleCredential.objects.all()
     mocker.patch(
             'fyle_integrations_platform_connector.apis.Categories.post_bulk',
             return_value=[]
@@ -208,6 +248,15 @@ def test_auto_create_project_mappings(db, mocker, add_fyle_credentials, add_nets
 
     assert mappings == projects
 
+    fyle_credentials = FyleCredential.objects.get(workspace_id=1)
+    fyle_credentials.delete()
+
+    response = auto_create_project_mappings(workspace_id=1)
+
+    assert response == None
+
+
+
 def test_auto_create_cost_center_mappings(db, mocker, add_fyle_credentials, add_netsuite_credentials):
     
     mocker.patch(
@@ -223,6 +272,12 @@ def test_auto_create_cost_center_mappings(db, mocker, add_fyle_credentials, add_
 
     assert cost_center == 12
     assert mappings == 12
+
+    fyle_credentials = FyleCredential.objects.get(workspace_id=1)
+    fyle_credentials.delete()
+
+    response = auto_create_cost_center_mappings(workspace_id=1)
+    assert response == None
 
 
 def test_schedule_tax_group_creation(db):
@@ -259,17 +314,18 @@ def test_auto_create_tax_group_mappings(db, mocker, add_fyle_credentials, add_ne
     assert mappings == 9
 
     auto_create_tax_group_mappings(workspace_id=2)
-    mappings = Mapping.objects.filter(workspace_id=2, destination_type='TAX_ITEM').count()
 
+    tax_groups = DestinationAttribute.objects.filter(workspace_id=2, attribute_type='TAX_ITEM').count()
+    mappings = Mapping.objects.filter(workspace_id=2, destination_type='TAX_ITEM').count()
     assert mappings == 29
 
     mapping_settings = MappingSetting.objects.get(source_field='TAX_GROUP', workspace_id=2)
     mapping_settings.delete()
 
     auto_create_tax_group_mappings(workspace_id=2)
+    
 
-
-def test_schedule_fyle_attributes_creation(db, mocker, add_netsuite_credentials, add_fyle_credentials):
+def test_schedule_fyle_attributes_creation(db, mocker, add_netsuite_credentials, add_fyle_credentials, ):
 
     schedule_fyle_attributes_creation(49)
 
@@ -277,15 +333,29 @@ def test_schedule_fyle_attributes_creation(db, mocker, add_netsuite_credentials,
             'fyle_integrations_platform_connector.apis.ExpenseCustomFields.post',
             return_value=[]
     )
-    schedule = Schedule.objects.last()
+
+    schedule = Schedule.objects.filter(
+        func='apps.mappings.tasks.async_auto_create_custom_field_mappings',
+        args='{}'.format(49),
+    ).first()
     assert schedule.func == 'apps.mappings.tasks.async_auto_create_custom_field_mappings'
 
     async_auto_create_custom_field_mappings(49)
 
-    custom_fields = DestinationAttribute.objects.filter(attribute_type='ASHWINTEST1').count()
-    custom_fields_mappings = Mapping.objects.filter(source_type='DUMMY').count()
+    schedule_fyle_attributes_creation(2)
+    schedule = Schedule.objects.filter(
+        func='apps.mappings.tasks.async_auto_create_custom_field_mappings',
+        args='{}'.format(2),
+    ).first()
 
-    assert custom_fields == custom_fields_mappings
+    assert schedule == None
+
+
+def test_async_auto_map_employees(db, add_netsuite_credentials, add_fyle_credentials):
+    async_auto_map_employees(1)
+
+    employee_mappings = EmployeeMapping.objects.filter(workspace_id=1).count()
+    assert employee_mappings == 1 
 
 
 def test_schedule_auto_map_employees(db, add_netsuite_credentials, add_fyle_credentials):
@@ -296,10 +366,163 @@ def test_schedule_auto_map_employees(db, add_netsuite_credentials, add_fyle_cred
 
     schedule_auto_map_employees(employee_mapping_preference='NAME', workspace_id=1)
 
-    schedule = Schedule.objects.last()
+    schedule = Schedule.objects.filter(
+        func='apps.mappings.tasks.async_auto_map_employees',
+        args='{}'.format(1),
+    ).first()
     assert schedule.func == 'apps.mappings.tasks.async_auto_map_employees'
 
+    schedule_auto_map_employees(employee_mapping_preference='', workspace_id=1)
+
+    schedule = Schedule.objects.filter(
+        func='apps.mappings.tasks.async_auto_map_employees',
+        args='{}'.format(1),
+    ).first()
+    assert schedule == None
     async_auto_map_employees(1)
 
     employee_mappings = EmployeeMapping.objects.filter(workspace_id=1).count()
     assert employee_mappings == 1  #Todo: Will Fix this Later
+
+
+@pytest.mark.django_db
+def test_schedule_auto_map_ccc_employees(db, mocker, add_fyle_credentials, add_netsuite_credentials):
+    workspace_id=2
+
+    configuration = Configuration.objects.get(workspace_id=2)
+    configuration.auto_map_employees = 'NAME'
+    configuration.save()
+
+    schedule_auto_map_ccc_employees(workspace_id=2)
+
+    schedule = Schedule.objects.filter(
+        func='apps.mappings.tasks.async_auto_map_ccc_account',
+        args='{0}'.format(workspace_id),
+    ).first()
+    assert schedule.func == 'apps.mappings.tasks.async_auto_map_ccc_account'
+
+    general_mappings = GeneralMapping.objects.get(workspace_id=1)
+
+    general_mappings.default_ccc_account_name = 'Aus Account'
+    general_mappings.default_ccc_account_id = 228
+    general_mappings.save()
+
+    async_auto_map_ccc_account(workspace_id=1)
+    employee_mappings = EmployeeMapping.objects.filter(workspace_id=1).count()
+    assert employee_mappings == 30
+
+    configuration = Configuration.objects.get(workspace_id=2)
+    configuration.auto_map_employees = ''
+    configuration.save()
+
+    schedule_auto_map_ccc_employees(workspace_id=1)
+
+    schedule = Schedule.objects.filter(
+        func='apps.mappings.tasks.async_auto_map_ccc_account',
+        args='{}'.format(1),
+    ).first()
+
+    assert schedule == None
+
+
+@pytest.mark.django_db
+def test_async_auto_map_ccc_account(db, mocker, add_fyle_credentials, add_netsuite_credentials):
+    workspace_id=2
+
+    general_mappings = GeneralMapping.objects.get(workspace_id=1)
+
+    general_mappings.default_ccc_account_name = 'Aus Account'
+    general_mappings.default_ccc_account_id = 228
+    general_mappings.save()
+
+    async_auto_map_ccc_account(workspace_id=1)
+    employee_mappings = EmployeeMapping.objects.filter(workspace_id=1).count()
+    assert employee_mappings == 30
+
+
+def test_auto_create_vendors_as_merchants(db, mocker, add_fyle_credentials, add_netsuite_credentials):
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.Merchants.post_bulk',
+        return_value=[]
+    )
+
+
+    vendors = DestinationAttribute.objects.filter(workspace_id=49, attribute_type='VENDOR').count()
+    expense_attribute = ExpenseAttribute.objects.filter(workspace_id=49, attribute_type='MERCHANT').count()
+    assert vendors == 7
+    assert expense_attribute == 0
+
+    auto_create_vendors_as_merchants(workspace_id=49)
+    
+    vendors = DestinationAttribute.objects.filter(workspace_id=49, attribute_type='VENDOR').count()
+    expense_attribute = ExpenseAttribute.objects.filter(workspace_id=49, attribute_type='MERCHANT').count()
+    assert expense_attribute == 24
+    assert vendors == 9
+
+    fyle_credentials = FyleCredential.objects.get(workspace_id=1)
+    fyle_credentials.delete()
+
+    response = auto_create_vendors_as_merchants(workspace_id=1)
+
+    assert response == None
+    
+
+def test_schedule_vendors_as_merchants_creation(db):
+    workspace_id=2
+    schedule_vendors_as_merchants_creation(import_vendors_as_merchants=True, workspace_id=workspace_id)
+
+    schedule = Schedule.objects.filter(
+        func='apps.mappings.tasks.auto_create_vendors_as_merchants',
+        args='{}'.format(workspace_id),
+    ).first()
+    
+    assert schedule.func == 'apps.mappings.tasks.auto_create_vendors_as_merchants'
+
+    schedule_vendors_as_merchants_creation(import_vendors_as_merchants=False, workspace_id=workspace_id)
+
+    schedule = Schedule.objects.filter(
+        func='apps.mappings.tasks.auto_create_vendors_as_merchants',
+        args='{}'.format(workspace_id),
+    ).first()
+
+    assert schedule == None
+
+
+@pytest.mark.django_db
+def test_schedule_projects_creation():
+    workspace_id=2
+    schedule_projects_creation(import_to_fyle=True, workspace_id=workspace_id)
+
+    schedule = Schedule.objects.filter(
+        func='apps.mappings.tasks.auto_create_project_mappings',
+        args='{}'.format(workspace_id),
+    ).first()
+    
+    assert schedule.func == 'apps.mappings.tasks.auto_create_project_mappings'
+
+    schedule_projects_creation(import_to_fyle=False, workspace_id=workspace_id)
+
+    schedule = Schedule.objects.filter(
+        func='apps.mappings.tasks.auto_create_project_mappings',
+        args='{}'.format(workspace_id),
+    ).first()
+
+    assert schedule == None
+
+
+def test_auto_create_expense_fields_mappings():
+    try:
+        response = auto_create_expense_fields_mappings(10, '', '')
+    except:
+        logger.error('Error while creating expense field')
+    
+
+@pytest.mark.django_db
+def test_post_merchants(db, mocker, add_fyle_credentials, add_netsuite_credentials):
+    fyle_credentials = FyleCredential.objects.all()
+    fyle_credentials = FyleCredential.objects.get(workspace_id=49) 
+    fyle_connection = PlatformConnector(fyle_credentials)
+    post_merchants(fyle_connection, 49, False)
+
+    expense_attribute = ExpenseAttribute.objects.filter(attribute_type='MERCHANT', workspace_id=49).count()
+    assert expense_attribute == 24

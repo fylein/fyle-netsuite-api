@@ -234,6 +234,7 @@ FYLE_CLIENT_ID = os.environ.get('FYLE_CLIENT_ID')
 FYLE_CLIENT_SECRET = os.environ.get('FYLE_CLIENT_SECRET')
 FYLE_REFRESH_TOKEN = os.environ.get('FYLE_REFRESH_TOKEN')
 FYLE_BASE_URL = os.environ.get('FYLE_BASE_URL')
+FYLE_APP_URL = os.environ.get('APP_URL')
 
 # Netsuite Settings
 NS_ACCOUNT_ID = os.environ.get('NS_ACCOUNT_ID')
@@ -241,3 +242,23 @@ NS_TOKEN_ID = os.environ.get('NS_TOKEN_ID')
 NS_TOKEN_SECRET = os.environ.get('NS_TOKEN_SECRET')
 NS_CONSUMER_KEY = os.environ.get('NS_CONSUMER_KEY')
 NS_CONSUMER_SECRET = os.environ.get('NS_CONSUMER_SECRET')
+SENDGRID_API_KEY = os.environ.get('SENDGRID_KEY')
+EMAIL = os.environ.get('SENDGRID_EMAIL')
+EMAIL_BACKEND = 'sendgrid_backend.SendgridBackend'
+
+
+CACHE_EXPIRY = 3600
+
+CORS_ORIGIN_ALLOW_ALL = True
+
+CORS_ALLOW_HEADERS = [
+    'sentry-trace',
+    'authorization',
+    'content-type'
+]
+
+# Toggle sandbox mode (when running in DEBUG mode)
+SENDGRID_SANDBOX_MODE_IN_DEBUG=False
+
+# echo to stdout or any other file-like object that is passed to the backend via the stream kwarg.
+SENDGRID_ECHO_TO_STDOUT=True
