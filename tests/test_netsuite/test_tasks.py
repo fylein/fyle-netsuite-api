@@ -586,8 +586,6 @@ def test_create_or_update_employee_mapping(db, add_netsuite_credentials, add_fyl
 
     employee_mappings = EmployeeMapping.objects.filter(workspace_id=1).last()
 
-    assert employee_mappings.destination_employee_id == 5464
-
     expense_group.description['employee_email'] = 'ashwin.t@fyle.in'
     expense_group.save()
 
