@@ -29,7 +29,7 @@ def test_update_import_card_credits_flag():
     expense_group_setting = ExpenseGroupSettings.objects.get(id=1)
     assert expense_group_setting.import_card_credits == True
 
-    update_import_card_credits_flag('BILL', 'JOURNAL ENTRY', 1)
+    update_import_card_credits_flag('BILL', 'EXPENSE_REPORT', 1)
     expense_group_setting = ExpenseGroupSettings.objects.get(id=1)
     assert expense_group_setting.import_card_credits == False
 
@@ -49,7 +49,7 @@ def test_update_use_employee_attributes_flag():
     assert general_mapping.use_employee_location == False
 
 @pytest.mark.django_db
-def test_check_interval_and_sync_dimension(test_connection, add_fyle_credentials):
+def test_check_interval_and_sync_dimension(access_token, add_fyle_credentials):
     # Todo: To be utilized later
     workspace = Workspace.objects.get(id=1)
     fyle_credentials = FyleCredential.objects.get(workspace_id=1)

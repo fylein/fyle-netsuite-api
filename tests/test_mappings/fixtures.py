@@ -58,15 +58,17 @@ data = {
         },
     ],
     "expense_custom_field_payload": {
-        'id': None,
-        'name': 'Ashwintest1',
-        'type': 'SELECT',
-        'active': True,
-        'mandatory': False,
-        'placeholder': 'Select Ashwintest1',
-        'default_value': None,
-        'options': ['value1', 'value2', 'value3'],
-        'code': None
+        "field_name":"Ashwintest1",
+        "type":"SELECT",
+        "is_enabled":True,
+        "is_mandatory":False,
+        "placeholder":"Select Ashwintest1",
+        "options":[
+            "value1",
+            "value2",
+            "value3"
+        ],
+        "code":None
     },
     "cost_center_payload": [
         {

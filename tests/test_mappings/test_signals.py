@@ -5,7 +5,7 @@ from apps.mappings.models import GeneralMapping
 from fyle_accounting_mappings.models import MappingSetting, ExpenseAttribute
 
 @pytest.mark.django_db()
-def test_run_post_mapping_settings_triggers(test_connection):
+def test_run_post_mapping_settings_triggers(access_token):
     mapping_setting = MappingSetting(
         source_field='PROJECT',
         destination_field='PROJECT',
@@ -43,7 +43,7 @@ def test_run_post_mapping_settings_triggers(test_connection):
     assert schedule.args == '1'
 
 
-def test_run_post_general_mapping_triggers(db, test_connection):
+def test_run_post_general_mapping_triggers(db, access_token):
 
     workspace = Workspace.objects.filter(id=1).first()
 

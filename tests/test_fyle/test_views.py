@@ -10,8 +10,8 @@ from .fixtures import data
 
 
 @pytest.mark.django_db(databases=['default'])
-def test_expense_group_view(api_client, test_connection):
-   access_token = test_connection.access_token
+def test_expense_group_view(api_client, access_token):
+
    url = reverse('expense-groups', 
          kwargs={
                'workspace_id': 1,
@@ -42,10 +42,8 @@ def test_expense_group_view(api_client, test_connection):
    
 
 @pytest.mark.django_db(databases=['default'])
-def test_expense_view(api_client, test_connection):
+def test_expense_view(api_client, access_token):
     
-   access_token = test_connection.access_token
-
    expense_group = ExpenseGroup.objects.filter(workspace_id=2).first()
    url = reverse('expense-group-expenses', 
       kwargs={
@@ -74,8 +72,7 @@ def test_expense_view(api_client, test_connection):
    assert response.data['message'] == 'Expense group not found'
 
 @pytest.mark.django_db(databases=['default'])
-def test_count_expense_view(api_client, test_connection):
-   access_token = test_connection.access_token
+def test_count_expense_view(api_client, access_token):
 
    url = reverse('expense-groups-count', 
       kwargs={
@@ -90,8 +87,7 @@ def test_count_expense_view(api_client, test_connection):
 
 
 @pytest.mark.django_db(databases=['default'])
-def test_expense_group_settings(api_client, test_connection):
-   access_token = test_connection.access_token
+def test_expense_group_settings(api_client, access_token):
 
    url = reverse('expense-group-settings', 
       kwargs={
@@ -121,9 +117,8 @@ def test_expense_group_settings(api_client, test_connection):
 
 #  Will use paramaterize decorator of python later
 @pytest.mark.django_db(databases=['default'])
-def test_fyle_fields_view(api_client, test_connection):
+def test_fyle_fields_view(api_client, access_token):
     
-   access_token = test_connection.access_token
    url = reverse('fyle-fields', 
       kwargs={
             'workspace_id': 1
@@ -141,8 +136,8 @@ def test_fyle_fields_view(api_client, test_connection):
 
 
 @pytest.mark.django_db(databases=['default'])
-def test_fyle_expense_attribute_view(api_client, test_connection):
-   access_token = test_connection.access_token
+def test_fyle_expense_attribute_view(api_client, access_token):
+
    url = reverse('expense-attributes', 
       kwargs={
             'workspace_id': 2
@@ -161,9 +156,7 @@ def test_fyle_expense_attribute_view(api_client, test_connection):
 
 
 @pytest.mark.django_db(databases=['default'])
-def test_expense_group_id_view(api_client, test_connection):
-    
-   access_token = test_connection.access_token
+def test_expense_group_id_view(api_client, access_token):
 
    expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
    url = reverse('expense-group-by-id', 
@@ -183,9 +176,7 @@ def test_expense_group_id_view(api_client, test_connection):
 
 
 @pytest.mark.django_db(databases=['default'])
-def test_fyle_refresh_dimension(api_client, test_connection, add_fyle_credentials):
-    
-   access_token = test_connection.access_token
+def test_fyle_refresh_dimension(api_client, access_token, add_fyle_credentials):
 
    url = reverse('refresh-fyle-dimensions',
       kwargs={
@@ -206,9 +197,7 @@ def test_fyle_refresh_dimension(api_client, test_connection, add_fyle_credential
    assert response.data['message'] == 'Fyle credentials not found in workspace'
 
 @pytest.mark.django_db(databases=['default'])
-def test_fyle_sync_dimension(api_client, test_connection, add_fyle_credentials):
-    
-   access_token = test_connection.access_token
+def test_fyle_sync_dimension(api_client, access_token, add_fyle_credentials):
 
    url = reverse('sync-fyle-dimensions', 
       kwargs={
@@ -229,9 +218,7 @@ def test_fyle_sync_dimension(api_client, test_connection, add_fyle_credentials):
    assert response.data['message'] == 'Fyle credentials not found in workspace'\
 
 
-def test_expense_group_schedule_view(api_client, test_connection):
-
-   access_token = test_connection.access_token
+def test_expense_group_schedule_view(api_client, access_token):
 
    url = reverse('expense-groups-trigger', 
       kwargs={

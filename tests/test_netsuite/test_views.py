@@ -11,9 +11,8 @@ from .fixtures import data
 
 #  Will use paramaterize decorator of python later
 @pytest.mark.django_db(databases=['default'])
-def test_netsutie_fields_view(api_client, test_connection):
+def test_netsutie_fields_view(api_client, access_token):
 
-   access_token = test_connection.access_token
    url = reverse('netsuite-fields', 
       kwargs={
             'workspace_id': 1
@@ -30,9 +29,8 @@ def test_netsutie_fields_view(api_client, test_connection):
 
 
 @pytest.mark.django_db(databases=['default'])
-def test_destination_attribute_view(api_client, test_connection):
+def test_destination_attribute_view(api_client, access_token):
 
-   access_token = test_connection.access_token
    url = reverse('destination-attributes',
       kwargs={
          'workspace_id': 1
@@ -56,9 +54,8 @@ def test_destination_attribute_view(api_client, test_connection):
     [("EMPLOYEE", 7), ("ACCOUNT", 123), ['PROJECT', 1086]],
 )
 @pytest.mark.django_db(databases=['default'])
-def test_destination_attribute_count_view(test_input, expected, api_client, test_connection):
+def test_destination_attribute_count_view(test_input, expected, api_client, access_token):
 
-   access_token = test_connection.access_token
    url = reverse('attributes-count',
       kwargs={
          'workspace_id': 1
@@ -76,9 +73,8 @@ def test_destination_attribute_count_view(test_input, expected, api_client, test
    assert response['count'] == expected
 
 
-def test_custom_segment_view(api_client, test_connection):
+def test_custom_segment_view(api_client, access_token):
 
-   access_token = test_connection.access_token
    url = reverse('custom-segments',
       kwargs={
          'workspace_id': 2
@@ -94,9 +90,8 @@ def test_custom_segment_view(api_client, test_connection):
    assert len(response) == 0
 
 
-def test_trigger_export_view(api_client, test_connection):
+def test_trigger_export_view(api_client, access_token):
 
-   access_token = test_connection.access_token
    url = reverse('trigger-exports',
       kwargs={
          'workspace_id': 1
@@ -117,9 +112,8 @@ def test_trigger_export_view(api_client, test_connection):
       assert response.status_code == 200
 
    
-def test_trigger_payment_view(api_client, test_connection, add_fyle_credentials):
+def test_trigger_payment_view(api_client, access_token, add_fyle_credentials):
 
-   access_token = test_connection.access_token
    url = reverse('trigger-payments',
       kwargs={
          'workspace_id': 2
@@ -132,9 +126,8 @@ def test_trigger_payment_view(api_client, test_connection, add_fyle_credentials)
    assert response.status_code == 200
 
 
-def test_sync_netsuite_dimensions(api_client, test_connection, add_netsuite_credentials):
+def test_sync_netsuite_dimensions(api_client, access_token, add_netsuite_credentials):
 
-   access_token = test_connection.access_token
    url = reverse('sync-dimensions',
       kwargs={
          'workspace_id': 2
@@ -156,9 +149,8 @@ def test_sync_netsuite_dimensions(api_client, test_connection, add_netsuite_cred
    assert response.data['message'] == 'NetSuite credentials not found in workspace'
 
 
-def test_refresh_netsuite_dimensions(api_client, test_connection, add_netsuite_credentials):
+def test_refresh_netsuite_dimensions(api_client, access_token, add_netsuite_credentials):
 
-   access_token = test_connection.access_token
    url = reverse('refresh-dimensions',
       kwargs={
          'workspace_id': 2

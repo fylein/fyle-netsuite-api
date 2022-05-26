@@ -95,6 +95,7 @@ def test_create_fyle_expense_custom_field_payload(db):
     netsuite_attributes = remove_duplicates(netsuite_attributes)
 
     payload = create_fyle_expense_custom_field_payload(netsuite_attributes, 49, 'ASHWINTEST1')
+    print('oidhfoidh', payload)
     assert payload == data['expense_custom_field_payload']
 
 def test_create_fyle_merchants_payload(db):

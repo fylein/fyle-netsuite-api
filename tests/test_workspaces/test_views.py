@@ -16,7 +16,7 @@ from tests.helper import dict_compare_keys, get_response_dict
 
 
 @pytest.mark.django_db(databases=['default'])
-def test_get_workspace(api_client, test_connection):
+def test_get_workspace(api_client, access_token):
 
     url = reverse('workspace')
 
@@ -24,7 +24,7 @@ def test_get_workspace(api_client, test_connection):
         'org_id': 'orf6t6jWUnpx'
     })
 
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
 
     response = api_client.get(url)
     assert response.status_code == 200
@@ -34,7 +34,7 @@ def test_get_workspace(api_client, test_connection):
     assert dict_compare_keys(response, expected_response['workspace']) == [], 'workspaces api returns a diff in the keys'
 
 @pytest.mark.django_db(databases=['default'])
-def test_get_workspace_by_id(api_client, test_connection):
+def test_get_workspace_by_id(api_client, access_token):
 
     url = reverse(
         'workspace-by-id', kwargs={
@@ -42,7 +42,7 @@ def test_get_workspace_by_id(api_client, test_connection):
         }
     )
 
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
     response = api_client.get(url)
     assert response.status_code == 200
 
@@ -65,13 +65,13 @@ def test_get_workspace_by_id(api_client, test_connection):
 
 
 @pytest.mark.django_db(databases=['default'])
-def test_post_of_workspace(api_client, test_connection):
+def test_post_of_workspace(api_client, access_token):
 
     url = reverse(
         'workspace'
     )
 
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
     response = api_client.post(url)
     assert response.status_code == 200
 
@@ -81,7 +81,7 @@ def test_post_of_workspace(api_client, test_connection):
     assert dict_compare_keys(response, expected_response['workspace']) == [], 'workspaces api returns a diff in the keys'
 
 @pytest.mark.django_db(databases=['default'])
-def test_get_configuration_detail(api_client, test_connection):
+def test_get_configuration_detail(api_client, access_token):
 
     url = reverse(
         'workspace-configurations', kwargs={
@@ -89,7 +89,7 @@ def test_get_configuration_detail(api_client, test_connection):
         }
     )
 
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
     response = api_client.get(url)
     assert response.status_code == 200
     response = json.loads(response.content)
@@ -99,14 +99,14 @@ def test_get_configuration_detail(api_client, test_connection):
     assert dict_compare_keys(response, expected_response['configuration']) == [], 'configuration api returns a diff in keys'
 
 @pytest.mark.django_db(databases=['default'])
-def test_post_netsuite_credentials(api_client, test_connection, add_netsuite_credentials, add_fyle_credentials):
+def test_post_netsuite_credentials(api_client, access_token, add_netsuite_credentials, add_fyle_credentials):
 
     url = reverse(
         'post-netsuite-credentials', kwargs={
             'workspace_id': 1
         }
     )
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
     paylaod = create_netsuite_credential_object_payload(1)
     response = api_client.post(
         url,
@@ -122,7 +122,7 @@ def test_post_netsuite_credentials(api_client, test_connection, add_netsuite_cre
             'workspace_id': 1
         }
     )
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
     paylaod = create_netsuite_credential_object_payload(1)
     response = api_client.post(
         url,
@@ -132,13 +132,13 @@ def test_post_netsuite_credentials(api_client, test_connection, add_netsuite_cre
     
  
 @pytest.mark.django_db(databases=['default'])
-def test_post_workspace_configurations(api_client, test_connection):
+def test_post_workspace_configurations(api_client, access_token):
     url = reverse(
         'workspace-configurations', kwargs={
             'workspace_id': 1
         }
     )
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
 
     response = api_client.post(
         url,
@@ -231,14 +231,14 @@ def test_post_workspace_configurations(api_client, test_connection):
 
 
 @pytest.mark.django_db(databases=['default'])
-def test_get_workspace_configuration(api_client, test_connection):
+def test_get_workspace_configuration(api_client, access_token):
     url = reverse(
         'workspace-configurations', kwargs={
             'workspace_id': 1
         }
     )
 
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
 
     response = api_client.get(url)
     response = json.loads(response.content)
@@ -250,7 +250,7 @@ def test_get_workspace_configuration(api_client, test_connection):
     configuration = Configuration.objects.get(workspace_id=1)
     configuration.delete()
 
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
     response = api_client.get(url)
     response = json.loads(response.content)
 
@@ -258,7 +258,7 @@ def test_get_workspace_configuration(api_client, test_connection):
 
 
 @pytest.mark.django_db(databases=['default'])
-def test_patch_workspace_configuration(api_client, test_connection):
+def test_patch_workspace_configuration(api_client, access_token):
 
     url = reverse(
         'workspace-configurations', kwargs={
@@ -266,7 +266,7 @@ def test_patch_workspace_configuration(api_client, test_connection):
         }
     )
 
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
     configuration = Configuration.objects.get(workspace_id=1)
     configuration.auto_create_destination_entity = True
     configuration.auto_map_employees = ''
@@ -279,13 +279,13 @@ def test_patch_workspace_configuration(api_client, test_connection):
     response = json.loads(response.content)
     assert response['auto_create_destination_entity'] == True
 
-def test_post_workspace_schedule(api_client, test_connection):
+def test_post_workspace_schedule(api_client, access_token):
     url = reverse(
          'workspace-schedule', kwargs={
             'workspace_id': 1
         }
     )
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
 
     response = api_client.post(url, {
         'schedule_enabled': False,
@@ -293,14 +293,14 @@ def test_post_workspace_schedule(api_client, test_connection):
     })
     assert response.status_code == 200
 
-def test_get_workspace_schedule(api_client, test_connection):
+def test_get_workspace_schedule(api_client, access_token):
     url = reverse(
         'workspace-schedule', kwargs={
             'workspace_id': 1
         }
     )
 
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
 
     response = api_client.get(url)
     response = json.loads(response.content)
@@ -318,10 +318,10 @@ def test_get_workspace_schedule(api_client, test_connection):
     assert dict_compare_keys(response, expected_response['workspace_schedule']) == [] , 'workspace-schedule api returns a diff in keys'
 
 @pytest.mark.django_db(databases=['default'])
-def test_ready_view(api_client, test_connection):
+def test_ready_view(api_client, access_token):
     url = reverse('ready')
 
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
 
     response = api_client.get(url)
     response = json.loads(response.content)
@@ -329,12 +329,12 @@ def test_ready_view(api_client, test_connection):
     assert response == {'message': 'Ready'}
 
 @pytest.mark.django_db(databases=['default'])
-def test_get_fyle_credentials(api_client, test_connection, add_fyle_credentials):
+def test_get_fyle_credentials(api_client, access_token, add_fyle_credentials):
     url = reverse('get-fyle-credentials', kwargs={
             'workspace_id': 1
         })
 
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
     response = api_client.get(url)
 
     response = json.loads(response.content)
@@ -349,24 +349,24 @@ def test_get_fyle_credentials(api_client, test_connection, add_fyle_credentials)
     assert response['message'] == 'Fyle Credentials not found in this workspace'
 
 @pytest.mark.django_db(databases=['default'])
-def test_delete_fyle_credentials(api_client, test_connection, add_fyle_credentials):
+def test_delete_fyle_credentials(api_client, access_token, add_fyle_credentials):
     url = reverse('delete-fyle-credentials', kwargs={
         'workspace_id': 1
     })
 
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
     response = api_client.delete(url)
 
     response = json.loads(response.content)
     assert response['message'] == 'Fyle credentials deleted'
 
 @pytest.mark.django_db(databases=['default'])
-def test_post_fyle_credentials(api_client, test_connection):
+def test_post_fyle_credentials(api_client, access_token):
     url = reverse('connect-fyle', kwargs={
             'workspace_id': 1
         })
 
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
     paylaod = create_fyle_credential_object_payload(1)
     response = api_client.post(
         url,
@@ -379,12 +379,12 @@ def test_post_fyle_credentials(api_client, test_connection):
 
 
 @pytest.mark.django_db(databases=['default'])
-def test_get_and_delete_netsuite_crendentials(api_client, test_connection, add_netsuite_credentials):
+def test_get_and_delete_netsuite_crendentials(api_client, access_token, add_netsuite_credentials):
     url = reverse('get-netsuite-credentials', kwargs={
         'workspace_id': 1
     })
 
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
     response = api_client.get(url)
 
     response = json.loads(response.content)
@@ -408,7 +408,7 @@ def test_get_and_delete_netsuite_crendentials(api_client, test_connection, add_n
     assert response['message'] == 'NetSuite credentials deleted'
 
 @pytest.mark.django_db(databases=['default'])
-def test_get_workspace_admin_view(api_client, test_connection, db):
+def test_get_workspace_admin_view(api_client, access_token, db):
     url = reverse(
         'admin', kwargs={
             'workspace_id': 1
@@ -418,7 +418,7 @@ def test_get_workspace_admin_view(api_client, test_connection, db):
     name.value = 'admin1@fylefornt.com'
     name.save()
 
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
     response = api_client.get(url)
     assert response.status_code == 200
     response = json.loads(response.content)

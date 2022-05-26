@@ -5,7 +5,7 @@ from fyle_accounting_mappings.models import ExpenseAttribute
 from apps.workspaces.models import FyleCredential, Workspace
 
 @pytest.mark.django_db()
-def test_sync_tax_groups(add_fyle_credentials, test_connection):
+def test_sync_tax_groups(add_fyle_credentials, access_token):
 
     fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=1)
 
