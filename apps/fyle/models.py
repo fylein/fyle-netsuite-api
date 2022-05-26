@@ -299,7 +299,7 @@ class ExpenseGroup(models.Model):
 
             if total_amount < 0:
                 reimbursable_expenses = list(filter(lambda expense: expense.amount > 0, reimbursable_expenses))
-        else:
+        elif  configuration.reimbursable_expenses_object  != 'JOURNAL ENTRY':
             reimbursable_expenses = list(filter(lambda expense: expense.amount > 0, reimbursable_expenses))
 
         expense_groups = _group_expenses(reimbursable_expenses, reimbursable_expense_group_fields, workspace_id)
