@@ -26,7 +26,7 @@ def access_token(db):
     client_secret = settings.FYLE_CLIENT_SECRET
     token_url = settings.FYLE_TOKEN_URI
     refresh_token = settings.FYLE_REFRESH_TOKEN
-    access_token = get_access_token(refresh_token=refresh_token)
+    final_access_token = get_access_token(refresh_token=refresh_token)
 
     fyle = Platform(
         server_url="https://staging.fyle.tech/platform/v1beta",
@@ -51,7 +51,7 @@ def access_token(db):
     )
     auth_token.save()
 
-    return access_token
+    return final_access_token
 
 @pytest.fixture()
 def add_netsuite_credentials(db):
