@@ -9,7 +9,7 @@ from fyle_accounting_mappings.models import Mapping, MappingSetting
 from apps.mappings.models import GeneralMapping
 
 @pytest.mark.django_db(databases=['default'])
-def test_get_department_id_or_none(test_connection):
+def test_get_department_id_or_none(access_token):
 
     expense = Expense.objects.get(id=1)
     expense_group = ExpenseGroup.objects.get(id=1)

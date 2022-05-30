@@ -6,9 +6,8 @@ import pytest
 
 #  Will use paramaterize decorator of python later
 @pytest.mark.django_db(databases=['default'])
-def test_get_profile_view(api_client, test_connection):
+def test_get_profile_view(api_client, access_token):
     
-    access_token = test_connection.access_token
     url = reverse('profile')
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
 
@@ -17,8 +16,7 @@ def test_get_profile_view(api_client, test_connection):
 
 
 @pytest.mark.django_db(databases=['default'])
-def test_get_fyle_orgs_view(api_client, test_connection):
-    access_token = test_connection.access_token
+def test_get_fyle_orgs_view(api_client, access_token):
     url = reverse('orgs')
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
 

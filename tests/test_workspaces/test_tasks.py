@@ -18,7 +18,7 @@ def test_schedule_sync(db):
     ws_schedule = WorkspaceSchedule.objects.filter(workspace_id=2).last()
     assert ws_schedule.enabled == False
 
-def test_run_sync_schedule(db, test_connection, add_fyle_credentials, add_netsuite_credentials):
+def test_run_sync_schedule(db, access_token, add_fyle_credentials, add_netsuite_credentials):
     run_sync_schedule(1)
 
     configuration = Configuration.objects.get(workspace_id=1)

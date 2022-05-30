@@ -7,11 +7,10 @@ from apps.workspaces.models import Configuration
 from .fixtures import data
 
 @pytest.mark.django_db(databases=['default'])
-def test_subsidiary_mapping_view(api_client, test_connection):
+def test_subsidiary_mapping_view(api_client, access_token):
     '''
     Test Post of User Profile
     '''
-    access_token = test_connection.access_token
 
     url = reverse('subsidiaries', 
         kwargs={
@@ -36,7 +35,7 @@ def test_subsidiary_mapping_view(api_client, test_connection):
 
 
 @pytest.mark.django_db(databases=['default'])
-def test_post_country_view(api_client, test_connection, add_netsuite_credentials):
+def test_post_country_view(api_client, access_token, add_netsuite_credentials):
     '''
     Test Post of User Profile
     '''
@@ -46,7 +45,7 @@ def test_post_country_view(api_client, test_connection, add_netsuite_credentials
             }
         )
 
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
 
     response = api_client.post(url)
     response = json.loads(response.content)
@@ -62,7 +61,7 @@ def test_post_country_view(api_client, test_connection, add_netsuite_credentials
     assert response.data['message'] == 'Subsidiary mappings do not exist for the workspace'
 
 @pytest.mark.django_db(databases=['default'])
-def test_get_general_mappings(api_client, test_connection):
+def test_get_general_mappings(api_client, access_token):
     '''
     Test get of general mappings
     '''
@@ -72,7 +71,7 @@ def test_get_general_mappings(api_client, test_connection):
             }
         )
 
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
 
     response = api_client.get(url)
     assert response.status_code == 200
@@ -95,7 +94,7 @@ def test_get_general_mappings(api_client, test_connection):
 
 
 @pytest.mark.django_db()
-def test_post_general_mappings(api_client, test_connection, db):
+def test_post_general_mappings(api_client, access_token, db):
     '''
     Test Post of general mappings
     '''
@@ -105,7 +104,7 @@ def test_post_general_mappings(api_client, test_connection, db):
             }
         )
 
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
 
     response = api_client.post(
         url,
@@ -212,7 +211,7 @@ def test_post_general_mappings(api_client, test_connection, db):
     assert response['non_field_errors'][0] == 'use_employee_department or use_employee_location or use_employee_class can be used only when employee is mapped to employee'
 
 
-def test_auto_map_employee_trigger(api_client, test_connection):
+def test_auto_map_employee_trigger(api_client, access_token):
 
     url = reverse('auto-map-employees-trigger', 
         kwargs={
@@ -220,7 +219,7 @@ def test_auto_map_employee_trigger(api_client, test_connection):
             }
         )
 
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
 
     response = api_client.post(url)
 
