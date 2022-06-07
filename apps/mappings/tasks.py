@@ -419,6 +419,32 @@ def create_fyle_tax_group_payload(netsuite_attributes: List[DestinationAttribute
             )
     return fyle_tax_group_payload
 
+def disable_inactive_expense_attributes(
+							mapping_setting: MappingSetting, workspace_id):
+	# Get All the inactive destination attribute ids
+    destination_attribute = DestinationAttribute.objects.filter(
+		attribute_type=mapping_setting.destination_field, 
+		mapping__isnull=False,
+		mapping__destination_type=mapping_setting.destination_field,
+		active=False,
+		workspace_id=workspace_id
+	)
+
+    destination_attribute = remove_duplicates(destination_attribute)
+    destination_attribute_ids = destination_attribute.values('id')
+
+	# Get all the expense attributes that are mapped to these destination_attribute_ids
+    expense_attributes = ExpenseAttribute.objects.filter(
+		attribute_type=mapping_setting.source_field, 
+		mapping__destination_id__in=destination_attribute_ids,
+		active=True
+	)
+
+	# if there are any expense attributes present, set active to False
+    if expense_attributes:
+        expense_attributes.update(active=False)
+        return expense_attributes
+
 def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_project_names: list):
     """
     Create Fyle Projects Payload from NetSuite Projects
@@ -437,7 +463,7 @@ def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_
                     project.value,
                     project.destination_id
                 ),
-                'is_enabled': True if project.active is None else project.active
+                'is_enabled': True if project.active else project.active
             })
 
     return payload
@@ -464,6 +490,13 @@ def post_projects_in_batches(platform: PlatformConnector, workspace_id: int, des
             platform.projects.sync()
 
         Mapping.bulk_create_mappings(paginated_ns_attributes, 'PROJECT', destination_field, workspace_id)
+    
+    mapping_setting = MappingSetting.objects.filter(workspace_id=workspace_id, destination_field='PROJECT')
+    update_fyle_project_payload = disable_inactive_expense_attributes(mapping_setting, workspace_id)
+
+    if update_fyle_project_payload:
+        platform.projects.post_bulk(update_fyle_project_payload)
+        platform.projects.sync()
 
 
 def auto_create_project_mappings(workspace_id):
