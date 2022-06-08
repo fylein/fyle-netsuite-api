@@ -89,7 +89,7 @@ def test_create_fyle_tax_group_payload(db):
     assert fyle_payload == []
         
 def test_create_fyle_expense_custom_field_payload(db):
-    fyle_credentials = FyleCredential.objects.get(workspace_id=49)
+    fyle_credentials = FyleCredential.objects.filter().first()
     platform = PlatformConnector(fyle_credentials)
 
     netsuite_attributes = DestinationAttribute.objects.filter(
