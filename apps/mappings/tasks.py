@@ -36,7 +36,26 @@ def remove_duplicates(ns_attributes: List[DestinationAttribute]):
     return unique_attributes
 
 
-def create_fyle_categories_payload(categories: List[DestinationAttribute], workspace_id: int):
+def get_all_categories_from_fyle(platform: PlatformConnector):
+    
+    categories_generator = platform.categories.get_all_generator()
+
+    categories = []
+
+    for response in categories_generator:
+        if response.get('data'):
+            categories.extend(response['data'])
+
+    category_name_map = {}
+    for category in categories:
+        if category['sub_category'] and category['name'] != category['sub_category']:
+                    category['name'] = '{0} / {1}'.format(category['name'], category['sub_category'])
+        category_name_map[category['name']] = category
+
+    return category_name_map
+
+
+def create_fyle_categories_payload(categories: List[DestinationAttribute], category_map: Dict):
     """
     Create Fyle Categories Payload from NetSuite Customer / Categories
     :param workspace_id: Workspace integer id
@@ -45,12 +64,17 @@ def create_fyle_categories_payload(categories: List[DestinationAttribute], works
     """
     payload = []
 
-    existing_category_names = ExpenseAttribute.objects.filter(
-        attribute_type='CATEGORY', workspace_id=workspace_id).values_list('value', flat=True)
-
     for category in categories:
-        if category.value not in existing_category_names:
+        if category.value not in category_map:
             payload.append({
+                'name': category.value,
+                'code': category.destination_id,
+                'is_enabled': True if category.active is None else category.active,
+                'restricted_project_ids': None
+            })
+        else:
+            payload.append({
+                'id': category_map[category.value]['id'],
                 'name': category.value,
                 'code': category.destination_id,
                 'is_enabled': True if category.active is None else category.active,
@@ -80,6 +104,8 @@ def upload_categories_to_fyle(workspace_id: int, reimbursable_expenses_object: s
     
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
+    category_map = get_all_categories_from_fyle(platform=platform)\
+
     netsuite_connection = NetSuiteConnector(
         netsuite_credentials=netsuite_credentials,
         workspace_id=workspace_id
@@ -101,7 +127,7 @@ def upload_categories_to_fyle(workspace_id: int, reimbursable_expenses_object: s
 
     netsuite_attributes = remove_duplicates(netsuite_attributes)
 
-    fyle_payload: List[Dict] = create_fyle_categories_payload(netsuite_attributes, workspace_id)
+    fyle_payload: List[Dict] = create_fyle_categories_payload(netsuite_attributes, category_map)
 
     if fyle_payload:
         platform.categories.post_bulk(fyle_payload)
