@@ -12,15 +12,12 @@ from netsuitesdk.internal.exceptions import NetSuiteRequestError
 from fyle_accounting_mappings.models import DestinationAttribute
 from fyle_accounting_mappings.serializers import DestinationAttributeSerializer
 
-from fyle_netsuite_api.utils import assert_valid
-
 from apps.workspaces.models import NetSuiteCredentials, Workspace, Configuration
 
 from .serializers import NetSuiteFieldSerializer, CustomSegmentSerializer
 from .tasks import schedule_bills_creation, schedule_expense_reports_creation, schedule_journal_entry_creation,\
     create_vendor_payment, check_netsuite_object_status, process_reimbursements, schedule_credit_card_charge_creation
 from .models import CustomSegment
-from .connector import NetSuiteConnector
 from .helpers import check_interval_and_sync_dimension, sync_dimensions
 
 

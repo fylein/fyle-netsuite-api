@@ -37,8 +37,10 @@ def remove_duplicates(ns_attributes: List[DestinationAttribute]):
 
 
 def get_all_categories_from_fyle(platform: PlatformConnector):
-    
-    categories_generator = platform.categories.get_all_generator()
+
+    categories_generator = platform.connection.v1beta.admin.categories.list_all(query_params={
+            'order': 'id.desc'
+        })
 
     categories = []
 
@@ -50,7 +52,7 @@ def get_all_categories_from_fyle(platform: PlatformConnector):
     for category in categories:
         if category['sub_category'] and category['name'] != category['sub_category']:
                     category['name'] = '{0} / {1}'.format(category['name'], category['sub_category'])
-        category_name_map[category['name']] = category
+        category_name_map[category['name'].lower()] = category
 
     return category_name_map
 
@@ -65,7 +67,7 @@ def create_fyle_categories_payload(categories: List[DestinationAttribute], categ
     payload = []
 
     for category in categories:
-        if category.value not in category_map:
+        if category.value.lower() not in category_map:
             payload.append({
                 'name': category.value,
                 'code': category.destination_id,
@@ -74,7 +76,7 @@ def create_fyle_categories_payload(categories: List[DestinationAttribute], categ
             })
         else:
             payload.append({
-                'id': category_map[category.value]['id'],
+                'id': category_map[category.value.lower()]['id'],
                 'name': category.value,
                 'code': category.destination_id,
                 'is_enabled': True if category.active is None else category.active,
@@ -104,7 +106,7 @@ def upload_categories_to_fyle(workspace_id: int, reimbursable_expenses_object: s
     
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
-    category_map = get_all_categories_from_fyle(platform=platform)\
+    category_map = get_all_categories_from_fyle(platform=platform)
 
     netsuite_connection = NetSuiteConnector(
         netsuite_credentials=netsuite_credentials,
