@@ -51,7 +51,7 @@ def get_all_categories_from_fyle(platform: PlatformConnector):
     category_name_map = {}
     for category in categories:
         if category['sub_category'] and category['name'] != category['sub_category']:
-                    category['name'] = '{0} / {1}'.format(category['name'], category['sub_category'])
+            category['name'] = '{0} / {1}'.format(category['name'], category['sub_category'])
         category_name_map[category['name'].lower()] = category
 
     return category_name_map
@@ -79,7 +79,7 @@ def create_fyle_categories_payload(categories: List[DestinationAttribute], categ
                 'id': category_map[category.value.lower()]['id'],
                 'name': category.value,
                 'code': category.destination_id,
-                'is_enabled': True if category.active is None else category.active,
+                'is_enabled': category_map[category.value.lower()]['is_enabled'],
                 'restricted_project_ids': None
             })
 
