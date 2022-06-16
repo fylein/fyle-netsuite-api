@@ -113,9 +113,15 @@ class DestinationAttributesView(generics.ListAPIView):
 
     def get_queryset(self):
         attribute_types = self.request.query_params.get('attribute_types').split(',')
+        active = self.request.query_params.get('active')
+        filters = {}
+        filters['attribute_type__in'] = attribute_types
+
+        if active and active.lower() == 'true':
+            filters['active'] = True
 
         return DestinationAttribute.objects.filter(
-            attribute_type__in=attribute_types, workspace_id=self.kwargs['workspace_id']).order_by('value')
+            workspace_id=self.kwargs['workspace_id'], **filters).order_by('value')
 
 
 class DestinationAttributesCountView(generics.RetrieveAPIView):
