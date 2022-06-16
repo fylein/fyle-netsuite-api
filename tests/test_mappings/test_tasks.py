@@ -88,7 +88,7 @@ def test_create_fyle_tax_group_payload(db):
     
     assert fyle_payload == []
         
-def test_create_fyle_expense_custom_field_payload(db):
+def test_create_fyle_expense_custom_field_payload(db, add_fyle_credentials):
     fyle_credentials = FyleCredential.objects.filter().first()
     platform = PlatformConnector(fyle_credentials)
 
@@ -97,7 +97,7 @@ def test_create_fyle_expense_custom_field_payload(db):
     
     netsuite_attributes = remove_duplicates(netsuite_attributes)
 
-    payload = create_fyle_expense_custom_field_payload(netsuite_attributes, 49, 'ASHWINTEST1')
+    payload = create_fyle_expense_custom_field_payload(netsuite_attributes, 49, 'ASHWINTEST1', platform)
 
     assert payload == data['expense_custom_field_payload']
 
