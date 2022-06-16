@@ -137,7 +137,7 @@ def test_sync_expense_categories_and_accounts(db, add_netsuite_credentials):
 
     count_of_accounts = DestinationAttribute.objects.filter(
         attribute_type='ACCOUNT', workspace_id=1).count()
-    assert count_of_accounts == 164
+    assert count_of_accounts == 173
 
 
 def test_upload_categories_to_fyle(mocker, db, add_fyle_credentials, add_netsuite_credentials):
@@ -156,7 +156,7 @@ def test_upload_categories_to_fyle(mocker, db, add_fyle_credentials, add_netsuit
 
     count_of_accounts = DestinationAttribute.objects.filter(
         attribute_type='ACCOUNT', workspace_id=1).count()
-    assert count_of_accounts == 164
+    assert count_of_accounts == 173
 
     netsuite_attributes = upload_categories_to_fyle(1, 'BILL', 'BILL')
     

@@ -39,7 +39,7 @@ data = {
         "name": "Nilesh Pant",
         "code": "13815",
         "description": "Project - Nilesh Pant, Id - 13815",
-        "is_enabled": True,
+        "is_enabled": None,
     }],
     "tax_group_payload": [
         {
