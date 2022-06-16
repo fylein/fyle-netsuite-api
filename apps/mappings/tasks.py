@@ -785,7 +785,7 @@ def schedule_cost_centers_creation(import_to_fyle, workspace_id):
 
 
 def create_fyle_expense_custom_field_payload(netsuite_attributes: List[DestinationAttribute], workspace_id: int,
-                                             fyle_attribute: str):
+                                             fyle_attribute: str, platform: PlatformConnector):
     """
     Create Fyle Expense Custom Field Payload from NetSuite Objects
     :param workspace_id: Workspace ID
@@ -818,7 +818,9 @@ def create_fyle_expense_custom_field_payload(netsuite_attributes: List[Destinati
         }
 
         if custom_field_id:
+            expense_field = platform.expense_custom_fields.get_by_id(custom_field_id)
             expense_custom_field_payload['id'] = custom_field_id
+            expense_custom_field_payload['is_mandatory'] = expense_field['is_mandatory']
 
         return expense_custom_field_payload
 
@@ -840,7 +842,8 @@ def upload_attributes_to_fyle(workspace_id: int, netsuite_attribute_type: str, f
     fyle_custom_field_payload = create_fyle_expense_custom_field_payload(
         fyle_attribute=fyle_attribute_type,
         netsuite_attributes=netsuite_attributes,
-        workspace_id=workspace_id
+        workspace_id=workspace_id,
+        platform=platform
     )
 
     if fyle_custom_field_payload:
