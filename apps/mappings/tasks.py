@@ -419,29 +419,25 @@ def create_fyle_tax_group_payload(netsuite_attributes: List[DestinationAttribute
             )
     return fyle_tax_group_payload
 
-def disable_inactive_expense_attributes(
-							mapping_setting: MappingSetting, workspace_id):
+def disable_inactive_expense_attributes(source_field, destination_field, workspace_id):
 
-	# Get All the inactive destination attribute ids
-    destination_attributes = DestinationAttribute.objects.filter(
-		attribute_type=mapping_setting.destination_field, 
+    # Get All the inactive destination attribute ids
+    destination_attribute_ids = DestinationAttribute.objects.filter(
+		attribute_type=destination_field, 
 		mapping__isnull=False,
-		mapping__destination_type=mapping_setting.destination_field,
+		mapping__destination_type=destination_field,
 		active=False,
 		workspace_id=workspace_id
-	)
+	).values_list('id', flat=True)
 
-    destination_attributes_without_duplicates = remove_duplicates(destination_attributes)
-    destination_attribute_ids = [destination_attribute.id for destination_attribute in destination_attributes_without_duplicates]
-
-	# Get all the expense attributes that are mapped to these destination_attribute_ids
+    # Get all the expense attributes that are mapped to these destination_attribute_ids
     expense_attributes = ExpenseAttribute.objects.filter(
-		attribute_type=mapping_setting.source_field, 
+		attribute_type=source_field, 
 		mapping__destination_id__in=destination_attribute_ids,
 		active=True
 	)
 
-	# if there are any expense attributes present, set active to False
+    # if there are any expense attributes present, set active to False
     if expense_attributes:
         expense_attributes_ids = [expense_attribute.id for expense_attribute in expense_attributes]
         expense_attributes.update(active=False)
@@ -507,14 +503,13 @@ def post_projects_in_batches(platform: PlatformConnector, workspace_id: int, des
 
         Mapping.bulk_create_mappings(paginated_ns_attributes, 'PROJECT', destination_field, workspace_id)
     
-    mapping_setting = MappingSetting.objects.filter(workspace_id=workspace_id, destination_field='PROJECT').first()
-    projects_to_be_disabled_ids = disable_inactive_expense_attributes(mapping_setting, workspace_id)
-
-    if projects_to_be_disabled_ids:
-        expense_attributes = ExpenseAttribute.objects.filter(id__in = projects_to_be_disabled_ids)
-        fyle_payload: List[Dict] = create_fyle_projects_payload(projects= [], existing_project_names= [],  updated_projects=expense_attributes)
-        platform.projects.post_bulk(fyle_payload)
-        platform.projects.sync()
+    if destination_field == 'PROJECT':
+        project_ids_to_be_disabled = disable_inactive_expense_attributes('PROJECT', 'PROJECT', workspace_id)
+        if project_ids_to_be_disabled:
+            expense_attributes = ExpenseAttribute.objects.filter(id__in=project_ids_to_be_disabled)
+            fyle_payload: List[Dict] = create_fyle_projects_payload(projects=[], existing_project_names=[], updated_projects=expense_attributes)
+            platform.projects.post_bulk(fyle_payload)
+            platform.projects.sync()
 
 
 def auto_create_project_mappings(workspace_id):
