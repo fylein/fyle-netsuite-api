@@ -8,7 +8,7 @@ from apps.workspaces.models import Configuration, FyleCredential, NetSuiteCreden
 from apps.mappings.tasks import async_auto_create_custom_field_mappings, async_auto_map_employees, auto_create_category_mappings, auto_create_cost_center_mappings, auto_create_project_mappings, auto_create_tax_group_mappings, create_fyle_cost_centers_payload, create_fyle_expense_custom_field_payload, create_fyle_projects_payload, create_fyle_tax_group_payload, filter_unmapped_destinations, remove_duplicates, create_fyle_categories_payload, \
     construct_filter_based_on_destination, schedule_auto_map_employees, schedule_categories_creation, schedule_cost_centers_creation, schedule_fyle_attributes_creation, schedule_tax_groups_creation, sync_expense_categories_and_accounts, upload_categories_to_fyle, \
         create_fyle_merchants_payload, auto_create_vendors_as_merchants, schedule_vendors_as_merchants_creation, async_auto_map_ccc_account, schedule_auto_map_ccc_employees, schedule_projects_creation, auto_create_expense_fields_mappings, \
-            post_merchants
+            post_merchants, get_all_categories_from_fyle
 from .fixtures import data
 from fyle_integrations_platform_connector import PlatformConnector
 from apps.mappings.models import GeneralMapping
@@ -22,15 +22,19 @@ def test_remove_duplicates(db):
     assert len(attributes) == 20
 
 
-def test_create_fyle_category_payload(db):
+def test_create_fyle_category_payload(db, add_fyle_credentials):
 
     netsuite_attributes = DestinationAttribute.objects.filter(
             workspace_id=1, attribute_type='ACCOUNT'
         )
 
-    netsuite_attributes = remove_duplicates(netsuite_attributes)
+    fyle_credentials = FyleCredential.objects.filter().first()
+    platform = PlatformConnector(fyle_credentials)
 
-    fyle_category_payload = create_fyle_categories_payload(netsuite_attributes, 2)
+    netsuite_attributes = remove_duplicates(netsuite_attributes)
+    category_map = get_all_categories_from_fyle(platform=platform)
+
+    fyle_category_payload = create_fyle_categories_payload(netsuite_attributes, category_map)
 
     assert fyle_category_payload == data['fyle_category_payload']
 
