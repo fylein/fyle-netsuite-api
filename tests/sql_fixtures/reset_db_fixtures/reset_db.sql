@@ -1049,7 +1049,8 @@ CREATE TABLE public.mapping_settings (
     updated_at timestamp with time zone NOT NULL,
     workspace_id integer NOT NULL,
     import_to_fyle boolean NOT NULL,
-    is_custom boolean NOT NULL
+    is_custom boolean NOT NULL,
+    source_placeholder text
 );
 
 
@@ -7545,6 +7546,12 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 128	tasks	0008_auto_20220301_1300	2022-03-21 16:25:15.022971+00
 129	workspaces	0024_auto_20220310_0942	2022-03-21 16:25:15.052805+00
 130	workspaces	0025_configuration_import_vendors_as_merchants	2022-03-21 16:25:15.062151+00
+131	fyle_accounting_mappings	0013_auto_20220323_1133	2022-06-16 08:36:13.530809+00
+132	fyle_accounting_mappings	0014_mappingsetting_source_placeholder	2022-06-16 08:36:13.547535+00
+133	fyle_accounting_mappings	0015_auto_20220412_0614	2022-06-16 08:36:13.589291+00
+134	fyle_accounting_mappings	0016_auto_20220413_1624	2022-06-16 08:36:13.615571+00
+135	fyle_accounting_mappings	0017_auto_20220419_0649	2022-06-16 08:36:13.642293+00
+136	fyle_accounting_mappings	0018_auto_20220419_0709	2022-06-16 08:36:13.662162+00
 \.
 
 
@@ -11202,12 +11209,12 @@ COPY public.journal_entry_lineitems (id, debit_account_id, account_id, departmen
 -- Data for Name: mapping_settings; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.mapping_settings (id, source_field, destination_field, created_at, updated_at, workspace_id, import_to_fyle, is_custom) FROM stdin;
-1	TAX_GROUP	TAX_ITEM	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	2	f	f
-5	PROJECT	PROJECT	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	1	f	f
-6	COST_CENTER	DEPARTMENT	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	1	t	f
-10	DUMMY	ASHWINTEST1	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	49	t	t
-30	CORPORATE_CARD	CREDIT_CARD_ACCOUNT	2022-05-10 11:54:10.731264+00	2022-05-10 11:54:10.731264+00	49	t	f
+COPY public.mapping_settings (id, source_field, destination_field, created_at, updated_at, workspace_id, import_to_fyle, is_custom, source_placeholder) FROM stdin;
+1	TAX_GROUP	TAX_ITEM	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	2	f	f	\N
+5	PROJECT	PROJECT	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	1	f	f	\N
+6	COST_CENTER	DEPARTMENT	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	1	t	f	\N
+10	DUMMY	ASHWINTEST1	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	49	t	t	\N
+30	CORPORATE_CARD	CREDIT_CARD_ACCOUNT	2022-05-10 11:54:10.731264+00	2022-05-10 11:54:10.731264+00	49	t	f	\N
 \.
 
 
@@ -11404,7 +11411,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 41, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 130, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 136, true);
 
 
 --
@@ -11856,14 +11863,6 @@ ALTER TABLE ONLY public.django_session
 
 ALTER TABLE ONLY public.employee_mappings
     ADD CONSTRAINT employee_mappings_pkey PRIMARY KEY (id);
-
-
---
--- Name: employee_mappings employee_mappings_source_employee_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.employee_mappings
-    ADD CONSTRAINT employee_mappings_source_employee_id_key UNIQUE (source_employee_id);
 
 
 --
@@ -12422,6 +12421,13 @@ CREATE INDEX employee_mappings_destination_vendor_id_c4bd73df ON public.employee
 
 
 --
+-- Name: employee_mappings_source_employee_id_dd9948ba; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX employee_mappings_source_employee_id_dd9948ba ON public.employee_mappings USING btree (source_employee_id);
+
+
+--
 -- Name: employee_mappings_workspace_id_4a25f8c9; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -12849,14 +12855,6 @@ ALTER TABLE ONLY public.mappings
 
 
 --
--- Name: mappings fyle_accounting_mapp_source_id_7d692c36_fk_fyle_acco; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.mappings
-    ADD CONSTRAINT fyle_accounting_mapp_source_id_7d692c36_fk_fyle_acco FOREIGN KEY (source_id) REFERENCES public.expense_attributes(id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
 -- Name: mappings fyle_accounting_mapp_workspace_id_10d6edd3_fk_workspace; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12878,14 +12876,6 @@ ALTER TABLE ONLY public.expense_attributes
 
 ALTER TABLE ONLY public.destination_attributes
     ADD CONSTRAINT fyle_accounting_mapp_workspace_id_a6a3ab6a_fk_workspace FOREIGN KEY (workspace_id) REFERENCES public.workspaces(id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: mapping_settings fyle_accounting_mapp_workspace_id_c123c088_fk_workspace; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.mapping_settings
-    ADD CONSTRAINT fyle_accounting_mapp_workspace_id_c123c088_fk_workspace FOREIGN KEY (workspace_id) REFERENCES public.workspaces(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -12942,6 +12932,22 @@ ALTER TABLE ONLY public.journal_entry_lineitems
 
 ALTER TABLE ONLY public.journal_entry_lineitems
     ADD CONSTRAINT journal_entry_lineitems_expense_id_5a5ca4ff_fk_expenses_id FOREIGN KEY (expense_id) REFERENCES public.expenses(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: mapping_settings mapping_settings_workspace_id_590f14f3_fk_workspaces_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.mapping_settings
+    ADD CONSTRAINT mapping_settings_workspace_id_590f14f3_fk_workspaces_id FOREIGN KEY (workspace_id) REFERENCES public.workspaces(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: mappings mappings_source_id_fd4f378f_fk_expense_attributes_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.mappings
+    ADD CONSTRAINT mappings_source_id_fd4f378f_fk_expense_attributes_id FOREIGN KEY (source_id) REFERENCES public.expense_attributes(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --

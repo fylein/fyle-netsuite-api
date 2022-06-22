@@ -447,7 +447,32 @@ def create_fyle_tax_group_payload(netsuite_attributes: List[DestinationAttribute
             )
     return fyle_tax_group_payload
 
-def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_project_names: list):
+def disable_inactive_expense_attributes(source_field, destination_field, workspace_id):
+
+    # Get All the inactive destination attribute ids
+    destination_attribute_ids = DestinationAttribute.objects.filter(
+		attribute_type=destination_field, 
+		mapping__isnull=False,
+		mapping__destination_type=destination_field,
+		active=False,
+		workspace_id=workspace_id
+	).values_list('id', flat=True)
+
+    # Get all the expense attributes that are mapped to these destination_attribute_ids
+    expense_attributes = ExpenseAttribute.objects.filter(
+		attribute_type=source_field, 
+		mapping__destination_id__in=destination_attribute_ids,
+		active=True
+	)
+
+    # if there are any expense attributes present, set active to False
+    if expense_attributes:
+        expense_attributes_ids = [expense_attribute.id for expense_attribute in expense_attributes]
+        expense_attributes.update(active=False)
+        return expense_attributes_ids
+
+def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_project_names: list,
+                                     updated_projects: List[ExpenseAttribute] = None):
     """
     Create Fyle Projects Payload from NetSuite Projects
     :param existing_project_names: Existing Projects in Fyle
@@ -455,18 +480,31 @@ def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_
     :return: Fyle Projects Payload
     """
     payload = []
-
-    for project in projects:
-        if project.value not in existing_project_names:
+    if updated_projects:
+        for project in updated_projects:
+            destination_id_of_project = project.mapping.first().destination.destination_id
             payload.append({
+                'id': project.source_id,
                 'name': project.value,
-                'code': project.destination_id,
+                'code': destination_id_of_project,
                 'description': 'Project - {0}, Id - {1}'.format(
                     project.value,
-                    project.destination_id
+                    destination_id_of_project
                 ),
-                'is_enabled': True if project.active is None else project.active
+                'is_enabled': False
             })
+    else:
+        for project in projects:
+            if project.value not in existing_project_names:
+                payload.append({
+                    'name': project.value,
+                    'code': project.destination_id,
+                    'description': 'Project - {0}, Id - {1}'.format(
+                        project.value,
+                        project.destination_id
+                    ),
+                    'is_enabled': True if project.active else project.active
+                })
 
     return payload
 
@@ -492,6 +530,14 @@ def post_projects_in_batches(platform: PlatformConnector, workspace_id: int, des
             platform.projects.sync()
 
         Mapping.bulk_create_mappings(paginated_ns_attributes, 'PROJECT', destination_field, workspace_id)
+    
+    if destination_field == 'PROJECT':
+        project_ids_to_be_disabled = disable_inactive_expense_attributes('PROJECT', 'PROJECT', workspace_id)
+        if project_ids_to_be_disabled:
+            expense_attributes = ExpenseAttribute.objects.filter(id__in=project_ids_to_be_disabled)
+            fyle_payload: List[Dict] = create_fyle_projects_payload(projects=[], existing_project_names=[], updated_projects=expense_attributes)
+            platform.projects.post_bulk(fyle_payload)
+            platform.projects.sync()
 
 
 def auto_create_project_mappings(workspace_id):

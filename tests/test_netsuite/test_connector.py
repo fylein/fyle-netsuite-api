@@ -121,7 +121,7 @@ def test_sync_accounts(add_netsuite_credentials):
     netsuite_connection.sync_accounts()
 
     new_account_counts = DestinationAttribute.objects.filter(attribute_type='ACCOUNT', workspace_id=1).count()
-    assert new_account_counts == 164
+    assert new_account_counts == 173
 
 @pytest.mark.django_db()
 def test_sync_expense_categories(add_netsuite_credentials):

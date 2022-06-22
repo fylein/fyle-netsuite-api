@@ -685,9 +685,19 @@ class NetSuiteConnector:
 
             for projects in projects_generator:
                 attributes = []
+                destination_ids = DestinationAttribute.objects.filter(workspace_id=self.workspace_id,\
+                    attribute_type= 'PROJECT', display_name='Project').values_list('destination_id', flat=True)
                 for project in projects:
-                    if not project['isInactive']:
-                        value = self.__decode_project_or_customer_name(project['entityId'])
+                    value = self.__decode_project_or_customer_name(project['entityId'])
+                    if project['internalId'] in destination_ids :
+                        attributes.append({
+                            'attribute_type': 'PROJECT',
+                            'display_name': 'Project',
+                            'value': value,
+                            'destination_id': project['internalId'],
+                            'active': not project['isInactive']
+	                    })
+                    elif not project['isInactive']:
                         attributes.append({
                             'attribute_type': 'PROJECT',
                             'display_name': 'Project',
@@ -711,9 +721,19 @@ class NetSuiteConnector:
 
             for customers in customers_generator:
                 attributes = []
+                destination_ids = DestinationAttribute.objects.filter(workspace_id=self.workspace_id,\
+                    attribute_type= 'PROJECT', display_name='Customer').values_list('destination_id', flat=True)
                 for customer in customers:
-                    if not customer['isInactive']:
-                        value = self.__decode_project_or_customer_name(customer['entityId'])
+                    value = self.__decode_project_or_customer_name(customer['entityId'])
+                    if customer['internalId'] in destination_ids :
+                        attributes.append({
+                            'attribute_type': 'PROJECT',
+                            'display_name': 'Customer',
+                            'value': value,
+                            'destination_id': customer['internalId'],
+                            'active': not customer['isInactive']
+	                    })
+                    elif not customer['isInactive']:
                         attributes.append({
                             'attribute_type': 'PROJECT',
                             'display_name': 'Customer',
