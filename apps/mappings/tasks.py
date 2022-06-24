@@ -469,9 +469,9 @@ def disable_or_enable_expense_attributes(source_field, destination_field, worksp
     expense_attributes_to_enable = ExpenseAttribute.objects.filter(
         ~Q(mapping__destination_id__in=destination_attribute_ids),
         mapping__isnull=False,
-		mapping__source_type=source_field,
-		attribute_type=source_field,
-		active=False,
+        mapping__source_type=source_field,
+        attribute_type=source_field,
+        active=False,
         workspace_id=workspace_id
 	)
 
