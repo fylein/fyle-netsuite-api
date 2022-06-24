@@ -1,6 +1,7 @@
 import logging
 import traceback
 from datetime import datetime, timedelta
+from django.db.models import Q
 
 from typing import List, Dict
 from dateutil import parser
@@ -447,7 +448,7 @@ def create_fyle_tax_group_payload(netsuite_attributes: List[DestinationAttribute
             )
     return fyle_tax_group_payload
 
-def disable_inactive_expense_attributes(source_field, destination_field, workspace_id):
+def disable_or_enable_expense_attributes(source_field, destination_field, workspace_id):
 
     # Get All the inactive destination attribute ids
     destination_attribute_ids = DestinationAttribute.objects.filter(
@@ -459,16 +460,27 @@ def disable_inactive_expense_attributes(source_field, destination_field, workspa
 	).values_list('id', flat=True)
 
     # Get all the expense attributes that are mapped to these destination_attribute_ids
-    expense_attributes = ExpenseAttribute.objects.filter(
+    expense_attributes_to_disable = ExpenseAttribute.objects.filter(
 		attribute_type=source_field, 
 		mapping__destination_id__in=destination_attribute_ids,
 		active=True
 	)
 
+    expense_attributes_to_enable = ExpenseAttribute.objects.filter(
+        ~Q(mapping__destination_id__in=destination_attribute_ids),
+        mapping__isnull=False,
+		mapping__source_type=source_field,
+		attribute_type=source_field,
+		active=False,
+        workspace_id=workspace_id
+	)
+
     # if there are any expense attributes present, set active to False
-    if expense_attributes:
-        expense_attributes_ids = [expense_attribute.id for expense_attribute in expense_attributes]
-        expense_attributes.update(active=False)
+    if expense_attributes_to_disable or expense_attributes_to_enable:
+        expense_attributes_ids = [expense_attribute.id for expense_attribute in expense_attributes_to_disable]
+        expense_attributes_ids = expense_attributes_ids + [expense_attribute.id for expense_attribute in expense_attributes_to_enable]
+        expense_attributes_to_disable.update(active=False)
+        expense_attributes_to_enable.update(active=True)
         return expense_attributes_ids
 
 def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_project_names: list,
@@ -491,7 +503,7 @@ def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_
                     project.value,
                     destination_id_of_project
                 ),
-                'is_enabled': False
+                'is_enabled': project.active
             })
     else:
         for project in projects:
@@ -532,9 +544,9 @@ def post_projects_in_batches(platform: PlatformConnector, workspace_id: int, des
         Mapping.bulk_create_mappings(paginated_ns_attributes, 'PROJECT', destination_field, workspace_id)
     
     if destination_field == 'PROJECT':
-        project_ids_to_be_disabled = disable_inactive_expense_attributes('PROJECT', 'PROJECT', workspace_id)
-        if project_ids_to_be_disabled:
-            expense_attributes = ExpenseAttribute.objects.filter(id__in=project_ids_to_be_disabled)
+        project_ids_to_be_changed = disable_or_enable_expense_attributes('PROJECT', 'PROJECT', workspace_id)
+        if project_ids_to_be_changed:
+            expense_attributes = ExpenseAttribute.objects.filter(id__in=project_ids_to_be_changed)
             fyle_payload: List[Dict] = create_fyle_projects_payload(projects=[], existing_project_names=[], updated_projects=expense_attributes)
             platform.projects.post_bulk(fyle_payload)
             platform.projects.sync()
