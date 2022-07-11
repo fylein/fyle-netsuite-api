@@ -1342,15 +1342,20 @@ def process_reimbursements(workspace_id):
     if reimbursement_ids:
         # Validating deleted reimbursements
         valid_reimbursement_ids = get_valid_reimbursement_ids(reimbursement_ids, platform)
-        
-        if valid_reimbursement_ids:
-            reimbursements_list = []
-            for reimbursement_id in valid_reimbursement_ids:
-                reimbursement_object = {'id': reimbursement_id}
-                reimbursements_list.append(reimbursement_object)
-            
-            platform.reimbursements.bulk_post_reimbursements(reimbursements_list)
-            platform.reimbursements.sync()
+
+        chunk_size = 50
+
+        for index in range(0, len(valid_reimbursement_ids), chunk_size):
+            partitioned_list = valid_reimbursement_ids[index:index + chunk_size]
+
+            if partitioned_list:
+                reimbursements_list = []
+                for reimbursement_id in partitioned_list:
+                    reimbursement_object = {'id': reimbursement_id}
+                    reimbursements_list.append(reimbursement_object)
+
+                platform.reimbursements.bulk_post_reimbursements(reimbursements_list)
+                platform.reimbursements.sync()
 
 
 def schedule_reimbursements_sync(sync_netsuite_to_fyle_payments, workspace_id):
