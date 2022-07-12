@@ -277,6 +277,7 @@ CACHE_EXPIRY = 3600
 CORS_ORIGIN_ALLOW_ALL = True
 
 CORS_ALLOW_HEADERS = [
+    'sentry-trace',
     'authorization',
     'content-type'
 ]
