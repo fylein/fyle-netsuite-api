@@ -258,7 +258,7 @@ def create_bill(expense_group, task_log_id):
             attachment_links = {}
 
             for expense in expense_group.expenses.all():
-                attachment_link = load_attachments(netsuite_connection, expense.expense_id, expense_group)
+                attachment_link = load_attachments(netsuite_connection, expense, expense_group)
 
                 if attachment_link:
                     attachment_links[expense.expense_id] = attachment_link

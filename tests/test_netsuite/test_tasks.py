@@ -557,10 +557,8 @@ def test_load_attachments(db, add_netsuite_credentials, add_fyle_credentials):
     netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
 
-    attachment = load_attachments(netsuite_connection, 'tx3asPlm9wyF', expense_group)
+    attachment = load_attachments(netsuite_connection, expense_group.expenses.first(), expense_group)
     assert attachment == None
-
-    attachment = load_attachments(None, 'tx3asPlm9wyF', expense_group)
 
 
 def test_create_or_update_employee_mapping(db, add_netsuite_credentials, add_fyle_credentials):
