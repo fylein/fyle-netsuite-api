@@ -63,25 +63,26 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense_id: str, ex
                     file_object = {'id': id}
                     files_list.append(file_object)
 
-            if files_list:
-                attachments =platform.files.bulk_generate_file_urls(files_list)
+        if files_list:
+            attachments =platform.files.bulk_generate_file_urls(files_list)
 
-            if attachments:
-                for attachment in attachments:
-                    netsuite_connection.connection.files.post({
-                        "externalId": expense_id,
-                        "name": '{0}_{1}'.format(attachment['id'], attachment['name']),
-                        'content': base64.b64decode(attachment['download_url']),
-                        "folder": {
-                            "name": None,
-                            "internalId": folder['internalId'],
-                            "externalId": folder['externalId'],
-                            "type": "folder"
-                        }
-                    })
+        if attachments:
+            for attachment in attachments:
+                print(attachment['name'], attachment['id'], expense_id)
+                netsuite_connection.connection.files.post({
+                    "externalId": expense_id,
+                    "name": '{0}_{1}'.format(attachment['id'], attachment['name']),
+                    'content': base64.b64decode(attachment['download_url']),
+                    "folder": {
+                        "name": None,
+                        "internalId": folder['internalId'],
+                        "externalId": folder['externalId'],
+                        "type": "folder"
+                    }
+                })
 
-                file = netsuite_connection.connection.files.get(externalId=expense_id)
-                return file['url']
+            file = netsuite_connection.connection.files.get(externalId=expense_id)
+            return file['url']
     except Exception:
         error = traceback.format_exc()
         logger.error(
