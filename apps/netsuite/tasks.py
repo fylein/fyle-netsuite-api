@@ -34,7 +34,7 @@ netsuite_paid_state = 'Paid In Full'
 netsuite_error_message = 'NetSuite System Error'
 
 
-def load_attachments(netsuite_connection: NetSuiteConnector, expense_id: str, expense_group: ExpenseGroup):
+def load_attachments(netsuite_connection: NetSuiteConnector, expense: Expense, expense_group: ExpenseGroup):
     """
     Get attachments from Fyle
     :param netsuite_connection: NetSuite Connection
@@ -46,7 +46,7 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense_id: str, ex
 
     try:
         fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-        file_ids = expense_group.expenses.values_list('file_ids', flat=True)
+        file_ids = expense.file_ids
         platform = PlatformConnector(fyle_credentials)
 
         folder = netsuite_connection.connection.folders.post({
@@ -56,38 +56,35 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense_id: str, ex
 
         files_list = []
         attachments = []
+        receipt_url = None
 
-        for file_id in file_ids:
-            if file_id:
-               for id in file_id:
-                    file_object = {'id': id}
-                    files_list.append(file_object)
-
-        if files_list:
+        if len(file_ids):
+            files_list = [{'id': file_ids[0]}]
             attachments =platform.files.bulk_generate_file_urls(files_list)
 
-        if attachments:
-            for attachment in attachments:
-                print(attachment['name'], attachment['id'], expense_id)
-                netsuite_connection.connection.files.post({
-                    "externalId": expense_id,
-                    "name": '{0}_{1}'.format(attachment['id'], attachment['name']),
-                    'content': base64.b64decode(attachment['download_url']),
-                    "folder": {
-                        "name": None,
-                        "internalId": folder['internalId'],
-                        "externalId": folder['externalId'],
-                        "type": "folder"
-                    }
-                })
+            if attachments:
+                for attachment in attachments:
+                    netsuite_connection.connection.files.post({
+                        "externalId": expense.expense_id,
+                        "name": '{0}_{1}'.format(attachment['id'], attachment['name']),
+                        'content': base64.b64decode(attachment['download_url']),
+                        "folder": {
+                            "name": None,
+                            "internalId": folder['internalId'],
+                            "externalId": folder['externalId'],
+                            "type": "folder"
+                        }
+                    })
 
-            file = netsuite_connection.connection.files.get(externalId=expense_id)
-            return file['url']
+                file = netsuite_connection.connection.files.get(externalId=expense.expense_id)
+                receipt_url = file['url']
+
+        return receipt_url
     except Exception:
         error = traceback.format_exc()
         logger.error(
             'Attachment failed for expense group id %s / workspace id %s Error: %s',
-            expense_id, workspace_id, {'error': error}
+            expense.expense_id, workspace_id, {'error': error}
         )
 
 
@@ -260,11 +257,11 @@ def create_bill(expense_group, task_log_id):
 
             attachment_links = {}
 
-            for expense_id in expense_group.expenses.values_list('expense_id', flat=True):
-                attachment_link = load_attachments(netsuite_connection, expense_id, expense_group)
+            for expense in expense_group.expenses.all():
+                attachment_link = load_attachments(netsuite_connection, expense, expense_group)
 
                 if attachment_link:
-                    attachment_links[expense_id] = attachment_link
+                    attachment_links[expense.expense_id] = attachment_link
 
             created_bill = netsuite_connection.post_bill(bill_object, bill_lineitems_objects, attachment_links)
 
@@ -358,7 +355,7 @@ def create_credit_card_charge(expense_group, task_log_id):
             refund = False
             if expense.amount < 0:
                 refund = True
-            attachment_link = load_attachments(netsuite_connection, expense.expense_id, expense_group)
+            attachment_link = load_attachments(netsuite_connection, expense, expense_group)
 
             if attachment_link:
                 attachment_links[expense.expense_id] = attachment_link
@@ -452,10 +449,10 @@ def create_expense_report(expense_group, task_log_id):
 
             attachment_links = {}
 
-            for expense_id in expense_group.expenses.values_list('expense_id', flat=True):
-                attachment_link = load_attachments(netsuite_connection, expense_id, expense_group)
+            for expense in expense_group.expenses.all():
+                attachment_link = load_attachments(netsuite_connection, expense, expense_group)
                 if attachment_link:
-                    attachment_links[expense_id] = attachment_link
+                    attachment_links[expense.expense_id] = attachment_link
 
             created_expense_report = netsuite_connection.post_expense_report(
                 expense_report_object, expense_report_lineitems_objects, attachment_links
@@ -541,11 +538,11 @@ def create_journal_entry(expense_group, task_log_id):
 
             attachment_links = {}
 
-            for expense_id in expense_group.expenses.values_list('expense_id', flat=True):
-                attachment_link = load_attachments(netsuite_connection, expense_id, expense_group)
+            for expense in expense_group.expenses.all():
+                attachment_link = load_attachments(netsuite_connection, expense, expense_group)
 
                 if attachment_link:
-                    attachment_links[expense_id] = attachment_link
+                    attachment_links[expense.expense_id] = attachment_link
 
             created_journal_entry = netsuite_connection.post_journal_entry(
                 journal_entry_object, journal_entry_lineitems_objects, attachment_links
