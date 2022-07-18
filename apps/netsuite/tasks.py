@@ -1343,6 +1343,7 @@ def process_reimbursements(workspace_id):
 
         chunk_size = 20
 
+        print('Processing reimbursements with chunk size 20 \n')
         for index in range(0, len(valid_reimbursement_ids), chunk_size):
             partitioned_list = valid_reimbursement_ids[index:index + chunk_size]
 
@@ -1351,9 +1352,10 @@ def process_reimbursements(workspace_id):
                 for reimbursement_id in partitioned_list:
                     reimbursement_object = {'id': reimbursement_id}
                     reimbursements_list.append(reimbursement_object)
-
+                print('Batch - ', reimbursements_list)
                 platform.reimbursements.bulk_post_reimbursements(reimbursements_list)
                 platform.reimbursements.sync()
+                print('Batch done \n')
 
 
 def schedule_reimbursements_sync(sync_netsuite_to_fyle_payments, workspace_id):
