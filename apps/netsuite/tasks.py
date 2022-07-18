@@ -15,6 +15,7 @@ from netsuitesdk.internal.exceptions import NetSuiteRequestError
 
 from fyle_accounting_mappings.models import ExpenseAttribute, Mapping, DestinationAttribute, CategoryMapping, EmployeeMapping
 from fyle_integrations_platform_connector import PlatformConnector
+from fyle.platform.exceptions import InternalServerError
 
 from fyle_netsuite_api.exceptions import BulkError
 
@@ -1353,8 +1354,11 @@ def process_reimbursements(workspace_id):
                     reimbursement_object = {'id': reimbursement_id}
                     reimbursements_list.append(reimbursement_object)
                 print('Batch - ', reimbursements_list)
-                platform.reimbursements.bulk_post_reimbursements(reimbursements_list)
-                platform.reimbursements.sync()
+                try:
+                    platform.reimbursements.bulk_post_reimbursements(reimbursements_list)
+                    platform.reimbursements.sync()
+                except InternalServerError as exception:
+                    logger.exception(exception)
                 print('Batch done \n')
 
 
