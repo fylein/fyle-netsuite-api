@@ -59,9 +59,9 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense: Expense, e
         attachments = []
         receipt_url = None
 
-        if len(file_ids):
+        if file_ids and len(file_ids):
             files_list = [{'id': file_ids[0]}]
-            attachments =platform.files.bulk_generate_file_urls(files_list)
+            attachments = platform.files.bulk_generate_file_urls(files_list)
 
             if attachments:
                 for attachment in attachments:
