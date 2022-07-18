@@ -15,6 +15,7 @@ from netsuitesdk.internal.exceptions import NetSuiteRequestError
 
 from fyle_accounting_mappings.models import ExpenseAttribute, Mapping, DestinationAttribute, CategoryMapping, EmployeeMapping
 from fyle_integrations_platform_connector import PlatformConnector
+from fyle.platform.exceptions import InternalServerError
 
 from fyle_netsuite_api.exceptions import BulkError
 
@@ -58,9 +59,9 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense: Expense, e
         attachments = []
         receipt_url = None
 
-        if len(file_ids):
+        if file_ids and len(file_ids):
             files_list = [{'id': file_ids[0]}]
-            attachments =platform.files.bulk_generate_file_urls(files_list)
+            attachments = platform.files.bulk_generate_file_urls(files_list)
 
             if attachments:
                 for attachment in attachments:
@@ -1352,8 +1353,11 @@ def process_reimbursements(workspace_id):
                     reimbursement_object = {'id': reimbursement_id}
                     reimbursements_list.append(reimbursement_object)
 
-                platform.reimbursements.bulk_post_reimbursements(reimbursements_list)
-                platform.reimbursements.sync()
+                try:
+                    platform.reimbursements.bulk_post_reimbursements(reimbursements_list)
+                    platform.reimbursements.sync()
+                except InternalServerError as exception:
+                    logger.exception(exception)
 
 
 def schedule_reimbursements_sync(sync_netsuite_to_fyle_payments, workspace_id):
