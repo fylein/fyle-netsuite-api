@@ -1341,7 +1341,7 @@ def process_reimbursements(workspace_id):
         # Validating deleted reimbursements
         valid_reimbursement_ids = get_valid_reimbursement_ids(reimbursement_ids, platform)
 
-        chunk_size = 50
+        chunk_size = 20
 
         for index in range(0, len(valid_reimbursement_ids), chunk_size):
             partitioned_list = valid_reimbursement_ids[index:index + chunk_size]
