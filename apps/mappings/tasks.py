@@ -973,7 +973,10 @@ def post_merchants(platform_connection: PlatformConnector, workspace_id: int, fi
             updated_at__gte=merchant_updated_at
         ).order_by('value', 'id')
 
+    print('netsuite before', netsuite_attributes)
     netsuite_attributes = remove_duplicates(netsuite_attributes)
+    print('netsuite after', netsuite_attributes)
+
     fyle_payload: List[str] = create_fyle_merchants_payload(
         netsuite_attributes, existing_merchants_name)
 
