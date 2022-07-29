@@ -966,6 +966,7 @@ def post_merchants(platform_connection: PlatformConnector, workspace_id: int, fi
     else:
         merchant = platform_connection.merchants.get()
         merchant_updated_at = parser.isoparse(merchant['updated_at']).strftime('%Y-%m-%d %H:%M:%S.%f')
+        print('merchant updated at', merchant_updated_at)
         netsuite_attributes = DestinationAttribute.objects.filter(
             attribute_type='VENDOR',
             workspace_id=workspace_id,
@@ -976,6 +977,7 @@ def post_merchants(platform_connection: PlatformConnector, workspace_id: int, fi
     fyle_payload: List[str] = create_fyle_merchants_payload(
         netsuite_attributes, existing_merchants_name)
 
+    print('fyle payload', fyle_payload)
     if fyle_payload:
         platform_connection.merchants.post(fyle_payload)
 
@@ -990,7 +992,7 @@ def auto_create_vendors_as_merchants(workspace_id):
         existing_merchants_name = ExpenseAttribute.objects.filter(attribute_type='MERCHANT', workspace_id=workspace_id)
         
         first_run = False if existing_merchants_name else True
-
+        print('first run', first_run)
         fyle_connection.merchants.sync(workspace_id)
 
         sync_netsuite_attribute('VENDOR', workspace_id)
