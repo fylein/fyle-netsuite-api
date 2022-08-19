@@ -17,9 +17,9 @@ jobs:
           docker login --username ${{ secrets.DOCKERHUB_USERNAME }} --password ${{ secrets.DOCKERHUB_PASSWORD }}
           export NEW_TAG="v$(git rev-parse --short HEAD)";
           echo "New tag: $NEW_TAG";
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/fyle_qbo-app:$NEW_TAG .
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api:$NEW_TAG .
           echo "Pushing Docker Image to Docker Hub";
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/fyle_qbo-app:$NEW_TAG
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api:$NEW_TAG
           echo "NEW_TAG=v$(git rev-parse --short HEAD)" >> $GITHUB_ENV
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
