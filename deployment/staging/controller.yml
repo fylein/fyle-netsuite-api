@@ -33,7 +33,7 @@ spec:
     spec:
       containers:
         - name: netsuite-api
-          image: docker.io/{{DOCKERHUB_USERNAME}}}/fyle_netsuite-api:{{RELEASE_VERSION}}
+          image: docker.io/{{DOCKERHUB_USERNAME}}/fyle_netsuite-api:{{RELEASE_VERSION}}
           resources:
             limits:
               memory: 300Mi
@@ -77,7 +77,7 @@ spec:
     spec:
       containers:
         - name: netsuite-api
-          image: docker.io/{{DOCKERHUB_USERNAME}}}/fyle_netsuite-api:{{RELEASE_VERSION}}
+          image: docker.io/{{DOCKERHUB_USERNAME}}/fyle_netsuite-api:{{RELEASE_VERSION}}
           command: [ '/bin/bash', 'start_qcluster.sh' ]
           resources:
             limits:
