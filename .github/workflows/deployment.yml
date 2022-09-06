@@ -10,37 +10,34 @@ jobs:
     runs-on: ubuntu-latest
     environment: Staging
     steps:
-      - uses: actions/checkout@v2 
+      - uses: actions/checkout@v2
       - uses: satackey/action-docker-layer-caching@v0.0.11
         continue-on-error: true
       - name: Build and push docker image
         run: |
+          echo '127.0.0.1  kubernetes' | sudo tee -a /etc/hosts
           docker login --username ${{ secrets.DOCKERHUB_USERNAME }} --password ${{ secrets.DOCKERHUB_PASSWORD }}
           export NEW_TAG="v$(git rev-parse --short HEAD)";
-          echo "New tag: $NEW_TAG";
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api:$NEW_TAG .
           echo "Pushing Docker Image to Docker Hub";
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api:$NEW_TAG
           echo "NEW_TAG=v$(git rev-parse --short HEAD)" >> $GITHUB_ENV
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-south-1
-      - name: Run CodeBuild
-        uses: aws-actions/aws-codebuild-run-build@v1
-        with:
-          project-name: ${{ secrets.CODEBUILD_PROJECT_NAME }}
-          env-vars-for-codebuild: |
-            requester,
-            event-name,
-            NEW_TAG,
-            DOCKERHUB_USERNAME
+          echo "New tag: $NEW_TAG";
+          pip3 install ec2instanceconnectcli==1.0.2
+          sed -i "s?{{RELEASE_VERSION}}?${NEW_TAG}?" deployment/staging/controller.yml;
+          sed -i "s?{{DOCKERHUB_USERNAME}}?${DOCKERHUB_USERNAME}?" deployment/staging/controller.yml;
+          python3 deployment/staging/buildspec.py
         env:
-          requester: ${{ github.actor }}
-          event-name: ${{ github.event_name }}
-          NEW_TAG: ${{ env.NEW_TAG }}
+          EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
+          EC2_INSTANCE_NAME: ${{ secrets.EC2_INSTANCE_NAME }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          LOCAL_HOST: ${{ secrets.LOCAL_HOST }}
+          LOCAL_PORT: ${{ secrets.LOCAL_PORT }}
+          REMOTE_PORT: ${{ secrets.REMOTE_PORT }}
+          EKS_KUBECTL_ROLE: ${{ secrets.EKS_KUBECTL_ROLE }}
+          ROLE_SESSION_NAME: ${{ secrets.ROLE_SESSION_NAME }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2
