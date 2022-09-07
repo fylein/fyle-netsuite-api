@@ -24,6 +24,7 @@ jobs:
           echo "New tag: $NEW_TAG";
           sed -i "s?{{RELEASE_VERSION}}?${NEW_TAG}?" deployment/staging/controller.yml;
           sed -i "s?{{DOCKERHUB_USERNAME}}?${DOCKERHUB_USERNAME}?" deployment/staging/controller.yml;
+        env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       - name: Deploy to Staging
         uses: fylein/aws-eks-deploy-action@master
