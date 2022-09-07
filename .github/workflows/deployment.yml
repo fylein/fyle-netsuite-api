@@ -23,10 +23,12 @@ jobs:
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api:$NEW_TAG
           echo "NEW_TAG=v$(git rev-parse --short HEAD)" >> $GITHUB_ENV
           echo "New tag: $NEW_TAG";
-          pip3 install ec2instanceconnectcli==1.0.2
           sed -i "s?{{RELEASE_VERSION}}?${NEW_TAG}?" deployment/staging/controller.yml;
           sed -i "s?{{DOCKERHUB_USERNAME}}?${DOCKERHUB_USERNAME}?" deployment/staging/controller.yml;
-          python3 deployment/staging/buildspec.py
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      - name: Deploy to Staging
+        uses: fylein/aws-eks-deploy-action@master
         env:
           EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
@@ -37,7 +39,6 @@ jobs:
           ROLE_SESSION_NAME: ${{ secrets.ROLE_SESSION_NAME }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2
         env:
