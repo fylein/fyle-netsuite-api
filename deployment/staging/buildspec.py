@@ -13,7 +13,6 @@ LOCAL_PORT = os.environ.get('LOCAL_PORT')
 REMOTE_PORT = os.environ.get('REMOTE_PORT')
 EKS_KUBECTL_ROLE = os.environ.get('EKS_KUBECTL_ROLE')
 ROLE_SESSION_NAME = os.environ.get('ROLE_SESSION_NAME')
-EC2_INSTANCE_NAME = os.environ.get('EC2_INSTANCE_NAME')
 
 
 def get_vpc_id_and_endpoint():
@@ -32,7 +31,7 @@ def setup_ssh_tunnel(vpc_id: str, remote_host: str) -> str:
     logger.info('Getting intance id through the vpcId generate in previous step')
 
     describe_instance_command = f'aws ec2 describe-instances --filters Name=vpc-id,Values={vpc_id}\
-     Name=tag:Name,Values={EC2_INSTANCE_NAME}'
+     Name=tag:codename,Values="*bastion-host"'
     instance = json.loads(
         subprocess.check_output(describe_instance_command, shell=True)
     )['Reservations'][0]['Instances'][0]
