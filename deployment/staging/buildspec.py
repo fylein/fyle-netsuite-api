@@ -13,7 +13,6 @@ LOCAL_PORT = os.environ.get('LOCAL_PORT')
 REMOTE_PORT = os.environ.get('REMOTE_PORT')
 EKS_KUBECTL_ROLE = os.environ.get('EKS_KUBECTL_ROLE')
 ROLE_SESSION_NAME = os.environ.get('ROLE_SESSION_NAME')
-EC2_INSTANCE_NAME = os.environ.get('EC2_INSTANCE_NAME')
 
 
 def get_vpc_id_and_endpoint():
