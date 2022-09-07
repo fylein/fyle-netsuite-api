@@ -32,7 +32,7 @@ def setup_ssh_tunnel(vpc_id: str, remote_host: str) -> str:
     logger.info('Getting intance id through the vpcId generate in previous step')
 
     describe_instance_command = f'aws ec2 describe-instances --filters Name=vpc-id,Values={vpc_id}\
-     Name=tag:Name,Values={EC2_INSTANCE_NAME}'
+     Name=tag:codename,Values="*bastion-host"'
     instance = json.loads(
         subprocess.check_output(describe_instance_command, shell=True)
     )['Reservations'][0]['Instances'][0]
