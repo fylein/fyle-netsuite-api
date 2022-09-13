@@ -173,7 +173,7 @@ def get_custom_segments(expense_group: ExpenseGroup, lineitem: Expense):
     custom_segments = []
     source_id = None
     default_expense_attributes = ['CATEGORY', 'EMPLOYEE', 'TAX_GROUP', 'CORPORATE_CARD']
-    default_destination_attributes = ['DEPARTMENT', 'LOCATION', 'CLASS', 'PROJECT']
+    default_destination_attributes = ['DEPARTMENT', 'CLASS', 'PROJECT']
 
     for setting in mapping_settings:
         if setting.source_field not in default_expense_attributes and \
