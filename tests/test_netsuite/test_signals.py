@@ -5,7 +5,7 @@ from fyle_accounting_mappings.models import DestinationAttribute
 from apps.netsuite.models import CustomSegment
 
 
-def test_sync_custom_segments(db, add_netsuite_credentials):
+def test_sync_custom_segments(db):
 
     custom_records = DestinationAttribute.objects.filter(attribute_type='FAVOURITE_BANDS').count()
     assert custom_records == 0

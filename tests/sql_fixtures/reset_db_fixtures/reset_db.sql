@@ -11258,7 +11258,7 @@ COPY public.reimbursements (id, settlement_id, reimbursement_id, state, created_
 --
 
 COPY public.subsidiary_mappings (id, subsidiary_name, internal_id, created_at, updated_at, workspace_id, country_name) FROM stdin;
-1	Honeycomb Holdings Inc.	3	2021-11-15 08:55:44.014581+00	2021-11-15 08:55:44.014605+00	1	_unitedStates
+1	Honeycomb Mfg.	1	2021-11-15 08:55:44.014581+00	2021-11-15 08:55:44.014605+00	1	_unitedStates
 2	HoneComb Aus	5	2021-11-16 04:17:38.820246+00	2021-11-16 04:17:38.820273+00	2	_australia
 3	HoneComb Aus	5	2021-12-03 11:03:48.824626+00	2021-12-03 11:03:48.824658+00	49	_australia
 \.

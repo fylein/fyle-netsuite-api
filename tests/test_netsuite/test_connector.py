@@ -2,7 +2,6 @@ from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribu
 import pytest
 from apps.fyle.models import ExpenseGroup
 from apps.netsuite.connector import NetSuiteConnector, NetSuiteCredentials
-from apps.netsuite.tasks import create_journal_entry
 from tests.helper import dict_compare_keys
 from .fixtures import data
 
@@ -57,7 +56,7 @@ def test_contruct_credit_card_charge(create_credit_card_charge):
     assert credit_card_charge_object == data['credit_card_charge'][0]
 
 
-def test_post_vendor(add_netsuite_credentials):
+def test_post_vendor(mocker, db):
 
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
@@ -69,7 +68,7 @@ def test_post_vendor(add_netsuite_credentials):
     assert list(vendor.items())[1][1] == '13819'
     assert list(vendor.items())[2][1] == 'Nilesh'
 
-def test_get_bill(add_netsuite_credentials):
+def test_get_bill(mocker, db):
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
@@ -78,15 +77,41 @@ def test_get_bill(add_netsuite_credentials):
     assert dict_compare_keys(bill, data['get_bill_response'][0]) == [], 'get bill api return diffs in keys'
 
 
-def test_get_expense_report(add_netsuite_credentials):
+def test_get_expense_report(mocker, db):
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
     expense_report = netsuite_connection.get_expense_report(85327)
     assert dict_compare_keys(expense_report, data['get_expense_report_response'][0]) == [], 'get expense report returns diff in keys'
 
+def test_sync_vendors(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.vendors.Vendors.get_all_generator',
+        return_value=data['get_all_vendors']    
+    )
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
-def test_sync_project(add_netsuite_credentials):
+    vendors_count = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='VENDOR').count()
+    assert vendors_count == 3
+
+    netsuite_connection.sync_vendors()
+
+    new_vendors_count = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='VENDOR').count()
+    assert new_vendors_count == 7
+
+
+def test_sync_projects(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.projects.Projects.get_all_generator',
+        return_value=data['get_all_projects']    
+    )
+
+    mocker.patch(
+        'netsuitesdk.api.projects.Projects.count',
+        return_value=len(data['get_all_projects'][0])
+    )
+
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
@@ -98,20 +123,29 @@ def test_sync_project(add_netsuite_credentials):
     new_project_count = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='PROJECT').count()
     assert new_project_count == 1087
 
-def test_sync_employee(add_netsuite_credentials):
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)
-    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=49)
+def test_sync_employees(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.employees.Employees.get_all_generator',
+        return_value=data['get_all_employees']    
+    )
 
-    employee_count = DestinationAttribute.objects.filter(workspace_id=49, attribute_type='EMPLOYEE').count()
-    assert employee_count == 12
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
+
+    employee_count = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='EMPLOYEE').count()
+    assert employee_count == 7
 
     netsuite_connection.sync_employees()
 
-    new_employee_count = DestinationAttribute.objects.filter(workspace_id=49, attribute_type='EMPLOYEE').count()
+    new_employee_count = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='EMPLOYEE').count()
     assert new_employee_count == 13
 
 @pytest.mark.django_db()
-def test_sync_accounts(add_netsuite_credentials):
+def test_sync_accounts(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.accounts.Accounts.get_all_generator',
+        return_value=data['get_all_accounts']    
+    )
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
@@ -121,10 +155,14 @@ def test_sync_accounts(add_netsuite_credentials):
     netsuite_connection.sync_accounts()
 
     new_account_counts = DestinationAttribute.objects.filter(attribute_type='ACCOUNT', workspace_id=1).count()
-    assert new_account_counts == 173
+    assert new_account_counts == 124
 
 @pytest.mark.django_db()
-def test_sync_expense_categories(add_netsuite_credentials):
+def test_sync_expense_categories(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.expense_categories.ExpenseCategory.get_all_generator',
+        return_value=data['get_all_expense_categories']
+    )
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
@@ -134,33 +172,48 @@ def test_sync_expense_categories(add_netsuite_credentials):
     netsuite_connection.sync_expense_categories()
 
     new_expense_categories_count = DestinationAttribute.objects.filter(attribute_type='EXPENSE_CATEGORY', workspace_id=1).count()
-    assert new_expense_categories_count == 38
+    assert new_expense_categories_count == 34
 
 
 @pytest.mark.django_db()
-def test_sync_custom_segments(db, add_netsuite_credentials, add_custom_segment):
+def test_sync_custom_segments(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.custom_segments.CustomSegments.get',
+        return_value=data['get_custom_segment']
+    )
+
+    mocker.patch(
+        'netsuitesdk.api.custom_record_types.CustomRecordTypes.get_all_by_id',
+        return_value=data['get_custom_records_all']
+    )
+
+    mocker.patch(
+        'netsuitesdk.api.custom_lists.CustomLists.get',
+        return_value=data['get_custom_list']
+    )
+    
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=49)
 
-    custom_record = DestinationAttribute.objects.filter(attribute_type='FAVOURITE_BANDS', workspace_id=49).count()
-    assert custom_record == 5
-    custom_list = DestinationAttribute.objects.filter(attribute_type='SRAVAN_DEMO', workspace_id=49).count()
-    assert custom_list == 2
+    custom_record = DestinationAttribute.objects.filter(attribute_type='FAVOURITE_BANDS', workspace_id=49)
+    assert custom_record.count() == 0
+    custom_list = DestinationAttribute.objects.filter(attribute_type='FAVOURITE_SINGER', workspace_id=49)
+    assert custom_list.count() == 0
 
-    custom_segment = DestinationAttribute.objects.filter(attribute_type='PRODUCTION_LINE', workspace_id=49).count()
-    assert custom_segment == 2
+    custom_segment = DestinationAttribute.objects.filter(attribute_type='PRODUCTION_LINE', workspace_id=49)
+    assert custom_segment.count() == 0
 
     netsuite_connection.sync_custom_segments()
 
     custom_record = DestinationAttribute.objects.filter(attribute_type='FAVOURITE_BANDS', workspace_id=49).count()
     assert custom_record == 5
-    custom_list = DestinationAttribute.objects.filter(attribute_type='SRAVAN_DEMO', workspace_id=49).count()
-    assert custom_list == 2
+    custom_list = DestinationAttribute.objects.filter(attribute_type='FAVOURITE_SINGER', workspace_id=49).count()
+    assert custom_list == 6
     custom_segment = DestinationAttribute.objects.filter(attribute_type='PRODUCTION_LINE', workspace_id=49).count()
-    assert custom_segment == 2
+    assert custom_segment == 5
 
 
-def test_sync_subsidiaries(db, add_netsuite_credentials):
+def test_sync_subsidiaries(db):
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=49)
 
@@ -173,7 +226,7 @@ def test_sync_subsidiaries(db, add_netsuite_credentials):
     assert subsidiaries == 10
 
 
-def test_get_or_create_vendor(db, add_netsuite_credentials):
+def test_get_or_create_vendor(db):
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
     expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
