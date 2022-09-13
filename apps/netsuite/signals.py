@@ -32,7 +32,11 @@ def sync_custom_segments(sender, instance: CustomSegment, **kwargs):
         workspace_id=instance.workspace_id
     )
 
+    if instance.name.lower() == 'locationcen' or instance.name.lower() == 'class':
+        instance.name = '{}-CS'.format(instance.name)
+
     attribute_type = instance.name.upper().replace(' ', '_')
+
     if instance.segment_type == 'CUSTOM_LIST':
         custom_segment_attributes = ns_connection.get_custom_list_attributes(attribute_type, instance.internal_id)
     elif instance.segment_type == 'CUSTOM_RECORD':
