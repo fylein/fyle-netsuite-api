@@ -57,7 +57,10 @@ def test_contruct_credit_card_charge(create_credit_card_charge):
 
 
 def test_post_vendor(mocker, db):
-
+    mocker.patch(
+        'netsuitesdk.api.vendors.Vendors.post',
+        return_value=data['post_vendor']
+    )
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
@@ -65,10 +68,13 @@ def test_post_vendor(mocker, db):
     
     vendor = netsuite_connection.post_vendor(expense_group=expense_group, merchant='Nilesh')
 
-    assert list(vendor.items())[1][1] == '13819'
-    assert list(vendor.items())[2][1] == 'Nilesh'
+    assert dict_compare_keys(vendor, data['post_vendor']) == [], 'post vendor api return diffs in keys'
 
 def test_get_bill(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.vendor_bills.VendorBills.get',
+        return_value=data['get_bill_response'][0]
+    )
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
@@ -78,6 +84,10 @@ def test_get_bill(mocker, db):
 
 
 def test_get_expense_report(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.expense_reports.ExpenseReports.get',
+        return_value=data['get_expense_report_response'][0]   
+    )
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
@@ -213,7 +223,11 @@ def test_sync_custom_segments(mocker, db):
     assert custom_segment == 5
 
 
-def test_sync_subsidiaries(db):
+def test_sync_subsidiaries(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.subsidiaries.Subsidiaries.get_all_generator',
+        return_value=data['get_all_subsidiaries']
+    )
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=49)
 
@@ -223,10 +237,14 @@ def test_sync_subsidiaries(db):
     netsuite_connection.sync_subsidiaries()
 
     subsidiaries = DestinationAttribute.objects.filter(attribute_type='SUBSIDIARY', workspace_id=49).count()
-    assert subsidiaries == 10
+    assert subsidiaries == 8
 
 
-def test_get_or_create_vendor(db):
+def test_get_or_create_vendor(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.vendors.Vendors.search',
+        return_value=data['search_vendor']
+    )
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
     expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
@@ -236,10 +254,10 @@ def test_get_or_create_vendor(db):
         attribute_type='EMPLOYEE',
         value=expense_group.description.get('employee_email')
     )
-    vendor = DestinationAttribute.objects.filter(attribute_type='VENDOR', workspace_id=1).count()
-    assert vendor == 3
+    vendors = DestinationAttribute.objects.filter(attribute_type='VENDOR', workspace_id=1).count()
+    assert vendors == 3
 
     netsuite_connection.get_or_create_vendor(source_employee, expense_group)
 
-    vendor = DestinationAttribute.objects.filter(attribute_type='VENDOR', workspace_id=1).count()
-    assert vendor == 3
+    vendors = DestinationAttribute.objects.filter(attribute_type='VENDOR', workspace_id=1).count()
+    assert vendors == 4
