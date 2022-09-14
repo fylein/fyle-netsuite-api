@@ -195,8 +195,9 @@ def get_custom_segments(expense_group: ExpenseGroup, lineitem: Expense):
             )
 
             if mapping:
+                name = setting.destination_field.split('-')[0] if '-CS' in setting.destination_field else setting.destination_field
                 cus_list = CustomSegment.objects.filter(
-                    name=setting.destination_field,
+                    name=name,
                     workspace_id=expense_group.workspace_id
                 ).first()
                 value = mapping.destination.destination_id
