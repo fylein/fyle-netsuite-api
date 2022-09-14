@@ -1,23 +1,21 @@
 import json
 from unittest import mock
-from urllib import response
 import pytest
 import random
 import string
 import logging
 from django_q.models import Schedule
-from pytest_mock import mocker
 from netsuitesdk import NetSuiteRequestError
 from apps.fyle.models import ExpenseGroup, Reimbursement, Expense
 from apps.netsuite.connector import NetSuiteConnector
-from apps.netsuite.models import CreditCardCharge, ExpenseReport, Bill, JournalEntry, VendorPayment, VendorPaymentLineitem
+from apps.netsuite.models import CreditCardCharge, ExpenseReport, Bill, JournalEntry
 from apps.workspaces.models import Configuration, NetSuiteCredentials
 from apps.tasks.models import TaskLog
 from apps.netsuite.tasks import __validate_general_mapping, __validate_subsidiary_mapping, check_netsuite_object_status, create_credit_card_charge, create_journal_entry, create_or_update_employee_mapping, create_vendor_payment, get_all_internal_ids, \
      get_or_create_credit_card_vendor, create_bill, create_expense_report, load_attachments, __handle_netsuite_connection_error, process_reimbursements, process_vendor_payment, schedule_bills_creation, schedule_credit_card_charge_creation, schedule_expense_reports_creation, schedule_journal_entry_creation, schedule_netsuite_objects_status_sync, schedule_reimbursements_sync, schedule_vendor_payment_creation, \
         __validate_tax_group_mapping, check_expenses_reimbursement_status
 from apps.mappings.models import GeneralMapping
-from fyle_accounting_mappings.models import DestinationAttribute, EmployeeMapping, CategoryMapping, ExpenseAttribute
+from fyle_accounting_mappings.models import DestinationAttribute, EmployeeMapping, CategoryMapping
 from .fixtures import data
 from apps.workspaces.models import NetSuiteCredentials, Configuration
 
@@ -256,7 +254,7 @@ def test_accounting_period_working_bill(db):
 
 
 @pytest.mark.django_db()
-def test_create_expense_report(mocker, db):
+def test_post_expense_report(mocker, db):
     mocker.patch(
         'netsuitesdk.api.expense_reports.ExpenseReports.post',
         return_value=data['creation_response']
@@ -300,7 +298,7 @@ def test_create_expense_report(mocker, db):
 
 
 @pytest.mark.django_db()
-def test_create_expense_report_mapping_error(db):
+def test_post_expense_report_mapping_error(db):
 
     task_log = TaskLog.objects.filter(workspace_id=1).first()
     task_log.status = 'READY'
@@ -739,139 +737,49 @@ def test_schedule_vendor_payment_creation(db):
     schedule = Schedule.objects.filter(func='apps.netsuite.tasks.create_vendor_payment', args=1).first()
     assert schedule == None
 
-
-def test_create_vendor_payment(db, mocker, create_task_logs, add_netsuite_credentials, add_fyle_credentials):
-
-    expense_group = ExpenseGroup.objects.filter(workspace_id=1).last()
-    expenses = expense_group.expenses.all()
-
-    expense_group.id = random.randint(100, 1500000)
-    expense_group.fund_source = 'PERSONAL'
-    expense_group.exported_at = '2022-03-03'
-    expense_group.save()
-
-    task_log = TaskLog.objects.filter(workspace_id=1).first()
-    task_log.status = 'READY'
-    task_log.expense_group_id = expense_group.id
-    task_log.save()
-
-    for expense in expenses:
-        expense.expense_group_id = expense_group.id
-        expense.fund_source = 'PERSONAL'
-        expense.save()
-
-    expense_group.expenses.set(expenses)
-
-    create_expense_report(expense_group, task_log.id)
-    
-    new_task_log = TaskLog.objects.get(id=task_log.id)
-
+def test_process_vendor_payment_expense_report(mocker, db):
     mocker.patch(
-        'apps.tasks.models.TaskLog.objects.get',
-        return_value=new_task_log
+        'netsuitesdk.api.expense_reports.ExpenseReports.get',
+        return_value=data['get_expense_report_response'][0]
     )
-
-    mocker.patch(
-        'apps.netsuite.tasks.check_expenses_reimbursement_status',
-        return_value=True
-    )
-
-    create_vendor_payment(1)
-
-    task_log = TaskLog.objects.filter(workspace_id=1, status='FAILED').last()
-
-    assert task_log.detail[0]['message'] == 'An error occured in a upsert request: Invalid apacct reference key 118.'
-    assert task_log.status == 'FAILED'
-
-    vendor_payment_lineitems = VendorPaymentLineitem.objects.all()
-    vendor_payment_lineitems.delete()
-    vendor_payment = VendorPayment.objects.all()
-    vendor_payment.delete()
-
-
-    mocker.patch(
-        'netsuitesdk.api.vendor_payments.VendorPayments.post',
-        return_value={'message': 'payment_object'}
-    )
-
-    create_vendor_payment(1)
-
-    expense_report = ExpenseReport.objects.filter(expense_group_id=expense_group.id).first()
-
-    assert expense_report.payment_synced == True
-    assert expense_report.paid_on_netsuite == True
-
-
-def test_create_vendor_payment_bill_object(db, mocker, create_task_logs, add_netsuite_credentials, add_fyle_credentials):
-    expense_group = ExpenseGroup.objects.filter(workspace_id=1).last()
-    expenses = expense_group.expenses.all()
-
-    expense_group.id = random.randint(100, 1500000)
-    expense_group.fund_source = 'PERSONAL'
-    expense_group.exported_at = '2022-03-03'
-    expense_group.save()
-
-    task_log = TaskLog.objects.filter(workspace_id=1).first()
-    task_log.status = 'READY'
-    task_log.expense_group_id = expense_group.id
-    task_log.save()
-
-    for expense in expenses:
-        expense.expense_group_id = expense_group.id
-        expense.fund_source = 'PERSONAL'
-        expense.save()
-
-    expense_group.expenses.set(expenses)
-
-    general_mapping = GeneralMapping.objects.get(workspace_id=1)
-    general_mapping.location_name = "01: San Francisco"
-    general_mapping.location_id = 2
-    general_mapping.save()
-    
-    create_bill(expense_group, task_log.id)
-
-    bill = Bill.objects.first()
-
-    new_task_log = TaskLog.objects.get(id=task_log.id)
-
-    mocker.patch(
-        'apps.tasks.models.TaskLog.objects.get',
-        return_value=new_task_log
-    )
-
-    mocker.patch(
-        'apps.netsuite.tasks.check_expenses_reimbursement_status',
-        return_value=True
-    )
-
-    mocker.patch(
-        'netsuitesdk.api.vendor_payments.VendorPayments.post',
-        return_value={'message': 'payment_object'}
-    )
-
-    create_vendor_payment(1)
-
-    bill = Bill.objects.filter(expense_group_id=expense_group.id).first()
-
-    assert bill.payment_synced == True
-    assert bill.paid_on_netsuite == True
-
-
-def test_process_vendor_payment(db, mocker):
 
     entity_object = data['entity_object']
     expense_group = ExpenseGroup.objects.get(id=1)
     entity_object['line'][0].update({
         'expense_group': expense_group
     })
+
+    with mock.patch('apps.netsuite.connector.NetSuiteConnector.post_vendor_payment') as mock_call:
+        mock_call.side_effect = NetSuiteRequestError(
+            code='INVALID_KEY_OR_REF',
+            message='An error occured in a upsert request: Invalid apacct reference key 223.'
+        )
+        process_vendor_payment(entity_object, 49, 'EXPENSE_REPORT')
+
+    task_log = TaskLog.objects.filter(workspace_id=49, type='CREATING_VENDOR_PAYMENT').last()
+
+    assert task_log.status == 'FAILED'
+
+    mocker.patch(
+        'netsuitesdk.api.vendor_payments.VendorPayments.post',
+        return_value=data['create_vendor_payment']
+    )
 
     process_vendor_payment(entity_object, 49, 'EXPENSE_REPORT')
 
     task_log = TaskLog.objects.get(workspace_id=49, type='CREATING_VENDOR_PAYMENT')
-    assert task_log.detail == {'message': 'NetSuite Account not connected'}
+    assert task_log.status == 'COMPLETE'
+
+    entity_object['unique_id'] = '10011023'
+    expense_group.id = '12994309'
+    expense_group.save()
 
 
-def test_process_vendor_payment_bill(db, mocker):
+def test_process_vendor_payment_bill(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.vendor_bills.VendorBills.get',
+        return_value=data['get_bill_response'][0]
+    )
 
     entity_object = data['entity_object']
     expense_group = ExpenseGroup.objects.get(id=1)
@@ -879,10 +787,27 @@ def test_process_vendor_payment_bill(db, mocker):
         'expense_group': expense_group
     })
 
-    process_vendor_payment(entity_object, 49, 'BILL')
+    with mock.patch('apps.netsuite.connector.NetSuiteConnector.post_vendor_payment') as mock_call:
+        mock_call.side_effect = NetSuiteRequestError(
+            code='INVALID_KEY_OR_REF',
+            message='An error occured in a upsert request: Invalid apacct reference key 223.'
+        )
+        process_vendor_payment(entity_object, 49, 'BILL')
 
-    task_log = TaskLog.objects.get(workspace_id=49, type='CREATING_VENDOR_PAYMENT')
-    assert task_log.detail == {'message': 'NetSuite Account not connected'}
+    task_log = TaskLog.objects.filter(workspace_id=49, type='CREATING_VENDOR_PAYMENT').last()
+
+    assert task_log.status == 'FAILED'
+
+    mocker.patch(
+        'netsuitesdk.api.vendor_payments.VendorPayments.post',
+        return_value=data['create_vendor_payment']
+    )
+
+    process_vendor_payment(entity_object, 1, 'BILL')
+
+    task_log = TaskLog.objects.get(workspace_id=1, type='CREATING_VENDOR_PAYMENT')
+
+    assert task_log.status == 'COMPLETE'
 
 
 def test_schedule_netsuite_entity_creation(db):

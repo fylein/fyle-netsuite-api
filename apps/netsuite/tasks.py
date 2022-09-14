@@ -1061,10 +1061,8 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
         }
     )
 
-    with transaction.atomic():
-        try:
-            netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
-            netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
+    try:
+        with transaction.atomic():
 
             vendor_payment_object = VendorPayment.create_vendor_payment(
                 workspace_id, entity_object
@@ -1073,6 +1071,9 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
             vendor_payment_lineitems = VendorPaymentLineitem.create_vendor_payment_lineitems(
                 entity_object['line'], vendor_payment_object
             )
+
+            netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+            netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
 
             first_object_id = vendor_payment_lineitems[0].doc_id
             if object_type == 'BILL':
@@ -1102,42 +1103,42 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
             task_log.status = 'COMPLETE'
 
             task_log.save()
-        except NetSuiteCredentials.DoesNotExist:
-            logger.info(
-                'NetSuite Credentials not found for workspace_id %s',
-                workspace_id
-            )
-            detail = {
-                'message': 'NetSuite Account not connected'
-            }
-            task_log.status = 'FAILED'
-            task_log.detail = detail
+    except NetSuiteCredentials.DoesNotExist:
+        logger.info(
+            'NetSuite Credentials not found for workspace_id %s',
+            workspace_id
+        )
+        detail = {
+            'message': 'NetSuite Account not connected'
+        }
+        task_log.status = 'FAILED'
+        task_log.detail = detail
 
-            task_log.save()
+        task_log.save()
 
-        except NetSuiteRequestError as exception:
-            all_details = []
-            logger.exception({'error': exception})
-            detail = json.dumps(exception.__dict__)
-            detail = json.loads(detail)
-            task_log.status = 'FAILED'
+    except NetSuiteRequestError as exception:
+        all_details = []
+        logger.exception({'error': exception})
+        detail = json.dumps(exception.__dict__)
+        detail = json.loads(detail)
+        task_log.status = 'FAILED'
 
-            all_details.append({
-                'value': netsuite_error_message,
-                'type': detail['code'],
-                'message': detail['message']
-            })
-            task_log.detail = all_details
+        all_details.append({
+            'value': netsuite_error_message,
+            'type': detail['code'],
+            'message': detail['message']
+        })
+        task_log.detail = all_details
 
-            task_log.save()
+        task_log.save()
 
-        except BulkError as exception:
-            logger.info(exception.response)
-            detail = exception.response
-            task_log.status = 'FAILED'
-            task_log.detail = detail
+    except BulkError as exception:
+        logger.info(exception.response)
+        detail = exception.response
+        task_log.status = 'FAILED'
+        task_log.detail = detail
 
-            task_log.save()
+        task_log.save()
 
 
 def create_vendor_payment(workspace_id):

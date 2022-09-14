@@ -4872,5 +4872,11 @@ data = {
         },
         'internalId': '1000xys',
         'externalId': None
+    },
+    'create_vendor_payment': {
+        "name": None, 
+        "type": "vendorPayment", 
+        "externalId": "report 1057 - user2@fylefornscurrency.in-255", 
+        "internalId": "76115"
     }
 }
