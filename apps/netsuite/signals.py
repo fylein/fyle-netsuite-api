@@ -32,6 +32,7 @@ def sync_custom_segments(sender, instance: CustomSegment, **kwargs):
         workspace_id=instance.workspace_id
     )
 
+    # add -CS identifier to custom-segment name if it matches with location / class
     if instance.name.lower() == 'location' or instance.name.lower() == 'class':
         instance.name = '{}-CS'.format(instance.name)
 
