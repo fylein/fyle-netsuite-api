@@ -173,7 +173,7 @@ def get_custom_segments(expense_group: ExpenseGroup, lineitem: Expense):
     custom_segments = []
     source_id = None
     default_expense_attributes = ['CATEGORY', 'EMPLOYEE', 'TAX_GROUP', 'CORPORATE_CARD']
-    default_destination_attributes = ['DEPARTMENT', 'LOCATION', 'CLASS', 'PROJECT']
+    default_destination_attributes = ['DEPARTMENT', 'CLASS', 'PROJECT', 'LOCATION']
 
     for setting in mapping_settings:
         if setting.source_field not in default_expense_attributes and \
@@ -195,8 +195,10 @@ def get_custom_segments(expense_group: ExpenseGroup, lineitem: Expense):
             )
 
             if mapping:
+                # trim -CS from custom segment name
+                name = setting.destination_field.split('-')[0] if '-CS' in setting.destination_field else setting.destination_field
                 cus_list = CustomSegment.objects.filter(
-                    name=setting.destination_field,
+                    name=name,
                     workspace_id=expense_group.workspace_id
                 ).first()
                 value = mapping.destination.destination_id
