@@ -6,7 +6,7 @@ from apps.workspaces.models import Configuration
 from apps.netsuite.models import CustomSegment
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def create_task_logs(db):
     TaskLog.objects.update_or_create(
         workspace_id=1,

@@ -1,9 +1,13 @@
+import json
+from unittest import mock
+from urllib import response
 import pytest
 import random
 import string
 import logging
 from django_q.models import Schedule
 from pytest_mock import mocker
+from netsuitesdk import NetSuiteRequestError
 from apps.fyle.models import ExpenseGroup, Reimbursement, Expense
 from apps.netsuite.connector import NetSuiteConnector
 from apps.netsuite.models import CreditCardCharge, ExpenseReport, Bill, JournalEntry, VendorPayment, VendorPaymentLineitem
@@ -88,36 +92,91 @@ def test_subsidary_mapping_not_found():
     assert errors == []
 
 @pytest.mark.django_db()
-def test_get_or_create_credit_card_vendor(add_netsuite_credentials):
-    configuration = Configuration.objects.get(workspace_id=1)
-    expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
-    merchant = 'Uber BV'
+def test_get_or_create_credit_card_vendor_search(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.vendors.Vendors.search',
+        return_value=data['search_vendor']
+    )
+    configuration = Configuration.objects.get(workspace_id=49)
+    expense_group = ExpenseGroup.objects.filter(workspace_id=49).first()
+    merchant = 'Amazon'
     auto_create_merchants = configuration.auto_create_merchants
 
-    vendor = get_or_create_credit_card_vendor(expense_group, merchant, auto_create_merchants)
+    get_or_create_credit_card_vendor(expense_group, merchant, auto_create_merchants)
     
     created_vendor = DestinationAttribute.objects.filter(
-        workspace_id=1,
-        value='Uber BV'
+        workspace_id=49,
+        value='Amazon'
     ).first()
     
-    assert created_vendor.destination_id == '12106'
+    assert created_vendor.destination_id == '1552'
     assert created_vendor.display_name == 'vendor'
-
-    get_or_create_credit_card_vendor(expense_group, merchant, True)
-
+    assert created_vendor.value == 'Amazon'
 
 @pytest.mark.django_db()
-def test_post_bill_success(create_task_logs, add_netsuite_credentials, add_fyle_credentials):
+def test_get_or_create_credit_card_vendor_create_true(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.vendors.Vendors.search',
+        return_value={}
+    )
+    mocker.patch(
+        'netsuitesdk.api.vendors.Vendors.post',
+        return_value=data['post_vendor']
+    )
+    expense_group = ExpenseGroup.objects.filter(workspace_id=49).first()
 
+    merchant = 'Random New Vendor'
+    auto_create_merchants = True
+
+    get_or_create_credit_card_vendor(expense_group, merchant, auto_create_merchants)
+    
+    created_vendor = DestinationAttribute.objects.filter(
+        workspace_id=49,
+        value='Random New Vendor'
+    ).first()
+
+    assert created_vendor.destination_id == '1000xys'
+    assert created_vendor.display_name == 'vendor'
+    assert created_vendor.value == 'Random New Vendor'
+
+@pytest.mark.django_db()
+def test_get_or_create_credit_card_vendor_create_false(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.vendors.Vendors.search',
+        return_value={}
+    )
+    mocker.patch(
+        'netsuitesdk.api.vendors.Vendors.post',
+        return_value=data['post_vendor']
+    )
+    expense_group = ExpenseGroup.objects.filter(workspace_id=49).first()
+
+    merchant = 'Random New Vendor'
+    auto_create_merchants = False
+
+    get_or_create_credit_card_vendor(expense_group, merchant, auto_create_merchants)
+    
+    created_vendor = DestinationAttribute.objects.filter(
+        workspace_id=49,
+        value='Random New Vendor'
+    ).first()
+
+    assert created_vendor == None
+
+@pytest.mark.django_db()
+def test_post_bill_success(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.vendor_bills.VendorBills.post',
+        return_value=data['creation_response']
+    )
     task_log = TaskLog.objects.filter(workspace_id=1).first()
     task_log.status = 'READY'
     task_log.save()
 
-    expense_group = ExpenseGroup.objects.get(id=2)
+    expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
     expenses = expense_group.expenses.all()
 
-    expense_group.id = random.randint(100, 1500000)
+    expense_group.id = 1
     expense_group.save()
 
     for expense in expenses:
@@ -130,73 +189,26 @@ def test_post_bill_success(create_task_logs, add_netsuite_credentials, add_fyle_
     
     task_log = TaskLog.objects.get(pk=task_log.id)
     bill = Bill.objects.get(expense_group_id=expense_group.id)
+
     assert task_log.status=='COMPLETE'
-    assert bill.entity_id=='1674'
-    assert bill.currency=='1'
-    assert bill.location_id=='8'
-    assert bill.accounts_payable_id=='25'
-
-    task_log = TaskLog.objects.filter(workspace_id=1).first()
-    task_log.status = 'READY'
-    task_log.save()
-
-    configuration = Configuration.objects.get(workspace_id=1)
-    configuration.auto_map_employees = 'NAME'
-    configuration.auto_create_destination_entity = True
-    configuration.save()
-
-    expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
-
-    source_employee = ExpenseAttribute.objects.get(
-        workspace_id=expense_group.workspace_id,
-        attribute_type='EMPLOYEE',
-        value=expense_group.description.get('employee_email')
-    )
-    source_employee.value = 'new_employeeee@fyle.in'
-    source_employee.detail.update({'full_name': 'Fyle new employeeee'})
-    source_employee.save()
-
-    expense_group.description.update({'employee_email': 'new_employeeee@fyle.in'})
-    expense_group.save()
-
-    expenses = expense_group.expenses.all()
-
-    general_mapping = GeneralMapping.objects.get(workspace_id=1)
-    general_mapping.location_name = "01: San Francisco"
-    general_mapping.location_id = 2
-    general_mapping.save()
-    
-    for expense in expenses:
-        expense.employee_email = 'new_employeeee@fyle.in'
-        expense.save()
-    
-    expense_group.expenses.set(expenses)
-
-    mapping = EmployeeMapping.objects.get(
-        source_employee__value=expense_group.description.get('employee_email'),
-        workspace_id=expense_group.workspace_id
-    )
-    mapping.delete()
-
-    create_bill(expense_group, task_log.id)
-
-    task_log = TaskLog.objects.filter(pk=task_log.id).first()
-    assert task_log.detail[0]['message'] == 'Employee mapping not found'
+    assert bill.currency == '1'
+    assert bill.accounts_payable_id == '25'
+    assert bill.entity_id == '12'
 
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_credentials.delete()
-    task_log = TaskLog.objects.filter(workspace_id=1).first()
+
     task_log.status = 'READY'
     task_log.save()
-    
+
     create_bill(expense_group, task_log.id)
 
-    final_task_log = TaskLog.objects.get(id=task_log.id)
-    final_task_log.detail['message'] == 'NetSuite Account not connected'
+    task_log = TaskLog.objects.get(id=task_log.id)
+    assert task_log.detail['message'] == 'NetSuite Account not connected'
+
 
 @pytest.mark.django_db()
-def test_post_bill_mapping_error(create_task_logs, add_netsuite_credentials, add_fyle_credentials):
-
+def test_post_bill_mapping_error():
     task_log = TaskLog.objects.filter(workspace_id=1).first()
     task_log.status = 'READY'
     task_log.save()
@@ -214,7 +226,102 @@ def test_post_bill_mapping_error(create_task_logs, add_netsuite_credentials, add
 
 
 @pytest.mark.django_db()
-def test_accounting_period_working(create_task_logs, add_netsuite_credentials, add_fyle_credentials):
+def test_accounting_period_working_bill(db):
+    task_log = TaskLog.objects.filter(workspace_id=1).first()
+    task_log.status = 'READY'
+    task_log.save()
+
+    expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
+    expenses = expense_group.expenses.all()
+    configuration = Configuration.objects.get(workspace_id=1)
+    configuration.change_accounting_period = False
+    configuration.save()
+    expense_group.id = 1
+    expense_group.save()
+
+    for expense in expenses:
+        expense.expense_group_id = expense_group.id
+        expense.save()
+    
+    expense_group.expenses.set(expenses)
+
+    with mock.patch('apps.netsuite.connector.NetSuiteConnector.post_bill') as mock_call:
+        mock_call.side_effect = NetSuiteRequestError(message='An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.')
+        create_bill(expense_group, task_log.id)
+
+    task_log = TaskLog.objects.get(pk=task_log.id)
+
+    assert task_log.detail[0]['message'] == 'An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'
+    assert task_log.status=='FAILED'
+
+
+@pytest.mark.django_db()
+def test_create_expense_report(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.expense_reports.ExpenseReports.post',
+        return_value=data['creation_response']
+    )
+    task_log = TaskLog.objects.filter(workspace_id=1).first()
+    task_log.status = 'READY'
+    task_log.save()
+
+    expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
+    expenses = expense_group.expenses.all()
+
+    expense_group.id = 1
+    expense_group.save()
+
+    for expense in expenses:
+        expense.expense_group_id = expense_group.id
+        expense.save()
+    
+    expense_group.expenses.set(expenses)
+    
+    create_expense_report(expense_group, task_log.id)
+    
+    task_log = TaskLog.objects.get(pk=task_log.id)
+    expense_report = ExpenseReport.objects.get(expense_group_id=expense_group.id)
+    
+    assert task_log.status=='COMPLETE'
+    assert expense_report.currency == '1'
+    assert expense_report.account_id == '118'
+    assert expense_report.entity_id == '1676'
+
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials.delete()
+
+    task_log.status = 'READY'
+    task_log.save()
+
+    create_expense_report(expense_group, task_log.id)
+
+    task_log = TaskLog.objects.get(id=task_log.id)
+    assert task_log.detail['message'] == 'NetSuite Account not connected'
+
+
+@pytest.mark.django_db()
+def test_create_expense_report_mapping_error(db):
+
+    task_log = TaskLog.objects.filter(workspace_id=1).first()
+    task_log.status = 'READY'
+    task_log.save()
+
+    CategoryMapping.objects.filter(workspace_id=1).delete()
+    EmployeeMapping.objects.filter(workspace_id=1).delete()
+
+    expense_group = ExpenseGroup.objects.get(id=1)
+    expense_group.description.update({'employee_email': 'sam@fyle.in'})
+    expense_group.save()
+    create_expense_report(expense_group, task_log.id)
+
+    task_log = TaskLog.objects.filter(pk=task_log.id).first()
+
+    assert task_log.detail[0]['message'] == 'Employee mapping not found'
+    assert task_log.status == 'FAILED'
+
+
+@pytest.mark.django_db()
+def test_accounting_period_working_expense_report(db):
     task_log = TaskLog.objects.filter(workspace_id=1).first()
 
     expense_group = ExpenseGroup.objects.get(id=2)
@@ -229,31 +336,129 @@ def test_accounting_period_working(create_task_logs, add_netsuite_credentials, a
     
     expense_group.expenses.set(expenses)
 
-    spent_at = {'spent_at': '2012-09-14T00:00:00'}
-    expense_group.description.update(spent_at)
-    create_bill(expense_group, task_log.id)
-    
+    with mock.patch('apps.netsuite.connector.NetSuiteConnector.post_expense_report') as mock_call:
+        mock_call.side_effect = NetSuiteRequestError(message='An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.')
+        create_expense_report(expense_group, task_log.id)
+
     task_log = TaskLog.objects.get(pk=task_log.id)
 
-    task_log = TaskLog.objects.filter(workspace_id=1).first()
     assert task_log.detail[0]['message'] == 'An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'
+    assert task_log.status=='FAILED'
 
-    configuration = Configuration.objects.get(workspace_id=1)
-    configuration.change_accounting_period = True
-    configuration.save()
-
-    create_bill(expense_group, task_log.id)
-    bill = Bill.objects.get(expense_group_id=expense_group.id)
-    task_log = TaskLog.objects.get(pk=task_log.id)
-
-    assert task_log.status=='COMPLETE'
-    assert bill.entity_id=='1674'
-    assert bill.currency=='1'
-    assert bill.location_id=='8'
-    assert bill.accounts_payable_id=='25'
 
 @pytest.mark.django_db()
-def test_create_expense_report(create_task_logs, add_netsuite_credentials, add_fyle_credentials):
+def test_post_journal_entry(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.journal_entries.JournalEntries.post',
+        return_value=data['creation_response']
+    )
+    task_log = TaskLog.objects.filter(workspace_id=1).first()
+    task_log.status = 'READY'
+    task_log.save()
+
+    expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
+    expenses = expense_group.expenses.all()
+
+    expense_group.id = 1
+    expense_group.save()
+
+    for expense in expenses:
+        expense.expense_group_id = expense_group.id
+        expense.save()
+    
+    expense_group.expenses.set(expenses)
+    
+    create_journal_entry(expense_group, task_log.id)
+    
+    task_log = TaskLog.objects.get(pk=task_log.id)
+    journal_entry = JournalEntry.objects.get(expense_group_id=expense_group.id)
+
+    assert task_log.status=='COMPLETE'
+    assert journal_entry.currency == '1'
+    assert journal_entry.external_id == 'journal 1 - ashwin.t@fyle.in'
+    assert journal_entry.memo == 'Reimbursable expenses by ashwin.t@fyle.in'
+
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials.delete()
+
+    task_log.status = 'READY'
+    task_log.save()
+
+    create_journal_entry(expense_group, task_log.id)
+
+    task_log = TaskLog.objects.get(id=task_log.id)
+    assert task_log.detail['message'] == 'NetSuite Account not connected'
+
+@pytest.mark.django_db()
+def test_post_journal_entry_mapping_error(db):
+
+    task_log = TaskLog.objects.filter(workspace_id=1).first()
+    task_log.status = 'READY'
+    task_log.save()
+
+    CategoryMapping.objects.filter(workspace_id=1).delete()
+    EmployeeMapping.objects.filter(workspace_id=1).delete()
+
+    expense_group = ExpenseGroup.objects.get(id=1)
+    expense_group.description.update({'employee_email': 'sam@fyle.in'})
+    expense_group.save()
+
+    create_journal_entry(expense_group, task_log.id)
+
+    task_log = TaskLog.objects.filter(pk=task_log.id).first()
+
+    assert task_log.detail[0]['message'] == 'Employee mapping not found'
+    assert task_log.status == 'FAILED'
+
+
+@pytest.mark.django_db()
+def test_accounting_period_working_create_journal_entry(db):
+    task_log = TaskLog.objects.filter(workspace_id=1).first()
+
+    expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
+    expenses = expense_group.expenses.all()
+
+    expense_group.id = 1
+    expense_group.save()
+
+    for expense in expenses:
+        expense.expense_group_id = expense_group.id
+        expense.save()
+    
+    with mock.patch('apps.netsuite.connector.NetSuiteConnector.post_journal_entry') as mock_call:
+        mock_call.side_effect = NetSuiteRequestError(message='An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.')
+        create_journal_entry(expense_group, task_log.id)
+
+    task_log = TaskLog.objects.get(pk=task_log.id)
+
+    assert task_log.detail[0]['message'] == 'An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'
+    assert task_log.status=='FAILED'
+
+
+@pytest.mark.django_db()
+def test_post_credit_card_charge(mocker, db):
+    class Response:
+        def __init__(self, text, status_code):
+            self.text = text
+            self.status_code = status_code
+
+    mocker.patch(
+        'requests_oauthlib.OAuth1Session.post',
+        return_value=Response(
+            status_code=200,
+            text=json.dumps(data['suitelet_response'])
+        )
+    )
+
+    mocker.patch(
+        'netsuitesdk.api.vendors.Vendors.search',
+        return_value={}
+    )
+
+    mocker.patch(
+        'netsuitesdk.api.vendors.Vendors.post',
+        return_value=data['post_vendor']
+    )
 
     task_log = TaskLog.objects.filter(workspace_id=1).first()
     task_log.status = 'READY'
@@ -262,181 +467,30 @@ def test_create_expense_report(create_task_logs, add_netsuite_credentials, add_f
     expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
     expenses = expense_group.expenses.all()
 
-    expense_group.id = random.randint(100, 1500000)
+    expense_group.id = 1
     expense_group.save()
 
-    for expense in expenses:
-        expense.expense_group_id = expense_group.id
-        expense.save()
-    
-    expense_group.expenses.set(expenses)
-    create_expense_report(expense_group, task_log.id)
-    expense_report = ExpenseReport.objects.get(expense_group_id=expense_group.id)
-
-    assert expense_report.account_id=='118'
-    assert expense_report.entity_id=='1676'
-    assert expense_report.expense_group_id==expense_group.id
-    assert expense_report.subsidiary_id == '3'
-
-
-    task_log = TaskLog.objects.filter(workspace_id=1).last()
-    task_log.status = 'READY'
-    task_log.save()
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
-    netsuite_credentials.delete()
-
-    create_expense_report(expense_group, task_log.id)
-
-    final_task_log = TaskLog.objects.get(id=task_log.id)
-    final_task_log.detail['message'] == 'NetSuite Account not connected'
-
-@pytest.mark.django_db()
-def test_post_journal_entry(create_task_logs, add_netsuite_credentials, add_fyle_credentials):
-    task_log = TaskLog.objects.filter(workspace_id=49).first()
-
-    expense_group = ExpenseGroup.objects.filter(workspace_id=49).first()
-    expenses = expense_group.expenses.all()
-
-    expense_group.id = random.randint(100, 1500000)
-    expense_group.save()
-
-    for expense in expenses:
-        expense.expense_group_id = expense_group.id
-        expense.save()
-
-    expense_group.expenses.set(expenses)
-    create_journal_entry(expense_group, task_log.id)
-
-    journal_entry = JournalEntry.objects.filter(expense_group_id=expense_group.id).first()
-
-    assert journal_entry.currency == '1'
-    assert journal_entry.location_id == '10'
-    assert journal_entry.memo == 'Reimbursable expenses by admin1@fyleforintacct.in'
-
-
-@pytest.mark.django_db()
-def test_create_journal_entry_mapping_error(create_task_logs, add_netsuite_credentials, add_fyle_credentials):
-
-    task_log = TaskLog.objects.filter(workspace_id=1).first()
-    task_log.status = 'READY'
-    task_log.save()
-
-    CategoryMapping.objects.filter(workspace_id=1).delete()
-    EmployeeMapping.objects.filter(workspace_id=1).delete()
-
-    expense_group = ExpenseGroup.objects.get(id=1)
-    expense_group.description.update({'employee_email': 'sam@fyle.in'})
-    expense_group.save()
-
-    create_journal_entry(expense_group, task_log.id)
-
-    task_log = TaskLog.objects.filter(pk=task_log.id).first()
-
-    assert task_log.detail[0]['message'] == 'Employee mapping not found'
-    assert task_log.status == 'FAILED'
-
-
-@pytest.mark.django_db()
-def test_accounting_period_working_create_journal_entry(create_task_logs, add_netsuite_credentials, add_fyle_credentials):
-    task_log = TaskLog.objects.filter(workspace_id=49).first()
-
-    expense_group = ExpenseGroup.objects.filter(workspace_id=49).first()
-    expenses = expense_group.expenses.all()
-
-    expense_group.id = random.randint(100, 1500000)
-    expense_group.save()
-
-    for expense in expenses:
-        expense.expense_group_id = expense_group.id
-        expense.save()
-    
-    expense_group.expenses.set(expenses)
-
-    spent_at = {'spent_at': '1190-11-14T00:00:00'}
-    expense_group.description.update(spent_at)
-    create_journal_entry(expense_group, task_log.id)
-    
-    task_log = TaskLog.objects.get(pk=task_log.id)
-
-    task_log = TaskLog.objects.filter(workspace_id=49).first()
-    assert task_log.detail[0]['message'] == 'An error occured in a upsert request: You have entered an Invalid Field Value 11/14/1190 for the following field: trandate'
-
-
-@pytest.mark.django_db()
-def test_create_expense_report_mapping_error(create_task_logs, add_netsuite_credentials, add_fyle_credentials):
-
-    task_log = TaskLog.objects.filter(workspace_id=1).first()
-    task_log.status = 'READY'
-    task_log.save()
-
-    CategoryMapping.objects.filter(workspace_id=1).delete()
-    EmployeeMapping.objects.filter(workspace_id=1).delete()
-
-    expense_group = ExpenseGroup.objects.get(id=1)
-    expense_group.description.update({'employee_email': 'sam@fyle.in'})
-    expense_group.save()
-    create_expense_report(expense_group, task_log.id)
-
-    task_log = TaskLog.objects.filter(pk=task_log.id).first()
-
-    assert task_log.detail[0]['message'] == 'Employee mapping not found'
-    assert task_log.status == 'FAILED'
-
-
-@pytest.mark.django_db()
-def test_accounting_period_working_create_expense_report(create_task_logs, add_netsuite_credentials, add_fyle_credentials):
-    task_log = TaskLog.objects.filter(workspace_id=1).first()
-
-    expense_group = ExpenseGroup.objects.get(id=2)
-    expenses = expense_group.expenses.all()
-
-    expense_group.id = random.randint(100, 1500000)
-    expense_group.save()
-
-    for expense in expenses:
-        expense.expense_group_id = expense_group.id
-        expense.save()
-    
-    expense_group.expenses.set(expenses)
-
-    spent_at = {'spent_at': '2012-09-14T00:00:00'}
-    expense_group.description.update(spent_at)
-    create_expense_report(expense_group, task_log.id)
-    
-    task_log = TaskLog.objects.get(pk=task_log.id)
-
-    task_log = TaskLog.objects.filter(workspace_id=1).first()
-    assert task_log.detail[0]['message'] == 'An error occured in a upsert request: A credit card account has not been selected for corporate card expenses in Accounting Preferences. Your Expense Report cannot be saved, contact an administrator.'
-
-
-@pytest.mark.django_db()
-def test_post_credit_charge(create_task_logs, add_netsuite_credentials, add_fyle_credentials):
-    task_log = TaskLog.objects.filter(workspace_id=49).first()
-
-    expense_group = ExpenseGroup.objects.filter(workspace_id=49).last()
-    expenses = expense_group.expenses.all()
-
-    general_mappings = GeneralMapping.objects.get(workspace_id=49)
-
-    general_mappings.default_ccc_account_name = 'Aus Account'
-    general_mappings.default_ccc_account_id = 228
+    general_mappings = GeneralMapping.objects.get(workspace_id=1)
+    general_mappings.default_ccc_account_id = '10'
     general_mappings.save()
 
-    expense_group.id = random.randint(100, 1500000)
-    expense_group.save()
-
     for expense in expenses:
         expense.expense_group_id = expense_group.id
         expense.save()
-
+    
     expense_group.expenses.set(expenses)
+    
     create_credit_card_charge(expense_group, task_log.id)
+    
+    task_log = TaskLog.objects.get(pk=task_log.id)
+    credit_card_charge = CreditCardCharge.objects.get(expense_group_id=expense_group.id)
+    
+    assert task_log.status=='COMPLETE'
+    assert credit_card_charge.currency == '1'
+    assert credit_card_charge.credit_card_account_id == '10'
+    assert credit_card_charge.external_id == 'cc-charge 1 - ashwin.t@fyle.in'
 
-    credit_card_charge = CreditCardCharge.objects.filter(expense_group_id=expense_group.id).first()
-    assert credit_card_charge.credit_card_account_id == '228'
-    assert credit_card_charge.memo == 'Credit card expenses by admin1@fyleforintacct.in'
-
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_credentials.delete()
 
     task_log.status = 'READY'
@@ -449,7 +503,16 @@ def test_post_credit_charge(create_task_logs, add_netsuite_credentials, add_fyle
 
 
 @pytest.mark.django_db()
-def test_create_credit_card_charge_mapping_error(create_task_logs, add_netsuite_credentials, add_fyle_credentials):
+def test_post_credit_card_charge_mapping_error(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.vendors.Vendors.search',
+        return_value={}
+    )
+
+    mocker.patch(
+        'netsuitesdk.api.vendors.Vendors.post',
+        return_value=data['post_vendor']
+    )
 
     task_log = TaskLog.objects.filter(workspace_id=49).first()
     task_log.status = 'READY'
@@ -472,48 +535,41 @@ def test_create_credit_card_charge_mapping_error(create_task_logs, add_netsuite_
 
 
 @pytest.mark.django_db()
-def test_accounting_period_working_create_credit_card_charge(create_task_logs, add_netsuite_credentials, add_fyle_credentials):
-    task_log = TaskLog.objects.filter(workspace_id=49).first()
-    expense_group = ExpenseGroup.objects.filter(workspace_id=49).last()
-    expenses = expense_group.expenses.all()
+def test_accounting_period_working_credit_card_charge(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.vendors.Vendors.search',
+        return_value={}
+    )
 
-    general_mappings = GeneralMapping.objects.get(workspace_id=49)
+    mocker.patch(
+        'netsuitesdk.api.vendors.Vendors.post',
+        return_value=data['post_vendor']
+    )
 
-    general_mappings.default_ccc_account_name = 'Aus Account'
-    general_mappings.default_ccc_account_id = 228
+    general_mappings = GeneralMapping.objects.get(workspace_id=1)
+    general_mappings.default_ccc_account_id = '10'
     general_mappings.save()
 
-    expense_group.id = random.randint(100, 1500000)
+    task_log = TaskLog.objects.filter(workspace_id=1).first()
+
+    expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
+    expenses = expense_group.expenses.all()
+
+    expense_group.id = 1
     expense_group.save()
 
     for expense in expenses:
         expense.expense_group_id = expense_group.id
         expense.save()
-
-    expense_group.expenses.set(expenses)
-
-    spent_at = {'spent_at': '1190-09-14T00:00:00'}
-    expense_group.description.update(spent_at)
-    create_credit_card_charge(expense_group, task_log.id)
     
-    task_log = TaskLog.objects.get(pk=task_log.id)
-
-    task_log = TaskLog.objects.filter(workspace_id=49).first()
-    # assert task_log.detail[0]['message'] == 'The transaction date you specified is not within the date range of your accounting period.'
-
-    configuration = Configuration.objects.get(workspace_id=1)
-    configuration.change_accounting_period = True
-    configuration.save()
-
-    create_credit_card_charge(expense_group, task_log.id)
-    credit_card_charge = CreditCardCharge.objects.get(expense_group_id=expense_group.id)
+    with mock.patch('apps.netsuite.connector.NetSuiteConnector.post_credit_card_charge') as mock_call:
+        mock_call.side_effect = NetSuiteRequestError(message='An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.')
+        create_credit_card_charge(expense_group, task_log.id)
 
     task_log = TaskLog.objects.get(pk=task_log.id)
 
-    assert task_log.status=='COMPLETE'
-    assert credit_card_charge.entity_id=='12104'
-    assert credit_card_charge.currency=='1'
-    assert credit_card_charge.location_id=='10'
+    assert task_log.detail[0]['message'] == 'An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'
+    assert task_log.status=='FAILED'
 
 
 @pytest.mark.django_db()

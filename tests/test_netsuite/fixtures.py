@@ -255,12 +255,19 @@ data = {
             "externalId": "bill 1258 - admin1@fylefornt.com",
         }
     ],
-    "bill_response": [
+    "creation_response": [
         ["name", None],
         ["internalId", "115043"],
         ["externalId", "bill 1405 - admin1@fylefornt.com"],
         ["type", "vendorBill"],
     ],
+    "suitelet_response": {
+        "success": True,
+        "name": None,
+        "internalId": "12344",
+        "externalId": "charge_card 1405 - admin1@fylefornt.com",
+        "type": "chargeCard"
+    },
     "expense_report_payload": [
         {
             'nullFieldList': None,

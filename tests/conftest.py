@@ -68,7 +68,7 @@ def add_netsuite_credentials(db):
             workspace_id=workspace_id
         )
 
-@pytest.fixture()
+@pytest.fixture(autouse=True)
 def add_fyle_credentials(db):
     workspaces = [1,2,49]
     for workspace_id in workspaces:

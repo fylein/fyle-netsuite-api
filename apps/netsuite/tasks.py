@@ -518,16 +518,15 @@ def create_journal_entry(expense_group, task_log_id):
 
     configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
-
-    netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
-
-    if configuration.auto_map_employees and configuration.auto_create_destination_entity:
-        create_or_update_employee_mapping(
-            expense_group, netsuite_connection, configuration.auto_map_employees,
-            configuration.employee_field_mapping)
-
     try:
+        netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
+
+        netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
+
+        if configuration.auto_map_employees and configuration.auto_create_destination_entity:
+            create_or_update_employee_mapping(
+                expense_group, netsuite_connection, configuration.auto_map_employees,
+                configuration.employee_field_mapping)
         with transaction.atomic():
             __validate_expense_group(expense_group, configuration)
 
