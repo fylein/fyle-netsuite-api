@@ -86,11 +86,6 @@ def default_session_fixture(request):
     )
     patched_1.__enter__()
 
-    # patched_1 = mock.patch(
-    #     'netsuitesdk.internal.client.NetSuite.connect_tba',
-    #     return_value=None
-    # )
-
     def unpatch():
         patched_1.__exit__()
 
