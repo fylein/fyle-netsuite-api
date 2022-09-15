@@ -28,6 +28,10 @@ services:
       FYLE_REFRESH_TOKEN: ''
       FYLE_TOKEN_URI: ${FYLE_TOKEN_URI}
       NS_ACCOUNT_ID: ${NS_ACCOUNT_ID}
+      NS_TOKEN_ID: ''
+      NS_TOKEN_SECRET: ''
+      NS_CONSUMER_KEY: ''
+      NS_CONSUMER_SECRET: ''
   db:
     image: "postgres:latest"
     environment: 

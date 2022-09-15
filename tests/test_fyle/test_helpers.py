@@ -6,18 +6,22 @@ from apps.fyle.models import ExpenseGroupSettings
 from apps.mappings.models import GeneralMapping
 from apps.workspaces.models import FyleCredential, Workspace
 from fyle_netsuite_api.tests import settings
+from .fixtures import data
+
 
 @pytest.mark.django_db()
 def test_add_expense_id_to_expense_group_settings():
 
     expense_group_setting = ExpenseGroupSettings.objects.get(id=1)
-    assert expense_group_setting.corporate_credit_card_expense_group_fields == ['employee_email', 'report_id', 'claim_number', 'fund_source']
+    assert expense_group_setting.corporate_credit_card_expense_group_fields == [
+        'employee_email', 'report_id', 'claim_number', 'fund_source']
 
     add_expense_id_to_expense_group_settings(1)
     expense_group_setting = ExpenseGroupSettings.objects.get(id=1)
-    
-    assert sorted(expense_group_setting.corporate_credit_card_expense_group_fields)  == ['claim_number', 'employee_email', 'expense_id', 'fund_source', 'report_id']
-    
+
+    assert sorted(expense_group_setting.corporate_credit_card_expense_group_fields) == [
+                  'claim_number', 'employee_email', 'expense_id', 'fund_source', 'report_id']
+
 
 @pytest.mark.django_db()
 def test_update_import_card_credits_flag():
@@ -32,6 +36,7 @@ def test_update_import_card_credits_flag():
     update_import_card_credits_flag('BILL', 'EXPENSE_REPORT', 1)
     expense_group_setting = ExpenseGroupSettings.objects.get(id=1)
     assert expense_group_setting.import_card_credits == False
+
 
 @pytest.mark.django_db()
 def test_update_use_employee_attributes_flag():
@@ -48,9 +53,43 @@ def test_update_use_employee_attributes_flag():
     assert general_mapping.use_employee_department == False
     assert general_mapping.use_employee_location == False
 
+
 @pytest.mark.django_db
-def test_check_interval_and_sync_dimension(access_token, add_fyle_credentials):
-    # Todo: To be utilized later
+def test_check_interval_and_sync_dimension(access_token, mocker, db):
+    mocker.patch(
+        'fyle.platform.apis.v1beta.admin.Employees.list_all',
+        return_value=data['get_all_employees']
+    )
+
+    mocker.patch(
+        'fyle.platform.apis.v1beta.admin.Categories.list_all',
+        return_value=data['get_all_categories']
+    )
+
+    mocker.patch(
+        'fyle.platform.apis.v1beta.admin.Projects.list_all',
+        return_value=data['get_all_projects']
+    )
+
+    mocker.patch(
+        'fyle.platform.apis.v1beta.admin.CostCenters.list_all',
+        return_value=data['get_all_cost_centers']
+    )
+
+    mocker.patch(
+        'fyle.platform.apis.v1beta.admin.ExpenseFields.list_all',
+        return_value=data['get_all_expense_fields']
+    )
+
+    mocker.patch(
+        'fyle.platform.apis.v1beta.admin.CorporateCards.list_all',
+        return_value=data['get_all_corporate_cards']
+    )
+
+    mocker.patch(
+        'fyle.platform.apis.v1beta.admin.TaxGroups.list_all',
+        return_value=data['get_all_tax_groups']
+    )
     workspace = Workspace.objects.get(id=1)
     fyle_credentials = FyleCredential.objects.get(workspace_id=1)
     response = check_interval_and_sync_dimension(workspace, fyle_credentials)

@@ -706,6 +706,16 @@ def test_process_reimbursements(db, mocker, add_fyle_credentials):
         return_value=[]
     )
 
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.Reimbursements.sync',
+        return_value=[],
+    )
+
+    mocker.patch(
+        'fyle.platform.apis.v1beta.admin.Reimbursements.list_all',
+        return_value=[]
+    )
+
     reimbursement_count = Reimbursement.objects.filter(workspace_id=1).count()
     assert reimbursement_count == 1
 
