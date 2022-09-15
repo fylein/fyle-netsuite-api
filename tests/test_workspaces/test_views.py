@@ -99,7 +99,8 @@ def test_get_configuration_detail(api_client, access_token):
     assert dict_compare_keys(response, expected_response['configuration']) == [], 'configuration api returns a diff in keys'
 
 @pytest.mark.django_db(databases=['default'])
-def test_post_netsuite_credentials(api_client, access_token, add_netsuite_credentials, add_fyle_credentials):
+def test_post_netsuite_credentials(api_client, access_token, mocker):
+    mocker.patch('netsuitesdk.api.accounts.Accounts.get_all_generator')
 
     url = reverse(
         'post-netsuite-credentials', kwargs={

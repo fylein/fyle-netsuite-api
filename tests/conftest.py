@@ -1,5 +1,6 @@
 import os
 from datetime import datetime, timezone
+from unittest import mock
 import pytest
 from rest_framework.test import APIClient
 from fyle_rest_auth.models import AuthToken, User
@@ -53,7 +54,7 @@ def access_token(db):
 
     return final_access_token
 
-@pytest.fixture()
+@pytest.fixture(autouse=True)
 def add_netsuite_credentials(db):
 
     workspaces = [1,2,49]
@@ -67,7 +68,7 @@ def add_netsuite_credentials(db):
             workspace_id=workspace_id
         )
 
-@pytest.fixture()
+@pytest.fixture(autouse=True)
 def add_fyle_credentials(db):
     workspaces = [1,2,49]
     for workspace_id in workspaces:
@@ -76,3 +77,16 @@ def add_fyle_credentials(db):
             workspace_id=workspace_id,
             cluster_domain='https://staging.fyle.tech'
         )
+
+@pytest.fixture(scope="session", autouse=True)
+def default_session_fixture(request):
+    patched_1 = mock.patch(
+        'netsuitesdk.internal.client.NetSuiteClient.connect_tba',
+        return_value=None
+    )
+    patched_1.__enter__()
+
+    def unpatch():
+        patched_1.__exit__()
+
+    request.addfinalizer(unpatch)

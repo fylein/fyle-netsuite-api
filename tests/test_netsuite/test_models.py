@@ -67,7 +67,6 @@ def test_get_customer_id_or_none():
 
 
 def test_create_bill(db):
-
     expense_group = ExpenseGroup.objects.get(id=2)
     bill = Bill.create_bill(expense_group)
     configuration = Configuration.objects.get(workspace_id=1)
@@ -80,7 +79,7 @@ def test_create_bill(db):
 
     assert bill.currency == '1'
     assert bill.transaction_date <= datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
-    assert bill.subsidiary_id == '3'
+    assert bill.subsidiary_id == '1'
 
     expense_group = ExpenseGroup.objects.get(id=2)
 
@@ -103,7 +102,7 @@ def test_create_bill(db):
 
     assert bill.currency == '1'
     assert bill.transaction_date <= datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
-    assert bill.subsidiary_id == '3'
+    assert bill.subsidiary_id == '1'
 
 
 def test_create_expense_report(db):

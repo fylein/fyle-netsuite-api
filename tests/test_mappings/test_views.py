@@ -4,6 +4,7 @@ from django.urls import reverse
 
 from apps.mappings.models import GeneralMapping, SubsidiaryMapping
 from apps.workspaces.models import Configuration
+from tests.test_netsuite.fixtures import data as netsuite_data
 from .fixtures import data
 
 @pytest.mark.django_db(databases=['default'])
@@ -23,8 +24,8 @@ def test_subsidiary_mapping_view(api_client, access_token):
     response = api_client.get(url)
     response = json.loads(response.content)
 
-    assert response['internal_id']=='3'
-    assert response['subsidiary_name']=='Honeycomb Holdings Inc.'
+    assert response['internal_id']=='1'
+    assert response['subsidiary_name']=='Honeycomb Mfg.'
 
     SubsidiaryMapping.objects.get(workspace_id=1).delete()
 
@@ -35,10 +36,12 @@ def test_subsidiary_mapping_view(api_client, access_token):
 
 
 @pytest.mark.django_db(databases=['default'])
-def test_post_country_view(api_client, access_token, add_netsuite_credentials):
-    '''
-    Test Post of User Profile
-    '''
+def test_post_country_view(api_client, access_token, mocker):
+    mocker.patch(
+        'netsuitesdk.api.subsidiaries.Subsidiaries.get',
+        return_value=netsuite_data['get_all_subsidiaries'][0][0]
+    )
+
     url = reverse('country', 
         kwargs={
                 'workspace_id': 1
@@ -51,7 +54,7 @@ def test_post_country_view(api_client, access_token, add_netsuite_credentials):
     response = json.loads(response.content)
 
     assert response['country_name']=='_unitedStates'
-    assert response['subsidiary_name']=='Honeycomb Holdings Inc.'
+    assert response['subsidiary_name']=='Honeycomb Mfg.'
 
     SubsidiaryMapping.objects.get(workspace_id=1).delete()
 
