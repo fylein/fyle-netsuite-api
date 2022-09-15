@@ -578,7 +578,11 @@ def test_get_all_internal_ids(create_expense_report, create_task_logs):
     assert internal_ids[1]['internal_id'] == 10913
 
 @pytest.mark.django_db()
-def test_check_netsuite_object_status(create_expense_report, create_task_logs, add_netsuite_credentials):
+def test_check_netsuite_object_status_expense_report(create_expense_report, mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.expense_reports.ExpenseReports.get',
+        return_value=data['get_expense_report_response'][0]
+    )
     expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
 
     expense_report = ExpenseReport.objects.filter(expense_group__id=expense_group.id).first()
@@ -587,11 +591,15 @@ def test_check_netsuite_object_status(create_expense_report, create_task_logs, a
     check_netsuite_object_status(1)
 
     expense_report = ExpenseReport.objects.filter(expense_group__id=expense_group.id).first()
-    assert expense_report.paid_on_netsuite == True
+    assert expense_report.paid_on_netsuite == False
 
 
 @pytest.mark.django_db()
-def test_check_netsuite_object_status_bill(add_netsuite_credentials, create_bill_task):
+def test_check_netsuite_object_status_bill(create_bill_task, mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.vendor_bills.VendorBills.get',
+        return_value=data['get_bill_response'][0]
+    )
     expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
     
     bill, bill_lineitems = create_bill_task
@@ -600,7 +608,7 @@ def test_check_netsuite_object_status_bill(add_netsuite_credentials, create_bill
     check_netsuite_object_status(1)
 
     bill = Bill.objects.filter(expense_group__id=expense_group.id).first()
-    assert bill.paid_on_netsuite == True
+    assert bill.paid_on_netsuite == False
 
 
 def test_load_attachments(db, add_netsuite_credentials, add_fyle_credentials):
@@ -615,7 +623,15 @@ def test_load_attachments(db, add_netsuite_credentials, add_fyle_credentials):
     assert attachment == None
 
 
-def test_create_or_update_employee_mapping(db, add_netsuite_credentials, add_fyle_credentials):
+def test_create_or_update_employee_mapping(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.employees.Employees.search',
+        return_value={}
+    )
+    mocker.patch(
+        'netsuitesdk.api.employees.Employees.post',
+        return_value=data['post_vendor']
+    )
 
     expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
 
