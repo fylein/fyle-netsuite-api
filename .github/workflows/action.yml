@@ -5,17 +5,6 @@ on:
     types: [assigned, opened, synchronize, reopened]
 
 jobs:
-  pylint:
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v1
-    - name: Python Pylin GitHub Action
-      uses: fylein/python-pylint-github-action@v4
-      with:
-        args: pip3 install -r requirements.txt && pip install pylint-django==2.3.0 && pylint --load-plugins pylint_django --rcfile=.pylintrc **/**.py
-        
   pytest:
     runs-on: ubuntu-latest
     environment: CI Environment
