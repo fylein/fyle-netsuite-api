@@ -1,5 +1,5 @@
 import pytest
-from apps.fyle.models import Expense, ExpenseGroup
+from apps.fyle.models import ExpenseGroup
 from apps.tasks.models import TaskLog
 from apps.netsuite.models import Bill, BillLineitem, CreditCardCharge, CreditCardChargeLineItem, ExpenseReport, ExpenseReportLineItem, JournalEntry, JournalEntryLineItem
 from apps.workspaces.models import Configuration

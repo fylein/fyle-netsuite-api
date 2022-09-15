@@ -10,6 +10,8 @@ from apps.workspaces.models import NetSuiteCredentials, FyleCredential
 from apps.fyle.helpers import get_access_token
 from fyle_netsuite_api.tests import settings
 
+from .test_fyle.fixtures import data as fyle_data
+
 def pytest_configure():
     os.system('sh ./tests/sql_fixtures/reset_db_fixtures/reset_db.sh')
 
@@ -85,6 +87,33 @@ def default_session_fixture(request):
         return_value=None
     )
     patched_1.__enter__()
+
+    patched_2 = mock.patch(
+        'fyle_rest_auth.authentication.get_fyle_admin',
+        return_value=fyle_data['get_my_profile']
+    )
+    patched_2.__enter__()
+
+    patched_3 = mock.patch(
+        'fyle.platform.internals.auth.Auth.update_access_token',
+        return_value='asnfalsnkflanskflansfklsan'
+    )
+    patched_3.__enter__()
+
+    patched_4 = mock.patch(
+        'apps.fyle.helpers.post_request',
+        return_value={
+            'access_token': 'easnfkjo12233.asnfaosnfa.absfjoabsfjk',
+            'cluster_domain': 'https://staging.fyle.tech'
+        }
+    )
+    patched_4.__enter__()
+
+    patched_5 = mock.patch(
+        'fyle.platform.apis.v1beta.spender.MyProfile.get',
+        return_value=fyle_data['get_my_profile']
+    )
+    patched_5.__enter__()
 
     def unpatch():
         patched_1.__exit__()

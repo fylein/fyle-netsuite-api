@@ -1,15 +1,13 @@
 import pytest
 import json
-from django.http import response
-from apps import fyle
 from fyle_netsuite_api.tests import settings
 from django.urls import reverse
-from apps.workspaces.models import Configuration, FyleCredential, NetSuiteCredentials, Workspace, WorkspaceSchedule
-from tests.conftest import api_client
-from fyle_rest_auth.models import AuthToken, User
+from apps.workspaces.models import Configuration, FyleCredential, NetSuiteCredentials, WorkspaceSchedule
 from .fixtures import create_netsuite_credential_object_payload, create_configurations_object_payload, \
     create_fyle_credential_object_payload
 from fyle_accounting_mappings.models import ExpenseAttribute
+
+from tests.test_fyle.fixtures import data as fyle_data
 
 
 from tests.helper import dict_compare_keys, get_response_dict
@@ -65,10 +63,22 @@ def test_get_workspace_by_id(api_client, access_token):
 
 
 @pytest.mark.django_db(databases=['default'])
-def test_post_of_workspace(api_client, access_token):
+def test_post_of_workspace(api_client, access_token, mocker):
 
     url = reverse(
         'workspace'
+    )
+
+    mocker.patch(
+        'apps.workspaces.views.get_fyle_admin',
+        return_value=fyle_data['get_my_profile']
+    )
+
+    mocker.patch(
+        'apps.workspaces.views.get_cluster_domain',
+        return_value={
+            'cluster_domain': 'https://staging.fyle.tech/'
+        }
     )
 
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
@@ -424,4 +434,4 @@ def test_get_workspace_admin_view(api_client, access_token, db):
     assert response.status_code == 200
     response = json.loads(response.content)
 
-    assert response[0]['email'] == 'admin1@fylefornt.com'
+    assert response[0]['email'] == 'ashwin.t@fyle.in'

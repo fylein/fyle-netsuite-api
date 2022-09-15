@@ -176,7 +176,41 @@ def test_expense_group_id_view(api_client, access_token):
 
 
 @pytest.mark.django_db(databases=['default'])
-def test_fyle_refresh_dimension(api_client, access_token, add_fyle_credentials):
+def test_fyle_refresh_dimension(api_client, access_token, mocker):
+   mocker.patch(
+      'fyle.platform.apis.v1beta.admin.Employees.list_all',
+      return_value=data['get_all_employees']
+   )
+
+   mocker.patch(
+      'fyle.platform.apis.v1beta.admin.Categories.list_all',
+      return_value=[]
+   )
+
+   mocker.patch(
+      'fyle.platform.apis.v1beta.admin.Projects.list_all',
+      return_value=data['get_all_projects']
+   )
+
+   mocker.patch(
+      'fyle.platform.apis.v1beta.admin.CostCenters.list_all',
+      return_value=data['get_all_cost_centers']
+   )
+
+   mocker.patch(
+      'fyle.platform.apis.v1beta.admin.ExpenseFields.list_all',
+      return_value=data['get_all_expense_fields']
+   )
+
+   mocker.patch(
+      'fyle.platform.apis.v1beta.admin.CorporateCards.list_all',
+      return_value=data['get_all_corporate_cards']
+   )
+
+   mocker.patch(
+      'fyle.platform.apis.v1beta.admin.TaxGroups.list_all',
+      return_value=data['get_all_tax_groups']
+   )
 
    url = reverse('refresh-fyle-dimensions',
       kwargs={
@@ -196,8 +230,43 @@ def test_fyle_refresh_dimension(api_client, access_token, add_fyle_credentials):
    assert response.status_code == 400
    assert response.data['message'] == 'Fyle credentials not found in workspace'
 
+
 @pytest.mark.django_db(databases=['default'])
-def test_fyle_sync_dimension(api_client, access_token, add_fyle_credentials):
+def test_fyle_sync_dimension(api_client, access_token, mocker):
+   mocker.patch(
+      'fyle.platform.apis.v1beta.admin.Employees.list_all',
+      return_value=data['get_all_employees']
+   )
+
+   mocker.patch(
+      'fyle.platform.apis.v1beta.admin.Categories.list_all',
+      return_value=data['get_all_categories']
+   )
+
+   mocker.patch(
+      'fyle.platform.apis.v1beta.admin.Projects.list_all',
+      return_value=data['get_all_projects']
+   )
+
+   mocker.patch(
+      'fyle.platform.apis.v1beta.admin.CostCenters.list_all',
+      return_value=data['get_all_cost_centers']
+   )
+
+   mocker.patch(
+      'fyle.platform.apis.v1beta.admin.ExpenseFields.list_all',
+      return_value=data['get_all_expense_fields']
+   )
+
+   mocker.patch(
+      'fyle.platform.apis.v1beta.admin.CorporateCards.list_all',
+      return_value=data['get_all_corporate_cards']
+   )
+
+   mocker.patch(
+      'fyle.platform.apis.v1beta.admin.TaxGroups.list_all',
+      return_value=data['get_all_tax_groups']
+   )
 
    url = reverse('sync-fyle-dimensions', 
       kwargs={
