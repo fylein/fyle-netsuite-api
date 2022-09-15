@@ -239,6 +239,119 @@ def test_sync_subsidiaries(mocker, db):
     subsidiaries = DestinationAttribute.objects.filter(attribute_type='SUBSIDIARY', workspace_id=49).count()
     assert subsidiaries == 8
 
+def test_sync_locations(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.locations.Locations.get_all_generator',
+        return_value=data['get_all_locations']
+    )
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=49)
+
+    locations = DestinationAttribute.objects.filter(attribute_type='LOCATION', workspace_id=49).count()
+    assert locations == 12
+
+    netsuite_connection.sync_locations()
+
+    locations = DestinationAttribute.objects.filter(attribute_type='LOCATION', workspace_id=49).count()
+    assert locations == 13
+
+
+def test_sync_departments(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.departments.Departments.get_all_generator',
+        return_value=data['get_all_departments']
+    )
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=49)
+
+    departments = DestinationAttribute.objects.filter(attribute_type='DEPARTMENT', workspace_id=49).count()
+    assert departments == 12
+
+    netsuite_connection.sync_departments()
+
+    departments = DestinationAttribute.objects.filter(attribute_type='DEPARTMENT', workspace_id=49).count()
+    assert departments == 13
+
+
+def test_sync_customers(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.customers.Customers.get_all_generator',
+        return_value=data['get_all_projects']    
+    )
+
+    mocker.patch(
+        'netsuitesdk.api.customers.Customers.count',
+        return_value=len(data['get_all_projects'][0])
+    )
+
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
+
+    customers = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='PROJECT').count()
+    assert customers == 1086
+
+    netsuite_connection.sync_customers()
+
+    customers = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='PROJECT').count()
+    assert customers == 1087
+
+
+def test_sync_tax_items(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.tax_items.TaxItems.get_all_generator',
+        return_value=data['get_all_tax_items']    
+    )
+
+    mocker.patch(
+        'netsuitesdk.api.tax_groups.TaxGroups.get_all_generator',
+        return_value=data['get_all_tax_groups']
+    )
+
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
+
+    tax_items = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='TAX_ITEM').count()
+    assert tax_items == 26
+
+    netsuite_connection.sync_tax_items()
+
+    tax_items = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='TAX_ITEM').count()
+    assert tax_items == 26
+
+
+def test_sync_currencies(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.currencies.Currencies.get_all',
+        return_value=data['get_all_currencies'][0]
+    )
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=49)
+
+    currencies = DestinationAttribute.objects.filter(attribute_type='CURRENCY', workspace_id=49).count()
+    assert currencies == 6
+
+    netsuite_connection.sync_currencies()
+
+    currencies = DestinationAttribute.objects.filter(attribute_type='CURRENCY', workspace_id=49).count()
+    assert currencies == 7
+
+
+def test_sync_classifications(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.classifications.Classifications.get_all_generator',
+        return_value=data['get_all_classifications']
+    )
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=49)
+
+    classifications = DestinationAttribute.objects.filter(attribute_type='CLASS', workspace_id=49).count()
+    assert classifications == 18
+
+    netsuite_connection.sync_classifications()
+
+    classifications = DestinationAttribute.objects.filter(attribute_type='CLASS', workspace_id=49).count()
+    assert classifications == 19
+
 
 def test_get_or_create_vendor(mocker, db):
     mocker.patch(
