@@ -21,10 +21,7 @@ jobs:
           echo "FAILED=$(cat test-reports/report.xml | awk -F'=' '{print $5}' | awk -F' ' '{gsub(/"/, "", $1); print $1}')" >> $GITHUB_ENV
         env:
           FYLE_BASE_URL: ${{ secrets.FYLE_BASE_URL }}
-          FYLE_CLIENT_ID: ${{ secrets.FYLE_CLIENT_ID }}
-          FYLE_CLIENT_SECRET: ${{ secrets.FYLE_CLIENT_SECRET }}
           FYLE_TOKEN_URI: ${{ secrets.FYLE_TOKEN_URI }}
-          FYLE_REFRESH_TOKEN: ${{ secrets.FYLE_REFRESH_TOKEN }}
           NS_ACCOUNT_ID: ${{ secrets.NS_ACCOUNT_ID }}
       - name: Pytest coverage comment
         uses: MishaKav/pytest-coverage-comment@main
