@@ -9,9 +9,11 @@ from apps.mappings.tasks import async_auto_create_custom_field_mappings, async_a
     construct_filter_based_on_destination, schedule_auto_map_employees, schedule_categories_creation, schedule_cost_centers_creation, schedule_fyle_attributes_creation, schedule_tax_groups_creation, sync_expense_categories_and_accounts, upload_categories_to_fyle, \
         create_fyle_merchants_payload, auto_create_vendors_as_merchants, schedule_vendors_as_merchants_creation, async_auto_map_ccc_account, schedule_auto_map_ccc_employees, schedule_projects_creation, auto_create_expense_fields_mappings, \
             post_merchants, get_all_categories_from_fyle
-from .fixtures import data
 from fyle_integrations_platform_connector import PlatformConnector
 from apps.mappings.models import GeneralMapping
+from tests.test_netsuite.fixtures import data as netsuite_data
+from .fixtures import data
+
 
 def test_remove_duplicates(db):
 
@@ -22,7 +24,7 @@ def test_remove_duplicates(db):
     assert len(attributes) == 20
 
 
-def test_create_fyle_category_payload(db, add_fyle_credentials):
+def test_create_fyle_category_payload(db):
 
     netsuite_attributes = DestinationAttribute.objects.filter(
             workspace_id=1, attribute_type='ACCOUNT'
@@ -119,7 +121,17 @@ def test_create_fyle_merchants_payload(db):
     assert len(fyle_payload) == 7
 
 
-def test_sync_expense_categories_and_accounts(db, add_netsuite_credentials):
+def test_sync_expense_categories_and_accounts(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.expense_categories.ExpenseCategory.get_all_generator',
+        return_value=netsuite_data['get_all_expense_categories']
+    )
+
+    mocker.patch(
+        'netsuitesdk.api.accounts.Accounts.get_all_generator',
+        return_value=netsuite_data['get_all_accounts']    
+    )
+
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
     existing_expense_category = DestinationAttribute.objects.filter(
@@ -135,52 +147,64 @@ def test_sync_expense_categories_and_accounts(db, add_netsuite_credentials):
 
     expense_category_count = DestinationAttribute.objects.filter(
         attribute_type='EXPENSE_CATEGORY', workspace_id=1).count()
-    assert expense_category_count == 38
+    assert expense_category_count == 34
 
     sync_expense_categories_and_accounts('BILL', 'JOURNAL ENTRY', netsuite_connection)
 
     count_of_accounts = DestinationAttribute.objects.filter(
         attribute_type='ACCOUNT', workspace_id=1).count()
-    assert count_of_accounts == 173
+    assert count_of_accounts == 124
 
 
-def test_upload_categories_to_fyle(mocker, db, add_fyle_credentials, add_netsuite_credentials):
+def test_upload_categories_to_fyle(mocker, db):
+    mocker.patch('fyle_integrations_platform_connector.apis.Categories.post_bulk')
 
     mocker.patch(
-        'fyle_integrations_platform_connector.apis.Categories.post_bulk',
-        return_value='nilesh'
+        'netsuitesdk.api.expense_categories.ExpenseCategory.get_all_generator',
+        return_value=netsuite_data['get_all_expense_categories']
+    )
+
+    mocker.patch(
+        'netsuitesdk.api.accounts.Accounts.get_all_generator',
+        return_value=netsuite_data['get_all_accounts']    
     )
 
     netsuite_attributes = upload_categories_to_fyle(1, 'EXPENSE REPORT', 'BILL')
 
     expense_category_count = DestinationAttribute.objects.filter(
         attribute_type='EXPENSE_CATEGORY', workspace_id=1).count()
-    assert expense_category_count == 38
+    assert expense_category_count == 34
     assert len(netsuite_attributes) == expense_category_count
 
     count_of_accounts = DestinationAttribute.objects.filter(
         attribute_type='ACCOUNT', workspace_id=1).count()
-    assert count_of_accounts == 173
+    assert count_of_accounts == 124
 
     netsuite_attributes = upload_categories_to_fyle(1, 'BILL', 'BILL')
     
     assert len(netsuite_attributes) == count_of_accounts
 
 
-def test_filter_unmapped_destinations(db, mocker, add_fyle_credentials, add_netsuite_credentials):
+def test_filter_unmapped_destinations(db, mocker):
+    mocker.patch('fyle_integrations_platform_connector.apis.Categories.post_bulk')
 
     mocker.patch(
-        'fyle_integrations_platform_connector.apis.Categories.post_bulk',
-        return_value='nilesh'
+        'netsuitesdk.api.expense_categories.ExpenseCategory.get_all_generator',
+        return_value=netsuite_data['get_all_expense_categories']
     )
 
-    netsutie_attribtues = upload_categories_to_fyle(workspace_id=1, reimbursable_expenses_object='EXPENSE REPORT', corporate_credit_card_expenses_object='BILL')
+    mocker.patch(
+        'netsuitesdk.api.accounts.Accounts.get_all_generator',
+        return_value=netsuite_data['get_all_accounts']    
+    )
 
-    destination_attributes = filter_unmapped_destinations('EXPENSE_CATEGORY', netsutie_attribtues)
-    assert len(destination_attributes) == 37
+    netsutie_attributes = upload_categories_to_fyle(workspace_id=1, reimbursable_expenses_object='EXPENSE REPORT', corporate_credit_card_expenses_object='BILL')
+
+    destination_attributes = filter_unmapped_destinations('EXPENSE_CATEGORY', netsutie_attributes)
+    assert len(destination_attributes) == 33
 
 
-def test_schedule_creation(db, add_fyle_credentials):
+def test_schedule_creation(db):
 
     schedule_categories_creation(True, 3)
     schedule = Schedule.objects.filter(
@@ -211,18 +235,25 @@ def test_schedule_creation(db, add_fyle_credentials):
     assert schedule == None
 
 
-def test_auto_create_category_mappings(db, mocker, add_fyle_credentials, add_netsuite_credentials):
+def test_auto_create_category_mappings(db, mocker):
     fyle_credentials = FyleCredential.objects.all()
+    mocker.patch('fyle_integrations_platform_connector.apis.Categories.post_bulk')
+
     mocker.patch(
-            'fyle_integrations_platform_connector.apis.Categories.post_bulk',
-            return_value=[]
-        )
+        'netsuitesdk.api.expense_categories.ExpenseCategory.get_all_generator',
+        return_value=netsuite_data['get_all_expense_categories']
+    )
+
+    mocker.patch(
+        'netsuitesdk.api.accounts.Accounts.get_all_generator',
+        return_value=netsuite_data['get_all_accounts']    
+    )
 
     response = auto_create_category_mappings(workspace_id=1)
     assert response == []
 
     mappings = CategoryMapping.objects.filter(workspace_id=1)
-    assert len(mappings) == 39
+    assert len(mappings) == 34
 
     configuration = Configuration.objects.get(workspace_id=1)
     configuration.reimbursable_expenses_object = 'BILL'
@@ -231,7 +262,7 @@ def test_auto_create_category_mappings(db, mocker, add_fyle_credentials, add_net
     response = auto_create_category_mappings(workspace_id=1)
 
     mappings = CategoryMapping.objects.filter(workspace_id=1)
-    assert len(mappings) == 172
+    assert len(mappings) == 127
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=1)
     fyle_credentials.delete()
@@ -241,7 +272,7 @@ def test_auto_create_category_mappings(db, mocker, add_fyle_credentials, add_net
     assert response == None
 
 
-def test_auto_create_project_mappings(db, mocker, add_fyle_credentials, add_netsuite_credentials):
+def test_auto_create_project_mappings(db, mocker):
 
     mocker.patch(
             'fyle_integrations_platform_connector.apis.Projects.post_bulk',
@@ -265,12 +296,13 @@ def test_auto_create_project_mappings(db, mocker, add_fyle_credentials, add_nets
 
 
 
-def test_auto_create_cost_center_mappings(db, mocker, add_fyle_credentials, add_netsuite_credentials):
-    
+def test_auto_create_cost_center_mappings(db, mocker):
+    mocker.patch('fyle_integrations_platform_connector.apis.CostCenters.post_bulk')
+
     mocker.patch(
-            'fyle_integrations_platform_connector.apis.CostCenters.post_bulk',
-            return_value=[]
-        )
+        'netsuitesdk.api.departments.Departments.get_all_generator',
+        return_value=netsuite_data['get_all_departments']
+    )
     
     response = auto_create_cost_center_mappings(workspace_id=1)
     assert response == None
@@ -278,7 +310,7 @@ def test_auto_create_cost_center_mappings(db, mocker, add_fyle_credentials, add_
     cost_center = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='DEPARTMENT').count()
     mappings = Mapping.objects.filter(workspace_id=1, source_type='COST_CENTER').count()
 
-    assert cost_center == 12
+    assert cost_center == 13
     assert mappings == 12
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=1)
@@ -309,10 +341,17 @@ def test_schedule_tax_group_creation(db):
     assert schedule == None
 
 
-def test_auto_create_tax_group_mappings(db, mocker, add_fyle_credentials, add_netsuite_credentials):
+def test_auto_create_tax_group_mappings(mocker, db):
+    mocker.patch('fyle_integrations_platform_connector.apis.TaxGroups.post_bulk')
+
     mocker.patch(
-        'fyle_integrations_platform_connector.apis.TaxGroups.post_bulk',
-        return_value=[]
+        'netsuitesdk.api.tax_items.TaxItems.get_all_generator',
+        return_value=netsuite_data['get_all_tax_items']    
+    )
+
+    mocker.patch(
+        'netsuitesdk.api.tax_groups.TaxGroups.get_all_generator',
+        return_value=netsuite_data['get_all_tax_groups']
     )
 
     tax_groups = DestinationAttribute.objects.filter(workspace_id=2, attribute_type='TAX_ITEM').count()
@@ -325,7 +364,7 @@ def test_auto_create_tax_group_mappings(db, mocker, add_fyle_credentials, add_ne
 
     tax_groups = DestinationAttribute.objects.filter(workspace_id=2, attribute_type='TAX_ITEM').count()
     mappings = Mapping.objects.filter(workspace_id=2, destination_type='TAX_ITEM').count()
-    assert mappings == 29
+    assert mappings == 26
 
     mapping_settings = MappingSetting.objects.get(source_field='TAX_GROUP', workspace_id=2)
     mapping_settings.delete()
@@ -333,7 +372,7 @@ def test_auto_create_tax_group_mappings(db, mocker, add_fyle_credentials, add_ne
     auto_create_tax_group_mappings(workspace_id=2)
     
 
-def test_schedule_fyle_attributes_creation(db, mocker, add_netsuite_credentials, add_fyle_credentials, ):
+def test_schedule_fyle_attributes_creation(db, mocker):
 
     schedule_fyle_attributes_creation(49)
 
@@ -359,15 +398,33 @@ def test_schedule_fyle_attributes_creation(db, mocker, add_netsuite_credentials,
     assert schedule == None
 
 
-def test_async_auto_map_employees(db, add_netsuite_credentials, add_fyle_credentials):
+def test_async_auto_map_employees(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.vendors.Vendors.get_all_generator',
+        return_value=netsuite_data['get_all_vendors']    
+    )
+
+    mocker.patch(
+        'netsuitesdk.api.employees.Employees.get_all_generator',
+        return_value=netsuite_data['get_all_employees']    
+    )
+
     async_auto_map_employees(1)
 
     employee_mappings = EmployeeMapping.objects.filter(workspace_id=1).count()
     assert employee_mappings == 1 
 
 
-def test_schedule_auto_map_employees(db, add_netsuite_credentials, add_fyle_credentials):
+def test_schedule_auto_map_employees(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.vendors.Vendors.get_all_generator',
+        return_value=netsuite_data['get_all_vendors']    
+    )
 
+    mocker.patch(
+        'netsuitesdk.api.employees.Employees.get_all_generator',
+        return_value=netsuite_data['get_all_employees']    
+    )
     configuration = Configuration.objects.get(workspace_id=1)
     configuration.auto_map_employees = 'NAME'
     configuration.save()
@@ -390,11 +447,11 @@ def test_schedule_auto_map_employees(db, add_netsuite_credentials, add_fyle_cred
     async_auto_map_employees(1)
 
     employee_mappings = EmployeeMapping.objects.filter(workspace_id=1).count()
-    assert employee_mappings == 1  #Todo: Will Fix this Later
+    assert employee_mappings == 1
 
 
 @pytest.mark.django_db
-def test_schedule_auto_map_ccc_employees(db, mocker, add_fyle_credentials, add_netsuite_credentials):
+def test_schedule_auto_map_ccc_employees(db, mocker):
     workspace_id=2
 
     configuration = Configuration.objects.get(workspace_id=2)
@@ -434,7 +491,7 @@ def test_schedule_auto_map_ccc_employees(db, mocker, add_fyle_credentials, add_n
 
 
 @pytest.mark.django_db
-def test_async_auto_map_ccc_account(db, mocker, add_fyle_credentials, add_netsuite_credentials):
+def test_async_auto_map_ccc_account(db, mocker):
     workspace_id=2
 
     general_mappings = GeneralMapping.objects.get(workspace_id=1)
@@ -448,12 +505,13 @@ def test_async_auto_map_ccc_account(db, mocker, add_fyle_credentials, add_netsui
     assert employee_mappings == 30
 
 
-def test_auto_create_vendors_as_merchants(db, mocker, add_fyle_credentials, add_netsuite_credentials):
-    mocker.patch(
-        'fyle_integrations_platform_connector.apis.Merchants.post_bulk',
-        return_value=[]
-    )
+def test_auto_create_vendors_as_merchants(db, mocker):
+    mocker.patch('fyle_integrations_platform_connector.apis.Merchants.post_bulk')
 
+    mocker.patch(
+        'netsuitesdk.api.vendors.Vendors.get_all_generator',
+        return_value=netsuite_data['get_all_vendors']    
+    )
 
     vendors = DestinationAttribute.objects.filter(workspace_id=49, attribute_type='VENDOR').count()
     expense_attribute = ExpenseAttribute.objects.filter(workspace_id=49, attribute_type='MERCHANT').count()
@@ -465,7 +523,7 @@ def test_auto_create_vendors_as_merchants(db, mocker, add_fyle_credentials, add_
     vendors = DestinationAttribute.objects.filter(workspace_id=49, attribute_type='VENDOR').count()
     expense_attribute = ExpenseAttribute.objects.filter(workspace_id=49, attribute_type='MERCHANT').count()
     assert expense_attribute == 24
-    assert vendors == 9
+    assert vendors == 7
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=1)
     fyle_credentials.delete()
@@ -520,13 +578,13 @@ def test_schedule_projects_creation():
 
 def test_auto_create_expense_fields_mappings():
     try:
-        response = auto_create_expense_fields_mappings(10, '', '')
+        auto_create_expense_fields_mappings(10, '', '')
     except:
         logger.error('Error while creating expense field')
     
 
 @pytest.mark.django_db
-def test_post_merchants(db, mocker, add_fyle_credentials, add_netsuite_credentials):
+def test_post_merchants(db, mocker):
     fyle_credentials = FyleCredential.objects.all()
     fyle_credentials = FyleCredential.objects.get(workspace_id=49) 
     fyle_connection = PlatformConnector(fyle_credentials)
