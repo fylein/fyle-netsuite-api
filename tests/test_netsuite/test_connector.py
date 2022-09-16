@@ -311,12 +311,12 @@ def test_sync_tax_items(mocker, db):
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
     tax_items = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='TAX_ITEM').count()
-    assert tax_items == 26
+    assert tax_items == 31
 
     netsuite_connection.sync_tax_items()
 
     tax_items = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='TAX_ITEM').count()
-    assert tax_items == 26
+    assert tax_items == 31
 
 
 def test_sync_currencies(mocker, db):
