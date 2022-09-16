@@ -18,4 +18,5 @@ netsuite_dimension_paths = [
     path('refresh_dimensions/', RefreshNetSuiteDimensionView.as_view(), name='refresh-dimensions')
 ]
 
+
 urlpatterns = [*netsuite_app_paths, *netsuite_dimension_paths]
