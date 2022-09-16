@@ -65,8 +65,11 @@ class NetSuiteConnector:
         return code, message
     
     @staticmethod
-    def get_tax_code_name(item_id, tax_type, rate):
-        return '{0}: {1} @{2}%'.format(tax_type, item_id, rate)
+    def get_tax_code_name(item_id, tax_type: None, rate: None):
+        if tax_type and rate:
+            return '{0}: {1} @{2}%'.format(tax_type, item_id, rate)
+        else:
+            return '{0} @{1}%'.format(item_id, rate if rate else 0)
 
 
     def sync_accounts(self):
@@ -653,9 +656,11 @@ class NetSuiteConnector:
 
         for tax_groups in tax_groups_generator:
             for tax_group in tax_groups:
-                if not tax_group['isInactive'] and tax_group['itemId'] and tax_group['taxType'] and tax_group['rate']:
-                    value = self.get_tax_code_name(tax_group['itemId'], tax_group['taxType']['name'], tax_group['rate'])
-                    tax_rate = float(tax_group['rate'])
+                if not tax_group['isInactive'] and tax_group['itemId']:
+                    tax_type = tax_group['taxType']['name'] if tax_group['taxType'] else None
+                    tax_rate = tax_group['rate'] if tax_group['rate'] else 0
+                    value = self.get_tax_code_name(tax_group['itemId'], tax_type, tax_rate)
+                    tax_rate = float(tax_group['rate']) if tax_group['rate'] else 0
 
                     if tax_rate >= 0:
                         attributes.append({
@@ -665,7 +670,7 @@ class NetSuiteConnector:
                             'destination_id': tax_group['internalId'],
                             'active': True,
                             'detail': {
-                                'tax_rate': tax_rate
+                                'tax_rate': tax_rate if tax_rate >= 0 else 0
                             }
                         })
 
