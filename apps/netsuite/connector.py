@@ -661,7 +661,7 @@ class NetSuiteConnector:
                     tax_rate = tax_group['rate'] if tax_group['rate'] else 0
                     value = self.get_tax_code_name(tax_group['itemId'], tax_type, tax_rate)
 
-                    if tax_rate >= 0:
+                    if float(tax_rate) >= 0:
                         attributes.append({
                             'attribute_type': 'TAX_ITEM',
                             'display_name': 'Tax Item',
