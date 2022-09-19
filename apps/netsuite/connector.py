@@ -658,7 +658,7 @@ class NetSuiteConnector:
             for tax_group in tax_groups:
                 if not tax_group['isInactive'] and tax_group['itemId']:
                     tax_type = tax_group['taxType']['name'] if tax_group['taxType'] else None
-                    tax_rate = float(tax_group['rate'].replace('%', '') if tax_group['rate'] else 0)
+                    tax_rate = float(tax_group['rate'] if tax_group['rate'] else 0)
 
                     value = self.get_tax_code_name(tax_group['itemId'], tax_type, tax_rate)
                     if tax_rate >= 0:
