@@ -1737,6 +1737,8 @@ class NetSuiteConnector:
         Post vendor payments to NetSuite
         """
         department = first_object['department']
+        print('department object - ', department)
+        print('dep id - ', department['internalId'] if (department and 'internalId' in department) else None)
 
         vendor_payment_payload = self.__construct_vendor_payment(
             vendor_payment, vendor_payment_lineitems, department

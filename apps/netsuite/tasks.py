@@ -1080,6 +1080,7 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
                 first_object = netsuite_connection.get_bill(first_object_id)
             else:
                 first_object = netsuite_connection.get_expense_report(first_object_id)
+            print('first object from tasks.py - ', first_object)
             created_vendor_payment = netsuite_connection.post_vendor_payment(
                 vendor_payment_object, vendor_payment_lineitems, first_object
             )
