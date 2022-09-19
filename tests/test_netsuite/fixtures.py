@@ -5669,7 +5669,7 @@ data = {
             'itemId': 'CA-BUTTE',
             'displayName': None,
             'description': None,
-            'rate': '7.25%',
+            'rate': 7.25,
             'taxType': None,
             'taxAgency': {
                 'name': 'State Board of Equalization',
@@ -5713,7 +5713,7 @@ data = {
             'itemId': 'CA-MARIN',
             'displayName': None,
             'description': None,
-            'rate': '7.25%',
+            'rate': 7.25,
             'taxType': None,
             'taxAgency': {
                 'name': 'State Board of Equalization',
@@ -5757,7 +5757,7 @@ data = {
             'itemId': 'CA-SIERRA',
             'displayName': None,
             'description': None,
-            'rate': '7.25%',
+            'rate': 7.25,
             'taxType': None,
             'taxAgency': {
                 'name': 'State Board of Equalization',
@@ -5801,7 +5801,7 @@ data = {
             'itemId': 'CA-MONO',
             'displayName': None,
             'description': None,
-            'rate': '7.25%',
+            'rate': 7.25,
             'taxType': None,
             'taxAgency': {
                 'name': 'State Board of Equalization',
@@ -5845,7 +5845,7 @@ data = {
             'itemId': 'CA-TUOLUMNE',
             'displayName': None,
             'description': None,
-            'rate': '7.25%',
+            'rate': 7.25,
             'taxType': None,
             'taxAgency': {
                 'name': 'State Board of Equalization',
