@@ -33,6 +33,7 @@ def create_configurations_object_payload(workspace_id):
         'sync_netsuite_to_fyle_payments': False,
         'import_projects': True,
         'import_categories': True,
+        'import_vendors_as_merchants': True,
         'auto_map_employees': '',
         'auto_create_destination_entity': False,
         'auto_create_merchants': False,
