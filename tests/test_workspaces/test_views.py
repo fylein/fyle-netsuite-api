@@ -1,5 +1,9 @@
 import pytest
 import json
+
+from django_q.models import Schedule
+from datetime import timedelta
+
 from fyle_netsuite_api.tests import settings
 from django.urls import reverse
 from apps.workspaces.models import Configuration, FyleCredential, NetSuiteCredentials, WorkspaceSchedule
@@ -155,6 +159,20 @@ def test_post_workspace_configurations(api_client, access_token):
         url,
         data=create_configurations_object_payload(1)
     )
+
+    merchant_import_schedule = Schedule.objects.filter(
+        func='apps.mappings.tasks.auto_create_vendors_as_merchants',
+        args='1'
+    ).first()
+
+    category_import_schedule = Schedule.objects.filter(
+        func='apps.mappings.tasks.auto_create_category_mappings',
+        args='1'
+    ).first()
+
+    assert (
+        category_import_schedule.next_run - merchant_import_schedule.next_run 
+    ) >= timedelta(minutes=10), 'Next Run for category import is not correct'
 
     assert response.status_code==201
 
