@@ -13,20 +13,12 @@ jobs:
       - uses: actions/checkout@v2
       - uses: satackey/action-docker-layer-caching@v0.0.11
         continue-on-error: true
-      - name: Build and push docker image
-        run: |
-          echo '127.0.0.1  kubernetes' | sudo tee -a /etc/hosts
-          docker login --username ${{ secrets.DOCKERHUB_USERNAME }} --password ${{ secrets.DOCKERHUB_PASSWORD }}
-          export NEW_TAG="v$(git rev-parse --short HEAD)";
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api:$NEW_TAG .
-          echo "Pushing Docker Image to Docker Hub";
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api:$NEW_TAG
-          echo "NEW_TAG=v$(git rev-parse --short HEAD)" >> $GITHUB_ENV
-          echo "New tag: $NEW_TAG";
-          sed -i "s?{{RELEASE_VERSION}}?${NEW_TAG}?" deployment/staging/controller.yml;
-          sed -i "s?{{DOCKERHUB_USERNAME}}?${DOCKERHUB_USERNAME}?" deployment/staging/controller.yml;
+      - name: push to dockerhub
+        uses: fylein/docker-release-action@master
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+          IMAGE_NAME: fyle_netsuite-api
       - name: Deploy to Staging
         uses: fylein/aws-eks-deploy-action@master
         env:
@@ -39,6 +31,8 @@ jobs:
           ROLE_SESSION_NAME: ${{ secrets.ROLE_SESSION_NAME }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          KUBERNETES_MANIFEST_FILE_PATH: deployment/staging/controller.yml
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2
         env:
