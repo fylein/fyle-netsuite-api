@@ -45,8 +45,9 @@ def sync_custom_segments(sender, instance: CustomSegment, **kwargs):
     else:
         custom_segment_attributes = ns_connection.get_custom_segment_attributes(attribute_type, instance.internal_id)
 
-    DestinationAttribute.bulk_create_or_update_destination_attributes(
-        custom_segment_attributes, attribute_type, instance.workspace_id, True)
+    if custom_segment_attributes:
+        DestinationAttribute.bulk_create_or_update_destination_attributes(
+            custom_segment_attributes, attribute_type, instance.workspace_id, True)
 
 
 @receiver(pre_save, sender=CustomSegment)
