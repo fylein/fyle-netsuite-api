@@ -69,7 +69,10 @@ class NetSuiteConnector:
         if tax_type and rate:
             return '{0}: {1} @{2}%'.format(tax_type, item_id, rate)
         else:
-            return '{0} @{1}%'.format(item_id, rate)
+            if tax_type:
+                return '{0}: {1} @{2}%'.format(tax_type, item_id, rate)
+            else:
+                return '{0} @{1}%'.format(item_id, rate)
 
 
     def sync_accounts(self):
