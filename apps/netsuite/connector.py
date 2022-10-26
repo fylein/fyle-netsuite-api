@@ -66,14 +66,10 @@ class NetSuiteConnector:
     
     @staticmethod
     def get_tax_code_name(item_id, tax_type, rate):
-        if tax_type and rate:
+        if tax_type:
             return '{0}: {1} @{2}%'.format(tax_type, item_id, rate)
         else:
-            if tax_type:
-                return '{0}: {1} @{2}%'.format(tax_type, item_id, rate)
-            else:
-                return '{0} @{1}%'.format(item_id, rate)
-
+            return '{0} @{1}%'.format(item_id, rate)
 
     def sync_accounts(self):
         """
