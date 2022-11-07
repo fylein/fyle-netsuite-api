@@ -1,20 +1,18 @@
 import pytest
 import json
-
+from unittest import mock
 from django_q.models import Schedule
 from datetime import timedelta
 
 from fyle_netsuite_api.tests import settings
 from django.urls import reverse
 from apps.workspaces.models import Configuration, FyleCredential, NetSuiteCredentials, WorkspaceSchedule
-from .fixtures import create_netsuite_credential_object_payload, create_configurations_object_payload, \
-    create_fyle_credential_object_payload
+from .fixtures import *
 from fyle_accounting_mappings.models import ExpenseAttribute
-
+from tests.test_netsuite.fixtures import data as netsuite_data
 from tests.test_fyle.fixtures import data as fyle_data
-
-
 from tests.helper import dict_compare_keys, get_response_dict
+from fyle.platform import exceptions as fyle_exc
 
 
 @pytest.mark.django_db(databases=['default'])
@@ -94,6 +92,14 @@ def test_post_of_workspace(api_client, access_token, mocker):
     
     assert dict_compare_keys(response, expected_response['workspace']) == [], 'workspaces api returns a diff in the keys'
 
+    mocker.patch(
+        'apps.workspaces.views.get_fyle_admin',
+        return_value={'data': {'org': {'name': 'Fyle For Arkham Asylum', 'id': 'or79Cob97KSh', 'currency': 'USD'}}}
+    )
+    response = api_client.post(url)
+    assert response.status_code == 200
+
+
 @pytest.mark.django_db(databases=['default'])
 def test_get_configuration_detail(api_client, access_token):
 
@@ -112,9 +118,11 @@ def test_get_configuration_detail(api_client, access_token):
 
     assert dict_compare_keys(response, expected_response['configuration']) == [], 'configuration api returns a diff in keys'
 
-@pytest.mark.django_db(databases=['default'])
-def test_post_netsuite_credentials(api_client, access_token, mocker):
-    mocker.patch('netsuitesdk.api.accounts.Accounts.get_all_generator')
+def test_post_netsuite_credentials(api_client, access_token, mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.accounts.Accounts.get_all_generator',
+        return_value=netsuite_data['get_all_accounts']    
+    )
 
     url = reverse(
         'post-netsuite-credentials', kwargs={
@@ -123,27 +131,32 @@ def test_post_netsuite_credentials(api_client, access_token, mocker):
     )
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
     paylaod = create_netsuite_credential_object_payload(1)
+
     response = api_client.post(
         url,
         data=paylaod
     )
-    assert response.status_code==200
+    assert response.status_code == 200
 
-    netsuite_credentials = NetSuiteCredentials.objects.filter(workspace=1).first() 
+    netsuite_credentials = NetSuiteCredentials.objects.filter(workspace=1).first()
+    netsuite_credentials.ns_account_id = 'sdfghjk'
+    netsuite_credentials.save()
+
+    response = api_client.post(
+        url,
+        data=paylaod
+    )
+    assert response.status_code == 400
+
+    netsuite_credentials = NetSuiteCredentials.objects.filter(workspace=1).first()
     netsuite_credentials.delete()
 
-    url = reverse(
-        'post-netsuite-credentials', kwargs={
-            'workspace_id': 1
-        }
-    )
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
     paylaod = create_netsuite_credential_object_payload(1)
     response = api_client.post(
         url,
         data=paylaod
     )
-    assert response.status_code==200
+    assert response.status_code == 200
     
  
 @pytest.mark.django_db(databases=['default'])
@@ -389,22 +402,79 @@ def test_delete_fyle_credentials(api_client, access_token, add_fyle_credentials)
     response = json.loads(response.content)
     assert response['message'] == 'Fyle credentials deleted'
 
-@pytest.mark.django_db(databases=['default'])
-def test_post_fyle_credentials(api_client, access_token):
-    url = reverse('connect-fyle', kwargs={
-            'workspace_id': 1
-        })
+
+def test_post_connect_fyle_view(mocker, api_client, access_token):
+    mocker.patch(
+        'fyle_rest_auth.utils.AuthUtils.generate_fyle_refresh_token',
+        return_value={'refresh_token': 'asdfghjk', 'access_token': 'qwertyuio'}
+    )
+    mocker.patch(
+        'apps.workspaces.views.get_fyle_admin',
+        return_value={'data': {'org': {'name': 'Fyle For Arkham Asylum', 'id': 'or79Cob97KSh', 'currency': 'USD'}}}
+    )
+    mocker.patch(
+        'apps.workspaces.views.get_cluster_domain',
+        return_value='https://staging.fyle.tech'
+    )
+    code = 'asd'
+    url = '/api/workspaces/1/connect_fyle/authorization_code/'
 
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
-    paylaod = create_fyle_credential_object_payload(1)
     response = api_client.post(
         url,
-        data=paylaod    
+        data={'code': code}    
     )
     response = api_client.post(url)
+    assert response.status_code == 200
 
-    response = json.loads(response.content)
-    assert response['message'] == 'Signature has expired'
+
+def test_connect_fyle_view_exceptions(api_client, access_token):
+    workspace_id = 1
+    
+    code = 'qwertyu'
+    url = '/api/workspaces/{}/connect_fyle/authorization_code/'.format(workspace_id)
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
+    
+    with mock.patch('fyle_rest_auth.utils.AuthUtils.generate_fyle_refresh_token') as mock_call:
+        mock_call.side_effect = fyle_exc.UnauthorizedClientError(msg='Invalid Authorization Code', response='Invalid Authorization Code')
+        
+        response = api_client.post(
+            url,
+            data={'code': code}    
+        )
+        assert response.status_code == 403
+
+        mock_call.side_effect = fyle_exc.NotFoundClientError(msg='Fyle Application not found', response='Fyle Application not found')
+        
+        response = api_client.post(
+            url,
+            data={'code': code}    
+        )
+        assert response.status_code == 404
+
+        mock_call.side_effect = fyle_exc.WrongParamsError(msg='Some of the parameters are wrong', response='Some of the parameters are wrong')
+        
+        response = api_client.post(
+            url,
+            data={'code': code}    
+        )
+        assert response.status_code == 400
+
+        mock_call.side_effect = fyle_exc.InternalServerError(msg='Wrong/Expired Authorization code', response='Wrong/Expired Authorization code')
+        
+        response = api_client.post(
+            url,
+            data={'code': code}    
+        )
+        assert response.status_code == 401
+
+        mock_call.side_effect = Exception()
+        
+        response = api_client.post(
+            url,
+            data={'code': code}    
+        )
+        assert response.status_code == 403
 
 
 @pytest.mark.django_db(databases=['default'])
@@ -414,6 +484,11 @@ def test_get_and_delete_netsuite_crendentials(api_client, access_token, add_nets
     })
 
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
+
+    netsuite_credentials = NetSuiteCredentials.objects.filter(workspace=1).first()
+    netsuite_credentials.ns_account_id = settings.NS_ACCOUNT_ID
+    netsuite_credentials.save()
+
     response = api_client.get(url)
 
     response = json.loads(response.content)

@@ -296,25 +296,61 @@ def test_auto_create_category_mappings(db, mocker):
 def test_auto_create_project_mappings(db, mocker):
 
     mocker.patch(
-            'fyle_integrations_platform_connector.apis.Projects.post_bulk',
-            return_value=[]
-        )
-    
-    response = auto_create_project_mappings(workspace_id=1)
+        'fyle_integrations_platform_connector.apis.Projects.post_bulk',
+        return_value=[]
+    )
+
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.Projects.sync',
+        return_value=[]
+    )
+
+    mocker.patch(
+        'netsuitesdk.api.projects.Projects.count',
+        return_value=len(netsuite_data['get_all_projects'][0])
+    )
+
+    mocker.patch(
+        'netsuitesdk.api.projects.Projects.get_all_generator',
+        return_value=netsuite_data['get_all_projects']    
+    )
+
+    mocker.patch(
+        'netsuitesdk.api.customers.Customers.get_all_generator',
+        return_value=netsuite_data['get_all_projects']    
+    )
+
+    mocker.patch(
+        'netsuitesdk.api.customers.Customers.count',
+        return_value=len(netsuite_data['get_all_projects'][0])
+    )
+    workspace_id = 1
+
+    expense_attributes_to_enable = ExpenseAttribute.objects.filter(
+        mapping__isnull=False,
+        mapping__source_type='PROJECT',
+        attribute_type='PROJECT',
+        workspace_id=workspace_id
+	).first()
+    print('expense_attributes_to_enable', expense_attributes_to_enable)
+
+    expense_attributes_to_enable.active = False
+    expense_attributes_to_enable.save()
+
+    response = auto_create_project_mappings(workspace_id=workspace_id)
     assert response == None
 
-    projects = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='PROJECT', mapping__isnull=False).count()
-    mappings = Mapping.objects.filter(workspace_id=1, destination_type='PROJECT').count()
+    projects = DestinationAttribute.objects.filter(workspace_id=workspace_id, attribute_type='PROJECT', mapping__isnull=False).count()
+    mappings = Mapping.objects.filter(workspace_id=workspace_id, destination_type='PROJECT').count()
 
     assert mappings == projects
 
-    fyle_credentials = FyleCredential.objects.get(workspace_id=1)
+    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
     fyle_credentials.delete()
 
-    response = auto_create_project_mappings(workspace_id=1)
+    response = auto_create_project_mappings(workspace_id=workspace_id)
 
     assert response == None
-
 
 
 def test_auto_create_cost_center_mappings(db, mocker):

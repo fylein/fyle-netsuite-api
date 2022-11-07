@@ -98,4 +98,4 @@ def test_get_last_synced_at(db):
 
     assert reimbursement.workspace_id == 1
     assert reimbursement.settlement_id == 'setqi0eM6HUgZ'
-    assert reimbursement.state == 'PENDING'
+    assert reimbursement.state == 'COMPLETE'

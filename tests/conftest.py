@@ -62,7 +62,7 @@ def add_netsuite_credentials(db):
     workspaces = [1,2,49]
     for workspace_id in workspaces:
         NetSuiteCredentials.objects.create(
-            ns_account_id=settings.NS_ACCOUNT_ID,
+            ns_account_id='TSTDRV2089588',
             ns_consumer_key=settings.NS_CONSUMER_KEY,
             ns_consumer_secret=settings.NS_CONSUMER_SECRET,
             ns_token_id=settings.NS_TOKEN_ID,
@@ -114,6 +114,12 @@ def default_session_fixture(request):
         return_value=fyle_data['get_my_profile']
     )
     patched_5.__enter__()
+
+    patched_6 = mock.patch(
+        'netsuitesdk.internal.client.NetSuiteClient.__init__',
+        return_value=None
+    )
+    patched_6.__enter__()
 
     def unpatch():
         patched_1.__exit__()
