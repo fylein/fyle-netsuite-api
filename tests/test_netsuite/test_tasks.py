@@ -357,17 +357,16 @@ def test_post_journal_entry(mocker, db):
     expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
     expenses = expense_group.expenses.all()
 
-    expense_group.id = 1
-    expense_group.save()
-
-    for expense in expenses:
-        expense.expense_group_id = expense_group.id
-        expense.save()
-    
-    expense_group.expenses.set(expenses)
+    general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
+    general_mappings.use_employee_class = True
+    general_mappings.use_employee_department = True
+    general_mappings.department_level = 'ALL'
+    general_mappings.use_employee_location = True
+    general_mappings.location_level = 'ALL'
+    general_mappings.save()
     
     create_journal_entry(expense_group, task_log.id)
-    
+
     task_log = TaskLog.objects.get(pk=task_log.id)
     journal_entry = JournalEntry.objects.get(expense_group_id=expense_group.id)
 
@@ -375,6 +374,32 @@ def test_post_journal_entry(mocker, db):
     assert journal_entry.currency == '1'
     assert journal_entry.external_id == 'journal 1 - ashwin.t@fyle.in'
     assert journal_entry.memo == 'Reimbursable expenses by ashwin.t@fyle.in'
+    
+    # journal_entry = JournalEntry.objects.get(expense_group__id=expense_group.id)
+    # expense_group.id = random.randint(50, 1000)
+    # expense_group.save()
+
+    task_log.status = 'READY'
+    task_log.save()
+
+    configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
+    configuration.employee_field_mapping = 'VENDOR'
+    configuration.save()
+
+    create_journal_entry(expense_group, task_log.id)
+
+    # journal_entry = JournalEntry.objects.get(expense_group__id=expense_group.id)
+    # expense_group.id = random.randint(50, 1000)
+    # expense_group.save()
+
+    task_log.status = 'READY'
+    task_log.save()
+
+    expense_group = ExpenseGroup.objects.filter(workspace_id=1, fund_source='CCC').first()
+    configuration.employee_field_mapping = 'EMPLOYEE'
+    configuration.save()
+
+    create_journal_entry(expense_group, task_log.id)
 
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_credentials.delete()

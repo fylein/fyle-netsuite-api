@@ -85,9 +85,9 @@ def test_custom_segment_view(api_client, access_token):
 
    response = api_client.get(url)
    assert response.status_code == 200
+
    response = json.loads(response.content)
-   
-   assert len(response) == 0
+   assert response[0]['script_id'] == 'custcol780'
 
 
 def test_trigger_export_view(api_client, access_token):

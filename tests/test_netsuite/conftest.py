@@ -118,11 +118,11 @@ def create_credit_card_charge(db, add_netsuite_credentials, add_fyle_credentials
 @pytest.fixture(autouse=True)
 def add_custom_segment(db):
     custom_segments = [{
-        'name': 'FAVOURITE_BANDS',
+        'name': 'KLASS',
         'segment_type': 'CUSTOM_RECORD',
         'script_id': 'custcol780',
         'internal_id': '476',
-        'workspace_id': 49  
+        'workspace_id': 2  
     },
     {
         'name': 'FAVOURITE_SINGER',

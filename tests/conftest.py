@@ -115,6 +115,12 @@ def default_session_fixture(request):
     )
     patched_5.__enter__()
 
+    patched_6 = mock.patch(
+        'netsuitesdk.internal.client.NetSuiteClient.__init__',
+        return_value=None
+    )
+    patched_6.__enter__()
+
     def unpatch():
         patched_1.__exit__()
 
