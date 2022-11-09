@@ -6,7 +6,7 @@ from rest_framework.test import APIClient
 from fyle_rest_auth.models import AuthToken, User
 from fyle.platform import Platform
 
-from apps.workspaces.models import NetSuiteCredentials, FyleCredential
+from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Workspace
 from apps.fyle.helpers import get_access_token
 from fyle_netsuite_api.tests import settings
 
@@ -62,7 +62,7 @@ def add_netsuite_credentials(db):
     workspaces = [1,2,49]
     for workspace_id in workspaces:
         NetSuiteCredentials.objects.create(
-            ns_account_id='TSTDRV2089588',
+            ns_account_id=Workspace.objects.get(id=workspace_id).ns_account_id,
             ns_consumer_key=settings.NS_CONSUMER_KEY,
             ns_consumer_secret=settings.NS_CONSUMER_SECRET,
             ns_token_id=settings.NS_TOKEN_ID,

@@ -7,7 +7,10 @@ from apps.workspaces.models import Configuration
 from netsuitesdk import NetSuiteConnection, NetSuiteRequestError
 from tests.helper import dict_compare_keys
 from .fixtures import data
-from asyncio.log import logger
+import logging
+
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 
 def test_construct_expense_report(create_expense_report):
