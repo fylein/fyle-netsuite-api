@@ -1,7 +1,8 @@
 import pytest
+from rest_framework.response import Response
+from rest_framework.views import status
 from datetime import datetime, timezone
-from apps.fyle.helpers import add_expense_id_to_expense_group_settings, update_import_card_credits_flag, \
-    update_use_employee_attributes_flag, check_interval_and_sync_dimension
+from apps.fyle.helpers import *
 from apps.fyle.models import ExpenseGroupSettings
 from apps.mappings.models import GeneralMapping
 from apps.workspaces.models import FyleCredential, Workspace
@@ -99,3 +100,95 @@ def test_check_interval_and_sync_dimension(access_token, mocker, db):
     workspace.source_synced_at = datetime.now(timezone.utc)
     response = check_interval_and_sync_dimension(workspace, settings.FYLE_REFRESH_TOKEN)
     assert response == False
+
+
+def test_post_request(mocker):
+    mocker.patch(
+        'apps.fyle.helpers.requests.post',
+        return_value=Response(
+            {
+                'message': 'Post request'
+            },
+            status=status.HTTP_200_OK
+        )
+    )
+    try:
+        post_request(url='sdfghjk', body={}, refresh_token='srtyu')
+    except:
+        logger.info('Error in post request')
+    
+    mocker.patch(
+        'apps.fyle.helpers.requests.post',
+        return_value=Response(
+            {
+                'message': 'Post request'
+            },
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    )
+    try:
+        post_request(url='sdfghjk', body={}, refresh_token='srtyu')
+    except:
+        logger.info('Error in post request')
+
+
+def test_get_request(mocker):
+    mocker.patch(
+        'apps.fyle.helpers.requests.get',
+        return_value=Response(
+            {
+                'message': 'Get request'
+            },
+            status=status.HTTP_200_OK
+        )
+    )
+    try:
+        get_request(url='sdfghjk', params={'sample': True}, refresh_token='srtyu')
+    except:
+        logger.info('Error in post request')
+
+    mocker.patch(
+        'apps.fyle.helpers.requests.get',
+        return_value=Response(
+            {
+                'message': 'Get request'
+            },
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    )
+    try:
+        get_request(url='sdfghjk', params={'sample': True}, refresh_token='srtyu')
+    except:
+        logger.info('Error in post request')
+
+
+def test_get_fyle_orgs(mocker):
+    mocker.patch(
+        'apps.fyle.helpers.requests.get',
+        return_value=Response(
+            {
+                'message': 'Get request'
+            },
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    )
+    try:
+        get_fyle_orgs(refresh_token='srtyu', cluster_domain='erty')
+    except:
+        logger.info('Error in post request')
+
+
+def test_get_cluster_domain(mocker):
+    mocker.patch(
+        'apps.fyle.helpers.requests.post',
+        return_value=Response(
+            {
+                'message': 'Post request'
+            },
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    )
+    try:
+        get_cluster_domain(refresh_token='srtyu')
+    except:
+        logger.info('Error in post request')

@@ -13,9 +13,9 @@ auth_utils = AuthUtils()
 def create_netsuite_credential_object_payload(workspace_id):
     netsuite_credentials = {
         'workspace': workspace_id,
-        'ns_account_id': settings.NS_ACCOUNT_ID,
-        'ns_token_id': settings.NS_TOKEN_ID,
-        'ns_token_secret': settings.NS_TOKEN_SECRET
+        'ns_account_id': 'TSTDRV2089588',
+        'ns_token_id': 'sdfghjkl',
+        'ns_token_secret': 'sdfghjkl;'
     }
     return netsuite_credentials
 
