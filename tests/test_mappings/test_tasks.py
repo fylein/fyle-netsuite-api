@@ -296,6 +296,7 @@ def test_auto_create_category_mappings(db, mocker):
 
 
 def test_auto_create_project_mappings(db, mocker):
+    workspace_id = 1
 
     mocker.patch(
         'fyle_integrations_platform_connector.apis.Projects.post_bulk',
@@ -317,18 +318,18 @@ def test_auto_create_project_mappings(db, mocker):
         'apps.mappings.tasks.create_fyle_projects_payload',
         return_value=data['fyle_project_payload']
     )
-    response = auto_create_project_mappings(workspace_id=1)
+    response = auto_create_project_mappings(workspace_id=workspace_id)
     assert response == None
 
-    projects = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='PROJECT', mapping__isnull=False).count()
-    mappings = Mapping.objects.filter(workspace_id=1, destination_type='PROJECT').count()
+    projects = DestinationAttribute.objects.filter(workspace_id=workspace_id, attribute_type='PROJECT', mapping__isnull=False).count()
+    mappings = Mapping.objects.filter(workspace_id=workspace_id, destination_type='PROJECT').count()
 
     assert mappings == projects
 
-    fyle_credentials = FyleCredential.objects.get(workspace_id=1)
+    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
     fyle_credentials.delete()
 
-    response = auto_create_project_mappings(workspace_id=1)
+    response = auto_create_project_mappings(workspace_id=workspace_id)
 
     assert response == None
 
@@ -468,7 +469,6 @@ def test_schedule_fyle_attributes_creation(db, mocker):
         args='{}'.format(49),
     ).first()
     assert schedule == None
-
 
 
 def test_async_auto_map_employees(mocker, db):

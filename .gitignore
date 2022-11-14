@@ -5,6 +5,7 @@ __pycache__/
 
 # developer notes
 notes*
+debugger
 
 # C extensions
 *.so

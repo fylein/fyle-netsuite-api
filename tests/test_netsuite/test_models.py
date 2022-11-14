@@ -332,7 +332,7 @@ def test_create_credit_card_charge(db):
     assert credit_card.transaction_date <= datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
     assert credit_card.subsidiary_id == '5'
 
-    expense_group = ExpenseGroup.objects.get(id=4)
+    expense_group = ExpenseGroup.objects.get(id=2)
 
     general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id) 
     general_mappings.use_employee_class = True
@@ -340,17 +340,18 @@ def test_create_credit_card_charge(db):
     general_mappings.department_level = 'ALL'
     general_mappings.use_employee_location = True
     general_mappings.location_level = 'ALL'
+    general_mappings.default_ccc_account_id = 252
     general_mappings.save()
 
     credit_card = CreditCardCharge.create_credit_card_charge(expense_group)
-    configuration = Configuration.objects.get(workspace_id=2)
+    configuration = Configuration.objects.get(workspace_id=1)
     credit_card_charge_lineitem = CreditCardChargeLineItem.create_credit_card_charge_lineitem(expense_group, configuration)
 
     assert credit_card_charge_lineitem.amount == 100.00
-    assert credit_card_charge_lineitem.memo == 'ashwin.t@fyle.in - Accounts Payable - 2021-11-16 - C/2021/11/R/1 - '
+    assert credit_card_charge_lineitem.memo == 'ashwin.t@fyle.in - Accounts Payable - 2021-11-15 - C/2021/11/R/6 - '
     assert credit_card_charge_lineitem.billable == False
 
     assert credit_card.currency == '1'
     assert credit_card.transaction_date <= datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
-    assert credit_card.subsidiary_id == '5'
+    assert credit_card.subsidiary_id == '1'
     

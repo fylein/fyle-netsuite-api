@@ -1,24 +1,27 @@
 import pytest
 from apps.fyle.models import Expense, ExpenseGroup
-from apps.netsuite.models import ExpenseReport
 from apps.tasks.models import TaskLog
-
 from apps.workspaces.models import Configuration, WorkspaceSchedule
-from apps.workspaces.tasks import run_sync_schedule, schedule_sync, delete_cards_mapping_settings, run_email_notification
+from apps.workspaces.tasks import *
+from tests.test_fyle.fixtures import data as fyle_data
 
 def test_schedule_sync(db):
-    schedule_sync(2, True, 3, [], [])
+    schedule_sync(2, True, 3, ['ashwin.t@fyle.in'], ['ashwin.t@fyle.in'])
 
     ws_schedule = WorkspaceSchedule.objects.filter(workspace_id=2).last()
     assert ws_schedule.interval_hours == 3
     assert ws_schedule.enabled == True
 
-    schedule_sync(2, False, 0, [], [])
+    schedule_sync(2, False, 0, ['ashwin.t@fyle.in'], ['ashwin.t@fyle.in'])
 
     ws_schedule = WorkspaceSchedule.objects.filter(workspace_id=2).last()
     assert ws_schedule.enabled == False
 
-def test_run_sync_schedule(db, access_token, add_fyle_credentials, add_netsuite_credentials):
+def test_run_sync_schedule(db, access_token, add_fyle_credentials, add_netsuite_credentials, mocker):
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.Expenses.get',
+        return_value=fyle_data['expenses']
+    )
     run_sync_schedule(1)
 
     configuration = Configuration.objects.get(workspace_id=1)
@@ -33,7 +36,7 @@ def test_run_sync_schedule(db, access_token, add_fyle_credentials, add_netsuite_
 
     expense_group = ExpenseGroup.objects.filter(workspace_id=1).count()
     expenses = Expense.objects.filter(org_id='or79Cob97KSh').count()
-    assert expense_group == 2
+    assert expense_group == 4
     assert expenses == 2
 
     run_sync_schedule(2)
@@ -65,11 +68,25 @@ def test_delete_cards_mapping_settings():
 
 @pytest.mark.django_db()
 def test_run_email_notification(db, mocker, create_task_logs):
-    tasks = TaskLog.objects.filter(workspace_id = 49)
     
     run_email_notification(49)
     ws_schedule = WorkspaceSchedule.objects.get(
         workspace_id=49
     )
     assert ws_schedule.error_count == 1
-    
+
+    attribute = ExpenseAttribute.objects.filter(workspace_id=49, value='owner@fyleforintacct.in').first()
+    attribute.delete()
+
+    ws_schedule = WorkspaceSchedule.objects.get(workspace_id=49)
+    ws_schedule.enabled = True
+    ws_schedule.emails_selected = ['owner@fyleforintacct.in']
+    ws_schedule.additional_email_options = [{'email': 'owner@fyleforintacct.in', 'name': 'Ashwin'}]
+    ws_schedule.save()
+
+    run_email_notification(49)
+
+    ws_schedule = WorkspaceSchedule.objects.get(
+        workspace_id=49
+    )
+    assert ws_schedule.enabled == True

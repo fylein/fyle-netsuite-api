@@ -7611,8 +7611,8 @@ COPY public.django_session (session_key, session_data, expire_date) FROM stdin;
 --
 
 COPY public.employee_mappings (id, created_at, updated_at, destination_card_account_id, destination_employee_id, destination_vendor_id, source_employee_id, workspace_id) FROM stdin;
-1	2021-11-15 08:57:07.203049+00	2021-11-15 10:52:18.15065+00	\N	98	1674	14	1
-2	2021-11-16 04:18:56.210874+00	2021-11-16 04:18:56.210949+00	2056	1753	\N	1701	2
+1	2021-11-15 08:57:07.203049+00	2021-11-15 10:52:18.15065+00	252	98	1674	14	1
+2	2021-11-16 04:18:56.210874+00	2021-11-16 04:18:56.210949+00	2056	\N	14	1701	2
 3	2021-12-03 11:24:32.439596+00	2021-12-03 11:24:32.439622+00	3734	3431	\N	3518	49
 \.
 
@@ -11185,7 +11185,7 @@ COPY public.fyle_credentials (id, refresh_token, created_at, updated_at, workspa
 
 COPY public.general_mappings (id, location_name, location_id, accounts_payable_name, accounts_payable_id, created_at, updated_at, workspace_id, default_ccc_account_id, default_ccc_account_name, reimbursable_account_id, reimbursable_account_name, default_ccc_vendor_id, default_ccc_vendor_name, vendor_payment_account_id, vendor_payment_account_name, location_level, department_level, use_employee_department, use_employee_class, use_employee_location) FROM stdin;
 1	hubajuba	8	Accounts Payable	25	2021-11-15 08:56:31.432106+00	2021-11-15 13:21:26.113427+00	1	\N	\N	118	Unapproved Expense Reports	1674	Ashwin Vendor	\N	\N	TRANSACTION_BODY	\N	f	f	f
-2	\N	\N	\N	\N	2021-11-16 04:18:39.195287+00	2021-11-16 04:18:39.195312+00	2	228	Aus Account	118	Unapproved Expense Reports	12104	Nilesh Aus Vendor	\N	\N	\N	\N	f	f	f
+2	\N	\N	Accounts Payable	25	2021-11-16 04:18:39.195287+00	2021-11-16 04:18:39.195312+00	2	228	Aus Account	118	Unapproved Expense Reports	12104	Nilesh Aus Vendor	\N	\N	\N	\N	f	f	f
 3	hukiju	10	\N	\N	2021-12-03 11:24:17.962764+00	2021-12-03 11:24:17.962809+00	49	228	Aus Account	228	Aus Account	12104	Nilesh Aus Vendor	\N	\N	TRANSACTION_BODY	\N	f	f	f
 \.
 
@@ -11234,6 +11234,7 @@ COPY public.mappings (id, source_type, destination_type, created_at, updated_at,
 8	TAX_GROUP	TAX_ITEM	2021-11-16 04:20:49.388221+00	2021-11-16 04:20:49.388239+00	3305	3288	2
 9	TAX_GROUP	TAX_ITEM	2021-11-16 04:20:49.388296+00	2021-11-16 04:20:49.388312+00	3304	3296	2
 10	COST_CENTER	DEPARTMENT	2021-11-16 04:20:49.388296+00	2021-11-16 04:20:49.388312+00	3304	3296	2
+9999	PROJECT	PROJECT	2021-11-16 04:20:49.388296+00	2021-11-16 04:20:49.388312+00	700	700	1
 \.
 
 
@@ -11250,7 +11251,7 @@ COPY public.netsuite_credentials (id, ns_account_id, ns_consumer_key, ns_consume
 --
 
 COPY public.reimbursements (id, settlement_id, reimbursement_id, state, created_at, updated_at, workspace_id) FROM stdin;
-1	setqi0eM6HUgZ	reimcfBxUUS6L8	PENDING	2021-11-15 08:55:44.014605+00	2021-11-15 08:55:44.014581+00	1
+1	setqi0eM6HUgZ	reimcfBxUUS6L8	COMPLETE	2021-11-15 08:55:44.014605+00	2021-11-15 08:55:44.014581+00	1
 \.
 
 
