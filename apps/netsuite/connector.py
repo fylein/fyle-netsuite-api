@@ -1,3 +1,4 @@
+import re
 import json
 from datetime import datetime
 from typing import List, Dict
@@ -465,12 +466,26 @@ class NetSuiteConnector:
         for employees in employees_generator:
             attributes = []
             for employee in employees:
+                supervisor = []
+                if employee['supervisor']:
+                    supervisor.append(self.connection.employees.get(
+                        employee['supervisor']['internalId'], employee['supervisor']['externalId'])['email'])
+
                 detail = {
                     'email': employee['email'] if employee['email'] else None,
                     'department_id': employee['department']['internalId'] if employee['department'] else None,
                     'location_id': employee['location']['internalId'] if employee['location'] else None,
-                    'class_id': employee['class']['internalId'] if employee['class'] else None
+                    'class_id': employee['class']['internalId'] if employee['class'] else None,
+                    'department_name': employee['department']['name'] if employee['department'] else None,
+                    'location_name': employee['location']['name'] if employee['location'] else None,
+                    'full_name': '{} {} {}'.format(employee['firstName'], employee['middleName'], employee['lastName']) \
+                        if employee['firstName'] or employee['lastName'] else employee['entityId'], #TODO: remove middle name if None
+                    'joined_at': employee['dateCreated'].isoformat(timespec='milliseconds'),
+                    'title': employee['title'] if employee['title'] else None,
+                    'mobile': employee['mobilePhone'] if employee['mobilePhone'] else None,
+                    'approver_emails': supervisor
                 }
+
                 if 'subsidiary' in employee and employee['subsidiary']:
                     if employee['subsidiary']['internalId'] == subsidiary_mapping.internal_id:
                         attributes.append({
@@ -478,7 +493,8 @@ class NetSuiteConnector:
                             'display_name': 'Employee',
                             'value': employee['entityId'],
                             'destination_id': employee['internalId'],
-                            'detail': detail
+                            'detail': detail,
+                            'active': False if employee['isInactive'] else True
                         })
                 else:
                     attributes.append({
@@ -486,7 +502,8 @@ class NetSuiteConnector:
                         'display_name': 'Employee',
                         'value': employee['entityId'],
                         'destination_id': employee['internalId'],
-                        'detail': detail
+                        'detail': detail,
+                        'active': False if employee['isInactive'] else True
                     })
 
             DestinationAttribute.bulk_create_or_update_destination_attributes(
