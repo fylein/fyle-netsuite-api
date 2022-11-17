@@ -138,6 +138,10 @@ def test_sync_employees(mocker, db):
         'netsuitesdk.api.employees.Employees.get_all_generator',
         return_value=data['get_all_employees']    
     )
+    mocker.patch(
+        'netsuitesdk.api.employees.Employees.get',
+        return_value=data['get_all_employees'][0][0]
+    )
 
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)

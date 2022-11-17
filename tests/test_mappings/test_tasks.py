@@ -444,6 +444,10 @@ def test_async_auto_map_employees(mocker, db):
         'netsuitesdk.api.employees.Employees.get_all_generator',
         return_value=netsuite_data['get_all_employees']    
     )
+    mocker.patch(
+        'netsuitesdk.api.employees.Employees.get',
+        return_value=netsuite_data['get_all_employees'][0][0]
+    )
 
     async_auto_map_employees(1)
 
@@ -465,6 +469,11 @@ def test_schedule_auto_map_employees(mocker, db):
     mocker.patch(
         'netsuitesdk.api.employees.Employees.get_all_generator',
         return_value=netsuite_data['get_all_employees']    
+    )
+
+    mocker.patch(
+        'netsuitesdk.api.employees.Employees.get',
+        return_value=netsuite_data['get_all_employees'][0][0] 
     )
     configuration = Configuration.objects.get(workspace_id=1)
     configuration.auto_map_employees = 'NAME'
