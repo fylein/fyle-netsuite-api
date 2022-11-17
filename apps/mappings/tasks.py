@@ -1122,6 +1122,11 @@ def post_employees(platform_connection: PlatformConnector, workspace_id: int, fi
 
     if fyle_employee_payload:
         platform_connection.connection.v1beta.admin.employees.invite_bulk({'data': fyle_employee_payload})
+
+        workspace.employee_exported_at = datetime.now()
+        workspace.save()
+
+    if employee_approver_payload:
         platform_connection.connection.v1beta.admin.employees.invite_bulk({'data': employee_approver_payload})
 
         workspace.employee_exported_at = datetime.now()

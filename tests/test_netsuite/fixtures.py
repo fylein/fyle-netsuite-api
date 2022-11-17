@@ -6081,5 +6081,14 @@ data = {
             "download_url": "https://aaa.bbb.cc/x232sds",
             "upload_url": "https://aaa.bbb.cc/x232sds"
         }
-    ]
+    ],
+    'get_departments': [{
+        'data': [
+            {
+                'id': 'asdfghjkl',
+                'name': 'Sales',
+                'is_enabled': False
+            }
+        ]
+    }]
 }

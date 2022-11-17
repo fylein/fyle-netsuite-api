@@ -118,6 +118,7 @@ def test_get_configuration_detail(api_client, access_token):
 
     assert dict_compare_keys(response, expected_response['configuration']) == [], 'configuration api returns a diff in keys'
 
+
 def test_post_netsuite_credentials(api_client, access_token, mocker, db):
     mocker.patch(
         'netsuitesdk.api.accounts.Accounts.get_all_generator',
