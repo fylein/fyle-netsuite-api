@@ -27,6 +27,7 @@ class Workspace(models.Model):
     destination_synced_at = models.DateTimeField(help_text='Datetime when destination dimensions were pulled', null=True)
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime')
+    employee_exported_at = models.DateTimeField(auto_now_add=True, help_text='Employee exported to Fyle at datetime')
 
     class Meta:
         db_table = 'workspaces'

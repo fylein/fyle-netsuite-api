@@ -478,8 +478,7 @@ class NetSuiteConnector:
                     'class_id': employee['class']['internalId'] if employee['class'] else None,
                     'department_name': employee['department']['name'] if employee['department'] else None,
                     'location_name': employee['location']['name'] if employee['location'] else None,
-                    'full_name': '{} {} {}'.format(employee['firstName'], employee['middleName'], employee['lastName']) \
-                        if employee['firstName'] or employee['lastName'] else employee['entityId'], #TODO: remove middle name if None
+                    'full_name': ' '.join(filter(None, [employee['firstName'], employee['middleName'], employee['lastName']])),
                     'joined_at': employee['dateCreated'].isoformat(timespec='milliseconds'),
                     'title': employee['title'] if employee['title'] else None,
                     'mobile': employee['mobilePhone'] if employee['mobilePhone'] else None,

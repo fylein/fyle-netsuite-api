@@ -16,7 +16,7 @@ from fyle_accounting_mappings.helpers import EmployeesAutoMappingHelper
 from fyle_integrations_platform_connector import PlatformConnector
 from apps.mappings.models import GeneralMapping
 from apps.netsuite.connector import NetSuiteConnector
-from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configuration
+from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configuration, Workspace
 
 
 from .constants import FYLE_EXPENSE_SYSTEM_FIELDS
@@ -1035,49 +1035,99 @@ def schedule_vendors_as_merchants_creation(import_vendors_as_merchants, workspac
             schedule.delete()
 
 
-def create_fyle_employee_payload(employees, existing_employee_names):
-    payload: List[str] = []
+def create_fyle_department_payload(platform_connection: PlatformConnector, department_name: str):
+    departments_generator = platform_connection.departments.search_departments(query_params={
+        'name': 'eq.{}'.format(department_name)
+    })
+
+    departments = []
+
+    for response in departments_generator:
+        if response.get('data'):
+            departments.extend(response['data'])
+
+    if departments:
+        for department in departments:
+            if not department['is_enabled']:
+                return {
+                    'name': department_name,
+                    'id': department['id'],
+                    'is_enabled': True
+                }
+    else:
+        return {
+            'name': department_name,
+        }
+    return {}
+
+
+def create_fyle_employee_payload(platform_connection: PlatformConnector, employees: List[DestinationAttribute], existing_employee_names: List[str]):
+    employee_payload: List[Dict] = []
+    employee_approver_payload: List[Dict] = []
+    department_payload: List[Dict] = []
+
     for employee in employees:
         if employee.value not in existing_employee_names:
-            payload.append({
-                'user_email': employee.detail['email'],
-                'user_full_name': employee.detail['full_name'],
-                'code': employee.destination_id,
-                'department_name': employee.detail['department_name'] if employee.detail['department_name'] else '', #TODO: department not found on fyle
-                'is_enabled': employee.active,
-                'joined_at': employee.detail['joined_at'],
-                'location': employee.detail['location_name'] if employee.detail['location_name'] else '',
-                'title': employee.detail['title'] if employee.detail['title'] else '',
-                'approver_emails': employee.detail['approver_emails'],    #TODO: modify approvers email payload
-                'mobile': employee.detail['mobile'] if employee.detail['mobile'] else ''
+            if employee.detail["department_name"]:
+                department = create_fyle_department_payload(platform_connection, employee.detail["department_name"])
+                if department:
+                    department_payload.append(department)
+
+            employee_payload.append({
+                "user_email": employee.detail["email"],
+                "user_full_name": employee.detail["full_name"],
+                "code": employee.destination_id,
+                "department_name": employee.detail["department_name"] if employee.detail["department_name"] else "",
+                "is_enabled": employee.active,
+                "joined_at": employee.detail["joined_at"],
+                "location": employee.detail["location_name"] if employee.detail["location_name"] else "",
+                "title": employee.detail["title"] if employee.detail["title"] else "",
+                "mobile": employee.detail["mobile"] if employee.detail["mobile"] else ""
             })
-    print('********************employee_payload*************')
-    print(payload)
-    return payload
+
+            employee_approver_payload.append({
+                "user_email": employee.detail["email"],
+                "code": employee.destination_id,
+                "approver_emails": employee.detail["approver_emails"]
+            })
+
+    return employee_payload, employee_approver_payload, department_payload
 
 
 def post_employees(platform_connection: PlatformConnector, workspace_id: int, first_run: bool):
     existing_employee_names = ExpenseAttribute.objects.filter(
         attribute_type='EMPLOYEE', workspace_id=workspace_id).values_list('value', flat=True)
 
+    workspace = Workspace.objects.get(id=workspace_id)
+
     if first_run:
         netsuite_attributes = DestinationAttribute.objects.filter(
             attribute_type='EMPLOYEE', workspace_id=workspace_id).order_by('value', 'id')
     else:
-        netsuite_attributes = DestinationAttribute.objects.filter(      #TODO: modify the timestamp check
+        netsuite_attributes = DestinationAttribute.objects.filter(
             attribute_type='EMPLOYEE',
             workspace_id=workspace_id,
-            value='Harshitha P'     #TODO: change filter
+            updated_at__gte=workspace.employee_exported_at
         ).order_by('value', 'id')
 
     netsuite_attributes = remove_duplicates(netsuite_attributes)
-    fyle_payload: List[str] = create_fyle_employee_payload(
-        netsuite_attributes, existing_employee_names)
 
-    if fyle_payload:
-        platform_connection.employees.post(fyle_payload)
+    fyle_employee_payload, employee_approver_payload, fyle_department_payload = create_fyle_employee_payload(
+        platform_connection, netsuite_attributes, existing_employee_names
+    )
 
-    platform_connection.employees.sync(workspace_id)
+    if fyle_department_payload:
+        for department in fyle_department_payload:
+            platform_connection.departments.post(department)
+
+    if fyle_employee_payload:
+        platform_connection.connection.v1beta.admin.employees.invite_bulk({'data': fyle_employee_payload})
+        platform_connection.connection.v1beta.admin.employees.invite_bulk({'data': employee_approver_payload})
+
+        workspace.employee_exported_at = datetime.now()
+        workspace.save()
+
+    platform_connection.employees.sync()
 
 
 def auto_create_netsuite_employees_on_fyle(workspace_id):
