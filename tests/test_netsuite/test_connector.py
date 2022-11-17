@@ -1,9 +1,16 @@
-from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute
 import pytest
+from unittest import mock
 from apps.fyle.models import ExpenseGroup
+from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute
 from apps.netsuite.connector import NetSuiteConnector, NetSuiteCredentials
+from apps.workspaces.models import Configuration
+from netsuitesdk import NetSuiteConnection, NetSuiteRequestError
 from tests.helper import dict_compare_keys
 from .fixtures import data
+import logging
+
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 
 def test_construct_expense_report(create_expense_report):
@@ -69,6 +76,13 @@ def test_post_vendor(mocker, db):
     vendor = netsuite_connection.post_vendor(expense_group=expense_group, merchant='Nilesh')
 
     assert dict_compare_keys(vendor, data['post_vendor']) == [], 'post vendor api return diffs in keys'
+
+    with mock.patch('netsuitesdk.api.vendors.Vendors.post') as mock_call:
+        mock_call.side_effect = [NetSuiteRequestError({
+            'message': {'isperson': True}
+        }), None]
+        netsuite_connection.post_vendor(expense_group=expense_group, merchant='Nilesh')
+    
 
 def test_get_bill(mocker, db):
     mocker.patch(
@@ -245,7 +259,7 @@ def test_sync_subsidiaries(mocker, db):
 
 def test_sync_locations(mocker, db):
     mocker.patch(
-        'netsuitesdk.api.locations.Locations.get_all_generator',
+        'netsuitesdk.api.locations.Locations.get_all',
         return_value=data['get_all_locations']
     )
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)
@@ -257,7 +271,7 @@ def test_sync_locations(mocker, db):
     netsuite_connection.sync_locations()
 
     locations = DestinationAttribute.objects.filter(attribute_type='LOCATION', workspace_id=49).count()
-    assert locations == 13
+    assert locations == 12
 
 
 def test_sync_departments(mocker, db):
@@ -320,7 +334,7 @@ def test_sync_tax_items(mocker, db):
     netsuite_connection.sync_tax_items()
 
     tax_items = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='TAX_ITEM').count()
-    assert tax_items == 31
+    assert tax_items == 32
 
 
 def test_sync_currencies(mocker, db):
@@ -378,3 +392,76 @@ def test_get_or_create_vendor(mocker, db):
 
     vendors = DestinationAttribute.objects.filter(attribute_type='VENDOR', workspace_id=1).count()
     assert vendors == 4
+
+
+def test_post_credit_card_charge_exception(db, mocker, create_credit_card_charge):
+    workspace_id = 1
+
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
+
+    credit_card_charge_transaction, credit_card_charge_transaction_lineitems = create_credit_card_charge
+
+    workspace_general_setting = Configuration.objects.get(workspace_id=workspace_id)
+    workspace_general_setting.change_accounting_period = True
+    workspace_general_setting.save()
+
+    try:
+        mocker.patch(
+            'requests_oauthlib.OAuth1Session.post',
+            return_value=mock.MagicMock(status_code=400, text="{'error': {'message': json.dumps({'message': 'The transaction date you specified is not within the date range of your accounting period.'}), 'code': 400}}")
+        )
+        netsuite_connection.post_credit_card_charge(credit_card_charge_transaction, credit_card_charge_transaction_lineitems, {}, True)
+    except:
+        logger.info('accounting period error')
+
+
+def test_post_bill_exception(db, mocker, create_bill):
+    workspace_id = 1
+
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
+
+    bill_transaction, bill_transaction_lineitems = create_bill
+
+    workspace_general_setting = Configuration.objects.get(workspace_id=workspace_id)
+    workspace_general_setting.change_accounting_period = True
+    workspace_general_setting.save()
+
+    with mock.patch('netsuitesdk.api.vendor_bills.VendorBills.post') as mock_call:
+        mock_call.side_effect = [NetSuiteRequestError('An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'), None]
+        netsuite_connection.post_bill(bill_transaction, bill_transaction_lineitems, {})
+
+
+def test_post_expense_report_exception(db, mocker, create_expense_report):
+    workspace_id = 1
+
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
+
+    expense_report_transaction, expense_report_transaction_lineitems = create_expense_report
+
+    workspace_general_setting = Configuration.objects.get(workspace_id=workspace_id)
+    workspace_general_setting.change_accounting_period = True
+    workspace_general_setting.save()
+
+    with mock.patch('netsuitesdk.api.expense_reports.ExpenseReports.post') as mock_call:
+        mock_call.side_effect = [NetSuiteRequestError('An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'), None]
+        netsuite_connection.post_expense_report(expense_report_transaction, expense_report_transaction_lineitems, {})
+
+
+def test_post_journal_entry_exception(db, mocker, create_journal_entry):
+    workspace_id = 1
+
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
+
+    journal_entry_transaction, journal_entry_transaction_lineitems = create_journal_entry
+
+    workspace_general_setting = Configuration.objects.get(workspace_id=workspace_id)
+    workspace_general_setting.change_accounting_period = True
+    workspace_general_setting.save()
+
+    with mock.patch('netsuitesdk.api.journal_entries.JournalEntries.post') as mock_call:
+        mock_call.side_effect = [NetSuiteRequestError('An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'), None]
+        netsuite_connection.post_journal_entry(journal_entry_transaction, journal_entry_transaction_lineitems, {})

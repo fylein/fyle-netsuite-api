@@ -237,11 +237,11 @@ FYLE_BASE_URL = os.environ.get('FYLE_BASE_URL')
 FYLE_APP_URL = os.environ.get('APP_URL')
 
 # Netsuite Settings
-NS_ACCOUNT_ID = os.environ.get('NS_ACCOUNT_ID')
-NS_TOKEN_ID = os.environ.get('NS_TOKEN_ID')
-NS_TOKEN_SECRET = os.environ.get('NS_TOKEN_SECRET')
-NS_CONSUMER_KEY = os.environ.get('NS_CONSUMER_KEY')
-NS_CONSUMER_SECRET = os.environ.get('NS_CONSUMER_SECRET')
+NS_ACCOUNT_ID = 'sdfghj'
+NS_TOKEN_ID = 'sdfghj'
+NS_TOKEN_SECRET = 'sdfghj'
+NS_CONSUMER_KEY = 'sdfghjk'
+NS_CONSUMER_SECRET = 'sdfghjkl'
 SENDGRID_API_KEY = os.environ.get('SENDGRID_KEY')
 EMAIL = os.environ.get('SENDGRID_EMAIL')
 EMAIL_BACKEND = 'sendgrid_backend.SendgridBackend'
