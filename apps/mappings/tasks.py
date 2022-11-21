@@ -1082,14 +1082,13 @@ def create_fyle_employee_payload(platform_connection: PlatformConnector, employe
                 "joined_at": employee.detail["joined_at"],
                 "location": employee.detail["location_name"] if employee.detail["location_name"] else "",
                 "title": employee.detail["title"] if employee.detail["title"] else "",
-                "mobile": employee.detail["mobile"] if employee.detail["mobile"] else ""
+                "mobile": employee.detail["mobile"] if employee.detail["mobile"] else None
             })
-
-            employee_approver_payload.append({
-                "user_email": employee.detail["email"],
-                "code": employee.destination_id,
-                "approver_emails": employee.detail["approver_emails"]
-            })
+            if employee.detail["approver_emails"]:
+                employee_approver_payload.append({
+                    "user_email": employee.detail["email"],
+                    "approver_emails": employee.detail["approver_emails"]
+                })
 
     return employee_payload, employee_approver_payload, department_payload
 

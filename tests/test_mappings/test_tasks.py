@@ -334,7 +334,6 @@ def test_auto_create_project_mappings(db, mocker):
         attribute_type='PROJECT',
         workspace_id=workspace_id
 	).first()
-    print('expense_attributes_to_enable', expense_attributes_to_enable)
 
     expense_attributes_to_enable.active = False
     expense_attributes_to_enable.save()
@@ -351,7 +350,6 @@ def test_auto_create_project_mappings(db, mocker):
     fyle_credentials.delete()
 
     response = auto_create_project_mappings(workspace_id=workspace_id)
-
     assert response == None
 
 
