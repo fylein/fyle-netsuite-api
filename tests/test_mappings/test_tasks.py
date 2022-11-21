@@ -760,11 +760,11 @@ def test_auto_create_netsuite_employees_on_fyle(db, mocker):
     assert expense_attribute == 30
     assert employees == 13
 
+    with mock.patch('fyle_integrations_platform_connector.apis.Employees.sync') as mock_call:
+        mock_call.side_effect = WrongParamsError(msg='Some of the parameters are wrong', response='Some of the parameters are wrong')
+        response = auto_create_netsuite_employees_on_fyle(workspace_id=workspace_id)
+
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
     fyle_credentials.delete()
 
     auto_create_netsuite_employees_on_fyle(workspace_id=workspace_id)
-
-    with mock.patch('fyle_rest_auth.utils.AuthUtils.generate_fyle_refresh_token') as mock_call:
-        mock_call.side_effect = WrongParamsError(msg='Some of the parameters are wrong', response='Some of the parameters are wrong')
-        response = auto_create_netsuite_employees_on_fyle(workspace_id=workspace_id)
