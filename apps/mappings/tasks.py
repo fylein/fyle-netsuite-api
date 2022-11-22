@@ -1040,25 +1040,21 @@ def create_fyle_department_payload(platform_connection: PlatformConnector, depar
         'name': 'eq.{}'.format(department_name)
     })
 
-    departments = []
-
+    departments_payload = []
     for response in departments_generator:
-        if response.get('data'):
-            departments.extend(response['data'])
-
-    if departments:
-        for department in departments:
-            if not department['is_enabled']:
-                return {
-                    'name': department_name,
-                    'id': department['id'],
-                    'is_enabled': True
-                }
-    else:
-        return {
-            'name': department_name,
-        }
-    return {}
+        if len(response.get('data')):
+            for department in response['data']:
+                if not department['is_enabled']:
+                    departments_payload.append({
+                        'name': department_name,
+                        'id': department['id'],
+                        'is_enabled': True
+                    })
+        else:
+            departments_payload.append({
+                'name': department_name,
+            })
+    return departments_payload
 
 
 def create_fyle_employee_payload(platform_connection: PlatformConnector, employees: List[DestinationAttribute], existing_employee_names: List[str]):
@@ -1071,7 +1067,7 @@ def create_fyle_employee_payload(platform_connection: PlatformConnector, employe
             if employee.detail["department_name"]:
                 department = create_fyle_department_payload(platform_connection, employee.detail["department_name"])
                 if department:
-                    department_payload.append(department)
+                    department_payload.extend(department)
 
             employee_payload.append({
                 "user_email": employee.detail["email"],
