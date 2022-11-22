@@ -1035,61 +1035,88 @@ def schedule_vendors_as_merchants_creation(import_vendors_as_merchants, workspac
             schedule.delete()
 
 
-def create_fyle_department_payload(platform_connection: PlatformConnector, department_name: str):
-    departments_generator = platform_connection.departments.search_departments(query_params={
-        'name': 'eq.{}'.format(department_name)
-    })
-
+def create_fyle_department_payload(department_name: str, existing_departments: Dict):
+    """
+    Search and create Fyle Departments Payload from NetSuite Objects
+    :param department_name: Department name
+    :param existing_departments: Existing Fyle Departments
+    :return: Fyle Departments Payload
+    """
     departments_payload = []
-    for response in departments_generator:
-        if len(response.get('data')):
-            for department in response['data']:
-                if not department['is_enabled']:
-                    departments_payload.append({
-                        'name': department_name,
-                        'id': department['id'],
-                        'is_enabled': True
-                    })
-        else:
+
+    if department_name in existing_departments.keys():
+        if not existing_departments[department_name]['is_enabled']:
             departments_payload.append({
                 'name': department_name,
+                'id': existing_departments[department_name]['id'],
+                'is_enabled': True
             })
+    else:
+        departments_payload.append({
+            'name': department_name,
+        })
     return departments_payload
 
 
 def create_fyle_employee_payload(platform_connection: PlatformConnector, employees: List[DestinationAttribute], existing_employee_names: List[str]):
+    """
+    Create Fyle Employee, Approver, Departments Payload from NetSuite Objects
+    :param platform_connection: Platform Connector
+    :param employees: NetSuite Employees Objects
+    :param existing_employee_names: Existing Fyle Employees
+    :return: Fyle Employee, Approver, Departments Payload
+    """
     employee_payload: List[Dict] = []
     employee_approver_payload: List[Dict] = []
     department_payload: List[Dict] = []
+    existing_departments: Dict = {}
+
+    departments_generator = platform_connection.connection.v1beta.admin.departments.list_all(query_params={
+        'order': 'id.desc'
+    })
+    for response in departments_generator:
+        if response.get('data'):
+            for department in response['data']:
+                existing_departments[department['name']] = {
+                    'id': department['id'],
+                    'is_enabled': department['is_enabled']
+                }
 
     for employee in employees:
         if employee.value not in existing_employee_names:
-            if employee.detail["department_name"]:
-                department = create_fyle_department_payload(platform_connection, employee.detail["department_name"])
+            if employee.detail['department_name']:
+                department = create_fyle_department_payload(employee.detail['department_name'], existing_departments)
                 if department:
                     department_payload.extend(department)
 
-            employee_payload.append({
-                "user_email": employee.detail["email"],
-                "user_full_name": employee.detail["full_name"],
-                "code": employee.destination_id,
-                "department_name": employee.detail["department_name"] if employee.detail["department_name"] else "",
-                "is_enabled": employee.active,
-                "joined_at": employee.detail["joined_at"],
-                "location": employee.detail["location_name"] if employee.detail["location_name"] else "",
-                "title": employee.detail["title"] if employee.detail["title"] else "",
-                "mobile": employee.detail["mobile"] if employee.detail["mobile"] else None
-            })
-            if employee.detail["approver_emails"]:
-                employee_approver_payload.append({
-                    "user_email": employee.detail["email"],
-                    "approver_emails": employee.detail["approver_emails"]
+            if employee.detail['email']:
+                employee_payload.append({
+                    'user_email': employee.detail['email'],
+                    'user_full_name': employee.detail['full_name'],
+                    'code': employee.destination_id,
+                    'department_name': employee.detail['department_name'] if employee.detail['department_name'] else '',
+                    'is_enabled': employee.active,
+                    'joined_at': employee.detail['joined_at'],
+                    'location': employee.detail['location_name'] if employee.detail['location_name'] else '',
+                    'title': employee.detail['title'] if employee.detail['title'] else '',
+                    'mobile': employee.detail['mobile'] if employee.detail['mobile'] else None
                 })
+                if employee.detail['approver_emails']:
+                    employee_approver_payload.append({
+                        'user_email': employee.detail['email'],
+                        'approver_emails': employee.detail['approver_emails']
+                    })
 
     return employee_payload, employee_approver_payload, department_payload
 
 
 def post_employees(platform_connection: PlatformConnector, workspace_id: int, first_run: bool):
+    """
+    Post Employees to Fyle
+    :param platform_connection: Platform Connector
+    :param workspace_id: Workspace ID
+    :param first_run: True if Employees were added to Fyle before
+    """
     existing_employee_names = ExpenseAttribute.objects.filter(
         attribute_type='EMPLOYEE', workspace_id=workspace_id).values_list('value', flat=True)
 
@@ -1136,9 +1163,9 @@ def auto_create_netsuite_employees_on_fyle(workspace_id):
 
         platform_connection = PlatformConnector(fyle_credentials)
 
-        existing_employees_name = ExpenseAttribute.objects.filter(attribute_type='EMPLOYEE', workspace_id=workspace_id)
+        existing_employees = ExpenseAttribute.objects.filter(attribute_type='EMPLOYEE', workspace_id=workspace_id).count()
 
-        first_run = False if existing_employees_name else True
+        first_run = False if existing_employees else True
 
         platform_connection.employees.sync()
 
