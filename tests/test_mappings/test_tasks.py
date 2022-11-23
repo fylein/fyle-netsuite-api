@@ -732,7 +732,7 @@ def test_auto_create_netsuite_employees_on_fyle(db, mocker):
         return_value=netsuite_data['get_all_employees'][0][0]
     )
     mocker.patch(
-        'fyle_integrations_platform_connector.apis.Departments.search_departments',
+        'fyle.platform.apis.v1beta.admin.Departments.list_all',
         return_value=netsuite_data['get_departments']
     )
     mocker.patch(
@@ -762,7 +762,7 @@ def test_auto_create_netsuite_employees_on_fyle(db, mocker):
 
     with mock.patch('fyle_integrations_platform_connector.apis.Employees.sync') as mock_call:
         mock_call.side_effect = WrongParamsError(msg='Some of the parameters are wrong', response='Some of the parameters are wrong')
-        response = auto_create_netsuite_employees_on_fyle(workspace_id=workspace_id)
+        auto_create_netsuite_employees_on_fyle(workspace_id=workspace_id)
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
     fyle_credentials.delete()
