@@ -2655,7 +2655,7 @@ data = {
             'altName': None,
             'phone': '650-555-9788',
             'fax': None,
-            'email': 'Siva@fyle.in',
+            'email': 'ashwin.t@fyle.in',
             'defaultAddress': 'US',
             'isInactive': False,
             'phoneticName': None,
