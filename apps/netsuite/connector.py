@@ -465,28 +465,38 @@ class NetSuiteConnector:
         for employees in employees_generator:
             attributes = []
             for employee in employees:
-                # TODO: add an if case to check if allow_access_to_fyle is enabled on netsuite
-                supervisor = []
-                if employee['supervisor']:
-                    supervisor.append(self.connection.employees.get(
-                        employee['supervisor']['internalId'], employee['supervisor']['externalId'])['email'])
+                # TODO: change the below if case to check if allow_access_to_fyle is enabled on netsuite
+                if employee['email'] in ['harshitha.p+5@fyle.in', 'harshitha.p@fyle.in', 'ashwin.t@fyle.in', 'ashwin.t+5@fyle.in', 'nilesh.p+5@fyle.in']:
+                    supervisor = []
+                    if employee['supervisor']:
+                        supervisor.append(self.connection.employees.get(
+                            employee['supervisor']['internalId'], employee['supervisor']['externalId'])['email'])
 
-                detail = {
-                    'email': employee['email'] if employee['email'] else None,
-                    'department_id': employee['department']['internalId'] if employee['department'] else None,
-                    'location_id': employee['location']['internalId'] if employee['location'] else None,
-                    'class_id': employee['class']['internalId'] if employee['class'] else None,
-                    'department_name': employee['department']['name'] if employee['department'] else None,
-                    'location_name': employee['location']['name'] if employee['location'] else None,
-                    'full_name': ' '.join(filter(None, [employee['firstName'], employee['middleName'], employee['lastName']])),
-                    'joined_at': employee['dateCreated'].isoformat(timespec='milliseconds') if employee['dateCreated'] else datetime.now().isoformat(timespec='milliseconds'),
-                    'title': employee['title'] if employee['title'] else None,
-                    'mobile': employee['mobilePhone'] if employee['mobilePhone'] else None,
-                    'approver_emails': supervisor
-                }
+                    detail = {
+                        'email': employee['email'] if employee['email'] else None,
+                        'department_id': employee['department']['internalId'] if employee['department'] else None,
+                        'location_id': employee['location']['internalId'] if employee['location'] else None,
+                        'class_id': employee['class']['internalId'] if employee['class'] else None,
+                        'department_name': employee['department']['name'] if employee['department'] else None,
+                        'location_name': employee['location']['name'] if employee['location'] else None,
+                        'full_name': ' '.join(filter(None, [employee['firstName'], employee['middleName'], employee['lastName']])),
+                        'joined_at': employee['dateCreated'].isoformat(timespec='milliseconds') if employee['dateCreated'] else datetime.now().isoformat(timespec='milliseconds'),
+                        'title': employee['title'] if employee['title'] else None,
+                        'mobile': employee['mobilePhone'] if employee['mobilePhone'] else None,
+                        'approver_emails': supervisor
+                    }
 
-                if 'subsidiary' in employee and employee['subsidiary']:
-                    if employee['subsidiary']['internalId'] == subsidiary_mapping.internal_id:
+                    if 'subsidiary' in employee and employee['subsidiary']:
+                        if employee['subsidiary']['internalId'] == subsidiary_mapping.internal_id:
+                            attributes.append({
+                                'attribute_type': 'EMPLOYEE',
+                                'display_name': 'Employee',
+                                'value': employee['entityId'],
+                                'destination_id': employee['internalId'],
+                                'detail': detail,
+                                'active': False if employee['isInactive'] else True
+                            })
+                    else:
                         attributes.append({
                             'attribute_type': 'EMPLOYEE',
                             'display_name': 'Employee',
@@ -495,15 +505,6 @@ class NetSuiteConnector:
                             'detail': detail,
                             'active': False if employee['isInactive'] else True
                         })
-                else:
-                    attributes.append({
-                        'attribute_type': 'EMPLOYEE',
-                        'display_name': 'Employee',
-                        'value': employee['entityId'],
-                        'destination_id': employee['internalId'],
-                        'detail': detail,
-                        'active': False if employee['isInactive'] else True
-                    })
 
             DestinationAttribute.bulk_create_or_update_destination_attributes(
                 attributes, 'EMPLOYEE', self.workspace_id, True)
