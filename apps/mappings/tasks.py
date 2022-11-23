@@ -1037,7 +1037,7 @@ def schedule_vendors_as_merchants_creation(import_vendors_as_merchants, workspac
 
 def create_fyle_department_payload(department_name: str, existing_departments: Dict):
     """
-    Search and create Fyle Departments Payload from NetSuite Objects
+    Search and create Fyle Departments Payload from NetSuite Objects if not already present or disabled on Fyle
     :param department_name: Department name
     :param existing_departments: Existing Fyle Departments
     :return: Fyle Departments Payload
@@ -1069,8 +1069,11 @@ def create_fyle_employee_payload(platform_connection: PlatformConnector, employe
     employee_payload: List[Dict] = []
     employee_approver_payload: List[Dict] = []
     department_payload: List[Dict] = []
-    existing_departments: Dict = {}
 
+    """
+    Get all departments and create department mapping dictionary
+    """
+    existing_departments: Dict = {}
     departments_generator = platform_connection.connection.v1beta.admin.departments.list_all(query_params={
         'order': 'id.desc'
     })
@@ -1110,27 +1113,22 @@ def create_fyle_employee_payload(platform_connection: PlatformConnector, employe
     return employee_payload, employee_approver_payload, department_payload
 
 
-def post_employees(platform_connection: PlatformConnector, workspace_id: int, first_run: bool):
+def post_employees(platform_connection: PlatformConnector, workspace_id: int):
     """
-    Post Employees to Fyle
+    Post Employees and Departments to Fyle
     :param platform_connection: Platform Connector
     :param workspace_id: Workspace ID
-    :param first_run: True if Employees were added to Fyle before
     """
     existing_employee_names = ExpenseAttribute.objects.filter(
         attribute_type='EMPLOYEE', workspace_id=workspace_id).values_list('value', flat=True)
 
     workspace = Workspace.objects.get(id=workspace_id)
 
-    if first_run:
-        netsuite_attributes = DestinationAttribute.objects.filter(
-            attribute_type='EMPLOYEE', workspace_id=workspace_id).order_by('value', 'id')
-    else:
-        netsuite_attributes = DestinationAttribute.objects.filter(
-            attribute_type='EMPLOYEE',
-            workspace_id=workspace_id,
-            updated_at__gte=workspace.employee_exported_at
-        ).order_by('value', 'id')
+    netsuite_attributes = DestinationAttribute.objects.filter(
+        attribute_type='EMPLOYEE',
+        workspace_id=workspace_id,
+        updated_at__gte=workspace.employee_exported_at
+    ).order_by('value', 'id')
 
     netsuite_attributes = remove_duplicates(netsuite_attributes)
 
@@ -1163,14 +1161,10 @@ def auto_create_netsuite_employees_on_fyle(workspace_id):
 
         platform_connection = PlatformConnector(fyle_credentials)
 
-        existing_employees = ExpenseAttribute.objects.filter(attribute_type='EMPLOYEE', workspace_id=workspace_id).count()
-
-        first_run = False if existing_employees else True
-
         platform_connection.employees.sync()
 
         sync_netsuite_attribute('EMPLOYEE', workspace_id)
-        post_employees(platform_connection, workspace_id, first_run)
+        post_employees(platform_connection, workspace_id)
 
     except WrongParamsError as exception:
         logger.error(

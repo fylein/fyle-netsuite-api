@@ -465,6 +465,7 @@ class NetSuiteConnector:
         for employees in employees_generator:
             attributes = []
             for employee in employees:
+                # TODO: add an if case to check if allow_access_to_fyle is enabled on netsuite
                 supervisor = []
                 if employee['supervisor']:
                     supervisor.append(self.connection.employees.get(
@@ -478,7 +479,7 @@ class NetSuiteConnector:
                     'department_name': employee['department']['name'] if employee['department'] else None,
                     'location_name': employee['location']['name'] if employee['location'] else None,
                     'full_name': ' '.join(filter(None, [employee['firstName'], employee['middleName'], employee['lastName']])),
-                    'joined_at': employee['dateCreated'].isoformat(timespec='milliseconds'),
+                    'joined_at': employee['dateCreated'].isoformat(timespec='milliseconds') if employee['dateCreated'] else datetime.now().isoformat(timespec='milliseconds'),
                     'title': employee['title'] if employee['title'] else None,
                     'mobile': employee['mobilePhone'] if employee['mobilePhone'] else None,
                     'approver_emails': supervisor
