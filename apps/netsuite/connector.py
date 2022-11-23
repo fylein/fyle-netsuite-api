@@ -1,3 +1,4 @@
+import re
 import json
 from datetime import datetime
 from typing import List, Dict
@@ -482,7 +483,7 @@ class NetSuiteConnector:
                         'full_name': ' '.join(filter(None, [employee['firstName'], employee['middleName'], employee['lastName']])),
                         'joined_at': employee['dateCreated'].isoformat(timespec='milliseconds') if employee['dateCreated'] else datetime.now().isoformat(timespec='milliseconds'),
                         'title': employee['title'] if employee['title'] else None,
-                        'mobile': employee['mobilePhone'] if employee['mobilePhone'] else None,
+                        'mobile': '+{}'.format(re.sub('\D', '', employee['mobilePhone'])) if employee['mobilePhone'] else None,
                         'approver_emails': supervisor
                     }
 
