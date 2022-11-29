@@ -1085,6 +1085,8 @@ def create_fyle_employee_payload(platform_connection: PlatformConnector, employe
                     'is_enabled': department['is_enabled']
                 }
 
+    print('\nexisting_departments', existing_departments)
+
     for employee in employees:
         if employee.value not in existing_employee_names:
             if employee.detail['department_name']:
