@@ -1058,12 +1058,11 @@ def create_fyle_department_payload(department_name: str, existing_departments: D
     return departments_payload
 
 
-def create_fyle_employee_payload(platform_connection: PlatformConnector, employees: List[DestinationAttribute], existing_employee_names: List[str]):
+def create_fyle_employee_payload(platform_connection: PlatformConnector, employees: List[DestinationAttribute]):
     """
     Create Fyle Employee, Approver, Departments Payload from NetSuite Objects
     :param platform_connection: Platform Connector
     :param employees: NetSuite Employees Objects
-    :param existing_employee_names: Existing Fyle Employees
     :return: Fyle Employee, Approver, Departments Payload
     """
     employee_payload: List[Dict] = []
@@ -1088,29 +1087,30 @@ def create_fyle_employee_payload(platform_connection: PlatformConnector, employe
     print('\nexisting_departments', existing_departments)
 
     for employee in employees:
-        if employee.value not in existing_employee_names:
-            if employee.detail['department_name']:
-                department = create_fyle_department_payload(employee.detail['department_name'], existing_departments)
-                if department:
+        if employee.detail['department_name']:
+            department = create_fyle_department_payload(employee.detail['department_name'], existing_departments)
+            if department:
+                if not list(filter(
+                    lambda dept: dept['name'] == employee.detail['department_name'], department_payload)):   #check if department is already added to department_payload
                     department_payload.extend(department)
 
-            if employee.detail['email']:
-                employee_payload.append({
+        if employee.detail['email']:
+            employee_payload.append({
+                'user_email': employee.detail['email'],
+                'user_full_name': employee.detail['full_name'],
+                'code': employee.destination_id,
+                'department_name': employee.detail['department_name'] if employee.detail['department_name'] else '',
+                'is_enabled': employee.active,
+                'joined_at': employee.detail['joined_at'],
+                'location': employee.detail['location_name'] if employee.detail['location_name'] else '',
+                'title': employee.detail['title'] if employee.detail['title'] else '',
+                'mobile': employee.detail['mobile'] if employee.detail['mobile'] else None
+            })
+            if employee.detail['approver_emails']:
+                employee_approver_payload.append({
                     'user_email': employee.detail['email'],
-                    'user_full_name': employee.detail['full_name'],
-                    'code': employee.destination_id,
-                    'department_name': employee.detail['department_name'] if employee.detail['department_name'] else '',
-                    'is_enabled': employee.active,
-                    'joined_at': employee.detail['joined_at'],
-                    'location': employee.detail['location_name'] if employee.detail['location_name'] else '',
-                    'title': employee.detail['title'] if employee.detail['title'] else '',
-                    'mobile': employee.detail['mobile'] if employee.detail['mobile'] else None
+                    'approver_emails': employee.detail['approver_emails']
                 })
-                if employee.detail['approver_emails']:
-                    employee_approver_payload.append({
-                        'user_email': employee.detail['email'],
-                        'approver_emails': employee.detail['approver_emails']
-                    })
 
     return employee_payload, employee_approver_payload, department_payload
 
@@ -1121,8 +1121,6 @@ def post_employees(platform_connection: PlatformConnector, workspace_id: int):
     :param platform_connection: Platform Connector
     :param workspace_id: Workspace ID
     """
-    existing_employee_names = ExpenseAttribute.objects.filter(
-        attribute_type='EMPLOYEE', workspace_id=workspace_id).values_list('value', flat=True)
 
     workspace = Workspace.objects.get(id=workspace_id)
 
@@ -1135,7 +1133,7 @@ def post_employees(platform_connection: PlatformConnector, workspace_id: int):
     netsuite_attributes = remove_duplicates(netsuite_attributes)
 
     fyle_employee_payload, employee_approver_payload, fyle_department_payload = create_fyle_employee_payload(
-        platform_connection, netsuite_attributes, existing_employee_names
+        platform_connection, netsuite_attributes
     )
 
     print('\nfyle_employee_payload', fyle_employee_payload)
