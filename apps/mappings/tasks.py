@@ -1035,26 +1035,45 @@ def schedule_vendors_as_merchants_creation(import_vendors_as_merchants, workspac
             schedule.delete()
 
 
-def create_fyle_department_payload(department_name: str, existing_departments: Dict):
+def create_fyle_department_payload(department_name: str, parent_department: str, existing_departments: Dict):
     """
     Search and create Fyle Departments Payload from NetSuite Objects if not already present or disabled on Fyle
     :param department_name: Department name
+    :param parent_department: Parent Department
     :param existing_departments: Existing Fyle Departments
     :return: Fyle Departments Payload
     """
     departments_payload = []
 
-    if department_name in existing_departments.keys():
-        if not existing_departments[department_name]['is_enabled']:
+    department = department_name
+    if parent_department:
+        department = '{} / {}'.format(parent_department, department_name)
+
+    if department in existing_departments.keys():
+        if not existing_departments[department]['is_enabled']:
+            if parent_department:
+                departments_payload.append({
+                    'name': parent_department,
+                    'id': existing_departments[department]['id'],
+                    'sub_department': department_name,
+                    'is_enabled': True
+                })
+            else:
+                departments_payload.append({
+                    'name': department_name,
+                    'id': existing_departments[department]['id'],
+                    'is_enabled': True
+                })
+    else:
+        if parent_department:
+            departments_payload.append({
+                'name': parent_department,
+                'sub_department': department_name
+            })
+        else:
             departments_payload.append({
                 'name': department_name,
-                'id': existing_departments[department_name]['id'],
-                'is_enabled': True
             })
-    else:
-        departments_payload.append({
-            'name': department_name,
-        })
     return departments_payload
 
 
@@ -1079,7 +1098,7 @@ def create_fyle_employee_payload(platform_connection: PlatformConnector, employe
     for response in departments_generator:
         if response.get('data'):
             for department in response['data']:
-                existing_departments[department['name']] = {
+                existing_departments[department['display_name']] = {
                     'id': department['id'],
                     'is_enabled': department['is_enabled']
                 }
@@ -1088,14 +1107,14 @@ def create_fyle_employee_payload(platform_connection: PlatformConnector, employe
 
     for employee in employees:
         if employee.detail['department_name']:
-            department = create_fyle_department_payload(employee.detail['department_name'], existing_departments)
+            department = create_fyle_department_payload(employee.detail['department_name'], employee.detail['parent_department'], existing_departments)
             if department:
                 if not list(filter(
                     lambda dept: dept['name'] == employee.detail['department_name'], department_payload)):   #check if department is already added to department_payload
                     department_payload.extend(department)
 
         if employee.detail['email']:
-            employee_payload.append({
+            update_create_employee = {
                 'user_email': employee.detail['email'],
                 'user_full_name': employee.detail['full_name'],
                 'code': employee.destination_id,
@@ -1105,7 +1124,14 @@ def create_fyle_employee_payload(platform_connection: PlatformConnector, employe
                 'location': employee.detail['location_name'] if employee.detail['location_name'] else '',
                 'title': employee.detail['title'] if employee.detail['title'] else '',
                 'mobile': employee.detail['mobile'] if employee.detail['mobile'] else None
-            })
+            }
+
+            if employee.detail['parent_department']:
+                update_create_employee['department_name'] = employee.detail['parent_department']
+                update_create_employee['sub_department'] = employee.detail['department_name'] if employee.detail['department_name'] else ''
+
+            employee_payload.append(update_create_employee)
+
             if employee.detail['approver_emails']:
                 employee_approver_payload.append({
                     'user_email': employee.detail['email'],

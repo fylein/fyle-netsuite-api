@@ -473,12 +473,18 @@ class NetSuiteConnector:
                         supervisor.append(self.connection.employees.get(
                             employee['supervisor']['internalId'], employee['supervisor']['externalId'])['email'])
 
+                    parent_department = None
+                    if employee['department']:
+                        if len(employee['department']['name'].split(':')) > 1:
+                            parent_department = employee['department']['name'].split(':')[0].strip()
+
                     detail = {
                         'email': employee['email'] if employee['email'] else None,
                         'department_id': employee['department']['internalId'] if employee['department'] else None,
                         'location_id': employee['location']['internalId'] if employee['location'] else None,
                         'class_id': employee['class']['internalId'] if employee['class'] else None,
-                        'department_name': employee['department']['name'] if employee['department'] else None,
+                        'department_name': employee['department']['name'].split(':')[-1].strip() if employee['department'] else None,
+                        'parent_department': parent_department,
                         'location_name': employee['location']['name'] if employee['location'] else None,
                         'full_name': ' '.join(filter(None, [employee['firstName'], employee['middleName'], employee['lastName']])),
                         'joined_at': employee['dateCreated'].isoformat(timespec='milliseconds') if employee['dateCreated'] else datetime.now().isoformat(timespec='milliseconds'),
