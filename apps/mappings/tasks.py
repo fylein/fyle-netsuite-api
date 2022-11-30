@@ -1056,23 +1056,27 @@ def create_fyle_department_payload(department_name: str, parent_department: str,
                     'name': parent_department,
                     'id': existing_departments[department]['id'],
                     'sub_department': department_name,
-                    'is_enabled': True
+                    'is_enabled': True,
+                    'display_name': department
                 })
             else:
                 departments_payload.append({
                     'name': department_name,
                     'id': existing_departments[department]['id'],
-                    'is_enabled': True
+                    'is_enabled': True,
+                    'display_name': department
                 })
     else:
         if parent_department:
             departments_payload.append({
                 'name': parent_department,
-                'sub_department': department_name
+                'sub_department': department_name,
+                'display_name': department
             })
         else:
             departments_payload.append({
                 'name': department_name,
+                'display_name': department
             })
     return departments_payload
 
@@ -1103,20 +1107,13 @@ def create_fyle_employee_payload(platform_connection: PlatformConnector, employe
                     'is_enabled': department['is_enabled']
                 }
 
-    print('\nexisting_departments', existing_departments)
-
     for employee in employees:
         if employee.detail['department_name']:
             department = create_fyle_department_payload(employee.detail['department_name'], employee.detail['parent_department'], existing_departments)
             if department:
-                if employee.detail['parent_department']:
-                    if not list(filter(
-                        lambda dept: 'sub_department' in dept and dept['sub_department'] == employee.detail['department_name'], department_payload)):   #check if sub department of a parent department and is already added to department_payload
-                        department_payload.extend(department)
-                else:
-                    if not list(filter(
-                        lambda dept: dept['name'] == employee.detail['department_name'], department_payload)):   #check if department is already added to department_payload
-                        department_payload.extend(department)
+                if not list(filter(
+                    lambda dept: dept['display_name'] == department[0]['display_name'], department_payload)):   #check if department is already added to department_payload
+                    department_payload.extend(department)
 
         if employee.detail['email']:
             update_create_employee = {
