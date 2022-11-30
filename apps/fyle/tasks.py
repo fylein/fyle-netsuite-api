@@ -77,10 +77,10 @@ def create_expense_groups(workspace_id: int, configuration: Configuration, fund_
             if 'PERSONAL' in fund_source:
                 expenses.extend(platform.expenses.get(
                     source_account_type=['PERSONAL_CASH_ACCOUNT'],
-                    state=expense_group_settings.reimbursable_expense_state,
-                    settled_at=last_synced_at if expense_group_settings.reimbursable_expense_state == 'PAYMENT_PROCESSING' else None,
+                    state=expense_group_settings.expense_state,
+                    settled_at=last_synced_at if expense_group_settings.expense_state == 'PAYMENT_PROCESSING' else None,
                     filter_credit_expenses=filter_credit_expenses,
-                    last_paid_at=last_synced_at if expense_group_settings.reimbursable_expense_state == 'PAID' else None
+                    last_paid_at=last_synced_at if expense_group_settings.expense_state == 'PAID' else None
                 ))
 
             if expenses:
