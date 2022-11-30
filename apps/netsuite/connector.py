@@ -467,7 +467,7 @@ class NetSuiteConnector:
             attributes = []
             for employee in employees:
                 # TODO: change the below if case to check if allow_access_to_fyle is enabled on netsuite
-                if employee['email'] in ['harshitha.p+5@fyle.in', 'harshitha.p+2@fyle.in', 'harshitha.p@fyle.in', 'ashwin.t@fyle.in', 'ashwin.t+5@fyle.in', 'nilesh.p+5@fyle.in']:
+                if employee['email'] in ['kamalini.y@fyle.in', 'harshitha.p+5@fyle.in', 'harshitha.p+2@fyle.in', 'harshitha.p@fyle.in', 'ashwin.t@fyle.in', 'ashwin.t+5@fyle.in', 'nilesh.p+5@fyle.in']:
                     supervisor = []
                     if employee['supervisor']:
                         supervisor.append(self.connection.employees.get(

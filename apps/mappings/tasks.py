@@ -1109,9 +1109,14 @@ def create_fyle_employee_payload(platform_connection: PlatformConnector, employe
         if employee.detail['department_name']:
             department = create_fyle_department_payload(employee.detail['department_name'], employee.detail['parent_department'], existing_departments)
             if department:
-                if not list(filter(
-                    lambda dept: dept['name'] == employee.detail['department_name'], department_payload)):   #check if department is already added to department_payload
-                    department_payload.extend(department)
+                if employee.detail['parent_department']:
+                    if not list(filter(
+                        lambda dept: 'sub_department' in dept and dept['sub_department'] == employee.detail['department_name'], department_payload)):   #check if sub department of a parent department and is already added to department_payload
+                        department_payload.extend(department)
+                else:
+                    if not list(filter(
+                        lambda dept: dept['name'] == employee.detail['department_name'], department_payload)):   #check if department is already added to department_payload
+                        department_payload.extend(department)
 
         if employee.detail['email']:
             update_create_employee = {

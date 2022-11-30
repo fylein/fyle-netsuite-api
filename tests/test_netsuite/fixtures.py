@@ -6087,7 +6087,61 @@ data = {
             {
                 'id': 'asdfghjkl',
                 'name': 'Sales',
-                'is_enabled': False
+                'is_enabled': False,
+                "description": "",
+                "display_name": "Sales",
+                "doc_url": "HU61HYSM2E",
+                "id": "deptdExbJZaDqD",
+                "is_enabled": True,
+                "org_id": "orNoatdUnm1w",
+                "sub_department": "Purchasing",
+                "updated_at": "2020-09-02T08:06:17.063568+00:00"
+                },
+                {
+                "code": "522EDE7DBG",
+                "created_at": "2020-09-02T08:06:15.063568+00:00",
+                "department_head_user_ids": [
+                    "usJunSVNaFGE"
+                ],
+                "department_head_users": [
+                    {
+                        "email": "owner@fyleforqvd.com",
+                        "full_name": "Fyle For Quickbooks v4 Demo",
+                        "id": "usJunSVNaFGE"
+                    }
+                ],
+                "description": "",
+                "display_name": "Engineering / sample",
+                "doc_url": "HU61HYSM2E",
+                "id": "deptdExbJZaDqD",
+                "is_enabled": False,
+                "name": "Engineering",
+                "org_id": "orNoatdUnm1w",
+                "sub_department": "sample",
+                "updated_at": "2020-09-02T08:06:17.063568+00:00"
+            },
+            {
+                "code": "522EDE7DBG",
+                "created_at": "2020-09-02T08:06:15.063568+00:00",
+                "department_head_user_ids": [
+                    "usJunSVNaFGE"
+                ],
+                "department_head_users": [
+                    {
+                        "email": "owner@fyleforqvd.com",
+                        "full_name": "Fyle For Quickbooks v4 Demo",
+                        "id": "usJunSVNaFGE"
+                    }
+                ],
+                "description": "",
+                "display_name": "Engineerings",
+                "doc_url": "HU61HYSM2E",
+                "id": "deptdExbJZaDqD",
+                "is_enabled": False,
+                "name": "Engineerings",
+                "org_id": "orNoatdUnm1w",
+                "sub_department": "null",
+                "updated_at": "2020-09-02T08:06:17.063568+00:00"
             }
         ]
     }]
