@@ -37,6 +37,11 @@ SOURCE_ACCOUNT_MAP = {
     'PERSONAL_CORPORATE_CREDIT_CARD_ACCOUNT': 'CCC'
 }
 
+CCC_EXPENSE_STATE = (
+    ('APPROVED', 'APPROVED'),
+    ('PAID', 'PAID')
+)
+
 class Expense(models.Model):
     """
     Expense
@@ -141,6 +146,9 @@ def get_default_expense_group_fields():
 def get_default_expense_state():
     return 'PAYMENT_PROCESSING'
 
+def get_default_ccc_expense_state():
+    return 'PAID'
+
 
 class ExpenseGroupSettings(models.Model):
     """
@@ -159,6 +167,9 @@ class ExpenseGroupSettings(models.Model):
     expense_state = models.CharField(
         max_length=100, default=get_default_expense_state,
         help_text='state at which the expenses are fetched ( PAYMENT_PENDING / PAYMENT_PROCESSING / PAID)')
+    ccc_expense_state = models.CharField(
+        max_length=100, default=get_default_ccc_expense_state, choices=CCC_EXPENSE_STATE,
+        help_text='state at which the ccc expenses are fetched (APPROVED/PAID)', null=True)
     reimbursable_export_date_type = models.CharField(max_length=100, default='current_date', help_text='Export Date')
     ccc_export_date_type = models.CharField(max_length=100, default='current_date', help_text='CCC Export Date')
     import_card_credits = models.BooleanField(help_text='Import Card Credits', default=False)

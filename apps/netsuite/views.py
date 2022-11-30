@@ -186,7 +186,8 @@ class SyncNetSuiteDimensionView(generics.ListCreateAPIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
-        except Exception : 
+        except Exception as e:
+            print(e) 
             return Response(
                 data={
                     'message': 'Error in syncing Dimensions'
