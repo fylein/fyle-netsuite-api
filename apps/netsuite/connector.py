@@ -1,6 +1,7 @@
 import re
+import pytz
 import json
-from datetime import datetime
+from datetime import datetime,timezone
 from typing import List, Dict
 import logging
 
@@ -487,11 +488,16 @@ class NetSuiteConnector:
                         'parent_department': parent_department,
                         'location_name': employee['location']['name'] if employee['location'] else None,
                         'full_name': ' '.join(filter(None, [employee['firstName'], employee['middleName'], employee['lastName']])),
-                        'joined_at': employee['dateCreated'].isoformat(timespec='milliseconds') if employee['dateCreated'] else datetime.now().isoformat(timespec='milliseconds'),
+                        'joined_at': employee['dateCreated'].isoformat(timespec='milliseconds') if employee['dateCreated'] else None,
                         'title': employee['title'] if employee['title'] else None,
                         'mobile': '+{}'.format(re.sub('\D', '', employee['mobilePhone'])) if employee['mobilePhone'] else None,
                         'approver_emails': supervisor
                     }
+
+                    active_status = False if employee['isInactive'] else True
+                    if employee['releaseDate']:
+                        if employee['releaseDate'].isoformat(timespec='milliseconds') < datetime.now().isoformat(timespec='milliseconds'):
+                            active_status = False
 
                     if 'subsidiary' in employee and employee['subsidiary']:
                         if employee['subsidiary']['internalId'] == subsidiary_mapping.internal_id:
@@ -501,7 +507,7 @@ class NetSuiteConnector:
                                 'value': employee['entityId'],
                                 'destination_id': employee['internalId'],
                                 'detail': detail,
-                                'active': False if employee['isInactive'] else True
+                                'active': active_status
                             })
                     else:
                         attributes.append({
@@ -510,7 +516,7 @@ class NetSuiteConnector:
                             'value': employee['entityId'],
                             'destination_id': employee['internalId'],
                             'detail': detail,
-                            'active': False if employee['isInactive'] else True
+                            'active': active_status
                         })
 
             DestinationAttribute.bulk_create_or_update_destination_attributes(
