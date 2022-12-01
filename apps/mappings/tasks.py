@@ -1164,10 +1164,6 @@ def post_employees(platform_connection: PlatformConnector, workspace_id: int):
         platform_connection, netsuite_attributes
     )
 
-    print('\nfyle_employee_payload', fyle_employee_payload)
-    print('\nemployee_approver_payload', employee_approver_payload)
-    print('\nfyle_department_payload', fyle_department_payload)
-
     if fyle_department_payload:
         for department in fyle_department_payload:
             platform_connection.departments.post(department)
