@@ -94,6 +94,6 @@ def test_sync_dimensions(mocker, db):
     project_count = DestinationAttribute.objects.filter(attribute_type='PROJECT', workspace_id=1).count()
     categoty_count = DestinationAttribute.objects.filter(attribute_type='EXPENSE_CATEGORY', workspace_id=1).count()
 
-    assert employee_count == 13
+    assert employee_count == 7
     assert project_count == 1087
     assert categoty_count == 34

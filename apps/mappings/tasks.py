@@ -16,7 +16,7 @@ from fyle_accounting_mappings.helpers import EmployeesAutoMappingHelper
 from fyle_integrations_platform_connector import PlatformConnector
 from apps.mappings.models import GeneralMapping
 from apps.netsuite.connector import NetSuiteConnector
-from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configuration
+from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configuration, Workspace
 
 
 from .constants import FYLE_EXPENSE_SYSTEM_FIELDS
@@ -709,6 +709,9 @@ def sync_netsuite_attribute(netsuite_attribute_type: str, workspace_id: int):
     elif netsuite_attribute_type == 'VENDOR':
         ns_connection.sync_vendors()
 
+    elif netsuite_attribute_type == 'EMPLOYEE':
+        ns_connection.sync_employees()
+
     else:
         ns_connection.sync_custom_segments()
 
@@ -1025,6 +1028,202 @@ def schedule_vendors_as_merchants_creation(import_vendors_as_merchants, workspac
     else:
         schedule: Schedule = Schedule.objects.filter(
             func='apps.mappings.tasks.auto_create_vendors_as_merchants',
+            args='{}'.format(workspace_id),
+        ).first()
+
+        if schedule:
+            schedule.delete()
+
+
+def create_fyle_department_payload(department_name: str, parent_department: str, existing_departments: Dict):
+    """
+    Search and create Fyle Departments Payload from NetSuite Objects if not already present or disabled on Fyle
+    :param department_name: Department name
+    :param parent_department: Parent Department
+    :param existing_departments: Existing Fyle Departments
+    :return: Fyle Departments Payload
+    """
+    departments_payload = []
+
+    department = department_name
+    if parent_department:
+        department = '{} / {}'.format(parent_department, department_name)
+
+    if department in existing_departments.keys():
+        if not existing_departments[department]['is_enabled']:
+            if parent_department:
+                departments_payload.append({
+                    'name': parent_department,
+                    'id': existing_departments[department]['id'],
+                    'sub_department': department_name,
+                    'is_enabled': True,
+                    'display_name': department
+                })
+            else:
+                departments_payload.append({
+                    'name': department_name,
+                    'id': existing_departments[department]['id'],
+                    'is_enabled': True,
+                    'display_name': department
+                })
+    else:
+        if parent_department:
+            departments_payload.append({
+                'name': parent_department,
+                'sub_department': department_name,
+                'display_name': department
+            })
+        else:
+            departments_payload.append({
+                'name': department_name,
+                'display_name': department
+            })
+    return departments_payload
+
+
+def create_fyle_employee_payload(platform_connection: PlatformConnector, employees: List[DestinationAttribute]):
+    """
+    Create Fyle Employee, Approver, Departments Payload from NetSuite Objects
+    :param platform_connection: Platform Connector
+    :param employees: NetSuite Employees Objects
+    :return: Fyle Employee, Approver, Departments Payload
+    """
+    employee_payload: List[Dict] = []
+    employee_approver_payload: List[Dict] = []
+    department_payload: List[Dict] = []
+
+    """
+    Get all departments and create department mapping dictionary
+    """
+    existing_departments: Dict = {}
+    departments_generator = platform_connection.connection.v1beta.admin.departments.list_all(query_params={
+        'order': 'id.desc'
+    })
+    for response in departments_generator:
+        if response.get('data'):
+            for department in response['data']:
+                existing_departments[department['display_name']] = {
+                    'id': department['id'],
+                    'is_enabled': department['is_enabled']
+                }
+
+    for employee in employees:
+        if employee.detail['department_name']:
+            department = create_fyle_department_payload(employee.detail['department_name'], employee.detail['parent_department'], existing_departments)
+            if department:
+                if not list(filter(
+                    lambda dept: dept['display_name'] == department[0]['display_name'], department_payload)):   #check if department is already added to department_payload
+                    department_payload.extend(department)
+
+        if employee.detail['email']:
+            update_create_employee = {
+                'user_email': employee.detail['email'],
+                'user_full_name': employee.detail['full_name'],
+                'code': employee.destination_id,
+                'department_name': employee.detail['department_name'] if employee.detail['department_name'] else '',
+                'is_enabled': employee.active,
+                'joined_at': employee.detail['joined_at'],
+                'location': employee.detail['location_name'] if employee.detail['location_name'] else '',
+                'title': employee.detail['title'] if employee.detail['title'] else '',
+                'mobile': employee.detail['mobile'] if employee.detail['mobile'] else None
+            }
+
+            if employee.detail['parent_department']:
+                update_create_employee['department_name'] = employee.detail['parent_department']
+                update_create_employee['sub_department'] = employee.detail['department_name'] if employee.detail['department_name'] else ''
+
+            employee_payload.append(update_create_employee)
+
+            if employee.detail['approver_emails']:
+                employee_approver_payload.append({
+                    'user_email': employee.detail['email'],
+                    'approver_emails': employee.detail['approver_emails']
+                })
+
+    return employee_payload, employee_approver_payload, department_payload
+
+
+def post_employees(platform_connection: PlatformConnector, workspace_id: int):
+    """
+    Post Employees and Departments to Fyle
+    :param platform_connection: Platform Connector
+    :param workspace_id: Workspace ID
+    """
+
+    workspace = Workspace.objects.get(id=workspace_id)
+
+    netsuite_attributes = DestinationAttribute.objects.filter(
+        attribute_type='EMPLOYEE',
+        workspace_id=workspace_id,
+        updated_at__gte=workspace.employee_exported_at
+    ).order_by('value', 'id')
+
+    netsuite_attributes = remove_duplicates(netsuite_attributes)
+
+    fyle_employee_payload, employee_approver_payload, fyle_department_payload = create_fyle_employee_payload(
+        platform_connection, netsuite_attributes
+    )
+
+    if fyle_department_payload:
+        for department in fyle_department_payload:
+            platform_connection.departments.post(department)
+
+    if fyle_employee_payload:
+        platform_connection.connection.v1beta.admin.employees.invite_bulk({'data': fyle_employee_payload})
+
+        workspace.employee_exported_at = datetime.now()
+        workspace.save()
+
+    if employee_approver_payload:
+        platform_connection.connection.v1beta.admin.employees.invite_bulk({'data': employee_approver_payload})
+
+        workspace.employee_exported_at = datetime.now()
+        workspace.save()
+
+    platform_connection.employees.sync()
+
+
+def auto_create_netsuite_employees_on_fyle(workspace_id):
+    try:
+        fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
+
+        platform_connection = PlatformConnector(fyle_credentials)
+
+        platform_connection.employees.sync()
+
+        sync_netsuite_attribute('EMPLOYEE', workspace_id)
+        post_employees(platform_connection, workspace_id)
+
+    except WrongParamsError as exception:
+        logger.error(
+            'Error while posting netsuite employees to fyle for workspace_id - %s in Fyle %s %s',
+            workspace_id, exception.message, {'error': exception.response}
+        )
+
+    except Exception:
+        error = traceback.format_exc()
+        error = {
+            'error': error
+        }
+        logger.exception(
+            'Error while posting netsuite employees to fyle for workspace_id - %s error: %s',
+            workspace_id, error)
+
+
+def schedule_netsuite_employee_creation_on_fyle(import_netsuite_employees, workspace_id):
+    if import_netsuite_employees:
+        schedule, _ = Schedule.objects.update_or_create(
+            func='apps.mappings.tasks.auto_create_netsuite_employees_on_fyle',
+            args='{}'.format(workspace_id),
+            defaults={
+                'schedule_type': Schedule.MINUTES,
+                'minutes': 24 * 60,
+                'next_run': datetime.now()
+            }
+        )
+    else:
+        schedule: Schedule = Schedule.objects.filter(
+            func='apps.mappings.tasks.auto_create_netsuite_employees_on_fyle',
             args='{}'.format(workspace_id),
         ).first()
 
