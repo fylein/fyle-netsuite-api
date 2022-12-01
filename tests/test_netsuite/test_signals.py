@@ -1,7 +1,11 @@
-from fyle_accounting_mappings.models import DestinationAttribute
+import logging
+from unittest import mock
 from .fixtures import data
-
+from fyle_accounting_mappings.models import DestinationAttribute
 from apps.netsuite.models import CustomSegment
+
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 
 def test_sync_custom_segments(mocker, db):
@@ -47,18 +51,29 @@ def test_sync_custom_segments(mocker, db):
     custom_list = DestinationAttribute.objects.filter(attribute_type='FAVOURITE_SINGER').count()
     assert custom_list == 6
 
-    custom_segment = DestinationAttribute.objects.filter(attribute_type='SAMPLE_SEGMENT').count()
-    assert custom_segment == 0
+    custom_segment = DestinationAttribute.objects.filter(attribute_type='LOCATION').count()
+    assert custom_segment == 36
 
     CustomSegment.objects.create(
-        name='PRODUCTION_LINE',
+        name='LOCATION',
         segment_type='CUSTOM_SEGMENT',
         script_id='custcolauto87',
         internal_id='1002s',
         workspace_id=49
     )
 
-    custom_segment = DestinationAttribute.objects.filter(attribute_type='PRODUCTION_LINE').count()
+    custom_segment = DestinationAttribute.objects.filter(attribute_type='LOCATION').count()
+    assert custom_segment == 36
 
-    assert custom_segment == 5
-    
+    try:
+        with mock.patch('netsuitesdk.api.custom_segments.CustomSegments.get') as mock_call:
+            mock_call.side_effect = Exception()
+            CustomSegment.objects.create(
+                name='LOCATION',
+                segment_type='CUSTOM_SEGMENT',
+                script_id='custcolauto87',
+                internal_id='1002s',
+                workspace_id=49
+            )
+    except:
+        logger.info('rest_framework.exceptions.NotFound')

@@ -36,9 +36,10 @@ def test_get_cluster_domain_and_refresh_token(db, add_users_to_database):
     assert cluster_domain == 'https://staging.fyle.tech'
     assert refresh_token == fyle_credentials.refresh_token
 
+    fyle_credentials = FyleCredential.objects.filter(workspace__user=user)
+
     fyle_credentials.delete()
     cluster_domain, refresh_token = get_cluster_domain_and_refresh_token(user)
 
     assert cluster_domain == 'https://staging.fyle.tech'
-    assert refresh_token == fyle_credentials.refresh_token
     
