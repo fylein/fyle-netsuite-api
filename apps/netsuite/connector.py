@@ -467,8 +467,12 @@ class NetSuiteConnector:
         for employees in employees_generator:
             attributes = []
             for employee in employees:
-                # TODO: change the below if case to check if allow_access_to_fyle is enabled on netsuite
-                if employee['email'] in ['kamalini.y@fyle.in', 'harshitha.p+5@fyle.in', 'harshitha.p+2@fyle.in', 'harshitha.p@fyle.in', 'ashwin.t@fyle.in', 'ashwin.t+5@fyle.in', 'nilesh.p+5@fyle.in']:
+                allow_access_to_fyle = False
+                for field in employee['customFieldList']['customField']:    # Check if Allow access to fyle is enabled
+                    if field['scriptId'] == 'custentityallow_fyle_access' and field['value']:
+                        allow_access_to_fyle = True
+
+                if allow_access_to_fyle:
                     supervisor = []
                     if employee['supervisor']:
                         supervisor.append(self.connection.employees.get(
