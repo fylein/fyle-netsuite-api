@@ -39,7 +39,8 @@ SOURCE_ACCOUNT_MAP = {
 
 CCC_EXPENSE_STATE = (
     ('APPROVED', 'APPROVED'),
-    ('PAID', 'PAID')
+    ('PAID', 'PAID'),
+    ('PAYMENT_PROCESSING', 'PAYMENT_PROCESSING')
 )
 
 class Expense(models.Model):
@@ -249,7 +250,7 @@ class ExpenseGroupSettings(models.Model):
                 'reimbursable_expense_group_fields': reimbursable_grouped_by,
                 'corporate_credit_card_expense_group_fields': corporate_credit_card_expenses_grouped_by,
                 'expense_state': expense_group_settings['expense_state'],
-                'ccc_expense_state': expense_group_settings['ccc_expense_state'] if 'ccc_expense_state' in expense_group_settings else expense_group_settings['expense_state'],
+                'ccc_expense_state': expense_group_settings['ccc_expense_state'],
                 'reimbursable_export_date_type': expense_group_settings['reimbursable_export_date_type'],
                 'ccc_export_date_type': expense_group_settings['ccc_export_date_type']
             }
