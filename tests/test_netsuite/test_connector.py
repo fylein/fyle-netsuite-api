@@ -152,6 +152,10 @@ def test_sync_employees(mocker, db):
         'netsuitesdk.api.employees.Employees.get_all_generator',
         return_value=data['get_all_employees']    
     )
+    mocker.patch(
+        'netsuitesdk.api.employees.Employees.get',
+        return_value=data['get_all_employees'][0][0]
+    )
 
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
@@ -162,7 +166,7 @@ def test_sync_employees(mocker, db):
     netsuite_connection.sync_employees()
 
     new_employee_count = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='EMPLOYEE').count()
-    assert new_employee_count == 13
+    assert new_employee_count == 8
 
 @pytest.mark.django_db()
 def test_sync_accounts(mocker, db):

@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 14.2 (Debian 14.2-1.pgdg110+1)
--- Dumped by pg_dump version 14.2 (Debian 14.2-1.pgdg100+1)
+-- Dumped from database version 15.0 (Debian 15.0-1.pgdg110+1)
+-- Dumped by pg_dump version 15.1 (Debian 15.1-1.pgdg100+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -308,7 +308,8 @@ CREATE TABLE public.configurations (
     memo_structure character varying(100)[] NOT NULL,
     map_fyle_cards_netsuite_account boolean NOT NULL,
     skip_cards_mapping boolean NOT NULL,
-    import_vendors_as_merchants boolean NOT NULL
+    import_vendors_as_merchants boolean NOT NULL,
+    import_netsuite_employees boolean NOT NULL
 );
 
 
@@ -1650,7 +1651,8 @@ CREATE TABLE public.workspaces (
     updated_at timestamp with time zone NOT NULL,
     destination_synced_at timestamp with time zone,
     source_synced_at timestamp with time zone,
-    cluster_domain character varying(255)
+    cluster_domain character varying(255),
+    employee_exported_at timestamp with time zone NOT NULL
 );
 
 
@@ -2327,10 +2329,10 @@ COPY public.category_mappings (id, created_at, updated_at, destination_account_i
 -- Data for Name: configurations; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.configurations (id, reimbursable_expenses_object, corporate_credit_card_expenses_object, created_at, updated_at, workspace_id, sync_fyle_to_netsuite_payments, sync_netsuite_to_fyle_payments, import_projects, auto_map_employees, import_categories, auto_create_destination_entity, auto_create_merchants, employee_field_mapping, import_tax_items, change_accounting_period, memo_structure, map_fyle_cards_netsuite_account, skip_cards_mapping, import_vendors_as_merchants) FROM stdin;
-1	EXPENSE REPORT	BILL	2021-11-15 08:56:07.193743+00	2021-11-15 08:56:07.193795+00	1	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f
-2	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-11-16 04:18:15.836271+00	2021-11-16 04:20:09.969589+00	2	f	f	f	\N	f	f	f	EMPLOYEE	t	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f
-3	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-12-03 11:04:00.194287+00	2021-12-03 11:04:00.1943+00	49	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f
+COPY public.configurations (id, reimbursable_expenses_object, corporate_credit_card_expenses_object, created_at, updated_at, workspace_id, sync_fyle_to_netsuite_payments, sync_netsuite_to_fyle_payments, import_projects, auto_map_employees, import_categories, auto_create_destination_entity, auto_create_merchants, employee_field_mapping, import_tax_items, change_accounting_period, memo_structure, map_fyle_cards_netsuite_account, skip_cards_mapping, import_vendors_as_merchants, import_netsuite_employees) FROM stdin;
+1	EXPENSE REPORT	BILL	2021-11-15 08:56:07.193743+00	2021-11-15 08:56:07.193795+00	1	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f
+2	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-11-16 04:18:15.836271+00	2021-11-16 04:20:09.969589+00	2	f	f	f	\N	f	f	f	EMPLOYEE	t	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f
+3	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-12-03 11:04:00.194287+00	2021-12-03 11:04:00.1943+00	49	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f
 \.
 
 
@@ -2454,13 +2456,13 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 91	DEPARTMENT	Department	Engineering	11	2021-11-15 08:55:58.388192+00	2021-11-15 08:55:58.388201+00	1	\N	\N	f
 92	DEPARTMENT	Department	Product	12	2021-11-15 08:55:58.388233+00	2021-11-15 08:55:58.388242+00	1	\N	\N	f
 93	DEPARTMENT	Department	Fyle	13	2021-11-15 08:55:58.388273+00	2021-11-15 08:55:58.388282+00	1	\N	\N	f
-94	EMPLOYEE	Employee	Paul Blancaflor	1601	2021-11-15 08:56:02.247774+00	2021-11-15 08:56:02.247818+00	1	\N	{"email": "pblancaflor@netsuite.com", "class_id": null, "location_id": null, "department_id": null}	f
-95	EMPLOYEE	Employee	Fats Aralar	1626	2021-11-15 08:56:02.247906+00	2021-11-15 08:56:02.24793+00	1	\N	{"email": "faralar2@netsuite.com", "class_id": null, "location_id": null, "department_id": null}	f
-96	EMPLOYEE	Employee	Jan Bucoy	1640	2021-11-15 08:56:02.248006+00	2021-11-15 08:56:02.248025+00	1	\N	{"email": "jbucoy@netsuite.com", "class_id": null, "location_id": null, "department_id": null}	f
-97	EMPLOYEE	Employee	jhonsnow@gmail.com	1644	2021-11-15 08:56:02.248097+00	2021-11-15 08:56:02.248114+00	1	\N	{"email": "Siva@fyle.in", "class_id": null, "location_id": null, "department_id": null}	f
-98	EMPLOYEE	Employee	Shwetabh  Kumar	1676	2021-11-15 08:56:02.248184+00	2021-11-15 08:56:02.248201+00	1	\N	{"email": null, "class_id": null, "location_id": null, "department_id": null}	f
-101	EMPLOYEE	Employee	James Bond	11104	2021-11-15 08:56:02.248442+00	2021-11-15 08:56:02.248459+00	1	\N	{"email": "user2@fylefornileshfyle.in", "class_id": null, "location_id": null, "department_id": null}	f
-102	EMPLOYEE	Employee	Nil Sun	13812	2021-11-15 08:56:02.248527+00	2021-11-15 08:56:02.248544+00	1	\N	{"email": null, "class_id": null, "location_id": null, "department_id": null}	f
+94	EMPLOYEE	Employee	Paul Blancaflor	1601	2021-11-15 08:56:02.247774+00	2021-11-15 08:56:02.247818+00	1	\N	{"email": "pblancaflor@netsuite.com", "class_id": null, "location_id": null, "department_id": null, "department_name": "sample", "parent_department": "Engineering", "full_name": "sample", "joined_at": "2021-11-15 08:56:02.247818+00", "location_name": "", "title": "", "mobile": "", "approver_emails": []}	f
+95	EMPLOYEE	Employee	Fats Aralar	1626	2021-11-15 08:56:02.247906+00	2021-11-15 08:56:02.24793+00	1	\N	{"email": "faralar2@netsuite.com", "class_id": null, "location_id": null, "department_id": null, "department_name": "sample", "parent_department": "Engineering", "full_name": "sample", "joined_at": "2021-11-15 08:56:02.247818+00", "location_name": "", "title": "", "mobile": "", "approver_emails": []}	f
+96	EMPLOYEE	Employee	Jan Bucoy	1640	2021-11-15 08:56:02.248006+00	2021-11-15 08:56:02.248025+00	1	\N	{"email": "jbucoy@netsuite.com", "class_id": null, "location_id": null, "department_id": null, "department_name": "sample", "parent_department": "Engineering", "full_name": "sample", "joined_at": "2021-11-15 08:56:02.247818+00", "location_name": "", "title": "", "mobile": "", "approver_emails": []}	f
+97	EMPLOYEE	Employee	jhonsnow@gmail.com	1644	2021-11-15 08:56:02.248097+00	2021-11-15 08:56:02.248114+00	1	\N	{"email": "Siva@fyle.in", "class_id": null, "location_id": null, "department_id": null, "department_name": "simply", "parent_department": "Nothing", "full_name": "sample", "joined_at": "2021-11-15 08:56:02.247818+00", "location_name": "", "title": "", "mobile": "", "approver_emails": []}	f
+98	EMPLOYEE	Employee	Shwetabh  Kumar	1676	2021-11-15 08:56:02.248184+00	2021-11-15 08:56:02.248201+00	1	\N	{"email": null, "class_id": null, "location_id": null, "department_id": null, "department_name": "Engineerings", "parent_department": null, "full_name": "sample", "joined_at": "2021-11-15 08:56:02.247818+00", "location_name": "", "title": "", "mobile": "", "approver_emails": []}	f
+101	EMPLOYEE	Employee	James Bond	11104	2021-11-15 08:56:02.248442+00	2021-11-15 08:56:02.248459+00	1	\N	{"email": "user2@fylefornileshfyle.in", "class_id": null, "location_id": null, "department_id": null, "department_name": "sample", "parent_department": null, "full_name": "sample", "joined_at": "2021-11-15 08:56:02.247818+00", "location_name": "", "title": "", "mobile": "", "approver_emails": []}	f
+102	EMPLOYEE	Employee	Nil Sun	13812	2021-11-15 08:56:02.248527+00	2021-11-15 08:56:02.248544+00	1	\N	{"email": null, "class_id": null, "location_id": null, "department_id": null, "department_name": "samples", "parent_department": "null", "full_name": "sample", "joined_at": "2021-11-15 08:56:02.247818+00", "location_name": "", "title": "", "mobile": "", "approver_emails": []}	f
 103	BANK_ACCOUNT	Bank Account	Checking	1	2021-11-15 08:56:05.153711+00	2021-11-15 08:56:05.153751+00	1	\N	\N	f
 104	BANK_ACCOUNT	Bank Account	Savings	2	2021-11-15 08:56:05.153868+00	2021-11-15 08:56:05.153892+00	1	\N	\N	f
 105	BANK_ACCOUNT	Bank Account	Payroll	3	2021-11-15 08:56:05.154055+00	2021-11-15 08:56:05.15412+00	1	\N	\N	f
@@ -7552,6 +7554,9 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 134	fyle_accounting_mappings	0016_auto_20220413_1624	2022-06-16 08:36:13.615571+00
 135	fyle_accounting_mappings	0017_auto_20220419_0649	2022-06-16 08:36:13.642293+00
 136	fyle_accounting_mappings	0018_auto_20220419_0709	2022-06-16 08:36:13.662162+00
+137	workspaces	0026_configuration_import_netsuite_employees	2022-11-17 14:32:05.54967+00
+138	workspaces	0027_workspace_employee_exported_at	2022-11-17 14:32:05.589018+00
+139	workspaces	0028_auto_20221116_1350	2022-11-17 14:32:05.634688+00
 \.
 
 
@@ -11314,10 +11319,10 @@ COPY public.workspace_schedules (id, enabled, start_datetime, interval_hours, wo
 -- Data for Name: workspaces; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.workspaces (id, name, fyle_org_id, ns_account_id, last_synced_at, created_at, updated_at, destination_synced_at, source_synced_at, cluster_domain) FROM stdin;
-1	Fyle For Arkham Asylum	or79Cob97KSh	TSTDRV2089588	2021-11-15 13:12:12.210053+00	2021-11-15 08:46:16.062858+00	2021-11-15 13:12:12.210769+00	2021-11-15 08:56:43.737724+00	2021-11-15 08:55:57.620811+00	https://staging.fyle.tech
-2	Fyle For IntacctNew Technologies	oraWFQlEpjbb	TSTDRV2089588	2021-11-16 04:25:49.067507+00	2021-11-16 04:16:57.840307+00	2021-11-16 04:25:49.067805+00	2021-11-16 04:18:28.233322+00	2021-11-16 04:17:43.950915+00	https://staging.fyle.tech
-49	Fyle For intacct-test	orHe8CpW2hyN	TSTDRV2089588	2021-12-03 11:26:58.663241+00	2021-12-03 11:00:33.634494+00	2021-12-03 11:26:58.664557+00	2021-12-03 11:04:27.847159+00	2021-12-03 11:03:52.560696+00	https://staging.fyle.tech
+COPY public.workspaces (id, name, fyle_org_id, ns_account_id, last_synced_at, created_at, updated_at, destination_synced_at, source_synced_at, cluster_domain, employee_exported_at) FROM stdin;
+1	Fyle For Arkham Asylum	or79Cob97KSh	TSTDRV2089588	2021-11-15 13:12:12.210053+00	2021-11-15 08:46:16.062858+00	2021-11-15 13:12:12.210769+00	2021-11-15 08:56:43.737724+00	2021-11-15 08:55:57.620811+00	https://staging.fyle.tech	2021-09-17 14:32:05.585557+00
+2	Fyle For IntacctNew Technologies	oraWFQlEpjbb	TSTDRV2089588	2021-11-16 04:25:49.067507+00	2021-11-16 04:16:57.840307+00	2021-11-16 04:25:49.067805+00	2021-11-16 04:18:28.233322+00	2021-11-16 04:17:43.950915+00	https://staging.fyle.tech	2021-11-17 14:32:05.585557+00
+49	Fyle For intacct-test	orHe8CpW2hyN	TSTDRV2089588	2021-12-03 11:26:58.663241+00	2021-12-03 11:00:33.634494+00	2021-12-03 11:26:58.664557+00	2021-12-03 11:04:27.847159+00	2021-12-03 11:03:52.560696+00	https://staging.fyle.tech	2021-11-17 14:32:05.585557+00
 \.
 
 
@@ -11413,7 +11418,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 41, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 136, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 139, true);
 
 
 --
