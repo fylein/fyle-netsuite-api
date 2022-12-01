@@ -2828,7 +2828,12 @@ data = {
                         'value': False,
                         'internalId': '4613',
                         'scriptId': 'custentity_restrictexpensify'
-                    }
+                    },
+                    {
+                        "value": True,
+                        "internalId": "4691",
+                        "scriptId": "custentityallow_fyle_access",
+                    },
                 ]
             },
             'internalId': '-5',
