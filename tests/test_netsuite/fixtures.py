@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from datetime import datetime
+from datetime import datetime, timezone
 
 data = {
     "vendor": [
@@ -2655,18 +2655,18 @@ data = {
             'altName': None,
             'phone': '650-555-9788',
             'fax': None,
-            'email': 'Siva@fyle.in',
+            'email': 'ashwin.t@fyle.in',
             'defaultAddress': 'US',
             'isInactive': False,
             'phoneticName': None,
-            'lastModifiedDate': '"datetime.datetime(2021, 12, 13, 3, 48, 28, tzinfo=<FixedOffset \'-08:00\'>)"',
-            'dateCreated': '"datetime.datetime(2017, 9, 22, 0, 0, tzinfo=<FixedOffset \'-07:00\'>)"',
+            'lastModifiedDate': datetime(2021, 12, 13, 3, 48, 28, tzinfo=timezone.utc),
+            'dateCreated': datetime(2017, 9, 22, 0, 0, tzinfo=timezone.utc),
             'initials': 'AW',
             'officePhone': None,
             'homePhone': None,
             'mobilePhone': None,
             'department': {
-                'name': 'Sales',
+                'name': 'Sales : Team',
                 'internalId': '2',
                 'externalId': None,
                 'type': None
@@ -2741,7 +2741,7 @@ data = {
             'laborCost': None,
             'birthDate': "datetime.datetime(1960, 3, 11, 0, 0, tzinfo=<FixedOffset '-08:00'>)",
             'hireDate': "datetime.datetime(2016, 7, 1, 0, 0, tzinfo=<FixedOffset '-07:00'>)",
-            'releaseDate': None,
+            'releaseDate': datetime(2017, 9, 25, 0, 0, tzinfo=timezone.utc),
             'terminationDetails': None,
             'terminationReason': None,
             'terminationRegretted': None,
@@ -2828,7 +2828,12 @@ data = {
                         'value': False,
                         'internalId': '4613',
                         'scriptId': 'custentity_restrictexpensify'
-                    }
+                    },
+                    {
+                        "value": True,
+                        "internalId": "4691",
+                        "scriptId": "custentityallow_fyle_access",
+                    },
                 ]
             },
             'internalId': '-5',
@@ -2849,8 +2854,8 @@ data = {
             'defaultAddress': None,
             'isInactive': False,
             'phoneticName': None,
-            'lastModifiedDate': '"datetime.datetime(2019, 4, 24, 16, 3, 6, tzinfo=<FixedOffset \'-07:00\'>)"',
-            'dateCreated': '"datetime.datetime(2017, 9, 24, 0, 0, tzinfo=<FixedOffset \'-07:00\'>)"',
+            'lastModifiedDate': datetime(2019, 4, 24, 16, 3, 6, tzinfo=timezone.utc),
+            'dateCreated': datetime(2017, 9, 24, 0, 0, tzinfo=timezone.utc),
             'initials': None,
             'officePhone': None,
             'homePhone': None,
@@ -3004,8 +3009,8 @@ data = {
             'defaultAddress': None,
             'isInactive': False,
             'phoneticName': None,
-            'lastModifiedDate': '"datetime.datetime(2019, 4, 24, 16, 3, 6, tzinfo=<FixedOffset \'-07:00\'>)"',
-            'dateCreated': '"datetime.datetime(2017, 9, 24, 0, 0, tzinfo=<FixedOffset \'-07:00\'>)"',
+            'lastModifiedDate': datetime(2019, 4, 24, 16, 3, 6, tzinfo=timezone.utc),
+            'dateCreated': datetime(2017, 9, 24, 0, 0, tzinfo=timezone.utc),
             'initials': None,
             'officePhone': None,
             'homePhone': None,
@@ -3159,8 +3164,8 @@ data = {
             'defaultAddress': 'Krista Barton<br>1300 21st St<br>Apt 316<br>Los Gatos CA US',
             'isInactive': False,
             'phoneticName': None,
-            'lastModifiedDate': '"datetime.datetime(2019, 3, 6, 12, 40, 58, tzinfo=<FixedOffset \'-08:00\'>)"',
-            'dateCreated': '"datetime.datetime(2017, 9, 25, 0, 0, tzinfo=<FixedOffset \'-07:00\'>)"',
+            'lastModifiedDate': datetime(2019, 3, 6, 12, 40, 58, tzinfo=timezone.utc),
+            'dateCreated': datetime(2017, 9, 25, 0, 0, tzinfo=timezone.utc),
             'initials': 'KB',
             'officePhone': None,
             'homePhone': None,
@@ -3231,7 +3236,7 @@ data = {
             'laborCost': None,
             'birthDate': "datetime.datetime(2019, 3, 11, 0, 0, tzinfo=<FixedOffset '-07:00'>)",
             'hireDate': "datetime.datetime(2019, 3, 4, 0, 0, tzinfo=<FixedOffset '-08:00'>)",
-            'releaseDate': None,
+            'releaseDate': datetime(2017, 9, 25, 0, 0, tzinfo=timezone.utc),
             'terminationDetails': None,
             'terminationReason': None,
             'terminationRegretted': None,
@@ -3324,8 +3329,8 @@ data = {
             'defaultAddress': 'Sam R Cruz<br>1085 Lewis Ave<br>San Jose CA US',
             'isInactive': False,
             'phoneticName': None,
-            'lastModifiedDate': '"datetime.datetime(2019, 3, 29, 3, 39, 1, tzinfo=<FixedOffset \'-07:00\'>)"',
-            'dateCreated': '"datetime.datetime(2017, 9, 25, 0, 0, tzinfo=<FixedOffset \'-07:00\'>)"',
+            'lastModifiedDate': datetime(2019, 3, 29, 3, 39, 1, tzinfo=timezone.utc),
+            'dateCreated': datetime(2017, 9, 25, 0, 0, tzinfo=timezone.utc),
             'initials': 'SRC',
             'officePhone': None,
             'homePhone': None,
@@ -3396,7 +3401,7 @@ data = {
             'laborCost': None,
             'birthDate': "datetime.datetime(2019, 3, 7, 0, 0, tzinfo=<FixedOffset '-08:00'>)",
             'hireDate': "datetime.datetime(2016, 8, 1, 0, 0, tzinfo=<FixedOffset '-07:00'>)",
-            'releaseDate': None,
+            'releaseDate': datetime(2017, 9, 25, 0, 0, tzinfo=timezone.utc),
             'terminationDetails': None,
             'terminationReason': None,
             'terminationRegretted': None,
@@ -3489,8 +3494,8 @@ data = {
             'defaultAddress': 'Sam R Cruz<br>1085 Lewis Ave<br>San Jose CA US',
             'isInactive': False,
             'phoneticName': None,
-            'lastModifiedDate': '"datetime.datetime(2019, 3, 29, 3, 39, 1, tzinfo=<FixedOffset \'-07:00\'>)"',
-            'dateCreated': '"datetime.datetime(2017, 9, 25, 0, 0, tzinfo=<FixedOffset \'-07:00\'>)"',
+            'lastModifiedDate': datetime(2019, 3, 29, 3, 39, 1, tzinfo=timezone.utc),
+            'dateCreated': datetime(2017, 9, 25, 0, 0, tzinfo=timezone.utc),
             'initials': 'SRC',
             'officePhone': None,
             'homePhone': None,
@@ -3561,7 +3566,7 @@ data = {
             'laborCost': None,
             'birthDate': "datetime.datetime(2019, 3, 7, 0, 0, tzinfo=<FixedOffset '-08:00'>)",
             'hireDate': "datetime.datetime(2016, 8, 1, 0, 0, tzinfo=<FixedOffset '-07:00'>)",
-            'releaseDate': None,
+            'releaseDate': datetime(2017, 9, 25, 0, 0, tzinfo=timezone.utc),
             'terminationDetails': None,
             'terminationReason': None,
             'terminationRegretted': None,
@@ -6081,5 +6086,68 @@ data = {
             "download_url": "https://aaa.bbb.cc/x232sds",
             "upload_url": "https://aaa.bbb.cc/x232sds"
         }
-    ]
+    ],
+    'get_departments': [{
+        'data': [
+            {
+                'id': 'asdfghjkl',
+                'name': 'Sales',
+                'is_enabled': False,
+                "description": "",
+                "display_name": "Sales",
+                "doc_url": "HU61HYSM2E",
+                "id": "deptdExbJZaDqD",
+                "is_enabled": True,
+                "org_id": "orNoatdUnm1w",
+                "sub_department": "Purchasing",
+                "updated_at": "2020-09-02T08:06:17.063568+00:00"
+                },
+                {
+                "code": "522EDE7DBG",
+                "created_at": "2020-09-02T08:06:15.063568+00:00",
+                "department_head_user_ids": [
+                    "usJunSVNaFGE"
+                ],
+                "department_head_users": [
+                    {
+                        "email": "owner@fyleforqvd.com",
+                        "full_name": "Fyle For Quickbooks v4 Demo",
+                        "id": "usJunSVNaFGE"
+                    }
+                ],
+                "description": "",
+                "display_name": "Engineering / sample",
+                "doc_url": "HU61HYSM2E",
+                "id": "deptdExbJZaDqD",
+                "is_enabled": False,
+                "name": "Engineering",
+                "org_id": "orNoatdUnm1w",
+                "sub_department": "sample",
+                "updated_at": "2020-09-02T08:06:17.063568+00:00"
+            },
+            {
+                "code": "522EDE7DBG",
+                "created_at": "2020-09-02T08:06:15.063568+00:00",
+                "department_head_user_ids": [
+                    "usJunSVNaFGE"
+                ],
+                "department_head_users": [
+                    {
+                        "email": "owner@fyleforqvd.com",
+                        "full_name": "Fyle For Quickbooks v4 Demo",
+                        "id": "usJunSVNaFGE"
+                    }
+                ],
+                "description": "",
+                "display_name": "Engineerings",
+                "doc_url": "HU61HYSM2E",
+                "id": "deptdExbJZaDqD",
+                "is_enabled": False,
+                "name": "Engineerings",
+                "org_id": "orNoatdUnm1w",
+                "sub_department": "null",
+                "updated_at": "2020-09-02T08:06:17.063568+00:00"
+            }
+        ]
+    }]
 }
