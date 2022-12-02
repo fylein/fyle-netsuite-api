@@ -407,13 +407,21 @@ def test_post_journal_entry(mocker, db):
 
     expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
 
+    general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
+    general_mappings.use_employee_class = True
+    general_mappings.use_employee_department = True
+    general_mappings.department_level = 'ALL'
+    general_mappings.use_employee_location = True
+    general_mappings.location_level = 'ALL'
+    general_mappings.save()
+
     configuration = Configuration.objects.get(workspace_id=1)
     configuration.auto_map_employees = True
     configuration.auto_create_destination_entity = True
     configuration.save()
     
     create_journal_entry(expense_group, task_log.id)
-    
+
     task_log = TaskLog.objects.get(pk=task_log.id)
     journal_entry = JournalEntry.objects.get(expense_group_id=expense_group.id)
 
@@ -421,6 +429,32 @@ def test_post_journal_entry(mocker, db):
     assert journal_entry.currency == '1'
     assert journal_entry.external_id == 'journal 1 - ashwin.t@fyle.in'
     assert journal_entry.memo == 'Reimbursable expenses by ashwin.t@fyle.in'
+    
+    # journal_entry = JournalEntry.objects.get(expense_group__id=expense_group.id)
+    # expense_group.id = random.randint(50, 1000)
+    # expense_group.save()
+
+    task_log.status = 'READY'
+    task_log.save()
+
+    configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
+    configuration.employee_field_mapping = 'VENDOR'
+    configuration.save()
+
+    create_journal_entry(expense_group, task_log.id)
+
+    # journal_entry = JournalEntry.objects.get(expense_group__id=expense_group.id)
+    # expense_group.id = random.randint(50, 1000)
+    # expense_group.save()
+
+    task_log.status = 'READY'
+    task_log.save()
+
+    expense_group = ExpenseGroup.objects.filter(workspace_id=1, fund_source='CCC').first()
+    configuration.employee_field_mapping = 'EMPLOYEE'
+    configuration.save()
+
+    create_journal_entry(expense_group, task_log.id)
 
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_credentials.delete()
@@ -983,6 +1017,12 @@ def test_create_vendor_payment(db, mocker):
     task_log.save()
 
     bill = Bill.create_bill(expense_group)
+    expense = expense_group.expenses.first()
+
+    reimbursement = Reimbursement.objects.filter(workspace__id=expense_group.workspace_id).first()
+    reimbursement.settlement_id = expense.settlement_id
+    reimbursement.state = 'COMPLETE'
+    reimbursement.save()
 
     create_vendor_payment(workspace_id)
     task_log = TaskLog.objects.get(workspace_id=workspace_id, type='CREATING_VENDOR_PAYMENT' )
@@ -1039,6 +1079,12 @@ def test_create_vendor_payment_expense_report(db, mocker):
     task_log.save()
 
     expense_report = ExpenseReport.create_expense_report(expense_group)
+    expense = expense_group.expenses.first()
+
+    reimbursement = Reimbursement.objects.filter(workspace__id=expense_group.workspace_id).first()
+    reimbursement.settlement_id = expense.settlement_id
+    reimbursement.state = 'COMPLETE'
+    reimbursement.save()
 
     create_vendor_payment(workspace_id)
     task_log = TaskLog.objects.get(workspace_id=workspace_id, type='CREATING_VENDOR_PAYMENT')
@@ -1234,7 +1280,7 @@ def test_check_expenses_reimbursement_status(db):
     expenses[0].save()
 
     status = check_expenses_reimbursement_status(expenses)
-    assert status == True
+    assert status == False
 
 
 def test__validate_expense_group(mocker, db):

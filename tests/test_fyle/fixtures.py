@@ -258,8 +258,8 @@ data = {
         'reimbursable_expense_group_fields': ['claim_number'],
         'corporate_credit_card_expense_group_fields': ['claim_number'],
         'expense_state': 'PAYMENT_PROCESSING',
-        'reimbursable_export_date_type': 'current_date',
-        'ccc_export_date_type': 'current_date',
+        'reimbursable_export_date_type': 'spent_at',
+        'ccc_export_date_type': 'spent_at',
     },
     'get_my_profile': {
         'data': {
