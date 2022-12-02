@@ -1,18 +1,20 @@
+import logging
 import pytest
+from unittest import mock
 from django_q.models import Schedule
 from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute, CategoryMapping, \
      Mapping, MappingSetting, EmployeeMapping
 from apps.netsuite.connector import NetSuiteConnector
 from apps.workspaces.models import Configuration, FyleCredential, NetSuiteCredentials
-from apps.mappings.tasks import async_auto_create_custom_field_mappings, async_auto_map_employees, auto_create_category_mappings, auto_create_cost_center_mappings, auto_create_project_mappings, auto_create_tax_group_mappings, create_fyle_cost_centers_payload, create_fyle_expense_custom_field_payload, create_fyle_projects_payload, create_fyle_tax_group_payload, filter_unmapped_destinations, remove_duplicates, create_fyle_categories_payload, \
-    construct_filter_based_on_destination, schedule_auto_map_employees, schedule_categories_creation, schedule_cost_centers_creation, schedule_fyle_attributes_creation, schedule_tax_groups_creation, sync_expense_categories_and_accounts, upload_categories_to_fyle, \
-        create_fyle_merchants_payload, auto_create_vendors_as_merchants, schedule_vendors_as_merchants_creation, async_auto_map_ccc_account, schedule_auto_map_ccc_employees, schedule_projects_creation, auto_create_expense_fields_mappings, \
-            post_merchants, get_all_categories_from_fyle
+from apps.mappings.tasks import *
 from fyle_integrations_platform_connector import PlatformConnector
 from apps.mappings.models import GeneralMapping
 from tests.test_netsuite.fixtures import data as netsuite_data
 from tests.test_fyle.fixtures import data as fyle_data
 from .fixtures import data
+
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 
 def test_remove_duplicates(db):
@@ -332,7 +334,6 @@ def test_auto_create_project_mappings(db, mocker):
         attribute_type='PROJECT',
         workspace_id=workspace_id
 	).first()
-    print('expense_attributes_to_enable', expense_attributes_to_enable)
 
     expense_attributes_to_enable.active = False
     expense_attributes_to_enable.save()
@@ -349,7 +350,6 @@ def test_auto_create_project_mappings(db, mocker):
     fyle_credentials.delete()
 
     response = auto_create_project_mappings(workspace_id=workspace_id)
-
     assert response == None
 
 
@@ -480,6 +480,10 @@ def test_async_auto_map_employees(mocker, db):
         'netsuitesdk.api.employees.Employees.get_all_generator',
         return_value=netsuite_data['get_all_employees']    
     )
+    mocker.patch(
+        'netsuitesdk.api.employees.Employees.get',
+        return_value=netsuite_data['get_all_employees'][0][0]
+    )
 
     async_auto_map_employees(1)
 
@@ -501,6 +505,11 @@ def test_schedule_auto_map_employees(mocker, db):
     mocker.patch(
         'netsuitesdk.api.employees.Employees.get_all_generator',
         return_value=netsuite_data['get_all_employees']    
+    )
+
+    mocker.patch(
+        'netsuitesdk.api.employees.Employees.get',
+        return_value=netsuite_data['get_all_employees'][0][0] 
     )
     configuration = Configuration.objects.get(workspace_id=1)
     configuration.auto_map_employees = 'NAME'
@@ -688,3 +697,74 @@ def test_post_merchants(db, mocker):
 
     expense_attribute = ExpenseAttribute.objects.filter(attribute_type='MERCHANT', workspace_id=49).count()
     assert expense_attribute == 12
+
+
+def test_schedule_netsuite_employee_creation_on_fyle(db):
+    workspace_id=1
+    schedule_netsuite_employee_creation_on_fyle(import_netsuite_employees=True, workspace_id=workspace_id)
+
+    schedule = Schedule.objects.filter(
+        func='apps.mappings.tasks.auto_create_netsuite_employees_on_fyle',
+        args='{}'.format(workspace_id),
+    ).first()
+    
+    assert schedule.func == 'apps.mappings.tasks.auto_create_netsuite_employees_on_fyle'
+
+    schedule_netsuite_employee_creation_on_fyle(import_netsuite_employees=False, workspace_id=workspace_id)
+
+    schedule = Schedule.objects.filter(
+        func='apps.mappings.tasks.auto_create_netsuite_employees_on_fyle',
+        args='{}'.format(workspace_id),
+    ).first()
+
+    assert schedule == None
+
+
+def test_auto_create_netsuite_employees_on_fyle(db, mocker):
+    workspace_id = 1
+
+    mocker.patch(
+        'netsuitesdk.api.employees.Employees.get_all_generator',
+        return_value=netsuite_data['get_all_employees']    
+    )
+    mocker.patch(
+        'netsuitesdk.api.employees.Employees.get',
+        return_value=netsuite_data['get_all_employees'][0][0]
+    )
+    mocker.patch(
+        'fyle.platform.apis.v1beta.admin.Departments.list_all',
+        return_value=netsuite_data['get_departments']
+    )
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.Employees.sync',
+        return_value=[]
+    )
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.Departments.post',
+        return_value=[]
+    )
+    mocker.patch(
+      'fyle.platform.apis.v1beta.admin.Employees.invite_bulk',
+      return_value=fyle_data['get_all_employees']
+   )
+
+    employees = DestinationAttribute.objects.filter(workspace_id=workspace_id, attribute_type='EMPLOYEE').count()
+    expense_attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id, attribute_type='EMPLOYEE').count()
+    assert employees == 7
+    assert expense_attribute == 30
+
+    auto_create_netsuite_employees_on_fyle(workspace_id=workspace_id)
+    
+    employees = DestinationAttribute.objects.filter(workspace_id=workspace_id, attribute_type='EMPLOYEE').count()
+    expense_attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id, attribute_type='EMPLOYEE').count()
+    assert employees == 8
+    assert expense_attribute == 30
+
+    with mock.patch('fyle_integrations_platform_connector.apis.Employees.sync') as mock_call:
+        mock_call.side_effect = WrongParamsError(msg='Some of the parameters are wrong', response='Some of the parameters are wrong')
+        auto_create_netsuite_employees_on_fyle(workspace_id=workspace_id)
+
+    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+    fyle_credentials.delete()
+
+    auto_create_netsuite_employees_on_fyle(workspace_id=workspace_id)

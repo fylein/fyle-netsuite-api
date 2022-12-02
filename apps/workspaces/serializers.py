@@ -75,7 +75,8 @@ class ConfigurationSerializer(serializers.ModelSerializer):
                 'auto_create_merchants': validated_data['auto_create_merchants'],
                 'auto_create_destination_entity': validated_data['auto_create_destination_entity'],
                 'map_fyle_cards_netsuite_account': validated_data['map_fyle_cards_netsuite_account'],
-                'import_vendors_as_merchants': validated_data['import_vendors_as_merchants']
+                'import_vendors_as_merchants': validated_data['import_vendors_as_merchants'],
+                'import_netsuite_employees': validated_data['import_netsuite_employees']
             }
         )
 

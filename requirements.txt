@@ -19,8 +19,8 @@ django-sendgrid-v5==1.2.0
 enum34==1.1.10
 future==0.18.2
 fyle==0.30.0
-fyle-integrations-platform-connector==1.19.0
-fyle-accounting-mappings==1.15.3
+fyle-integrations-platform-connector==1.21.0
+fyle-accounting-mappings==1.21.1
 fyle-rest-auth==1.1.0
 gunicorn==20.0.4
 idna==2.8

@@ -38,7 +38,8 @@ def create_configurations_object_payload(workspace_id):
         'auto_create_destination_entity': False,
         'auto_create_merchants': False,
         'employee_field_mapping': 'VENDOR',
-        'memo_structure': memo_structure
+        'memo_structure': memo_structure,
+        'import_netsuite_employees': True
     }
 
     return workspace_general_settings_payload
