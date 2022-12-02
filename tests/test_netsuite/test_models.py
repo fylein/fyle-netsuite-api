@@ -2,32 +2,79 @@ from datetime import datetime
 import pytest
 
 from apps.fyle.models import Expense, ExpenseGroup
-from apps.netsuite.models import BillLineitem, ExpenseReport, ExpenseReportLineItem, get_department_id_or_none, get_transaction_date, get_expense_purpose, \
-    get_location_id_or_none, get_customer_id_or_none, Bill, get_class_id_or_none, get_location_id_or_none, get_custom_segments, CreditCardChargeLineItem, CreditCardCharge 
+from apps.netsuite.models import *
 from apps.workspaces.models import Configuration
-from fyle_accounting_mappings.models import Mapping, MappingSetting, EmployeeMapping
+from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttribute
 from apps.mappings.models import GeneralMapping
 
 @pytest.mark.django_db(databases=['default'])
-def test_get_department_id_or_none(access_token):
-
-    expense = Expense.objects.get(id=1)
-    expense_group = ExpenseGroup.objects.get(id=1)
-    expense_group.workspace_id = 1
+def test_get_department_id_or_none(access_token, mocker):
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.ExpenseCustomFields.get_by_id',
+        return_value={'options': ['samp'], 'updated_at': '2020-06-11T13:14:55.201598+00:00', 'is_mandatory': True}
+    )
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.ExpenseCustomFields.post',
+        return_value=[]
+    )
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.ExpenseCustomFields.sync',
+        return_value=None
+    )
+    expense = Expense.objects.get(id=2)
+    expense_group = ExpenseGroup.objects.get(id=2)
+    expense_group.description.update({'klass': 'Klass'})
+    expense_group.workspace_id = 2
     expense_group.save()
 
-    department_id = get_department_id_or_none(expense_group, expense)
-    
-    assert department_id == None
+    expense.project_id = 2897
+    expense.save()
 
     mapping_setting = MappingSetting.objects.filter(
-        workspace_id=1).first()
+        workspace_id=2).first()
     mapping_setting.destination_field = 'DEPARTMENT'
+    mapping_setting.source_field = 'PROJECT'
     mapping_setting.save()
 
     department_id = get_department_id_or_none(expense_group, expense)
-    
     assert department_id == None
+
+    mapping_setting.source_field = 'KLASS'
+    mapping_setting.save()
+
+    department_id = get_department_id_or_none(expense_group, expense)
+    assert department_id == None
+
+    department_id = get_department_id_or_none(expense_group, None)
+    assert department_id == None
+
+
+def test_get_ccc_account_id(db, mocker):
+    configuration = Configuration.objects.get(workspace_id=49)
+    configuration.map_fyle_cards_netsuite_account = True
+    configuration.save()
+
+    general_mappings = GeneralMapping.objects.get(workspace_id=49) 
+    expense_group = ExpenseGroup.objects.get(id=47)
+
+    expense = expense_group.expenses.first()
+    expense.corporate_card_id = ExpenseAttribute.objects.filter(attribute_type='CREDIT_CARD_ACCOUNT').first().id
+    expense.save()
+
+    mapping = Mapping.objects.filter(workspace_id=2, source_type='COST_CENTER').first()
+    mapping.source_type = 'CORPORATE_CARD'
+    mapping.destination_type = 'CREDIT_CARD_ACCOUNT'
+    mapping.source = ExpenseAttribute.objects.filter(attribute_type='CREDIT_CARD_ACCOUNT').first()
+    mapping.workspace = Workspace.objects.get(id=49)
+    mapping.save()
+
+    get_ccc_account_id(configuration, general_mappings, expense, expense_group.description)
+
+    configuration.map_fyle_cards_netsuite_account = False
+    configuration.save()
+
+    get_ccc_account_id(configuration, general_mappings, expense, expense_group.description)
+
 
 @pytest.mark.django_db(databases=['default'])
 @pytest.mark.parametrize(
@@ -108,6 +155,7 @@ def test_create_bill(db):
 def test_create_expense_report(db):
 
     expense_group = ExpenseGroup.objects.get(id=1)
+    general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
     expense_report = ExpenseReport.create_expense_report(expense_group)
 
     configuration = Configuration.objects.get(workspace_id=1)
@@ -123,10 +171,41 @@ def test_create_expense_report(db):
     assert expense_report.currency == '1'
     assert expense_report.account_id == '118'
     assert expense_report.location_id == '8'
-    
 
-def test_get_class_id_or_none(db, add_fyle_credentials):
+    general_mappings.use_employee_department = True
+    general_mappings.use_employee_location = True
+    general_mappings.use_employee_class = True
+    general_mappings.department_level = 'ALL'
+    general_mappings.location_level = 'ALL'
+    general_mappings.save()
+
+    expense_group = ExpenseGroup.objects.get(id=2)
+
+    expense_report = ExpenseReport.create_expense_report(expense_group)
+    expense_report_lineitems = ExpenseReportLineItem.create_expense_report_lineitems(expense_group, configuration)
+    
+    for expense_report_lineitem in expense_report_lineitems:
+        assert expense_report_lineitem.category == '13'
+        assert expense_report_lineitem.amount == 100.0
+    
+    assert expense_report.currency == '1'
+
+    
+def test_get_class_id_or_none(db, add_fyle_credentials, mocker):
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.ExpenseCustomFields.get_by_id',
+        return_value={'options': ['samp'], 'updated_at': '2020-06-11T13:14:55.201598+00:00', 'is_mandatory': True}
+    )
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.ExpenseCustomFields.post',
+        return_value=[]
+    )
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.ExpenseCustomFields.sync',
+        return_value=None
+    )
     expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
+    expense_group.description.update({'klass': 'sdfghjk'})
     expenses = expense_group.expenses.all()
 
     mapping_setting = MappingSetting.objects.filter(
@@ -143,9 +222,32 @@ def test_get_class_id_or_none(db, add_fyle_credentials):
     class_id = get_class_id_or_none(expense_group, expenses[0])
     assert class_id == None
 
+    mapping_setting.source_field = 'KLASS'
+    mapping_setting.save()
+    
+    class_id = get_class_id_or_none(expense_group, expenses[0])
+    assert class_id == None
 
-def test_get_location_id_or_none(db, add_fyle_credentials):
+    class_id = get_class_id_or_none(expense_group, None)
+    assert class_id == None
+
+
+def test_get_location_id_or_none(db, add_fyle_credentials, mocker):
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.ExpenseCustomFields.get_by_id',
+        return_value={'options': ['samp'], 'updated_at': '2020-06-11T13:14:55.201598+00:00', 'is_mandatory': True}
+    )
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.ExpenseCustomFields.post',
+        return_value=[]
+    )
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.ExpenseCustomFields.sync',
+        return_value=None
+    )
     expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
+    expense_group.description.update({'klass': 'sdfghjk'})
+    expense_group.save()
     expenses = expense_group.expenses.all()
 
     mapping_setting = MappingSetting.objects.filter(
@@ -162,24 +264,57 @@ def test_get_location_id_or_none(db, add_fyle_credentials):
     location_id = get_location_id_or_none(expense_group, expenses[0])
     assert location_id == None
 
+    mapping_setting.source_field = 'KLASS'
+    mapping_setting.save()
+    
+    location_id = get_location_id_or_none(expense_group, expenses[0])
+    assert location_id == None
 
-def test_get_custom_segments(db):
-    expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
+    location_id = get_location_id_or_none(expense_group, None)
+    assert location_id == None
+
+
+def test_get_custom_segments(db, mocker):
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.ExpenseCustomFields.get_by_id',
+        return_value={'is_mandatory': True}
+    )
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.ExpenseCustomFields.post',
+        return_value=[]
+    )
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.ExpenseCustomFields.sync',
+        return_value=None
+    )
+    expense_group = ExpenseGroup.objects.filter(workspace_id=2).first()
+    expense_group.description.update({'klass': 'sdfghjk'})
     expenses = expense_group.expenses.all()
 
-    mapping_settings = MappingSetting.objects.filter(
-        workspace_id=1)
+    mapping_settings = MappingSetting.objects.filter(workspace_id=2)
     for mapping_setting in mapping_settings:
-        mapping_setting.destination_field = 'CUSTOM'
+        mapping_setting.destination_field = 'KLASS'
+        mapping_setting.source_field = 'COST_CENTER'
         mapping_setting.save()
+    
+    custom_segments = get_custom_segments(expense_group, expenses[0])
 
-    get_custom_segments(expense_group, expenses[0])
+    mapping_setting.source_field = 'PROJECT'
+    mapping_setting.save()
+    
+    custom_segments = get_custom_segments(expense_group, expenses[0])
 
-    expense_group = ExpenseGroup.objects.filter(workspace_id=49).first()
-    expenses = expense_group.expenses.all()
+    mapping_setting.source_field = 'KLASS'
+    mapping_setting.save()
 
-    get_custom_segments(expense_group, expenses[0])
+    mapping = Mapping.objects.filter(workspace_id=2, source_type='COST_CENTER').first()
+    mapping.source = ExpenseAttribute.objects.filter(workspace_id=2, attribute_type='KLASS').first()
+    mapping.source_type = 'KLASS'
+    mapping.destination_type = 'KLASS'
+    mapping.save()
 
+    custom_segments = get_custom_segments(expense_group, expenses[0])
+    assert custom_segments == [{'scriptId': 'custcol780', 'type': 'Select', 'value': '1017'}]
 
 
 def test_create_credit_card_charge(db):

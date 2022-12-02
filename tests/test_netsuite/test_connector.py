@@ -234,7 +234,7 @@ def test_sync_custom_segments(mocker, db):
     netsuite_connection.sync_custom_segments()
 
     custom_record = DestinationAttribute.objects.filter(attribute_type='FAVOURITE_BANDS', workspace_id=49).count()
-    assert custom_record == 5
+    assert custom_record == 0
     custom_list = DestinationAttribute.objects.filter(attribute_type='FAVOURITE_SINGER', workspace_id=49).count()
     assert custom_list == 6
     custom_segment = DestinationAttribute.objects.filter(attribute_type='PRODUCTION_LINE', workspace_id=49).count()
@@ -392,6 +392,74 @@ def test_get_or_create_vendor(mocker, db):
 
     vendors = DestinationAttribute.objects.filter(attribute_type='VENDOR', workspace_id=1).count()
     assert vendors == 4
+
+    mocker.patch(
+        'netsuitesdk.api.vendors.Vendors.search',
+        return_value=None
+    )
+    mocker.patch(
+        'netsuitesdk.api.vendors.Vendors.post',
+        return_value=data['post_vendor']
+    )
+    netsuite_connection.get_or_create_vendor(source_employee, expense_group)
+
+    vendors = DestinationAttribute.objects.filter(attribute_type='VENDOR', workspace_id=1).count()
+    assert vendors == 5
+
+
+def test_get_or_create_employee(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.employees.Employees.search',
+        return_value=data['get_all_employees'][0]
+    )
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
+    expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
+
+    source_employee = ExpenseAttribute.objects.get(
+        workspace_id=expense_group.workspace_id,
+        attribute_type='EMPLOYEE',
+        value=expense_group.description.get('employee_email')
+    )
+    employees = DestinationAttribute.objects.filter(attribute_type='EMPLOYEE', workspace_id=1).count()
+    assert employees == 7
+
+    netsuite_connection.get_or_create_employee(source_employee, expense_group)
+
+    employees = DestinationAttribute.objects.filter(attribute_type='EMPLOYEE', workspace_id=1).count()
+    assert employees == 8
+
+    mocker.patch(
+        'netsuitesdk.api.employees.Employees.search',
+        return_value=None
+    )
+    mocker.patch(
+        'netsuitesdk.api.employees.Employees.post',
+        return_value={
+            'internalId': 'dfghjk'
+        }
+    )
+    netsuite_connection.get_or_create_employee(source_employee, expense_group)
+
+    employees = DestinationAttribute.objects.filter(attribute_type='EMPLOYEE', workspace_id=1).count()
+    assert employees == 9
+
+
+def test_post_employee(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.employees.Employees.post',
+        return_value=data['get_all_employees'][0]
+    )
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
+
+    expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
+
+    employee_attribute = ExpenseAttribute.objects.filter(attribute_type='EMPLOYEE', workspace_id=1).first()
+    
+    vendor = netsuite_connection.post_employee(expense_group=expense_group, employee=employee_attribute)
+
+    assert dict_compare_keys(vendor, data['post_vendor']) == [], 'post vendor api return diffs in keys'
 
 
 def test_post_credit_card_charge_exception(db, mocker, create_credit_card_charge):
