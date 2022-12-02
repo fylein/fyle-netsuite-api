@@ -76,27 +76,15 @@ class NetSuiteFieldsView(generics.ListAPIView):
             ~Q(attribute_type='EXPENSE_CATEGORY') & ~Q(attribute_type='BANK_ACCOUNT') &
             ~Q(attribute_type='CREDIT_CARD_ACCOUNT') & ~Q(attribute_type='BANK_ACCOUNT') &
             ~Q(attribute_type='SUBSIDIARY') & ~Q(attribute_type='CURRENCY') &
-            ~Q(attribute_type='CCC_ACCOUNT') & ~Q(attribute_type='TAX_ITEM'),
+            ~Q(attribute_type='CCC_ACCOUNT') & ~Q(attribute_type='TAX_ITEM') & ~Q(attribute_type='PROJECT'),
             workspace_id=self.kwargs['workspace_id']
         ).values('attribute_type', 'display_name').distinct()
 
         attributes = list(attributes)
-
-        has_projects = False
-        has_customers = False
-        for attribute in attributes:
-            if attribute['display_name'] == 'Project':
-                has_projects = True
-            elif attribute['display_name'] == 'Customer':
-                has_customers = True
-
-        if has_customers and not has_projects:
-            attributes.append({
-                'attribute_type': 'PROJECT',
-                'display_name': 'Project'
-            })
-        
-        attributes = list(filter(lambda attribute: attribute['display_name'] != 'Customer', attributes))
+        attributes.append({
+            'attribute_type': 'PROJECT',
+            'display_name': 'Project'
+        })
 
         return attributes
 
