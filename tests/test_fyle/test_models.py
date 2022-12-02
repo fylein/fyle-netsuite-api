@@ -2,7 +2,7 @@ import json
 from urllib import response
 import pytest
 from apps.fyle.models import Expense, ExpenseGroup, Reimbursement, get_default_expense_group_fields, get_default_expense_state, \
-    ExpenseGroupSettings, _group_expenses
+    ExpenseGroupSettings, _group_expenses, get_default_ccc_expense_state
 from apps.workspaces.models import Configuration, Workspace
 from .fixtures import data
 
@@ -26,9 +26,11 @@ def test_create_expense(create_temp_workspace):
 def test_default_fields():
     expense_group_field = get_default_expense_group_fields()
     expense_state = get_default_expense_state()
+    ccc_expense_state = get_default_ccc_expense_state()
 
     assert expense_group_field == ['employee_email', 'report_id', 'claim_number', 'fund_source']
     assert expense_state == 'PAYMENT_PROCESSING'
+    assert ccc_expense_state == 'PAID'
 
 
 @pytest.mark.django_db
@@ -42,6 +44,7 @@ def test_expense_group_settings(create_temp_workspace):
     settings = ExpenseGroupSettings.objects.last()
 
     assert settings.expense_state == 'PAYMENT_PROCESSING'
+    assert settings.ccc_expense_state == 'PAID'
     assert settings.ccc_export_date_type == 'spent_at'
 
 
