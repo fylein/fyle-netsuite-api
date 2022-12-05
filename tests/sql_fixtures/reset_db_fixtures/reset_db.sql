@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.0 (Debian 15.0-1.pgdg110+1)
--- Dumped by pg_dump version 15.1 (Debian 15.1-1.pgdg100+1)
+-- Dumped from database version 14.2 (Debian 14.2-1.pgdg110+1)
+-- Dumped by pg_dump version 14.2 (Debian 14.2-1.pgdg100+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -309,7 +309,8 @@ CREATE TABLE public.configurations (
     map_fyle_cards_netsuite_account boolean NOT NULL,
     skip_cards_mapping boolean NOT NULL,
     import_vendors_as_merchants boolean NOT NULL,
-    import_netsuite_employees boolean NOT NULL
+    import_netsuite_employees boolean NOT NULL,
+    is_simplify_report_closure_enabled boolean NOT NULL
 );
 
 
@@ -772,7 +773,8 @@ CREATE TABLE public.expense_group_settings (
     updated_at timestamp with time zone NOT NULL,
     workspace_id integer NOT NULL,
     import_card_credits boolean NOT NULL,
-    ccc_export_date_type character varying(100) NOT NULL
+    ccc_export_date_type character varying(100) NOT NULL,
+    ccc_expense_state character varying(100)
 );
 
 
@@ -1652,7 +1654,8 @@ CREATE TABLE public.workspaces (
     destination_synced_at timestamp with time zone,
     source_synced_at timestamp with time zone,
     cluster_domain character varying(255),
-    employee_exported_at timestamp with time zone NOT NULL
+    employee_exported_at timestamp with time zone NOT NULL,
+    ccc_last_synced_at timestamp with time zone
 );
 
 
@@ -2329,10 +2332,10 @@ COPY public.category_mappings (id, created_at, updated_at, destination_account_i
 -- Data for Name: configurations; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.configurations (id, reimbursable_expenses_object, corporate_credit_card_expenses_object, created_at, updated_at, workspace_id, sync_fyle_to_netsuite_payments, sync_netsuite_to_fyle_payments, import_projects, auto_map_employees, import_categories, auto_create_destination_entity, auto_create_merchants, employee_field_mapping, import_tax_items, change_accounting_period, memo_structure, map_fyle_cards_netsuite_account, skip_cards_mapping, import_vendors_as_merchants, import_netsuite_employees) FROM stdin;
-1	EXPENSE REPORT	BILL	2021-11-15 08:56:07.193743+00	2021-11-15 08:56:07.193795+00	1	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f
-2	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-11-16 04:18:15.836271+00	2021-11-16 04:20:09.969589+00	2	f	f	f	\N	f	f	f	EMPLOYEE	t	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f
-3	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-12-03 11:04:00.194287+00	2021-12-03 11:04:00.1943+00	49	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f
+COPY public.configurations (id, reimbursable_expenses_object, corporate_credit_card_expenses_object, created_at, updated_at, workspace_id, sync_fyle_to_netsuite_payments, sync_netsuite_to_fyle_payments, import_projects, auto_map_employees, import_categories, auto_create_destination_entity, auto_create_merchants, employee_field_mapping, import_tax_items, change_accounting_period, memo_structure, map_fyle_cards_netsuite_account, skip_cards_mapping, import_vendors_as_merchants, import_netsuite_employees, is_simplify_report_closure_enabled) FROM stdin;
+1	EXPENSE REPORT	BILL	2021-11-15 08:56:07.193743+00	2021-11-15 08:56:07.193795+00	1	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f
+2	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-11-16 04:18:15.836271+00	2021-11-16 04:20:09.969589+00	2	f	f	f	\N	f	f	f	EMPLOYEE	t	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f
+3	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-12-03 11:04:00.194287+00	2021-12-03 11:04:00.1943+00	49	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f
 \.
 
 
@@ -2456,13 +2459,13 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 91	DEPARTMENT	Department	Engineering	11	2021-11-15 08:55:58.388192+00	2021-11-15 08:55:58.388201+00	1	\N	\N	f
 92	DEPARTMENT	Department	Product	12	2021-11-15 08:55:58.388233+00	2021-11-15 08:55:58.388242+00	1	\N	\N	f
 93	DEPARTMENT	Department	Fyle	13	2021-11-15 08:55:58.388273+00	2021-11-15 08:55:58.388282+00	1	\N	\N	f
-94	EMPLOYEE	Employee	Paul Blancaflor	1601	2021-11-15 08:56:02.247774+00	2021-11-15 08:56:02.247818+00	1	\N	{"email": "pblancaflor@netsuite.com", "class_id": null, "location_id": null, "department_id": null, "department_name": "sample", "parent_department": "Engineering", "full_name": "sample", "joined_at": "2021-11-15 08:56:02.247818+00", "location_name": "", "title": "", "mobile": "", "approver_emails": []}	f
-95	EMPLOYEE	Employee	Fats Aralar	1626	2021-11-15 08:56:02.247906+00	2021-11-15 08:56:02.24793+00	1	\N	{"email": "faralar2@netsuite.com", "class_id": null, "location_id": null, "department_id": null, "department_name": "sample", "parent_department": "Engineering", "full_name": "sample", "joined_at": "2021-11-15 08:56:02.247818+00", "location_name": "", "title": "", "mobile": "", "approver_emails": []}	f
-96	EMPLOYEE	Employee	Jan Bucoy	1640	2021-11-15 08:56:02.248006+00	2021-11-15 08:56:02.248025+00	1	\N	{"email": "jbucoy@netsuite.com", "class_id": null, "location_id": null, "department_id": null, "department_name": "sample", "parent_department": "Engineering", "full_name": "sample", "joined_at": "2021-11-15 08:56:02.247818+00", "location_name": "", "title": "", "mobile": "", "approver_emails": []}	f
-97	EMPLOYEE	Employee	jhonsnow@gmail.com	1644	2021-11-15 08:56:02.248097+00	2021-11-15 08:56:02.248114+00	1	\N	{"email": "Siva@fyle.in", "class_id": null, "location_id": null, "department_id": null, "department_name": "simply", "parent_department": "Nothing", "full_name": "sample", "joined_at": "2021-11-15 08:56:02.247818+00", "location_name": "", "title": "", "mobile": "", "approver_emails": []}	f
-98	EMPLOYEE	Employee	Shwetabh  Kumar	1676	2021-11-15 08:56:02.248184+00	2021-11-15 08:56:02.248201+00	1	\N	{"email": null, "class_id": null, "location_id": null, "department_id": null, "department_name": "Engineerings", "parent_department": null, "full_name": "sample", "joined_at": "2021-11-15 08:56:02.247818+00", "location_name": "", "title": "", "mobile": "", "approver_emails": []}	f
-101	EMPLOYEE	Employee	James Bond	11104	2021-11-15 08:56:02.248442+00	2021-11-15 08:56:02.248459+00	1	\N	{"email": "user2@fylefornileshfyle.in", "class_id": null, "location_id": null, "department_id": null, "department_name": "sample", "parent_department": null, "full_name": "sample", "joined_at": "2021-11-15 08:56:02.247818+00", "location_name": "", "title": "", "mobile": "", "approver_emails": []}	f
-102	EMPLOYEE	Employee	Nil Sun	13812	2021-11-15 08:56:02.248527+00	2021-11-15 08:56:02.248544+00	1	\N	{"email": null, "class_id": null, "location_id": null, "department_id": null, "department_name": "samples", "parent_department": "null", "full_name": "sample", "joined_at": "2021-11-15 08:56:02.247818+00", "location_name": "", "title": "", "mobile": "", "approver_emails": []}	f
+94	EMPLOYEE	Employee	Paul Blancaflor	1601	2021-11-15 08:56:02.247774+00	2021-11-15 08:56:02.247818+00	1	\N	{"email": "pblancaflor@netsuite.com", "title": "", "mobile": "", "class_id": null, "full_name": "sample", "joined_at": "2021-11-15 08:56:02.247818+00", "location_id": null, "department_id": null, "location_name": "", "approver_emails": [], "department_name": "sample", "parent_department": "Engineering"}	f
+95	EMPLOYEE	Employee	Fats Aralar	1626	2021-11-15 08:56:02.247906+00	2021-11-15 08:56:02.24793+00	1	\N	{"email": "faralar2@netsuite.com", "title": "", "mobile": "", "class_id": null, "full_name": "sample", "joined_at": "2021-11-15 08:56:02.247818+00", "location_id": null, "department_id": null, "location_name": "", "approver_emails": [], "department_name": "sample", "parent_department": "Engineering"}	f
+96	EMPLOYEE	Employee	Jan Bucoy	1640	2021-11-15 08:56:02.248006+00	2021-11-15 08:56:02.248025+00	1	\N	{"email": "jbucoy@netsuite.com", "title": "", "mobile": "", "class_id": null, "full_name": "sample", "joined_at": "2021-11-15 08:56:02.247818+00", "location_id": null, "department_id": null, "location_name": "", "approver_emails": [], "department_name": "sample", "parent_department": "Engineering"}	f
+97	EMPLOYEE	Employee	jhonsnow@gmail.com	1644	2021-11-15 08:56:02.248097+00	2021-11-15 08:56:02.248114+00	1	\N	{"email": "Siva@fyle.in", "title": "", "mobile": "", "class_id": null, "full_name": "sample", "joined_at": "2021-11-15 08:56:02.247818+00", "location_id": null, "department_id": null, "location_name": "", "approver_emails": [], "department_name": "simply", "parent_department": "Nothing"}	f
+98	EMPLOYEE	Employee	Shwetabh  Kumar	1676	2021-11-15 08:56:02.248184+00	2021-11-15 08:56:02.248201+00	1	\N	{"email": null, "title": "", "mobile": "", "class_id": null, "full_name": "sample", "joined_at": "2021-11-15 08:56:02.247818+00", "location_id": null, "department_id": null, "location_name": "", "approver_emails": [], "department_name": "Engineerings", "parent_department": null}	f
+101	EMPLOYEE	Employee	James Bond	11104	2021-11-15 08:56:02.248442+00	2021-11-15 08:56:02.248459+00	1	\N	{"email": "user2@fylefornileshfyle.in", "title": "", "mobile": "", "class_id": null, "full_name": "sample", "joined_at": "2021-11-15 08:56:02.247818+00", "location_id": null, "department_id": null, "location_name": "", "approver_emails": [], "department_name": "sample", "parent_department": null}	f
+102	EMPLOYEE	Employee	Nil Sun	13812	2021-11-15 08:56:02.248527+00	2021-11-15 08:56:02.248544+00	1	\N	{"email": null, "title": "", "mobile": "", "class_id": null, "full_name": "sample", "joined_at": "2021-11-15 08:56:02.247818+00", "location_id": null, "department_id": null, "location_name": "", "approver_emails": [], "department_name": "samples", "parent_department": "null"}	f
 103	BANK_ACCOUNT	Bank Account	Checking	1	2021-11-15 08:56:05.153711+00	2021-11-15 08:56:05.153751+00	1	\N	\N	f
 104	BANK_ACCOUNT	Bank Account	Savings	2	2021-11-15 08:56:05.153868+00	2021-11-15 08:56:05.153892+00	1	\N	\N	f
 105	BANK_ACCOUNT	Bank Account	Payroll	3	2021-11-15 08:56:05.154055+00	2021-11-15 08:56:05.15412+00	1	\N	\N	f
@@ -2663,6 +2666,7 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 298	CREDIT_CARD_ACCOUNT	Credit Card Account	Opening Balance 	54	2021-11-15 08:56:05.250252+00	2021-11-15 08:56:05.250261+00	1	\N	{"account_type": "_equity"}	f
 299	CREDIT_CARD_ACCOUNT	Credit Card Account	Sales	55	2021-11-15 08:56:05.250296+00	2021-11-15 08:56:05.250305+00	1	\N	{"account_type": "_income"}	f
 300	CREDIT_CARD_ACCOUNT	Credit Card Account	Sales - Merchandise	56	2021-11-15 08:56:05.250339+00	2021-11-15 08:56:05.250348+00	1	\N	{"account_type": "_income"}	f
+629	PROJECT	Customer	Avani Walters	196	2021-11-15 08:56:25.186682+00	2021-11-15 08:56:25.186693+00	1	\N	\N	f
 301	CREDIT_CARD_ACCOUNT	Credit Card Account	Sales - Service	57	2021-11-15 08:56:05.250383+00	2021-11-15 08:56:05.250392+00	1	\N	{"account_type": "_income"}	f
 302	CREDIT_CARD_ACCOUNT	Credit Card Account	Sales - Clearance	58	2021-11-15 08:56:05.274093+00	2021-11-15 08:56:05.274136+00	1	\N	{"account_type": "_income"}	f
 303	CREDIT_CARD_ACCOUNT	Credit Card Account	Purchases	59	2021-11-15 08:56:05.274246+00	2021-11-15 08:56:05.274276+00	1	\N	{"account_type": "_costOfGoodsSold"}	f
@@ -2759,6 +2763,7 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 392	CREDIT_CARD_ACCOUNT	Credit Card Account	Sales Taxes Payable NY	227	2021-11-15 08:56:05.286161+00	2021-11-15 08:56:05.28617+00	1	\N	{"account_type": "_otherCurrentLiability"}	f
 393	CREDIT_CARD_ACCOUNT	Credit Card Account	Aus Account	228	2021-11-15 08:56:05.286205+00	2021-11-15 08:56:05.286214+00	1	\N	{"account_type": "_creditCard"}	f
 394	CREDIT_CARD_ACCOUNT	Credit Card Account	new account	229	2021-11-15 08:56:05.286248+00	2021-11-15 08:56:05.286258+00	1	\N	{"account_type": "_bank"}	f
+471	ACCOUNT	Account	Bill Quantity Variance	150	2021-11-15 08:56:05.391744+00	2021-11-15 08:56:05.391796+00	1	\N	\N	f
 395	CREDIT_CARD_ACCOUNT	Credit Card Account	VAT on Sales	230	2021-11-15 08:56:05.286292+00	2021-11-15 08:56:05.286301+00	1	\N	{"account_type": "_otherCurrentLiability"}	f
 396	CREDIT_CARD_ACCOUNT	Credit Card Account	VAT on Purchases	231	2021-11-15 08:56:05.286336+00	2021-11-15 08:56:05.286615+00	1	\N	{"account_type": "_otherCurrentAsset"}	f
 397	CREDIT_CARD_ACCOUNT	Credit Card Account	VAT Liability	232	2021-11-15 08:56:05.286757+00	2021-11-15 08:56:05.286785+00	1	\N	{"account_type": "_otherCurrentLiability"}	f
@@ -2833,7 +2838,6 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 468	ACCOUNT	Account	Damaged Goods	144	2021-11-15 08:56:05.390373+00	2021-11-15 08:56:05.390414+00	1	\N	\N	f
 469	ACCOUNT	Account	Inventory Write Offs	146	2021-11-15 08:56:05.39049+00	2021-11-15 08:56:05.390512+00	1	\N	\N	f
 470	ACCOUNT	Account	Inventory In Transit	148	2021-11-15 08:56:05.390575+00	2021-11-15 08:56:05.390593+00	1	\N	\N	f
-471	ACCOUNT	Account	Bill Quantity Variance	150	2021-11-15 08:56:05.391744+00	2021-11-15 08:56:05.391796+00	1	\N	\N	f
 472	ACCOUNT	Account	Bill Price Variance	151	2021-11-15 08:56:05.391872+00	2021-11-15 08:56:05.391891+00	1	\N	\N	f
 473	ACCOUNT	Account	Bill Exchange Rate Variance	152	2021-11-15 08:56:05.391954+00	2021-11-15 08:56:05.391974+00	1	\N	\N	f
 474	ACCOUNT	Account	Inventory Transfer Price Gain - Loss	153	2021-11-15 08:56:05.392042+00	2021-11-15 08:56:05.39206+00	1	\N	\N	f
@@ -2989,7 +2993,6 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 626	PROJECT	Customer	Wilson Kaplan	193	2021-11-15 08:56:25.186553+00	2021-11-15 08:56:25.186562+00	1	\N	\N	f
 627	PROJECT	Customer	Holly Romine	194	2021-11-15 08:56:25.186596+00	2021-11-15 08:56:25.186605+00	1	\N	\N	f
 628	PROJECT	Customer	Tamara Gibson	195	2021-11-15 08:56:25.186639+00	2021-11-15 08:56:25.186648+00	1	\N	\N	f
-629	PROJECT	Customer	Avani Walters	196	2021-11-15 08:56:25.186682+00	2021-11-15 08:56:25.186693+00	1	\N	\N	f
 630	PROJECT	Customer	Bolder Construction Inc.	197	2021-11-15 08:56:25.186725+00	2021-11-15 08:56:25.186734+00	1	\N	\N	f
 631	PROJECT	Customer	Woods Publishing Co.	198	2021-11-15 08:56:25.186768+00	2021-11-15 08:56:25.186777+00	1	\N	\N	f
 632	PROJECT	Customer	Bright Brothers Design	199	2021-11-15 08:56:25.18681+00	2021-11-15 08:56:25.186819+00	1	\N	\N	f
@@ -3131,6 +3134,7 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 769	PROJECT	Customer	Huck Apartments Inc.	358	2021-11-15 08:56:25.22682+00	2021-11-15 08:56:25.22683+00	1	\N	\N	f
 770	PROJECT	Customer	Ausbrooks Construction Incorporated	359	2021-11-15 08:56:25.226862+00	2021-11-15 08:56:25.226873+00	1	\N	\N	f
 771	PROJECT	Customer	Riede Title and Associates	360	2021-11-15 08:56:25.226907+00	2021-11-15 08:56:25.226916+00	1	\N	\N	f
+1412	PROJECT	Customer	Emergys	1155	2021-11-15 08:56:36.003618+00	2021-11-15 08:56:36.003709+00	1	\N	\N	f
 772	PROJECT	Customer	Botero Electric Co.	361	2021-11-15 08:56:25.226948+00	2021-11-15 08:56:25.226957+00	1	\N	\N	f
 773	PROJECT	Customer	Kunstlinger Automotive Manufacturing	362	2021-11-15 08:56:25.226989+00	2021-11-15 08:56:25.226998+00	1	\N	\N	f
 774	PROJECT	Customer	Soares Builders Inc.	363	2021-11-15 08:56:25.22703+00	2021-11-15 08:56:25.227039+00	1	\N	\N	f
@@ -3774,7 +3778,6 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 1409	PROJECT	Customer	Applications to go Inc	1152	2021-11-15 08:56:36.000312+00	2021-11-15 08:56:36.000321+00	1	\N	\N	f
 1410	PROJECT	Customer	Lintex Group	1153	2021-11-15 08:56:36.000352+00	2021-11-15 08:56:36.000361+00	1	\N	\N	f
 1411	PROJECT	Customer	Alchemy PR	1154	2021-11-15 08:56:36.003374+00	2021-11-15 08:56:36.003419+00	1	\N	\N	f
-1412	PROJECT	Customer	Emergys	1155	2021-11-15 08:56:36.003618+00	2021-11-15 08:56:36.003709+00	1	\N	\N	f
 1413	PROJECT	Customer	Bona Source	1156	2021-11-15 08:56:36.003936+00	2021-11-15 08:56:36.003954+00	1	\N	\N	f
 1414	PROJECT	Customer	Cytec Industries Inc	1157	2021-11-15 08:56:36.00405+00	2021-11-15 08:56:36.004912+00	1	\N	\N	f
 1415	PROJECT	Customer	NetPace Promotions	1158	2021-11-15 08:56:36.005389+00	2021-11-15 08:56:36.005426+00	1	\N	\N	f
@@ -4004,6 +4007,7 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 1644	TAX_ITEM	Tax Item	GST: NCT-AU @10.0%	1020	2021-11-15 08:56:43.688452+00	2021-11-15 08:56:43.688468+00	1	\N	{"tax_rate": 10.0}	f
 1645	TAX_ITEM	Tax Item	GST: NCI-AU @0.0%	1021	2021-11-15 08:56:43.68853+00	2021-11-15 08:56:43.688546+00	1	\N	{"tax_rate": 0.0}	f
 1646	TAX_ITEM	Tax Item	GST: NA-AU @0.0%	1022	2021-11-15 08:56:43.688608+00	2021-11-15 08:56:43.688624+00	1	\N	{"tax_rate": 0.0}	f
+2111	ACCOUNT	Account	Property	94	2021-11-16 04:17:54.276235+00	2021-11-16 04:17:54.276243+00	2	\N	\N	f
 1647	TAX_ITEM	Tax Item	LCT: LCT-AU @25.0%	1023	2021-11-15 08:56:43.688688+00	2021-11-15 08:56:43.688703+00	1	\N	{"tax_rate": 25.0}	f
 1648	TAX_ITEM	Tax Item	WET: WET-AU @29.0%	1024	2021-11-15 08:56:43.688765+00	2021-11-15 08:56:43.688781+00	1	\N	{"tax_rate": 29.0}	f
 1649	TAX_ITEM	Tax Item	VAT: UNDEF-GB @0.0%	1030	2021-11-15 08:56:43.688841+00	2021-11-15 08:56:43.688857+00	1	\N	{"tax_rate": 0.0}	f
@@ -4051,6 +4055,7 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 1691	EXPENSE_CATEGORY	Expense Category	Train	30	2021-11-16 04:17:41.475107+00	2021-11-16 04:17:41.475115+00	2	\N	{"account_name": "6010 Advertising", "account_internal_id": "65"}	f
 1692	EXPENSE_CATEGORY	Expense Category	Training	31	2021-11-16 04:17:41.475146+00	2021-11-16 04:17:41.475155+00	2	\N	{"account_name": "6010 Advertising", "account_internal_id": "65"}	f
 1693	EXPENSE_CATEGORY	Expense Category	Utility	32	2021-11-16 04:17:41.475186+00	2021-11-16 04:17:41.475195+00	2	\N	{"account_name": "6010 Advertising", "account_internal_id": "65"}	f
+2268	PROJECT	Customer	Julia Daniels	149	2021-11-16 04:18:10.203244+00	2021-11-16 04:18:10.203252+00	2	\N	\N	f
 1694	EXPENSE_CATEGORY	Expense Category	New Category	33	2021-11-16 04:17:41.475227+00	2021-11-16 04:17:41.475235+00	2	\N	{"account_name": "6010 Advertising", "account_internal_id": "65"}	f
 1695	EXPENSE_CATEGORY	Expense Category	Aus Category	34	2021-11-16 04:17:41.475283+00	2021-11-16 04:17:41.475296+00	2	\N	{"account_name": "6010 Advertising", "account_internal_id": "65"}	f
 1696	EXPENSE_CATEGORY	Expense Category	Travel - Automobile	35	2021-11-16 04:17:41.475331+00	2021-11-16 04:17:41.47534+00	2	\N	{"account_name": "6020 Automobile Expense", "account_internal_id": "67"}	f
@@ -4406,6 +4411,7 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 2043	CREDIT_CARD_ACCOUNT	Credit Card Account	Fyle Tax	215	2021-11-16 04:17:54.255195+00	2021-11-16 04:17:54.255203+00	2	\N	{"account_type": "_otherCurrentLiability"}	f
 2044	CREDIT_CARD_ACCOUNT	Credit Card Account	Tax Liability	216	2021-11-16 04:17:54.255234+00	2021-11-16 04:17:54.255242+00	2	\N	{"account_type": "_otherCurrentLiability"}	f
 2045	CREDIT_CARD_ACCOUNT	Credit Card Account	GST Paid	217	2021-11-16 04:17:54.255273+00	2021-11-16 04:17:54.255281+00	2	\N	{"account_type": "_otherCurrentAsset"}	f
+2621	PROJECT	Customer	Sindt Electric	547	2021-11-16 04:18:16.812441+00	2021-11-16 04:18:16.81245+00	2	\N	\N	f
 2046	CREDIT_CARD_ACCOUNT	Credit Card Account	GST Collected	218	2021-11-16 04:17:54.255312+00	2021-11-16 04:17:54.25532+00	2	\N	{"account_type": "_otherCurrentLiability"}	f
 2047	CREDIT_CARD_ACCOUNT	Credit Card Account	LCT Paid	219	2021-11-16 04:17:54.255351+00	2021-11-16 04:17:54.25536+00	2	\N	{"account_type": "_otherCurrentAsset"}	f
 2048	CREDIT_CARD_ACCOUNT	Credit Card Account	LCT Collected	220	2021-11-16 04:17:54.25539+00	2021-11-16 04:17:54.255398+00	2	\N	{"account_type": "_otherCurrentLiability"}	f
@@ -4472,7 +4478,6 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 2108	ACCOUNT	Account	Payroll Expenses	91	2021-11-16 04:17:54.276126+00	2021-11-16 04:17:54.276134+00	2	\N	\N	f
 2109	ACCOUNT	Account	Taxes & Licenses-Other	92	2021-11-16 04:17:54.276162+00	2021-11-16 04:17:54.27617+00	2	\N	\N	f
 2110	ACCOUNT	Account	Business	93	2021-11-16 04:17:54.276199+00	2021-11-16 04:17:54.276207+00	2	\N	\N	f
-2111	ACCOUNT	Account	Property	94	2021-11-16 04:17:54.276235+00	2021-11-16 04:17:54.276243+00	2	\N	\N	f
 2112	ACCOUNT	Account	Vehicle Registration	95	2021-11-16 04:17:54.276272+00	2021-11-16 04:17:54.27628+00	2	\N	\N	f
 2113	ACCOUNT	Account	Telephone Expense	96	2021-11-16 04:17:54.276308+00	2021-11-16 04:17:54.276316+00	2	\N	\N	f
 2114	ACCOUNT	Account	Regular Service	97	2021-11-16 04:17:54.276344+00	2021-11-16 04:17:54.276352+00	2	\N	\N	f
@@ -4628,7 +4633,6 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 2265	PROJECT	Customer	Anthony Jacobs	146	2021-11-16 04:18:10.203126+00	2021-11-16 04:18:10.203134+00	2	\N	\N	f
 2266	PROJECT	Customer	Greg Yamashige	147	2021-11-16 04:18:10.203165+00	2021-11-16 04:18:10.203173+00	2	\N	\N	f
 2267	PROJECT	Customer	Bruce Storm	148	2021-11-16 04:18:10.203204+00	2021-11-16 04:18:10.203212+00	2	\N	\N	f
-2268	PROJECT	Customer	Julia Daniels	149	2021-11-16 04:18:10.203244+00	2021-11-16 04:18:10.203252+00	2	\N	\N	f
 2269	PROJECT	Customer	Mackenzie Corporation	151	2021-11-16 04:18:10.203283+00	2021-11-16 04:18:10.203291+00	2	\N	\N	f
 2270	PROJECT	Customer	Stephan Simms	152	2021-11-16 04:18:10.203322+00	2021-11-16 04:18:10.20333+00	2	\N	\N	f
 2271	PROJECT	Customer	Sandy King	153	2021-11-16 04:18:10.203369+00	2021-11-16 04:18:10.203377+00	2	\N	\N	f
@@ -4984,7 +4988,6 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 2618	PROJECT	Customer	Colosimo Catering and Associates	544	2021-11-16 04:18:16.812317+00	2021-11-16 04:18:16.812327+00	2	\N	\N	f
 2619	PROJECT	Customer	Tarangelo and Mccrea Apartments Holding Corp.	545	2021-11-16 04:18:16.81236+00	2021-11-16 04:18:16.812369+00	2	\N	\N	f
 2620	PROJECT	Customer	Conterras and Katen Attorneys Services	546	2021-11-16 04:18:16.812401+00	2021-11-16 04:18:16.81241+00	2	\N	\N	f
-2621	PROJECT	Customer	Sindt Electric	547	2021-11-16 04:18:16.812441+00	2021-11-16 04:18:16.81245+00	2	\N	\N	f
 2622	PROJECT	Customer	Below Liquors Corporation	548	2021-11-16 04:18:16.812482+00	2021-11-16 04:18:16.81249+00	2	\N	\N	f
 2623	PROJECT	Customer	Wraight Software and Associates	549	2021-11-16 04:18:16.812522+00	2021-11-16 04:18:16.812538+00	2	\N	\N	f
 2624	PROJECT	Customer	Niedzwiedz Antiques and Associates	550	2021-11-16 04:18:16.812569+00	2021-11-16 04:18:16.812576+00	2	\N	\N	f
@@ -5265,6 +5268,7 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 2899	PROJECT	Customer	Lafayette Hardware Services	825	2021-11-16 04:18:22.580184+00	2021-11-16 04:18:22.580192+00	2	\N	\N	f
 2900	PROJECT	Customer	Mele Plumbing Manufacturing	826	2021-11-16 04:18:22.580233+00	2021-11-16 04:18:22.580242+00	2	\N	\N	f
 2901	PROJECT	Customer	Jaenicke Builders Management	827	2021-11-16 04:18:22.580273+00	2021-11-16 04:18:22.580282+00	2	\N	\N	f
+3048	PROJECT	Customer	Flores Inc	1128	2021-11-16 04:18:22.598663+00	2021-11-16 04:18:22.598671+00	2	\N	\N	f
 2902	PROJECT	Customer	Meneses Telecom Corporation	828	2021-11-16 04:18:22.580313+00	2021-11-16 04:18:22.580321+00	2	\N	\N	f
 2903	PROJECT	Customer	Kieff Software Fabricators	829	2021-11-16 04:18:22.580353+00	2021-11-16 04:18:22.580361+00	2	\N	\N	f
 2904	PROJECT	Customer	Schneck Automotive Group	830	2021-11-16 04:18:22.580392+00	2021-11-16 04:18:22.580401+00	2	\N	\N	f
@@ -5413,7 +5417,6 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 3045	PROJECT	Customer	Russ Mygrant	1125	2021-11-16 04:18:22.598552+00	2021-11-16 04:18:22.59856+00	2	\N	\N	f
 3046	PROJECT	Customer	Ashton Consulting Ltd	1126	2021-11-16 04:18:22.598589+00	2021-11-16 04:18:22.598597+00	2	\N	\N	f
 3047	PROJECT	Customer	Alex Benedet	1127	2021-11-16 04:18:22.598626+00	2021-11-16 04:18:22.598634+00	2	\N	\N	f
-3048	PROJECT	Customer	Flores Inc	1128	2021-11-16 04:18:22.598663+00	2021-11-16 04:18:22.598671+00	2	\N	\N	f
 3049	PROJECT	Customer	Peterson Builders & Assoc	1129	2021-11-16 04:18:22.5987+00	2021-11-16 04:18:22.598708+00	2	\N	\N	f
 3050	PROJECT	Customer	Michael Jannsen	1130	2021-11-16 04:18:22.598737+00	2021-11-16 04:18:22.598745+00	2	\N	\N	f
 3051	PROJECT	Customer	Cino & Cino	1131	2021-11-16 04:18:22.598774+00	2021-11-16 04:18:22.598782+00	2	\N	\N	f
@@ -5961,6 +5964,7 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 3612	CREDIT_CARD_ACCOUNT	Credit Card Account	Acc. Dep-Building	21	2021-12-03 11:04:03.265221+00	2021-12-03 11:04:03.265224+00	49	\N	{"account_type": "_fixedAsset"}	f
 3613	CREDIT_CARD_ACCOUNT	Credit Card Account	Acc. Dep-Leasehold Improvements	22	2021-12-03 11:04:03.265234+00	2021-12-03 11:04:03.265236+00	49	\N	{"account_type": "_fixedAsset"}	f
 3614	CREDIT_CARD_ACCOUNT	Credit Card Account	Deposits	23	2021-12-03 11:04:03.265247+00	2021-12-03 11:04:03.26525+00	49	\N	{"account_type": "_otherAsset"}	f
+3764	ACCOUNT	Account	Service	61	2021-12-03 11:04:03.287143+00	2021-12-03 11:04:03.287146+00	49	\N	\N	f
 3615	CREDIT_CARD_ACCOUNT	Credit Card Account	Organization Expense	24	2021-12-03 11:04:03.26526+00	2021-12-03 11:04:03.265263+00	49	\N	{"account_type": "_otherAsset"}	f
 3616	CREDIT_CARD_ACCOUNT	Credit Card Account	Accounts Payable	25	2021-12-03 11:04:03.265273+00	2021-12-03 11:04:03.265275+00	49	\N	{"account_type": "_accountsPayable"}	f
 3617	CREDIT_CARD_ACCOUNT	Credit Card Account	Accrued Expenses	26	2021-12-03 11:04:03.265286+00	2021-12-03 11:04:03.265288+00	49	\N	{"account_type": "_otherCurrentLiability"}	f
@@ -6009,6 +6013,7 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 3659	CREDIT_CARD_ACCOUNT	Credit Card Account	Ask My Accountant	112	2021-12-03 11:04:03.27115+00	2021-12-03 11:04:03.271152+00	49	\N	{"account_type": "_otherIncome"}	f
 3660	CREDIT_CARD_ACCOUNT	Credit Card Account	Inventory Received Not Billed	114	2021-12-03 11:04:03.271163+00	2021-12-03 11:04:03.271165+00	49	\N	{"account_type": "_otherCurrentLiability"}	f
 3661	CREDIT_CARD_ACCOUNT	Credit Card Account	Refunds Payable	115	2021-12-03 11:04:03.271176+00	2021-12-03 11:04:03.271178+00	49	\N	{"account_type": "_otherCurrentLiability"}	f
+3765	ACCOUNT	Account	Salaries & Wages	62	2021-12-03 11:04:03.287155+00	2021-12-03 11:04:03.287157+00	49	\N	\N	f
 3662	CREDIT_CARD_ACCOUNT	Credit Card Account	Unapproved Customer Payments	116	2021-12-03 11:04:03.271189+00	2021-12-03 11:04:03.271193+00	49	\N	{"account_type": "_nonPosting"}	f
 3663	CREDIT_CARD_ACCOUNT	Credit Card Account	Estimates	117	2021-12-03 11:04:03.271204+00	2021-12-03 11:04:03.271206+00	49	\N	{"account_type": "_nonPosting"}	f
 3664	CREDIT_CARD_ACCOUNT	Credit Card Account	Unapproved Expense Reports	118	2021-12-03 11:04:03.271217+00	2021-12-03 11:04:03.27122+00	49	\N	{"account_type": "_nonPosting"}	f
@@ -6056,6 +6061,7 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 3706	CREDIT_CARD_ACCOUNT	Credit Card Account	Build Quantity Variance	166	2021-12-03 11:04:03.27736+00	2021-12-03 11:04:03.277363+00	49	\N	{"account_type": "_costOfGoodsSold"}	f
 3707	CREDIT_CARD_ACCOUNT	Credit Card Account	Vendor Rebates	167	2021-12-03 11:04:03.277374+00	2021-12-03 11:04:03.277376+00	49	\N	{"account_type": "_costOfGoodsSold"}	f
 3708	CREDIT_CARD_ACCOUNT	Credit Card Account	Customer Return Variance	168	2021-12-03 11:04:03.277387+00	2021-12-03 11:04:03.277389+00	49	\N	{"account_type": "_costOfGoodsSold"}	f
+3766	ACCOUNT	Account	Other Direct Costs	63	2021-12-03 11:04:03.287166+00	2021-12-03 11:04:03.287169+00	49	\N	\N	f
 3709	CREDIT_CARD_ACCOUNT	Credit Card Account	Vendor Return Variance	169	2021-12-03 11:04:03.2774+00	2021-12-03 11:04:03.277402+00	49	\N	{"account_type": "_costOfGoodsSold"}	f
 3710	CREDIT_CARD_ACCOUNT	Credit Card Account	Failed ACH Transactions	170	2021-12-03 11:04:03.277413+00	2021-12-03 11:04:03.277416+00	49	\N	{"account_type": "_otherCurrentLiability"}	f
 3711	CREDIT_CARD_ACCOUNT	Credit Card Account	Deferred Revenue	171	2021-12-03 11:04:03.277427+00	2021-12-03 11:04:03.277429+00	49	\N	{"account_type": "_deferredRevenue"}	f
@@ -6112,9 +6118,6 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 3761	ACCOUNT	Account	Acc. Dep-Leasehold Improvements	22	2021-12-03 11:04:03.287109+00	2021-12-03 11:04:03.287111+00	49	\N	\N	f
 3762	ACCOUNT	Account	Purchases	59	2021-12-03 11:04:03.28712+00	2021-12-03 11:04:03.287122+00	49	\N	\N	f
 3763	ACCOUNT	Account	Merchandise	60	2021-12-03 11:04:03.287132+00	2021-12-03 11:04:03.287134+00	49	\N	\N	f
-3764	ACCOUNT	Account	Service	61	2021-12-03 11:04:03.287143+00	2021-12-03 11:04:03.287146+00	49	\N	\N	f
-3765	ACCOUNT	Account	Salaries & Wages	62	2021-12-03 11:04:03.287155+00	2021-12-03 11:04:03.287157+00	49	\N	\N	f
-3766	ACCOUNT	Account	Other Direct Costs	63	2021-12-03 11:04:03.287166+00	2021-12-03 11:04:03.287169+00	49	\N	\N	f
 3767	ACCOUNT	Account	Inventory Variance	64	2021-12-03 11:04:03.287178+00	2021-12-03 11:04:03.28718+00	49	\N	\N	f
 3768	ACCOUNT	Account	Advertising	65	2021-12-03 11:04:03.28719+00	2021-12-03 11:04:03.287192+00	49	\N	\N	f
 3769	ACCOUNT	Account	Amortization Expense	66	2021-12-03 11:04:03.287201+00	2021-12-03 11:04:03.287203+00	49	\N	\N	f
@@ -6487,6 +6490,7 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 4143	PROJECT	Customer	Manivong Apartments Incorporated	379	2021-12-03 11:04:16.115399+00	2021-12-03 11:04:16.115402+00	49	\N	\N	f
 4144	PROJECT	Customer	Port Townsend Title Corporation	380	2021-12-03 11:04:16.115412+00	2021-12-03 11:04:16.115414+00	49	\N	\N	f
 4145	PROJECT	Customer	Harrop Attorneys Inc.	381	2021-12-03 11:04:16.115425+00	2021-12-03 11:04:16.115427+00	49	\N	\N	f
+4869	PROJECT	Customer	Lakeside Inc	1259	2021-12-03 11:04:25.49744+00	2021-12-03 11:04:25.497443+00	49	\N	\N	f
 4146	PROJECT	Customer	Mackie Painting Company	382	2021-12-03 11:04:16.115437+00	2021-12-03 11:04:16.11544+00	49	\N	\N	f
 4147	PROJECT	Customer	Busacker Liquors Services	383	2021-12-03 11:04:16.11545+00	2021-12-03 11:04:16.115452+00	49	\N	\N	f
 4148	PROJECT	Customer	Franklin Windows Inc.	384	2021-12-03 11:04:16.115462+00	2021-12-03 11:04:16.115464+00	49	\N	\N	f
@@ -7211,7 +7215,6 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 4866	PROJECT	Customer	Thorne & Assoc	1256	2021-12-03 11:04:25.497405+00	2021-12-03 11:04:25.497408+00	49	\N	\N	f
 4867	PROJECT	Customer	RedPath Sugars	1257	2021-12-03 11:04:25.497417+00	2021-12-03 11:04:25.497419+00	49	\N	\N	f
 4868	PROJECT	Customer	Trebor Allen Candy	1258	2021-12-03 11:04:25.497429+00	2021-12-03 11:04:25.497431+00	49	\N	\N	f
-4869	PROJECT	Customer	Lakeside Inc	1259	2021-12-03 11:04:25.49744+00	2021-12-03 11:04:25.497443+00	49	\N	\N	f
 4870	PROJECT	Customer	Brewers Retail	1260	2021-12-03 11:04:25.497452+00	2021-12-03 11:04:25.497454+00	49	\N	\N	f
 4871	PROJECT	Customer	Hershey's Canada	1261	2021-12-03 11:04:25.497464+00	2021-12-03 11:04:25.497466+00	49	\N	\N	f
 4873	PROJECT	Customer	Nikon	1263	2021-12-03 11:04:25.497487+00	2021-12-03 11:04:25.49749+00	49	\N	\N	f
@@ -7557,6 +7560,9 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 137	workspaces	0026_configuration_import_netsuite_employees	2022-11-17 14:32:05.54967+00
 138	workspaces	0027_workspace_employee_exported_at	2022-11-17 14:32:05.589018+00
 139	workspaces	0028_auto_20221116_1350	2022-11-17 14:32:05.634688+00
+140	fyle	0019_expensegroupsettings_ccc_expense_state	2022-12-02 10:24:43.534864+00
+141	fyle	0020_auto_20221201_1147	2022-12-02 10:24:43.547814+00
+142	workspaces	0029_auto_20221202_0620	2022-12-02 10:24:43.568383+00
 \.
 
 
@@ -11111,10 +11117,10 @@ COPY public.expense_attributes (id, attribute_type, display_name, value, source_
 -- Data for Name: expense_group_settings; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.expense_group_settings (id, reimbursable_expense_group_fields, corporate_credit_card_expense_group_fields, expense_state, reimbursable_export_date_type, created_at, updated_at, workspace_id, import_card_credits, ccc_export_date_type) FROM stdin;
-1	{employee_email,report_id,claim_number,fund_source}	{employee_email,report_id,claim_number,fund_source}	PAYMENT_PROCESSING	current_date	2021-11-15 08:46:16.069944+00	2021-11-15 08:46:16.069986+00	1	f	current_date
-2	{fund_source,employee_email,settlement_id,spent_at}	{expense_id,fund_source,employee_email,settlement_id,spent_at}	PAID	spent_at	2021-11-16 04:16:57.847694+00	2021-11-16 07:34:26.302812+00	2	f	spent_at
-74	{employee_email,report_id,claim_number,fund_source}	{claim_number,employee_email,expense_id,report_id,fund_source}	PAYMENT_PROCESSING	last_spent_at	2021-12-03 11:00:33.637654+00	2021-12-03 11:04:00.206339+00	49	f	last_spent_at
+COPY public.expense_group_settings (id, reimbursable_expense_group_fields, corporate_credit_card_expense_group_fields, expense_state, reimbursable_export_date_type, created_at, updated_at, workspace_id, import_card_credits, ccc_export_date_type, ccc_expense_state) FROM stdin;
+1	{employee_email,report_id,claim_number,fund_source}	{employee_email,report_id,claim_number,fund_source}	PAYMENT_PROCESSING	current_date	2021-11-15 08:46:16.069944+00	2021-11-15 08:46:16.069986+00	1	f	current_date	PAID
+2	{fund_source,employee_email,settlement_id,spent_at}	{expense_id,fund_source,employee_email,settlement_id,spent_at}	PAID	spent_at	2021-11-16 04:16:57.847694+00	2021-11-16 07:34:26.302812+00	2	f	spent_at	PAID
+74	{employee_email,report_id,claim_number,fund_source}	{claim_number,employee_email,expense_id,report_id,fund_source}	PAYMENT_PROCESSING	last_spent_at	2021-12-03 11:00:33.637654+00	2021-12-03 11:04:00.206339+00	49	f	last_spent_at	PAID
 \.
 
 
@@ -11169,7 +11175,7 @@ COPY public.expense_reports (id, account_id, entity_id, currency, department_id,
 COPY public.expenses (id, employee_email, category, sub_category, project, expense_id, expense_number, claim_number, amount, currency, foreign_amount, foreign_currency, settlement_id, reimbursable, state, vendor, cost_center, purpose, report_id, spent_at, approved_at, expense_created_at, expense_updated_at, created_at, updated_at, fund_source, custom_properties, verified_at, paid_on_netsuite, billable, org_id, tax_amount, tax_group_id, project_id, file_ids, corporate_card_id) FROM stdin;
 1	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txjvDntD9ZXR	E/2021/11/T/11	C/2021/11/R/5	50	USD	\N	\N	set6GUp6tcEEp	t	PAYMENT_PROCESSING	\N	Treasury	\N	rpuN3bgphxbK	2021-11-15 00:00:00+00	2021-11-15 00:00:00+00	2021-11-15 10:27:53.649+00	2021-11-15 10:28:46.775+00	2021-11-15 10:29:07.597095+00	2021-11-15 10:29:07.597111+00	PERSONAL	{"Team": "", "Class": "", "Klass": "", "Team 2": "", "Location": "", "Team Copy": "", "Tax Groups": "", "Departments": "", "User Dimension": "", "Location Entity": "", "Operating System": "", "System Operating": "", "User Dimension Copy": ""}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N
 2	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txy6folbrG2j	E/2021/11/T/12	C/2021/11/R/6	100	USD	\N	\N	setNVTcPkZ6on	f	PAYMENT_PROCESSING	Ashwin Vendor	\N	\N	rpHLA9Dfp9hN	2021-11-15 00:00:00+00	2021-11-15 00:00:00+00	2021-11-15 13:11:22.304+00	2021-11-15 13:11:58.032+00	2021-11-15 13:12:12.250613+00	2021-11-15 13:12:12.250638+00	CCC	{"Team": "", "Class": "", "Klass": "Klass", "Team 2": "", "Location": "", "Team Copy": "", "Tax Groups": "", "Departments": "", "User Dimension": "", "Location Entity": "", "Operating System": "", "System Operating": "", "User Dimension Copy": ""}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N
-3	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txeLau9Rdu4X	E/2021/11/T/1	C/2021/11/R/2	80	USD	\N	\N	setqgvGQnsAya	t	PAYMENT_PROCESSING	\N	\N	\N	rpu5W0LYrk6e	2021-11-16 00:00:00+00	2021-11-16 00:00:00+00	2021-11-16 04:24:18.688+00	2021-11-16 04:25:21.996+00	2021-11-16 04:25:49.174565+00	2021-11-16 04:25:49.174584+00	PERSONAL	{"Device Type": "", "Fyle Category": "", "Klass": "Klass"}	\N	f	\N	oraWFQlEpjbb	4.53	tg31j9m4PoEO	\N	\N	\N
+3	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txeLau9Rdu4X	E/2021/11/T/1	C/2021/11/R/2	80	USD	\N	\N	setqgvGQnsAya	t	PAYMENT_PROCESSING	\N	\N	\N	rpu5W0LYrk6e	2021-11-16 00:00:00+00	2021-11-16 00:00:00+00	2021-11-16 04:24:18.688+00	2021-11-16 04:25:21.996+00	2021-11-16 04:25:49.174565+00	2021-11-16 04:25:49.174584+00	PERSONAL	{"Klass": "Klass", "Device Type": "", "Fyle Category": ""}	\N	f	\N	oraWFQlEpjbb	4.53	tg31j9m4PoEO	\N	\N	\N
 4	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txMLGb6Xy8m8	E/2021/11/T/2	C/2021/11/R/1	100	USD	\N	\N	setqgvGQnsAya	f	PAYMENT_PROCESSING	\N	\N	\N	rprqDvARHUnv	2021-11-16 00:00:00+00	2021-11-16 00:00:00+00	2021-11-16 04:24:38.141+00	2021-11-16 04:25:21.996+00	2021-11-16 04:25:49.192351+00	2021-11-16 04:25:49.192367+00	CCC	{"Device Type": "", "Fyle Category": ""}	\N	f	\N	oraWFQlEpjbb	16.67	tgSYjXsBCviv	\N	\N	\N
 173	admin1@fyleforintacct.in	Food	Food	Project 2	tx7A5QpesrV5	E/2021/12/T/1	C/2021/12/R/1	120	USD	\N	\N	set15sMvtRIiS	t	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85N	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:30.076+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.685597+00	2021-12-03 11:26:58.685616+00	PERSONAL	{}	\N	f	\N	orHe8CpW2hyN	\N	\N	\N	\N	\N
 174	admin1@fyleforintacct.in	Food	Food	Project 2	txcKVVELn1Vl	E/2021/12/T/2	C/2021/12/R/1	130	USD	\N	\N	set15sMvtRIiS	f	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85N	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:49.51+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.702183+00	2021-12-03 11:26:58.702209+00	CCC	{}	\N	f	\N	orHe8CpW2hyN	\N	\N	\N	\N	\N
@@ -11319,10 +11325,10 @@ COPY public.workspace_schedules (id, enabled, start_datetime, interval_hours, wo
 -- Data for Name: workspaces; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.workspaces (id, name, fyle_org_id, ns_account_id, last_synced_at, created_at, updated_at, destination_synced_at, source_synced_at, cluster_domain, employee_exported_at) FROM stdin;
-1	Fyle For Arkham Asylum	or79Cob97KSh	TSTDRV2089588	2021-11-15 13:12:12.210053+00	2021-11-15 08:46:16.062858+00	2021-11-15 13:12:12.210769+00	2021-11-15 08:56:43.737724+00	2021-11-15 08:55:57.620811+00	https://staging.fyle.tech	2021-09-17 14:32:05.585557+00
-2	Fyle For IntacctNew Technologies	oraWFQlEpjbb	TSTDRV2089588	2021-11-16 04:25:49.067507+00	2021-11-16 04:16:57.840307+00	2021-11-16 04:25:49.067805+00	2021-11-16 04:18:28.233322+00	2021-11-16 04:17:43.950915+00	https://staging.fyle.tech	2021-11-17 14:32:05.585557+00
-49	Fyle For intacct-test	orHe8CpW2hyN	TSTDRV2089588	2021-12-03 11:26:58.663241+00	2021-12-03 11:00:33.634494+00	2021-12-03 11:26:58.664557+00	2021-12-03 11:04:27.847159+00	2021-12-03 11:03:52.560696+00	https://staging.fyle.tech	2021-11-17 14:32:05.585557+00
+COPY public.workspaces (id, name, fyle_org_id, ns_account_id, last_synced_at, created_at, updated_at, destination_synced_at, source_synced_at, cluster_domain, employee_exported_at, ccc_last_synced_at) FROM stdin;
+1	Fyle For Arkham Asylum	or79Cob97KSh	TSTDRV2089588	2021-11-15 13:12:12.210053+00	2021-11-15 08:46:16.062858+00	2021-11-15 13:12:12.210769+00	2021-11-15 08:56:43.737724+00	2021-11-15 08:55:57.620811+00	https://staging.fyle.tech	2021-09-17 14:32:05.585557+00	\N
+2	Fyle For IntacctNew Technologies	oraWFQlEpjbb	TSTDRV2089588	2021-11-16 04:25:49.067507+00	2021-11-16 04:16:57.840307+00	2021-11-16 04:25:49.067805+00	2021-11-16 04:18:28.233322+00	2021-11-16 04:17:43.950915+00	https://staging.fyle.tech	2021-11-17 14:32:05.585557+00	\N
+49	Fyle For intacct-test	orHe8CpW2hyN	TSTDRV2089588	2021-12-03 11:26:58.663241+00	2021-12-03 11:00:33.634494+00	2021-12-03 11:26:58.664557+00	2021-12-03 11:04:27.847159+00	2021-12-03 11:03:52.560696+00	https://staging.fyle.tech	2021-11-17 14:32:05.585557+00	\N
 \.
 
 
@@ -11418,7 +11424,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 41, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 139, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 142, true);
 
 
 --

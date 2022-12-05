@@ -23,6 +23,7 @@ class Workspace(models.Model):
     cluster_domain = models.CharField(max_length=255, help_text='Fyle Cluster Domain', null=True)
     ns_account_id = models.CharField(max_length=255, help_text='NetSuite account id')
     last_synced_at = models.DateTimeField(help_text='Datetime when expenses were pulled last', null=True)
+    ccc_last_synced_at = models.DateTimeField(help_text='Datetime when ccc expenses were pulled last', null=True)
     source_synced_at = models.DateTimeField(help_text='Datetime when source dimensions were pulled', null=True)
     destination_synced_at = models.DateTimeField(help_text='Datetime when destination dimensions were pulled', null=True)
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')
@@ -154,6 +155,7 @@ class Configuration(models.Model):
         help_text='list of system fields for creating custom memo'
     )
     auto_create_destination_entity = models.BooleanField(default=False, help_text='Auto create vendor / employee')
+    is_simplify_report_closure_enabled = models.BooleanField(default=False, help_text='Simplify report closure is enbaled')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 

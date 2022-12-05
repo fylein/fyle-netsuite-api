@@ -58,6 +58,7 @@ def create_expense_groups(workspace_id: int, configuration: Configuration, fund_
             expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=workspace_id)
             workspace = Workspace.objects.get(pk=workspace_id)
             last_synced_at = workspace.last_synced_at
+            ccc_last_synced_at = workspace.ccc_last_synced_at
             fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
 
             platform = PlatformConnector(fyle_credentials)
@@ -70,17 +71,36 @@ def create_expense_groups(workspace_id: int, configuration: Configuration, fund_
             if expense_group_settings.import_card_credits:
                 filter_credit_expenses = False
 
-            expenses = platform.expenses.get(
-                source_account_type=source_account_type,
-                state=expense_group_settings.expense_state,
-                settled_at=last_synced_at if expense_group_settings.expense_state == 'PAYMENT_PROCESSING' else None,
-                filter_credit_expenses=filter_credit_expenses,
-                last_paid_at=last_synced_at if expense_group_settings.expense_state == 'PAID' else None
-            )
+            expenses = []
+            reimbursable_expenses_count = 0
+
+            if 'PERSONAL' in fund_source:
+                expenses.extend(platform.expenses.get(
+                    source_account_type=['PERSONAL_CASH_ACCOUNT'],
+                    state=expense_group_settings.expense_state,
+                    settled_at=last_synced_at if expense_group_settings.expense_state == 'PAYMENT_PROCESSING' else None,
+                    filter_credit_expenses=filter_credit_expenses,
+                    last_paid_at=last_synced_at if expense_group_settings.expense_state == 'PAID' else None
+                ))
 
             if expenses:
                 workspace.last_synced_at = datetime.now()
-                workspace.save()
+                reimbursable_expenses_count = len(expenses)
+
+            if 'CCC' in fund_source:
+                expenses.extend(platform.expenses.get(
+                    source_account_type=['PERSONAL_CORPORATE_CREDIT_CARD_ACCOUNT'],
+                    state=expense_group_settings.ccc_expense_state,
+                    settled_at=ccc_last_synced_at if expense_group_settings.ccc_expense_state == 'PAYMENT_PROCESSING' else None,
+                    approved_at=ccc_last_synced_at if expense_group_settings.ccc_expense_state == 'APPROVED' else None,
+                    filter_credit_expenses=filter_credit_expenses,
+                    last_paid_at=ccc_last_synced_at if expense_group_settings.ccc_expense_state == 'PAID' else None
+                ))
+
+            if len(expenses) != reimbursable_expenses_count:
+                workspace.ccc_last_synced_at = datetime.now()
+
+            workspace.save()
 
             expense_objects = Expense.create_expense_objects(expenses)
 

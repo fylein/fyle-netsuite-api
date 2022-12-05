@@ -153,6 +153,7 @@ data = {
         "expense_state": "PAYMENT_PROCESSING",
         "reimbursable_export_date_type": "current_date",
         "ccc_export_date_type": "current_date",
+        "ccc_expense_state": "PAID",
         "import_card_credits": "false",
         "created_at": "2021-11-15T08:46:16.069944Z",
         "updated_at": "2021-11-15T08:46:16.069986Z",
@@ -260,6 +261,7 @@ data = {
         'expense_state': 'PAYMENT_PROCESSING',
         'reimbursable_export_date_type': 'spent_at',
         'ccc_export_date_type': 'spent_at',
+        'ccc_expense_state': 'PAID'
     },
     'get_my_profile': {
         'data': {
