@@ -809,7 +809,7 @@ def test_auto_create_netsuite_employees_on_fyle(db, mocker):
     
     employees = DestinationAttribute.objects.filter(workspace_id=workspace_id, attribute_type='EMPLOYEE').count()
     expense_attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id, attribute_type='EMPLOYEE').count()
-    assert employees == 8
+    assert employees == 13
     assert expense_attribute == 30
 
     with mock.patch('fyle_integrations_platform_connector.apis.Employees.sync') as mock_call:
