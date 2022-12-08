@@ -25,8 +25,8 @@ from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Workspac
 logger = logging.getLogger(__name__)
 
 SYNC_UPPER_LIMIT = {
-    'projects': 5000,
-    'customers': 5000
+    'projects': 7000,
+    'customers': 7000
 }
 
 
