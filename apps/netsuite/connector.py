@@ -94,7 +94,8 @@ class NetSuiteConnector:
                         'attribute_type': 'BANK_ACCOUNT',
                         'display_name': 'Bank Account',
                         'value': account['acctName'],
-                        'destination_id': account['internalId']
+                        'destination_id': account['internalId'],
+                        'active': not account['isInactive']
                     })
 
                     attributes['credit_card_account'].append({
@@ -104,7 +105,8 @@ class NetSuiteConnector:
                         'destination_id': account['internalId'],
                         'detail': {
                             'account_type': account['acctType']
-                        }
+                        },
+                        'active': not account['isInactive']
                     })
 
                 if account['acctType'] == '_accountsPayable':
@@ -112,7 +114,8 @@ class NetSuiteConnector:
                         'attribute_type': 'ACCOUNTS_PAYABLE',
                         'display_name': 'Accounts Payable',
                         'value': account['acctName'],
-                        'destination_id': account['internalId']
+                        'destination_id': account['internalId'],
+                        'active': not account['isInactive']
                     })
 
                 if account['acctType'] in ['_expense', '_costOfGoodsSold', '_otherCurrentAsset', '_otherExpense',
@@ -121,7 +124,8 @@ class NetSuiteConnector:
                         'attribute_type': 'ACCOUNT',
                         'display_name': 'Account',
                         'value': unidecode.unidecode(u'{0}'.format(account['acctName'])).replace('/', '-'),
-                        'destination_id': account['internalId']
+                        'destination_id': account['internalId'],
+                        'active': not account['isInactive']
                     })
 
                 if account['acctType'] == '_bank' or account['acctType'] == '_creditCard':
@@ -129,7 +133,8 @@ class NetSuiteConnector:
                         'attribute_type': 'VENDOR_PAYMENT_ACCOUNT',
                         'display_name': 'Vendor Payment Account',
                         'value': account['acctName'],
-                        'destination_id': account['internalId']
+                        'destination_id': account['internalId'],
+                        'active': not account['isInactive']
                     })
 
             for attribute_type, attribute in attributes.items():
@@ -162,7 +167,8 @@ class NetSuiteConnector:
                         'display_name': 'Expense Category',
                         'value': unidecode.unidecode(u'{0}'.format(category['name'])).replace('/', '-'),
                         'destination_id': category['internalId'],
-                        'detail': detail
+                        'detail': detail,
+                        'active': not category['isInactive']
                     }
                 )
 
