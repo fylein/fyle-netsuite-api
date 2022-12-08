@@ -1155,7 +1155,8 @@ def post_employees(platform_connection: PlatformConnector, workspace_id: int):
     netsuite_attributes = DestinationAttribute.objects.filter(
         attribute_type='EMPLOYEE',
         workspace_id=workspace_id,
-        updated_at__gte=workspace.employee_exported_at
+        updated_at__gte=workspace.employee_exported_at,
+        detail__allow_access_to_fyle=True
     ).order_by('value', 'id')
 
     netsuite_attributes = remove_duplicates(netsuite_attributes)
