@@ -94,6 +94,7 @@ def disable_or_enable_expense_attributes(source_field, destination_field, worksp
             workspace_id=workspace_id
         )
 
+    expense_attributes_ids = []
     if expense_attributes_to_disable or expense_attributes_to_enable:
         expense_attributes_ids = [expense_attribute.id for expense_attribute in expense_attributes_to_disable]
         expense_attributes_to_disable.update(active=False)
@@ -102,7 +103,7 @@ def disable_or_enable_expense_attributes(source_field, destination_field, worksp
             expense_attributes_ids = expense_attributes_ids + [expense_attribute.id for expense_attribute in expense_attributes_to_enable]
             expense_attributes_to_enable.update(active=True)
 
-        return expense_attributes_ids
+    return expense_attributes_ids
 
 
 def get_all_categories_from_fyle(platform: PlatformConnector):
@@ -533,41 +534,6 @@ def create_fyle_tax_group_payload(netsuite_attributes: List[DestinationAttribute
                 }
             )
     return fyle_tax_group_payload
-
-def disable_or_enable_expense_attributes(source_field, destination_field, workspace_id):
-
-    # Get All the inactive destination attribute ids
-    destination_attribute_ids = DestinationAttribute.objects.filter(
-		attribute_type=destination_field, 
-		mapping__isnull=False,
-		mapping__destination_type=destination_field,
-		active=False,
-		workspace_id=workspace_id
-	).values_list('id', flat=True)
-
-    # Get all the expense attributes that are mapped to these destination_attribute_ids
-    expense_attributes_to_disable = ExpenseAttribute.objects.filter(
-		attribute_type=source_field, 
-		mapping__destination_id__in=destination_attribute_ids,
-		active=True
-	)
-
-    expense_attributes_to_enable = ExpenseAttribute.objects.filter(
-        ~Q(mapping__destination_id__in=destination_attribute_ids),
-        mapping__isnull=False,
-        mapping__source_type=source_field,
-        attribute_type=source_field,
-        active=False,
-        workspace_id=workspace_id
-	)
-
-    # if there are any expense attributes present, set active to False
-    if expense_attributes_to_disable or expense_attributes_to_enable:
-        expense_attributes_ids = [expense_attribute.id for expense_attribute in expense_attributes_to_disable]
-        expense_attributes_ids = expense_attributes_ids + [expense_attribute.id for expense_attribute in expense_attributes_to_enable]
-        expense_attributes_to_disable.update(active=False)
-        expense_attributes_to_enable.update(active=True)
-        return expense_attributes_ids
 
 def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_project_names: list,
                                      updated_projects: List[ExpenseAttribute] = None):
