@@ -47,7 +47,6 @@ def test_create_fyle_category_payload(mocker, db):
     assert len(fyle_category_payload) == 98
 
     expense_attributes = ExpenseAttribute.objects.filter(workspace_id=1, active=True, attribute_type='CATEGORY')
-    print(expense_attributes)
     fyle_category_payload = create_fyle_categories_payload([], {}, expense_attributes, 'EXPENSE_CATEGORY')
     assert len(fyle_category_payload) == 1
 
