@@ -9,7 +9,7 @@ workspaces_app_paths = [
          name='workspace-schedule'),
     path('<int:workspace_id>/configuration/', ConfigurationsView.as_view(), name='workspace-configurations'),
     path('ready/', ReadyView.as_view({'get': 'get'}), name='ready'),
-    path('<int:workspace_id>/admins/', WorkspaceAdminsView.as_view({'get': 'get'}), name='admin')
+    path('<int:workspace_id>/admins/', WorkspaceAdminsView.as_view(), name='admin')
 ]
 
 fyle_connection_api_paths = [
