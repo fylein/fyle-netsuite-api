@@ -42,7 +42,7 @@ def disable_or_enable_expense_attributes(source_field, destination_field, worksp
     # Get All the inactive destination attribute ids
     filter = {
         'mapping__isnull': False,
-		'mapping__destination_type': destination_field
+        'mapping__destination_type': destination_field
     }
 
     if source_field == 'CATEGORY':
@@ -64,7 +64,7 @@ def disable_or_enable_expense_attributes(source_field, destination_field, worksp
 
     # Get all the expense attributes that are mapped to these destination_attribute_ids
     filter = {
-		'mapping__destination_id__in': destination_attribute_ids
+        'mapping__destination_id__in': destination_attribute_ids
     }
 
     if source_field == 'CATEGORY':
@@ -127,7 +127,7 @@ def get_all_categories_from_fyle(platform: PlatformConnector):
     return category_name_map
 
 
-def create_fyle_categories_payload(categories: List[DestinationAttribute], category_map: Dict, updated_categories: List[ExpenseAttribute] = [], destination_type: str = ''):
+def create_fyle_categories_payload(categories: List[DestinationAttribute], category_map: Dict, updated_categories: List[ExpenseAttribute] = [], destination_type: str = None):
     """
     Create Fyle Categories Payload from NetSuite Customer / Categories
     :param workspace_id: Workspace integer id
