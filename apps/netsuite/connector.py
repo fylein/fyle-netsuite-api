@@ -88,7 +88,7 @@ class NetSuiteConnector:
                 'vendor_payment_account': []
             }
             destination_ids = DestinationAttribute.objects.filter(workspace_id=self.workspace_id,
-                attribute_type= 'ACCOUNT', display_name='Account').values_list('destination_id', flat=True)
+                attribute_type='ACCOUNT', display_name='Account').values_list('destination_id', flat=True)
 
             for account in list(accounts):
                 if account['acctType'] != '_expense':
@@ -167,7 +167,7 @@ class NetSuiteConnector:
                 'ccc_expense_category': []
             }
             destination_ids = DestinationAttribute.objects.filter(workspace_id=self.workspace_id,
-                    attribute_type= 'EXPENSE_CATEGORY', display_name='Expense Category').values_list('destination_id', flat=True)
+                    attribute_type='EXPENSE_CATEGORY', display_name='Expense Category').values_list('destination_id', flat=True)
 
             for category in categories:
                 detail = {
