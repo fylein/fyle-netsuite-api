@@ -851,10 +851,3 @@ def test_auto_create_netsuite_employees_on_fyle(db, mocker):
     fyle_credentials.delete()
 
     auto_create_netsuite_employees_on_fyle(workspace_id=workspace_id)
-
-
-def test_disable_or_enable_expense_attributes(db):
-    workspace_id = 2
-
-    expense_attributes_ids = disable_or_enable_expense_attributes('TAX_GROUP', 'TAX_ITEM', workspace_id)
-    assert len(expense_attributes_ids) == 2

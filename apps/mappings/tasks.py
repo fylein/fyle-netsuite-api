@@ -37,7 +37,7 @@ def remove_duplicates(ns_attributes: List[DestinationAttribute]):
     return unique_attributes
 
 
-def disable_or_enable_expense_attributes(source_field, destination_field, workspace_id):
+def disable_expense_attributes(source_field, destination_field, workspace_id):
 
     # Get All the inactive destination attribute ids
     filter = {
@@ -83,25 +83,11 @@ def disable_or_enable_expense_attributes(source_field, destination_field, worksp
         **filter
     )
 
-    expense_attributes_to_enable = []
-    if source_field != 'PROJECT' and source_field != 'CATEGORY':
-        expense_attributes_to_enable = ExpenseAttribute.objects.filter(
-            ~Q(mapping__destination_id__in=destination_attribute_ids),
-            mapping__isnull=False,
-            mapping__source_type=source_field,
-            attribute_type=source_field,
-            active=False,
-            workspace_id=workspace_id
-        )
-
+    # Update active column to false for expense attributes to be disabled
     expense_attributes_ids = []
-    if expense_attributes_to_disable or expense_attributes_to_enable:
+    if expense_attributes_to_disable :
         expense_attributes_ids = [expense_attribute.id for expense_attribute in expense_attributes_to_disable]
         expense_attributes_to_disable.update(active=False)
-
-        if source_field != 'PROJECT' and source_field != 'CATEGORY':
-            expense_attributes_ids = expense_attributes_ids + [expense_attribute.id for expense_attribute in expense_attributes_to_enable]
-            expense_attributes_to_enable.update(active=True)
 
     return expense_attributes_ids
 
@@ -467,7 +453,7 @@ def auto_create_category_mappings(workspace_id):
         create_category_mappings(fyle_categories, reimbursable_destination_type, workspace_id)
 
         # auto-sync categories and expense accounts
-        category_ids_to_be_changed = disable_or_enable_expense_attributes('CATEGORY', reimbursable_destination_type, workspace_id)
+        category_ids_to_be_changed = disable_expense_attributes('CATEGORY', reimbursable_destination_type, workspace_id)
         if category_ids_to_be_changed:
             expense_attributes = ExpenseAttribute.objects.filter(id__in=category_ids_to_be_changed)
             fyle_payload: List[Dict] = create_fyle_categories_payload(categories=[], category_map={}, updated_categories=expense_attributes, destination_type=reimbursable_destination_type)
@@ -596,7 +582,7 @@ def post_projects_in_batches(platform: PlatformConnector, workspace_id: int, des
         Mapping.bulk_create_mappings(paginated_ns_attributes, 'PROJECT', destination_field, workspace_id)
     
     if destination_field == 'PROJECT':
-        project_ids_to_be_changed = disable_or_enable_expense_attributes('PROJECT', 'PROJECT', workspace_id)
+        project_ids_to_be_changed = disable_expense_attributes('PROJECT', 'PROJECT', workspace_id)
         if project_ids_to_be_changed:
             expense_attributes = ExpenseAttribute.objects.filter(id__in=project_ids_to_be_changed)
             fyle_payload: List[Dict] = create_fyle_projects_payload(projects=[], existing_project_names=[], updated_projects=expense_attributes)
