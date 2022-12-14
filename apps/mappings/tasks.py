@@ -193,6 +193,7 @@ def upload_categories_to_fyle(workspace_id: int, reimbursable_expenses_object: s
 
     fyle_payload: List[Dict] = create_fyle_categories_payload(netsuite_attributes, category_map)
 
+    print('fyle_payload upload_categories_to_fyle', fyle_payload)
     if fyle_payload:
         platform.categories.post_bulk(fyle_payload)
         platform.categories.sync()
@@ -457,6 +458,7 @@ def auto_create_category_mappings(workspace_id):
         if category_ids_to_be_changed:
             expense_attributes = ExpenseAttribute.objects.filter(id__in=category_ids_to_be_changed)
             fyle_payload: List[Dict] = create_fyle_categories_payload(categories=[], category_map={}, updated_categories=expense_attributes, destination_type=reimbursable_destination_type)
+            print('fyle_payload to update', fyle_payload)
             platform.categories.post_bulk(fyle_payload)
             platform.categories.sync()
 
@@ -575,6 +577,7 @@ def post_projects_in_batches(platform: PlatformConnector, workspace_id: int, des
 
         fyle_payload: List[Dict] = create_fyle_projects_payload(
             paginated_ns_attributes, existing_project_names)
+        print('fyle_payload create_fyle_projects_payload', fyle_payload)
         if fyle_payload:
             platform.projects.post_bulk(fyle_payload)
             platform.projects.sync()
@@ -586,6 +589,7 @@ def post_projects_in_batches(platform: PlatformConnector, workspace_id: int, des
         if project_ids_to_be_changed:
             expense_attributes = ExpenseAttribute.objects.filter(id__in=project_ids_to_be_changed)
             fyle_payload: List[Dict] = create_fyle_projects_payload(projects=[], existing_project_names=[], updated_projects=expense_attributes)
+            print('fyle_payload update ones', fyle_payload)
             platform.projects.post_bulk(fyle_payload)
             platform.projects.sync()
 
