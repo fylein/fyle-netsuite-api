@@ -87,6 +87,8 @@ class NetSuiteConnector:
                 'ccc_account': [],
                 'vendor_payment_account': []
             }
+            destination_ids = DestinationAttribute.objects.filter(workspace_id=self.workspace_id,
+                attribute_type= 'ACCOUNT', display_name='Account').values_list('destination_id', flat=True)
 
             for account in list(accounts):
                 if account['acctType'] != '_expense':
@@ -120,13 +122,22 @@ class NetSuiteConnector:
 
                 if account['acctType'] in ['_expense', '_costOfGoodsSold', '_otherCurrentAsset', '_otherExpense',
                     '_fixedAsset', '_deferredExpense', '_otherCurrentLiability', '_income', '_otherAsset']:
-                    attributes['account'].append({
-                        'attribute_type': 'ACCOUNT',
-                        'display_name': 'Account',
-                        'value': unidecode.unidecode(u'{0}'.format(account['acctName'])).replace('/', '-'),
-                        'destination_id': account['internalId'],
-                        'active': not account['isInactive']
-                    })
+                    if account['internalId'] in destination_ids:
+                        attributes['account'].append({
+                            'attribute_type': 'ACCOUNT',
+                            'display_name': 'Account',
+                            'value': unidecode.unidecode(u'{0}'.format(account['acctName'])).replace('/', '-'),
+                            'destination_id': account['internalId'],
+                            'active': not account['isInactive']
+                        })
+                    elif not account['isInactive']:
+                        attributes['account'].append({
+                            'attribute_type': 'ACCOUNT',
+                            'display_name': 'Account',
+                            'value': unidecode.unidecode(u'{0}'.format(account['acctName'])).replace('/', '-'),
+                            'destination_id': account['internalId'],
+                            'active': True
+                        })
 
                 if account['acctType'] == '_bank' or account['acctType'] == '_creditCard':
                     attributes['vendor_payment_account'].append({
@@ -155,22 +166,37 @@ class NetSuiteConnector:
                 'expense_category': [],
                 'ccc_expense_category': []
             }
+            destination_ids = DestinationAttribute.objects.filter(workspace_id=self.workspace_id,
+                    attribute_type= 'EXPENSE_CATEGORY', display_name='Expense Category').values_list('destination_id', flat=True)
+
             for category in categories:
                 detail = {
                     'account_name': category['expenseAcct']['name'],
                     'account_internal_id': category['expenseAcct']['internalId']
                 }
 
-                attributes['expense_category'].append(
-                    {
-                        'attribute_type': 'EXPENSE_CATEGORY',
-                        'display_name': 'Expense Category',
-                        'value': unidecode.unidecode(u'{0}'.format(category['name'])).replace('/', '-'),
-                        'destination_id': category['internalId'],
-                        'detail': detail,
-                        'active': not category['isInactive']
-                    }
-                )
+                if category['internalId'] in destination_ids:
+                    attributes['expense_category'].append(
+                        {
+                            'attribute_type': 'EXPENSE_CATEGORY',
+                            'display_name': 'Expense Category',
+                            'value': unidecode.unidecode(u'{0}'.format(category['name'])).replace('/', '-'),
+                            'destination_id': category['internalId'],
+                            'detail': detail,
+                            'active': not category['isInactive']
+                        }
+                    )
+                elif not category['isInactive']:
+                    attributes['expense_category'].append(
+                        {
+                            'attribute_type': 'EXPENSE_CATEGORY',
+                            'display_name': 'Expense Category',
+                            'value': unidecode.unidecode(u'{0}'.format(category['name'])).replace('/', '-'),
+                            'destination_id': category['internalId'],
+                            'detail': detail,
+                            'active': True
+                        }
+                    )
 
             for attribute_type, attribute in attributes.items():
                 DestinationAttribute.bulk_create_or_update_destination_attributes(
