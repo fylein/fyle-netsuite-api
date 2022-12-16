@@ -4,7 +4,7 @@ astroid==2.6.6
 attrs==21.2.0
 blessed==1.16.1
 cached-property==1.5.2
-certifi==2019.11.28
+certifi==2022.12.7
 chardet==3.0.4
 coverage==6.2
 dj-database-url==0.5.0
