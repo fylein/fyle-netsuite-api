@@ -1,9 +1,9 @@
 import pytest
 from fyle_integrations_platform_connector import PlatformConnector
 
-from apps.fyle.models import ExpenseGroup, Expense, ExpenseGroupSettings
+from apps.fyle.models import ExpenseGroup, Expense, ExpenseGroupSettings, ExpenseFilters
 from apps.tasks.models import TaskLog
-from apps.fyle.tasks import create_expense_groups, schedule_expense_group_creation
+from apps.fyle.tasks import create_expense_groups, schedule_expense_group_creation, construct_expense_filters
 from apps.workspaces.models import Configuration, FyleCredential
 from .fixtures import data
 
@@ -70,3 +70,67 @@ def test_schedule_expense_group_creation(mocker, add_fyle_credentials):
 
     assert len(expense_group) == 2
     assert len(expenses) == 2
+
+@pytest.mark.django_db()
+def test_schedule_construct_expense_filters(mocker, add_fyle_credentials):
+    #employee-email-is-equal
+    expense_filter = ExpenseFilters(
+        condition = 'employee_email',
+        operator = 'in',
+        values = ['killua.z@fyle.in', 'naruto.u@fyle.in'],
+        rank = '1'
+    )
+    constructed_expense_filter = construct_expense_filters(expense_filter)
+
+    #report-id-is-equal
+    assert constructed_expense_filter == {'employee_email__in':['killua.z@fyle.in', 'naruto.u@fyle.in']}
+
+    expense_filter = ExpenseFilters(
+        condition = 'report_id',
+        operator = 'in',
+        values = ['ajdnwjnadw', 'ajdnwjnlol'],
+        rank = '1'
+    )
+    constructed_expense_filter = construct_expense_filters(expense_filter)
+
+    assert constructed_expense_filter == {'report_id__in':['ajdnwjnadw', 'ajdnwjnlol']}
+
+    #custom-properties-number-is-equal
+    expense_filter = ExpenseFilters(
+        condition = 'Gon Number',
+        operator = 'in',
+        values = [102,108],
+        rank = '1',
+        is_custom = True
+    )
+    constructed_expense_filter = construct_expense_filters(expense_filter)
+
+    assert constructed_expense_filter == {'custom_properties__Gon Number__in':[102, 108]}
+
+    #custom-properties-text-is-equal
+    expense_filter = ExpenseFilters(
+        condition = 'Killua Text',
+        operator = 'in',
+        values = ['hunter', 'naruto', 'sasuske'],
+        rank = '1',
+        is_custom = True
+    )
+    constructed_expense_filter = construct_expense_filters(expense_filter)
+
+    assert constructed_expense_filter == {'custom_properties__Killua Text__in':['hunter', 'naruto', 'sasuske']}
+
+    #custom-properties-select-is-equal
+    expense_filter = ExpenseFilters(
+        condition = 'Kratos',
+        operator = 'in',
+        values = ['BOOK', 'Dev-D'],
+        rank = '1',
+        is_custom = True
+    )
+    constructed_expense_filter = construct_expense_filters(expense_filter)
+
+    assert constructed_expense_filter == {'custom_properties__Kratos__in':['BOOK', 'Dev-D']}
+
+
+
+

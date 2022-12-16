@@ -11,7 +11,7 @@ from fyle_integrations_platform_connector import PlatformConnector
 from apps.workspaces.models import FyleCredential, Workspace, Configuration
 from apps.tasks.models import TaskLog
 
-from .models import Expense, ExpenseGroup, ExpenseGroupSettings
+from .models import Expense, ExpenseGroup, ExpenseGroupSettings, ExpenseFilters
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -129,3 +129,16 @@ def create_expense_groups(workspace_id: int, configuration: Configuration, fund_
         task_log.status = 'FATAL'
         task_log.save()
         logger.exception('Something unexpected happened workspace_id: %s %s', task_log.workspace_id, task_log.detail)
+
+def construct_expense_filters(expense_filter:ExpenseFilters):
+    constructed_expense_filter = {}
+    if expense_filter.is_custom:
+        constructed_expense_filter = {
+            'custom_properties__{0}__{1}'.format(expense_filter.condition, expense_filter.operator):expense_filter.values
+        }
+    else:
+        constructed_expense_filter = {
+            '{0}__{1}'.format(expense_filter.condition, expense_filter.operator):expense_filter.values
+        }
+
+    return constructed_expense_filter

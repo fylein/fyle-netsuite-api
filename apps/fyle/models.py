@@ -71,6 +71,7 @@ class Expense(models.Model):
     cost_center = models.CharField(max_length=255, null=True, blank=True, help_text='Fyle Expense Cost Center')
     purpose = models.TextField(null=True, blank=True, help_text='Purpose')
     report_id = models.CharField(max_length=255, help_text='Report ID')
+    report_title = models.TextField(null=True, blank=True, help_text='Report title')
     corporate_card_id = models.CharField(max_length=255, null=True, blank=True, help_text='Corporate Card ID')
     file_ids = ArrayField(base_field=models.CharField(max_length=255), null=True, help_text='File IDs')
     spent_at = models.DateTimeField(null=True, help_text='Expense spent at')
@@ -121,6 +122,7 @@ class Expense(models.Model):
                     'cost_center': expense['cost_center'],
                     'purpose': expense['purpose'],
                     'report_id': expense['report_id'],
+                    'report_title': expense['report_title'],
                     'corporate_card_id': expense['corporate_card_id'],
                     'file_ids': expense['file_ids'],
                     'spent_at': expense['spent_at'],
@@ -436,3 +438,24 @@ class Reimbursement(models.Model):
         return Reimbursement.objects.filter(
             workspace_id=workspace_id
         ).order_by('-updated_at').first()
+
+
+class ExpenseFilters(models.Model):
+    """
+    Reimbursements
+    """
+    id = models.AutoField(primary_key=True)
+    condition = models.CharField(max_length=255, help_text='Condition for the filter')
+    operator = models.CharField(max_length=255, help_text='Operator for the filter')
+    values = ArrayField(base_field=models.CharField(max_length=255),null=True ,help_text='Values for the operator')
+    rank = models.CharField(max_length=255, help_text='Rank for the filter')
+    join_by = models.CharField(max_length=255,null=True ,help_text='Used to join the filter (AND/OR)')
+    is_custom = models.BooleanField(default=False, help_text='Custom Field or not')
+    workspace = models.ForeignKey(
+        Workspace, on_delete=models.PROTECT, help_text='To which workspace these filters belongs to'
+    )
+    created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
+    updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
+
+    class Meta:
+        db_table = 'expense_filters'
