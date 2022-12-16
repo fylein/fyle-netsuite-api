@@ -166,7 +166,7 @@ def test_sync_employees(mocker, db):
     netsuite_connection.sync_employees()
 
     new_employee_count = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='EMPLOYEE').count()
-    assert new_employee_count == 8
+    assert new_employee_count == 13
 
 @pytest.mark.django_db()
 def test_sync_accounts(mocker, db):
