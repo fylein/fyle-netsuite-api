@@ -129,5 +129,3 @@ def create_expense_groups(workspace_id: int, configuration: Configuration, fund_
         task_log.status = 'FATAL'
         task_log.save()
         logger.exception('Something unexpected happened workspace_id: %s %s', task_log.workspace_id, task_log.detail)
-
-

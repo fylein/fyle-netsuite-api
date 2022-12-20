@@ -1,11 +1,10 @@
 import pytest
 from fyle_integrations_platform_connector import PlatformConnector
 
-from apps.fyle.models import ExpenseGroup, Expense, ExpenseGroupSettings, ExpenseFilter
+from apps.fyle.models import ExpenseGroup, Expense, ExpenseGroupSettings
 from apps.tasks.models import TaskLog
-from apps.fyle.tasks import create_expense_groups, schedule_expense_group_creation, construct_expense_filters
+from apps.fyle.tasks import create_expense_groups, schedule_expense_group_creation
 from apps.workspaces.models import Configuration, FyleCredential
-from django.db.models import Q
 from .fixtures import data
 
 
@@ -71,4 +70,3 @@ def test_schedule_expense_group_creation(mocker, add_fyle_credentials):
 
     assert len(expense_group) == 2
     assert len(expenses) == 2
-
