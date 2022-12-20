@@ -6,8 +6,9 @@ import logging
 
 from django.utils.module_loading import import_string
 from django.conf import settings
+from django.db.models import Q
 
-from apps.fyle.models import ExpenseGroupSettings
+from apps.fyle.models import ExpenseGroupSettings,ExpenseFilter
 from apps.mappings.models import GeneralMapping
 from apps.workspaces.models import FyleCredential, Workspace
 
@@ -185,4 +186,33 @@ def sync_dimensions(fyle_credentials: FyleCredential, workspace_id: int) -> None
 
     platform.import_fyle_dimensions(import_taxes=True)
    
-    
+
+
+def construct_expense_filter(expense_filter:ExpenseFilter):
+    constructed_expense_filter = {}
+    if expense_filter.is_custom and expense_filter.operator != 'isnull':
+        filter1 = {
+            'custom_properties__{0}__{1}'.format(expense_filter.condition, expense_filter.operator): expense_filter.values if len(expense_filter.values) > 1 else expense_filter.values[0]
+        }
+        constructed_expense_filter = Q(**filter1)
+
+    elif expense_filter.is_custom and expense_filter.operator == 'isnull':
+        expense_filter_value: bool = True if expense_filter.values[0].lower() == 'true' else False
+        filter1 = {
+            'custom_properties__{0}__{1}'.format(expense_filter.condition, expense_filter.operator): expense_filter_value
+        }
+        filter2 = {
+            'custom_properties__{0}__exact'.format(expense_filter.condition): None
+        }
+        if expense_filter_value == True:
+            constructed_expense_filter = Q(**filter1) | Q(**filter2)
+        else:
+            constructed_expense_filter = ~Q(**filter2)
+
+    else:
+        filter1 = {
+            '{0}__{1}'.format(expense_filter.condition, expense_filter.operator):expense_filter.values if len(expense_filter.values) > 1 else expense_filter.values[0]
+        }
+        constructed_expense_filter = Q(**filter1)
+
+    return constructed_expense_filter

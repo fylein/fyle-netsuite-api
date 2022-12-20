@@ -84,6 +84,7 @@ class Expense(models.Model):
     verified_at = models.DateTimeField(help_text='Report verified at', null=True)
     paid_on_netsuite = models.BooleanField(help_text='Expense Payment status on NetSuite', default=False)
     custom_properties = JSONField(null=True)
+    is_skipped = models.BooleanField(null=True, default=False, help_text='Expense is skipped or not')
 
     class Meta:
         db_table = 'expenses'
@@ -97,6 +98,10 @@ class Expense(models.Model):
         expense_objects = []
 
         for expense in expenses:
+            for custom_property_field in expense['custom_properties']:
+                if expense['custom_properties'][custom_property_field] == '':
+                    expense['custom_properties'][custom_property_field] = None
+                        
             expense_object, _ = Expense.objects.update_or_create(
                 expense_id=expense['id'],
                 defaults={
@@ -440,7 +445,7 @@ class Reimbursement(models.Model):
         ).order_by('-updated_at').first()
 
 
-class ExpenseFilters(models.Model):
+class ExpenseFilter(models.Model):
     """
     Reimbursements
     """

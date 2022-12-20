@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import status
 from datetime import datetime, timezone
 from apps.fyle.helpers import *
-from apps.fyle.models import ExpenseGroupSettings
+from apps.fyle.models import ExpenseGroupSettings, ExpenseFilter
 from apps.mappings.models import GeneralMapping
 from apps.workspaces.models import FyleCredential, Workspace
 from fyle_netsuite_api.tests import settings
@@ -192,3 +192,259 @@ def test_get_cluster_domain(mocker):
         get_cluster_domain(refresh_token='srtyu')
     except:
         logger.info('Error in post request')
+
+@pytest.mark.django_db()
+def test_construct_expense_filter(mocker, add_fyle_credentials):
+    #employee-email-is-equal
+    expense_filter = ExpenseFilter(
+        condition = 'employee_email',
+        operator = 'in',
+        values = ['killua.z@fyle.in', 'naruto.u@fyle.in'],
+        rank = '1'
+    )
+    constructed_expense_filter = construct_expense_filter(expense_filter)
+
+    filter1 = {'employee_email__in':['killua.z@fyle.in', 'naruto.u@fyle.in']}
+    respone = Q(**filter1)
+
+    assert constructed_expense_filter == respone
+
+    #report-id-is-equal
+    expense_filter = ExpenseFilter(
+        condition = 'report_id',
+        operator = 'in',
+        values = ['ajdnwjnadw', 'ajdnwjnlol'],
+        rank = '1'
+    )
+    constructed_expense_filter = construct_expense_filter(expense_filter)
+
+    filter1 = {'report_id__in':['ajdnwjnadw', 'ajdnwjnlol']}
+    respone = Q(**filter1)
+
+    assert constructed_expense_filter == respone
+
+    #report-name-is-equal
+    expense_filter = ExpenseFilter(
+        condition = 'report_title',
+        operator = 'iexact',
+        values = ['#17:  Dec 2022'],
+        rank = '1'
+    )
+    constructed_expense_filter = construct_expense_filter(expense_filter)
+
+    filter1 = {'report_title__iexact':'#17:  Dec 2022'}
+    respone = Q(**filter1)
+
+    assert constructed_expense_filter == respone
+
+    #report-name-contains
+    expense_filter = ExpenseFilter(
+        condition = 'report_title',
+        operator = 'icontains',
+        values = ['Dec 2022'],
+        rank = '1'
+    )
+    constructed_expense_filter = construct_expense_filter(expense_filter)
+
+    filter1 = {'report_title__icontains':'Dec 2022'}
+    respone = Q(**filter1)
+
+    assert constructed_expense_filter == respone
+
+    #spent-at-is-before
+    expense_filter = ExpenseFilter(
+        condition = 'spent_at',
+        operator = 'lt',
+        values = ['2020-04-20 23:59:59+00'],
+        rank = '1'
+    )
+    constructed_expense_filter = construct_expense_filter(expense_filter)
+
+    filter1 = {'spent_at__lt':'2020-04-20 23:59:59+00'}
+    respone = Q(**filter1)
+
+    assert constructed_expense_filter == respone
+
+    #spent-at-is-on-or-before
+    expense_filter = ExpenseFilter(
+        condition = 'spent_at',
+        operator = 'lte',
+        values = ['2020-04-20 23:59:59+00'],
+        rank = '1'
+    )
+    constructed_expense_filter = construct_expense_filter(expense_filter)
+
+    filter1 = {'spent_at__lte':'2020-04-20 23:59:59+00'}
+    respone = Q(**filter1)
+
+    assert constructed_expense_filter == respone
+
+    #custom-properties-number-is-equal
+    expense_filter = ExpenseFilter(
+        condition = 'Gon Number',
+        operator = 'in',
+        values = [102,108],
+        rank = '1',
+        is_custom = True
+    )
+    constructed_expense_filter = construct_expense_filter(expense_filter)
+
+    filter1 = {'custom_properties__Gon Number__in':[102, 108]}
+    respone = Q(**filter1)
+
+    assert constructed_expense_filter == respone
+
+    #custom-properties-number-is-not-empty
+    expense_filter = ExpenseFilter(
+        condition = 'Gon Number',
+        operator = 'isnull',
+        values = ['False'],
+        rank = '1',
+        is_custom = True
+    )
+    constructed_expense_filter = construct_expense_filter(expense_filter)
+
+    filter1 = {'custom_properties__Gon Number__exact': None}
+    respone = ~Q(**filter1)
+
+    assert constructed_expense_filter == respone
+
+    #custom-properties-number-is--empty
+    expense_filter = ExpenseFilter(
+        condition = 'Gon Number',
+        operator = 'isnull',
+        values = ['True'],
+        rank = '1',
+        is_custom = True
+    )
+    constructed_expense_filter = construct_expense_filter(expense_filter)
+
+    filter1 = {'custom_properties__Gon Number__isnull': True}
+    filter2 = {'custom_properties__Gon Number__exact': None}
+    respone = Q(**filter1) | Q(**filter2)
+
+    assert constructed_expense_filter == respone
+
+    #custom-properties-text-is-equal
+    expense_filter = ExpenseFilter(
+        condition = 'Killua Text',
+        operator = 'in',
+        values = ['hunter', 'naruto', 'sasuske'],
+        rank = '1',
+        is_custom = True
+    )
+    constructed_expense_filter = construct_expense_filter(expense_filter)
+
+    filter1 = {'custom_properties__Killua Text__in':['hunter', 'naruto', 'sasuske']}
+    respone = Q(**filter1)
+
+    assert constructed_expense_filter == respone
+
+    #custom-properties-text-is-not-empty
+    expense_filter = ExpenseFilter(
+        condition = 'Killua Text',
+        operator = 'isnull',
+        values = ['False'],
+        rank = '1',
+        is_custom = True
+    )
+    constructed_expense_filter = construct_expense_filter(expense_filter)
+
+    filter1 = {'custom_properties__Killua Text__exact': None}
+    respone = ~Q(**filter1)
+
+    assert constructed_expense_filter == respone
+
+    #custom-properties-text-is--empty
+    expense_filter = ExpenseFilter(
+        condition = 'Killua Text',
+        operator = 'isnull',
+        values = ['True'],
+        rank = '1',
+        is_custom = True
+    )
+    constructed_expense_filter = construct_expense_filter(expense_filter)
+
+    filter1 = {'custom_properties__Killua Text__isnull': True}
+    filter2 = {'custom_properties__Killua Text__exact': None}
+    respone = Q(**filter1) | Q(**filter2)
+
+    assert constructed_expense_filter == respone
+
+    #custom-properties-select-is-equal
+    expense_filter = ExpenseFilter(
+        condition = 'Kratos',
+        operator = 'in',
+        values = ['BOOK', 'Dev-D'],
+        rank = '1',
+        is_custom = True
+    )
+    constructed_expense_filter = construct_expense_filter(expense_filter)
+
+    filter1 = {'custom_properties__Kratos__in':['BOOK', 'Dev-D']}
+    respone = Q(**filter1)
+
+    assert constructed_expense_filter == respone
+
+    #custom-properties-select-is-not-empty
+    expense_filter = ExpenseFilter(
+        condition = 'Kratos',
+        operator = 'isnull',
+        values = ['False'],
+        rank = '1',
+        is_custom = True
+    )
+    constructed_expense_filter = construct_expense_filter(expense_filter)
+
+    filter1 = {'custom_properties__Kratos__exact': None}
+    respone = ~Q(**filter1)
+
+    assert constructed_expense_filter == respone
+
+    #custom-properties-select-is--empty
+    expense_filter = ExpenseFilter(
+        condition = 'Kratos',
+        operator = 'isnull',
+        values = ['True'],
+        rank = '1',
+        is_custom = True
+    )
+    constructed_expense_filter = construct_expense_filter(expense_filter)
+
+    filter1 = {'custom_properties__Kratos__isnull': True}
+    filter2 = {'custom_properties__Kratos__exact': None}
+    respone = Q(**filter1) | Q(**filter2)
+
+    assert constructed_expense_filter == respone
+
+    # #multiple cases
+    # expense_filter1 = ExpenseFilter(
+    #     condition = 'employee_email',
+    #     operator = 'in',
+    #     values = ['killua.z@fyle.in', 'naruto.u@fyle.in'],
+    #     rank = '1'
+    # )
+    # constructed_expense_filter1 = construct_expense_filter(expense_filter1)
+
+    # expense_filter2 = ExpenseFilter(
+    #     condition = 'report_id',
+    #     operator = 'in',
+    #     values = ['ajdnwjnadw', 'ajdnwjnlol'],
+    #     rank = '1'
+    # )
+
+    # constructed_expense_filter2 = construct_expense_filter(expense_filter2)
+
+    # filter1 = {'employee_email__in':['killua.z@fyle.in', 'naruto.u@fyle.in']}
+    # respone = Q(**filter1)
+
+    # assert constructed_expense_filter == respone
+
+    
+
+    # filter1 = {'report_id__in':['ajdnwjnadw', 'ajdnwjnlol']}
+    # respone = Q(**filter1)
+
+    # assert constructed_expense_filter == respone
+
+    
