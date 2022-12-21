@@ -214,7 +214,8 @@ class NetSuiteConnector:
                     'attribute_type': attribute_type,
                     'display_name': custom_lists['name'],
                     'value': field['value'],
-                    'destination_id': str(field['valueId'])
+                    'destination_id': str(field['valueId']),
+                    'active': not field['isInactive']
                 }
             )
 
@@ -234,7 +235,8 @@ class NetSuiteConnector:
                     'attribute_type': attribute_type,
                     'display_name': custom_records[0]['recType']['name'],
                     'value': field['name'],
-                    'destination_id': field['internalId']
+                    'destination_id': field['internalId'],
+                    'active': not field['isInactive']
                 }
             )
 
@@ -250,7 +252,8 @@ class NetSuiteConnector:
                     'attribute_type': attribute_type,
                     'display_name': custom_records[0]['recType']['name'],
                     'value': field['name'],
-                    'destination_id': field['internalId']
+                    'destination_id': field['internalId'],
+                    'active': not field['isInactive']
                 }
             )
 
