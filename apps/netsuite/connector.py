@@ -221,7 +221,7 @@ class NetSuiteConnector:
                     'display_name': custom_records[0]['recType']['name'],
                     'value': field['name'],
                     'destination_id': field['internalId'],
-                    'active': not field['isInactive'] if field['isInactive'] else False
+                    'active': not field['isInactive']
                 }
             )
 
