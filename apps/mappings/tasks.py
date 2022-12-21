@@ -37,6 +37,61 @@ def remove_duplicates(ns_attributes: List[DestinationAttribute]):
     return unique_attributes
 
 
+def disable_expense_attributes(source_field, destination_field, workspace_id):
+
+    # Get All the inactive destination attribute ids
+    filter = {
+        'mapping__isnull': False,
+        'mapping__destination_type': destination_field
+    }
+
+    if source_field == 'CATEGORY':
+        if destination_field == 'EXPENSE_CATEGORY':
+            filter = {
+                'destination_expense_head__isnull': False
+            }
+        elif destination_field == 'ACCOUNT':
+            filter = {
+                'destination_account__isnull': False
+            }
+
+    destination_attribute_ids = DestinationAttribute.objects.filter(
+        attribute_type=destination_field,
+        active=False,
+        workspace_id=workspace_id,
+        **filter
+    ).values_list('id', flat=True)
+
+    # Get all the expense attributes that are mapped to these destination_attribute_ids
+    filter = {
+        'mapping__destination_id__in': destination_attribute_ids
+    }
+
+    if source_field == 'CATEGORY':
+        if destination_field == 'EXPENSE_CATEGORY':
+            filter = {
+                'categorymapping__destination_expense_head_id__in': destination_attribute_ids
+            }
+        elif destination_field == 'ACCOUNT':
+            filter = {
+                'categorymapping__destination_account_id__in': destination_attribute_ids
+            }
+
+    expense_attributes_to_disable = ExpenseAttribute.objects.filter(
+        attribute_type=source_field,
+        active=True,
+        **filter
+    )
+
+    # Update active column to false for expense attributes to be disabled
+    expense_attributes_ids = []
+    if expense_attributes_to_disable :
+        expense_attributes_ids = [expense_attribute.id for expense_attribute in expense_attributes_to_disable]
+        expense_attributes_to_disable.update(active=False)
+
+    return expense_attributes_ids
+
+
 def get_all_categories_from_fyle(platform: PlatformConnector):
 
     categories_generator = platform.connection.v1beta.admin.categories.list_all(query_params={
@@ -58,7 +113,7 @@ def get_all_categories_from_fyle(platform: PlatformConnector):
     return category_name_map
 
 
-def create_fyle_categories_payload(categories: List[DestinationAttribute], category_map: Dict):
+def create_fyle_categories_payload(categories: List[DestinationAttribute], category_map: Dict, updated_categories: List[ExpenseAttribute] = [], destination_type: str = None):
     """
     Create Fyle Categories Payload from NetSuite Customer / Categories
     :param workspace_id: Workspace integer id
@@ -67,22 +122,28 @@ def create_fyle_categories_payload(categories: List[DestinationAttribute], categ
     """
     payload = []
 
-    for category in categories:
-        if category.value.lower() not in category_map:
+    if updated_categories:
+        for category in updated_categories:
+            if destination_type == 'EXPENSE_CATEGORY':
+                destination_id_of_category = category.categorymapping.destination_expense_head.destination_id
+            elif destination_type == 'ACCOUNT':
+                destination_id_of_category = category.categorymapping.destination_account.destination_id
             payload.append({
+                'id': category.source_id,
                 'name': category.value,
-                'code': category.destination_id,
-                'is_enabled': True if category.active is None else category.active,
+                'code': destination_id_of_category,
+                'is_enabled': category.active,
                 'restricted_project_ids': None
             })
-        else:
-            payload.append({
-                'id': category_map[category.value.lower()]['id'],
-                'name': category.value,
-                'code': category.destination_id,
-                'is_enabled': category_map[category.value.lower()]['is_enabled'],
-                'restricted_project_ids': None
-            })
+    else:
+        for category in categories:
+            if category.value.lower() not in category_map:
+                payload.append({
+                    'name': category.value,
+                    'code': category.destination_id,
+                    'is_enabled': category.active,
+                    'restricted_project_ids': None
+                })
 
     return payload
 
@@ -381,11 +442,24 @@ def auto_create_category_mappings(workspace_id):
         reimbursable_destination_type = 'ACCOUNT'
 
     try:
+
+        fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
+        platform = PlatformConnector(fyle_credentials=fyle_credentials)
+
         fyle_categories = upload_categories_to_fyle(
             workspace_id=workspace_id, reimbursable_expenses_object=reimbursable_expenses_object,
             corporate_credit_card_expenses_object=corporate_credit_card_expenses_object)
 
         create_category_mappings(fyle_categories, reimbursable_destination_type, workspace_id)
+
+        # auto-sync categories and expense accounts
+        category_ids_to_be_changed = disable_expense_attributes('CATEGORY', reimbursable_destination_type, workspace_id)
+        if category_ids_to_be_changed:
+            expense_attributes = ExpenseAttribute.objects.filter(id__in=category_ids_to_be_changed)
+            fyle_payload: List[Dict] = create_fyle_categories_payload(categories=[], category_map={}, updated_categories=expense_attributes, destination_type=reimbursable_destination_type)
+
+            platform.categories.post_bulk(fyle_payload)
+            platform.categories.sync()
 
         if reimbursable_expenses_object == 'EXPENSE REPORT' and \
             corporate_credit_card_expenses_object in ('BILL', 'JOURNAL ENTRY', 'CREDIT CARD CHARGE'):
@@ -448,41 +522,6 @@ def create_fyle_tax_group_payload(netsuite_attributes: List[DestinationAttribute
             )
     return fyle_tax_group_payload
 
-def disable_or_enable_expense_attributes(source_field, destination_field, workspace_id):
-
-    # Get All the inactive destination attribute ids
-    destination_attribute_ids = DestinationAttribute.objects.filter(
-		attribute_type=destination_field, 
-		mapping__isnull=False,
-		mapping__destination_type=destination_field,
-		active=False,
-		workspace_id=workspace_id
-	).values_list('id', flat=True)
-
-    # Get all the expense attributes that are mapped to these destination_attribute_ids
-    expense_attributes_to_disable = ExpenseAttribute.objects.filter(
-		attribute_type=source_field, 
-		mapping__destination_id__in=destination_attribute_ids,
-		active=True
-	)
-
-    expense_attributes_to_enable = ExpenseAttribute.objects.filter(
-        ~Q(mapping__destination_id__in=destination_attribute_ids),
-        mapping__isnull=False,
-        mapping__source_type=source_field,
-        attribute_type=source_field,
-        active=False,
-        workspace_id=workspace_id
-	)
-
-    # if there are any expense attributes present, set active to False
-    if expense_attributes_to_disable or expense_attributes_to_enable:
-        expense_attributes_ids = [expense_attribute.id for expense_attribute in expense_attributes_to_disable]
-        expense_attributes_ids = expense_attributes_ids + [expense_attribute.id for expense_attribute in expense_attributes_to_enable]
-        expense_attributes_to_disable.update(active=False)
-        expense_attributes_to_enable.update(active=True)
-        return expense_attributes_ids
-
 def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_project_names: list,
                                      updated_projects: List[ExpenseAttribute] = None):
     """
@@ -544,7 +583,7 @@ def post_projects_in_batches(platform: PlatformConnector, workspace_id: int, des
         Mapping.bulk_create_mappings(paginated_ns_attributes, 'PROJECT', destination_field, workspace_id)
     
     if destination_field == 'PROJECT':
-        project_ids_to_be_changed = disable_or_enable_expense_attributes('PROJECT', 'PROJECT', workspace_id)
+        project_ids_to_be_changed = disable_expense_attributes('PROJECT', 'PROJECT', workspace_id)
         if project_ids_to_be_changed:
             expense_attributes = ExpenseAttribute.objects.filter(id__in=project_ids_to_be_changed)
             fyle_payload: List[Dict] = create_fyle_projects_payload(projects=[], existing_project_names=[], updated_projects=expense_attributes)

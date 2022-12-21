@@ -2666,7 +2666,7 @@ data = {
             'homePhone': None,
             'mobilePhone': None,
             'department': {
-                'name': 'Sales : Team',
+                'name': 'Engineering : sample',
                 'internalId': '2',
                 'externalId': None,
                 'type': None
@@ -2833,7 +2833,7 @@ data = {
                         "value": True,
                         "internalId": "4691",
                         "scriptId": "custentityallow_fyle_access",
-                    },
+                    }
                 ]
             },
             'internalId': '-5',
@@ -2861,8 +2861,8 @@ data = {
             'homePhone': None,
             'mobilePhone': None,
             'department': {
-                'name': 'Sales',
-                'internalId': '2',
+                'name': 'Sample',
+                'internalId': '3',
                 'externalId': None,
                 'type': None
             },
@@ -2988,6 +2988,11 @@ data = {
                         'value': False,
                         'internalId': '4613',
                         'scriptId': 'custentity_restrictexpensify'
+                    },
+                    {
+                        "value": True,
+                        "internalId": "4691",
+                        "scriptId": "custentityallow_fyle_access",
                     }
                 ]
             },
@@ -3143,6 +3148,11 @@ data = {
                         'value': False,
                         'internalId': '4613',
                         'scriptId': 'custentity_restrictexpensify'
+                    },
+                    {
+                        "value": True,
+                        "internalId": "4691",
+                        "scriptId": "custentityallow_fyle_access",
                     }
                 ]
             },
@@ -3171,7 +3181,7 @@ data = {
             'homePhone': None,
             'mobilePhone': None,
             'department': {
-                'name': 'Sales',
+                'name': 'Samp : trip',
                 'internalId': '2',
                 'externalId': None,
                 'type': None
@@ -3308,6 +3318,11 @@ data = {
                         'value': False,
                         'internalId': '4613',
                         'scriptId': 'custentity_restrictexpensify'
+                    },
+                    {
+                        "value": True,
+                        "internalId": "4691",
+                        "scriptId": "custentityallow_fyle_access",
                     }
                 ]
             },
@@ -3336,7 +3351,7 @@ data = {
             'homePhone': None,
             'mobilePhone': None,
             'department': {
-                'name': 'Sales',
+                'name': 'Samp : Trip',
                 'internalId': '2',
                 'externalId': None,
                 'type': None
@@ -3473,6 +3488,11 @@ data = {
                         'value': False,
                         'internalId': '4613',
                         'scriptId': 'custentity_restrictexpensify'
+                    },
+                    {
+                        "value": True,
+                        "internalId": "4691",
+                        "scriptId": "custentityallow_fyle_access",
                     }
                 ]
             },
@@ -3492,7 +3512,7 @@ data = {
             'fax': None,
             'email': 'scruz@ramsey.com',
             'defaultAddress': 'Sam R Cruz<br>1085 Lewis Ave<br>San Jose CA US',
-            'isInactive': False,
+            'isInactive': True,
             'phoneticName': None,
             'lastModifiedDate': datetime(2019, 3, 29, 3, 39, 1, tzinfo=timezone.utc),
             'dateCreated': datetime(2017, 9, 25, 0, 0, tzinfo=timezone.utc),
@@ -3638,6 +3658,11 @@ data = {
                         'value': False,
                         'internalId': '4613',
                         'scriptId': 'custentity_restrictexpensify'
+                    },
+                    {
+                        "value": True,
+                        "internalId": "4691",
+                        "scriptId": "custentityallow_fyle_access",
                     }
                 ]
             },
@@ -6097,12 +6122,12 @@ data = {
                 "display_name": "Sales",
                 "doc_url": "HU61HYSM2E",
                 "id": "deptdExbJZaDqD",
-                "is_enabled": True,
+                "is_enabled": False,
                 "org_id": "orNoatdUnm1w",
                 "sub_department": "Purchasing",
                 "updated_at": "2020-09-02T08:06:17.063568+00:00"
-                },
-                {
+            },
+            {
                 "code": "522EDE7DBG",
                 "created_at": "2020-09-02T08:06:15.063568+00:00",
                 "department_head_user_ids": [
