@@ -30,7 +30,7 @@ def get_filtered_mapping(
 
     if source_id:
         filters['source__source_id'] = source_id
-    else:
+    elif source_value:
         filters['source__value'] = source_value
 
     return Mapping.objects.filter(**filters).first()
