@@ -776,7 +776,7 @@ def test_post_merchants(db, mocker):
     fyle_credentials = FyleCredential.objects.all()
     fyle_credentials = FyleCredential.objects.get(workspace_id=49) 
     fyle_connection = PlatformConnector(fyle_credentials)
-    post_merchants(fyle_connection, 49, False)
+    post_merchants(fyle_connection, 49)
 
     expense_attribute = ExpenseAttribute.objects.filter(attribute_type='MERCHANT', workspace_id=49).count()
     assert expense_attribute == 12
