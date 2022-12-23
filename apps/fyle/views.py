@@ -12,9 +12,9 @@ from apps.workspaces.models import FyleCredential, Workspace
 
 from .tasks import schedule_expense_group_creation
 from .helpers import check_interval_and_sync_dimension, sync_dimensions
-from .models import Expense, ExpenseGroup, ExpenseGroupSettings
+from .models import Expense, ExpenseGroup, ExpenseGroupSettings, ExpenseFilter
 from .serializers import ExpenseGroupSerializer, ExpenseSerializer, ExpenseFieldSerializer, \
-    ExpenseGroupSettingsSerializer
+    ExpenseGroupSettingsSerializer, ExpenseFilterSerializer
 
 
 class ExpenseGroupView(generics.ListCreateAPIView):
@@ -251,6 +251,32 @@ class RefreshFyleDimensionView(generics.ListCreateAPIView):
             return Response(
                 data={
                     'message': 'Error in refreshing Dimensions'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class ExpenseFilterView(generics.ListCreateAPIView):
+    """
+    Expense Filter view
+    """
+    serializer_class = ExpenseFilterSerializer
+
+    def get(self, request, *args, **kwargs):
+        """
+        Get Expense filter
+        """
+        try:
+            expense_filters = ExpenseFilter.objects.filter(workspace_id=kwargs['workspace_id']).order_by('-rank')
+            return Response(
+                data=ExpenseFilterSerializer(expense_filters, many=True).data,
+                status=status.HTTP_200_OK
+            )
+
+        except ExpenseFilter.DoesNotExist:
+            return Response(
+                data={
+                    'message': 'Expense filter not found'
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )

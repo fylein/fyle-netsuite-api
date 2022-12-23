@@ -768,7 +768,7 @@ CREATE TABLE public.expense_filters (
     condition character varying(255) NOT NULL,
     operator character varying(255) NOT NULL,
     "values" character varying(255)[],
-    rank character varying(255) NOT NULL,
+    rank integer NOT NULL,
     join_by character varying(255),
     is_custom boolean NOT NULL,
     created_at timestamp with time zone NOT NULL,
@@ -993,8 +993,8 @@ CREATE TABLE public.expenses (
     project_id character varying(255),
     file_ids character varying(255)[],
     corporate_card_id character varying(255),
-    report_title text,
-    is_skipped boolean
+    is_skipped boolean,
+    report_title text
 );
 
 
@@ -2337,10 +2337,10 @@ COPY public.auth_permission (id, name, content_type_id, codename) FROM stdin;
 162	Can change Queued task	41	change_ormq
 163	Can delete Queued task	41	delete_ormq
 164	Can view Queued task	41	view_ormq
-165	Can add expense filters	42	add_expensefilters
-166	Can change expense filters	42	change_expensefilters
-167	Can delete expense filters	42	delete_expensefilters
-168	Can view expense filters	42	view_expensefilters
+165	Can add expense filter	42	add_expensefilter
+166	Can change expense filter	42	change_expensefilter
+167	Can delete expense filter	42	delete_expensefilter
+168	Can view expense filter	42	view_expensefilter
 \.
 
 
@@ -2442,7 +2442,7 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 17	EXPENSE_CATEGORY	Expense Category	Courier	10	2021-11-15 08:55:49.059036+00	2021-11-15 08:55:49.059046+00	1	\N	{"account_name": "6010 Advertising", "account_internal_id": "65"}	f
 18	EXPENSE_CATEGORY	Expense Category	Entertainment	11	2021-11-15 08:55:49.059081+00	2021-11-15 08:55:49.05909+00	1	\N	{"account_name": "6010 Advertising", "account_internal_id": "65"}	f
 19	EXPENSE_CATEGORY	Expense Category	Flight	12	2021-11-15 08:55:49.059126+00	2021-11-15 08:55:49.059135+00	1	\N	{"account_name": "6010 Advertising", "account_internal_id": "65"}	f
-20	EXPENSE_CATEGORY	Expense Category	Food	13	2021-11-15 08:55:49.059171+00	2021-11-15 08:55:49.05918+00	1	\N	{"account_name": "6010 Advertising", "account_internal_id": "65"}	f
+20	EXPENSE_CATEGORY	Expense Category	Food	13	2021-11-15 08:55:49.059171+00	2021-11-15 08:55:49.05918+00	1	t	{"account_name": "6010 Advertising", "account_internal_id": "65"}	f
 21	EXPENSE_CATEGORY	Expense Category	Fuel	14	2021-11-15 08:55:49.05922+00	2021-11-15 08:55:49.059229+00	1	\N	{"account_name": "6010 Advertising", "account_internal_id": "65"}	f
 22	EXPENSE_CATEGORY	Expense Category	Hotel	15	2021-11-15 08:55:49.059266+00	2021-11-15 08:55:49.059275+00	1	\N	{"account_name": "6010 Advertising", "account_internal_id": "65"}	f
 23	EXPENSE_CATEGORY	Expense Category	Internet	16	2021-11-15 08:55:49.05931+00	2021-11-15 08:55:49.05932+00	1	\N	{"account_name": "6010 Advertising", "account_internal_id": "65"}	f
@@ -2841,7 +2841,7 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 416	ACCOUNT	Account	Salaries & Wages	62	2021-11-15 08:56:05.374471+00	2021-11-15 08:56:05.374479+00	1	\N	\N	f
 417	ACCOUNT	Account	Other Direct Costs	63	2021-11-15 08:56:05.374511+00	2021-11-15 08:56:05.37452+00	1	\N	\N	f
 418	ACCOUNT	Account	Inventory Variance	64	2021-11-15 08:56:05.374551+00	2021-11-15 08:56:05.37456+00	1	\N	\N	f
-419	ACCOUNT	Account	Advertising	65	2021-11-15 08:56:05.374591+00	2021-11-15 08:56:05.374599+00	1	\N	\N	f
+419	ACCOUNT	Account	Advertising	65	2021-11-15 08:56:05.374591+00	2021-11-15 08:56:05.374599+00	1	t	\N	f
 420	ACCOUNT	Account	Amortization Expense	66	2021-11-15 08:56:05.37463+00	2021-11-15 08:56:05.374639+00	1	\N	\N	f
 421	ACCOUNT	Account	Automobile Expense	67	2021-11-15 08:56:05.37467+00	2021-11-15 08:56:05.374679+00	1	\N	\N	f
 422	ACCOUNT	Account	Gas & Oil	68	2021-11-15 08:56:05.374711+00	2021-11-15 08:56:05.374719+00	1	\N	\N	f
@@ -4504,7 +4504,7 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 2079	ACCOUNT	Account	Salaries & Wages	62	2021-11-16 04:17:54.274993+00	2021-11-16 04:17:54.275001+00	2	\N	\N	f
 2080	ACCOUNT	Account	Other Direct Costs	63	2021-11-16 04:17:54.275031+00	2021-11-16 04:17:54.27504+00	2	\N	\N	f
 2081	ACCOUNT	Account	Inventory Variance	64	2021-11-16 04:17:54.275069+00	2021-11-16 04:17:54.275077+00	2	\N	\N	f
-2082	ACCOUNT	Account	Advertising	65	2021-11-16 04:17:54.275105+00	2021-11-16 04:17:54.275113+00	2	\N	\N	f
+2082	ACCOUNT	Account	Advertising	65	2021-11-16 04:17:54.275105+00	2021-11-16 04:17:54.275113+00	2	t	\N	f
 2083	ACCOUNT	Account	Amortization Expense	66	2021-11-16 04:17:54.275142+00	2021-11-16 04:17:54.275149+00	2	\N	\N	f
 2084	ACCOUNT	Account	Automobile Expense	67	2021-11-16 04:17:54.275178+00	2021-11-16 04:17:54.275186+00	2	\N	\N	f
 2085	ACCOUNT	Account	Gas & Oil	68	2021-11-16 04:17:54.275214+00	2021-11-16 04:17:54.275222+00	2	\N	\N	f
@@ -5739,8 +5739,8 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 3314	TAX_ITEM	Tax Item	GST: ashwin_tax_code_1 @2.0%	1033	2021-11-16 04:18:28.22811+00	2021-11-16 04:18:28.228118+00	2	\N	{"tax_rate": 2.0}	f
 3315	TAX_ITEM	Tax Item	GST: ashwin_tax_code_2 @4.0%	1034	2021-11-16 04:18:28.228151+00	2021-11-16 04:18:28.22816+00	2	\N	{"tax_rate": 4.0}	f
 3316	TAX_ITEM	Tax Item	ABN: dfvdfvf @20.0%	1027	2021-11-16 04:18:28.228194+00	2021-11-16 04:18:28.228203+00	2	\N	{"tax_rate": 20.0}	f
-3317	TAX_ITEM	Tax Item	ABN: Nilesh @54.0%	1029	2021-11-16 04:18:28.228235+00	2021-11-16 04:18:28.228244+00	2	\N	{"tax_rate": 54.0}	f
-3318	TAX_ITEM	Tax Item	ABN: Ashwin Tax Group @6.0%	1035	2021-11-16 04:18:28.228277+00	2021-11-16 04:18:28.228286+00	2	\N	{"tax_rate": 6.0}	f
+3317	TAX_ITEM	Tax Item	ABN: Nilesh @54.0%	1029	2021-11-16 04:18:28.228235+00	2021-11-16 04:18:28.228244+00	2	t	{"tax_rate": 54.0}	f
+3318	TAX_ITEM	Tax Item	ABN: Ashwin Tax Group @6.0%	1035	2021-11-16 04:18:28.228277+00	2021-11-16 04:18:28.228286+00	2	f	{"tax_rate": 6.0}	f
 3334	SUBSIDIARY	Subsidiary	Honeycomb Mfg.	1	2021-12-03 11:03:00.706425+00	2021-12-03 11:03:00.706437+00	49	\N	{"country": "_unitedStates"}	f
 3335	SUBSIDIARY	Subsidiary	Honeycomb Holdings Inc.	3	2021-12-03 11:03:00.70645+00	2021-12-03 11:03:00.706453+00	49	\N	{"country": "_unitedStates"}	f
 3336	SUBSIDIARY	Subsidiary	test sub	4	2021-12-03 11:03:00.706465+00	2021-12-03 11:03:00.706468+00	49	\N	{"country": "_unitedStates"}	f
@@ -6174,7 +6174,7 @@ COPY public.destination_attributes (id, attribute_type, display_name, value, des
 3762	ACCOUNT	Account	Purchases	59	2021-12-03 11:04:03.28712+00	2021-12-03 11:04:03.287122+00	49	\N	\N	f
 3763	ACCOUNT	Account	Merchandise	60	2021-12-03 11:04:03.287132+00	2021-12-03 11:04:03.287134+00	49	\N	\N	f
 3767	ACCOUNT	Account	Inventory Variance	64	2021-12-03 11:04:03.287178+00	2021-12-03 11:04:03.28718+00	49	\N	\N	f
-3768	ACCOUNT	Account	Advertising	65	2021-12-03 11:04:03.28719+00	2021-12-03 11:04:03.287192+00	49	\N	\N	f
+3768	ACCOUNT	Account	Advertising	65	2021-12-03 11:04:03.28719+00	2021-12-03 11:04:03.287192+00	49	t	\N	f
 3769	ACCOUNT	Account	Amortization Expense	66	2021-12-03 11:04:03.287201+00	2021-12-03 11:04:03.287203+00	49	\N	\N	f
 3770	ACCOUNT	Account	Automobile Expense	67	2021-12-03 11:04:03.287213+00	2021-12-03 11:04:03.287215+00	49	\N	\N	f
 3771	ACCOUNT	Account	Gas & Oil	68	2021-12-03 11:04:03.287224+00	2021-12-03 11:04:03.287227+00	49	\N	\N	f
@@ -7468,7 +7468,7 @@ COPY public.django_content_type (id, app_label, model) FROM stdin;
 39	django_q	failure
 40	django_q	success
 41	django_q	ormq
-42	fyle	expensefilters
+42	fyle	expensefilter
 \.
 
 
@@ -7619,8 +7619,7 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 140	fyle	0019_expensegroupsettings_ccc_expense_state	2022-12-02 10:24:43.534864+00
 141	fyle	0020_auto_20221201_1147	2022-12-02 10:24:43.547814+00
 142	workspaces	0029_auto_20221202_0620	2022-12-02 10:24:43.568383+00
-143	fyle	0021_auto_20221214_1613	2022-12-15 17:38:29.621333+00
-144	fyle	0022_expense_is_skipped	2022-12-21 06:25:14.223812+00
+143	fyle	0021_auto_20221222_1447	2022-12-22 15:01:00.742292+00
 \.
 
 
@@ -8391,7 +8390,7 @@ COPY public.expense_attributes (id, attribute_type, display_name, value, source_
 697	PROJECT	Project	Emergys	247140	2021-11-15 08:55:55.325106+00	2021-11-15 08:55:55.325115+00	1	\N	\N	f	f
 698	PROJECT	Project	Empire Financial Group	247141	2021-11-15 08:55:55.325149+00	2021-11-15 08:55:55.325157+00	1	\N	\N	f	f
 699	PROJECT	Project	eNable Corp	247929	2021-11-15 08:55:55.325191+00	2021-11-15 08:55:55.325199+00	1	\N	\N	f	f
-700	PROJECT	Project	Engelkemier Catering Management	247142	2021-11-15 08:55:55.325233+00	2021-11-15 08:55:55.325242+00	1	\N	\N	f	f
+700	PROJECT	Project	Engelkemier Catering Management	247142	2021-11-15 08:55:55.325233+00	2021-11-15 08:55:55.325242+00	1	t	\N	f	f
 701	PROJECT	Project	Epling Builders Inc.	247143	2021-11-15 08:55:55.325277+00	2021-11-15 08:55:55.325285+00	1	\N	\N	f	f
 702	PROJECT	Project	Eric Korb	247144	2021-11-15 08:55:55.325584+00	2021-11-15 08:55:55.325595+00	1	\N	\N	f	f
 703	PROJECT	Project	Eric Schmidt	247145	2021-11-15 08:55:55.32563+00	2021-11-15 08:55:55.325639+00	1	\N	\N	f	f
@@ -9381,7 +9380,7 @@ COPY public.expense_attributes (id, attribute_type, display_name, value, source_
 1686	TAX_GROUP	Tax Group	Other 2 Sales Tax: GST @18.0%	tgYw6DkCzssM	2021-11-15 08:55:57.607678+00	2021-11-15 08:55:57.607693+00	1	\N	{"tax_rate": 0.18}	f	f
 1687	TAX_GROUP	Tax Group	Input tax @0%	tgZCQgT9K0Fk	2021-11-15 08:55:57.607761+00	2021-11-15 08:55:57.607777+00	1	\N	{"tax_rate": 0}	f	f
 1688	TAX_GROUP	Tax Group	Nilesh Tax - 10%	tgzVoKWXqWFB	2021-11-15 08:55:57.607848+00	2021-11-15 08:55:57.607866+00	1	\N	{"tax_rate": 0.28}	f	f
-137	CATEGORY	Category	Food	135453	2021-11-15 08:55:50.11381+00	2021-11-15 08:56:50.783693+00	1	\N	\N	f	f
+137	CATEGORY	Category	Food	135453	2021-11-15 08:55:50.11381+00	2021-11-15 08:56:50.783693+00	1	t	\N	f	f
 2033	CATEGORY	Category	WET Paid	147833	2021-11-16 04:17:41.331301+00	2021-11-16 04:17:41.33131+00	2	\N	\N	f	f
 14	EMPLOYEE	Employee	ashwin.t@fyle.in	ouVLOYP8lelN	2021-11-15 08:55:47.715561+00	2021-11-15 10:52:18.122073+00	1	\N	{"user_id": "usqywo0f3nBY", "location": null, "full_name": "Ashwin", "department": null, "department_id": null, "employee_code": null, "department_code": null}	f	f
 1689	EMPLOYEE	Employee	approver1@fyleforintacctnew.in	ouDSYaFs9GGQ	2021-11-16 04:17:40.632268+00	2021-11-16 04:17:40.632309+00	2	\N	{"user_id": "usO4imTV2eeV", "location": null, "full_name": "Ryan Gallagher", "department": null, "department_id": null, "employee_code": null, "department_code": null}	f	f
@@ -10975,11 +10974,11 @@ COPY public.expense_attributes (id, attribute_type, display_name, value, source_
 3306	TAX_GROUP	Tax Group	GST: EXPS-AU @0.00%	tgzMx4TnO7nu	2021-11-16 04:17:43.944283+00	2021-11-16 04:17:43.944291+00	2	\N	{"tax_rate": 0}	f	f
 3262	TAX_GROUP	Tax Group	GST: ITS-AU @0.0%	tg1PFDyMJsPf	2021-11-16 04:17:43.9424+00	2021-11-16 04:17:43.942409+00	2	\N	{"tax_rate": 0.0}	t	f
 3263	TAX_GROUP	Tax Group	GST: UNDEF-AU @0.0%	tg1vHNhXICHs	2021-11-16 04:17:43.942445+00	2021-11-16 04:17:43.942453+00	2	\N	{"tax_rate": 0.0}	t	f
-3264	TAX_GROUP	Tax Group	ABN: Ashwin Tax Group @6.0%	tg31j9m4PoEO	2021-11-16 04:17:43.942489+00	2021-11-16 04:17:43.942497+00	2	\N	{"tax_rate": 0.06}	t	f
+3264	TAX_GROUP	Tax Group	ABN: Ashwin Tax Group @6.0%	tg31j9m4PoEO	2021-11-16 04:17:43.942489+00	2021-11-16 04:17:43.942497+00	2	t	{"tax_rate": 0.06}	t	f
 3265	TAX_GROUP	Tax Group	GST: NCT-AU @10.0%	tg4x3Vf8Fi2x	2021-11-16 04:17:43.942534+00	2021-11-16 04:17:43.942543+00	2	\N	{"tax_rate": 0.1}	t	f
 3267	TAX_GROUP	Tax Group	GST: ADJ-AU @0.0%	tg7pzvTGqhhe	2021-11-16 04:17:43.942622+00	2021-11-16 04:17:43.942631+00	2	\N	{"tax_rate": 0.0}	t	f
 3268	TAX_GROUP	Tax Group	LCT: LCT-AU @25.0%	tg7SxWyIrNJW	2021-11-16 04:17:43.942666+00	2021-11-16 04:17:43.942675+00	2	\N	{"tax_rate": 0.25}	t	f
-3271	TAX_GROUP	Tax Group	ABN: Nilesh @54.0%	tgAiTHhCy7J3	2021-11-16 04:17:43.942805+00	2021-11-16 04:17:43.942812+00	2	\N	{"tax_rate": 0.54}	t	f
+3271	TAX_GROUP	Tax Group	ABN: Nilesh @54.0%	tgAiTHhCy7J3	2021-11-16 04:17:43.942805+00	2021-11-16 04:17:43.942812+00	2	f	{"tax_rate": 0.54}	t	f
 3273	TAX_GROUP	Tax Group	Other 2 Sales Tax: GST @18.0%	tgAXIJkRM2ms	2021-11-16 04:17:43.942887+00	2021-11-16 04:17:43.942895+00	2	\N	{"tax_rate": 0.18}	t	f
 3274	TAX_GROUP	Tax Group	GST: NA-AU @0.0%	tgbDibTQwta5	2021-11-16 04:17:43.942928+00	2021-11-16 04:17:43.942936+00	2	\N	{"tax_rate": 0.0}	t	f
 3276	TAX_GROUP	Tax Group	WET: WET-AU @29.0%	tgDEah9SY8cN	2021-11-16 04:17:43.943011+00	2021-11-16 04:17:43.943019+00	2	\N	{"tax_rate": 0.29}	t	f
@@ -11048,7 +11047,7 @@ COPY public.expense_attributes (id, attribute_type, display_name, value, source_
 3564	CATEGORY	Category	Job Expenses:Job Materials	138866	2021-12-03 11:03:50.975983+00	2021-12-03 11:03:50.975991+00	49	\N	\N	f	f
 3565	CATEGORY	Category	Job Expenses:Job Materials:Decks and Patios	138867	2021-12-03 11:03:50.97603+00	2021-12-03 11:03:50.976038+00	49	\N	\N	f	f
 3566	CATEGORY	Category	Job Expenses:Job Materials:Fountain and Garden Lighting	138868	2021-12-03 11:03:50.976073+00	2021-12-03 11:03:50.976081+00	49	\N	\N	f	f
-3552	CATEGORY	Category	Food	136924	2021-12-03 11:03:50.97543+00	2021-12-03 11:24:52.929944+00	49	\N	\N	f	f
+3552	CATEGORY	Category	Food	136924	2021-12-03 11:03:50.97543+00	2021-12-03 11:24:52.929944+00	49	t	\N	f	f
 3529	CATEGORY	Category	Accounts Payable	137098	2021-12-03 11:03:50.97423+00	2021-12-03 11:25:15.909572+00	49	\N	\N	f	f
 3568	CATEGORY	Category	Job Expenses:Job Materials:Sprinklers and Drip Systems	138870	2021-12-03 11:03:50.976157+00	2021-12-03 11:03:50.976165+00	49	\N	\N	f	f
 3569	CATEGORY	Category	Job Expenses:Permits	138871	2021-12-03 11:03:50.976199+00	2021-12-03 11:03:50.976207+00	49	\N	\N	f	f
@@ -11238,13 +11237,13 @@ COPY public.expense_reports (id, account_id, entity_id, currency, department_id,
 -- Data for Name: expenses; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.expenses (id, employee_email, category, sub_category, project, expense_id, expense_number, claim_number, amount, currency, foreign_amount, foreign_currency, settlement_id, reimbursable, state, vendor, cost_center, purpose, report_id, spent_at, approved_at, expense_created_at, expense_updated_at, created_at, updated_at, fund_source, custom_properties, verified_at, paid_on_netsuite, billable, org_id, tax_amount, tax_group_id, project_id, file_ids, corporate_card_id, report_title, is_skipped) FROM stdin;
-1	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txjvDntD9ZXR	E/2021/11/T/11	C/2021/11/R/5	50	USD	\N	\N	set6GUp6tcEEp	t	PAYMENT_PROCESSING	\N	Treasury	\N	rpuN3bgphxbK	2021-11-15 00:00:00+00	2021-11-15 00:00:00+00	2021-11-15 10:27:53.649+00	2021-11-15 10:28:46.775+00	2021-11-15 10:29:07.597095+00	2021-11-15 10:29:07.597111+00	PERSONAL	{"Team": "", "Class": "", "Klass": "", "Team 2": "", "Location": "", "Team Copy": "", "Tax Groups": "", "Departments": "", "User Dimension": "", "Location Entity": "", "Operating System": "", "System Operating": "", "User Dimension Copy": ""}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N	\N	f
-2	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txy6folbrG2j	E/2021/11/T/12	C/2021/11/R/6	100	USD	\N	\N	setNVTcPkZ6on	f	PAYMENT_PROCESSING	Ashwin Vendor	\N	\N	rpHLA9Dfp9hN	2021-11-15 00:00:00+00	2021-11-15 00:00:00+00	2021-11-15 13:11:22.304+00	2021-11-15 13:11:58.032+00	2021-11-15 13:12:12.250613+00	2021-11-15 13:12:12.250638+00	CCC	{"Team": "", "Class": "", "Klass": "Klass", "Team 2": "", "Location": "", "Team Copy": "", "Tax Groups": "", "Departments": "", "User Dimension": "", "Location Entity": "", "Operating System": "", "System Operating": "", "User Dimension Copy": ""}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N	\N	f
-3	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txeLau9Rdu4X	E/2021/11/T/1	C/2021/11/R/2	80	USD	\N	\N	setqgvGQnsAya	t	PAYMENT_PROCESSING	\N	\N	\N	rpu5W0LYrk6e	2021-11-16 00:00:00+00	2021-11-16 00:00:00+00	2021-11-16 04:24:18.688+00	2021-11-16 04:25:21.996+00	2021-11-16 04:25:49.174565+00	2021-11-16 04:25:49.174584+00	PERSONAL	{"Klass": "Klass", "Device Type": "", "Fyle Category": ""}	\N	f	\N	oraWFQlEpjbb	4.53	tg31j9m4PoEO	\N	\N	\N	\N	f
-4	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txMLGb6Xy8m8	E/2021/11/T/2	C/2021/11/R/1	100	USD	\N	\N	setqgvGQnsAya	f	PAYMENT_PROCESSING	\N	\N	\N	rprqDvARHUnv	2021-11-16 00:00:00+00	2021-11-16 00:00:00+00	2021-11-16 04:24:38.141+00	2021-11-16 04:25:21.996+00	2021-11-16 04:25:49.192351+00	2021-11-16 04:25:49.192367+00	CCC	{"Device Type": "", "Fyle Category": ""}	\N	f	\N	oraWFQlEpjbb	16.67	tgSYjXsBCviv	\N	\N	\N	\N	f
-173	admin1@fyleforintacct.in	Food	Food	Project 2	tx7A5QpesrV5	E/2021/12/T/1	C/2021/12/R/1	120	USD	\N	\N	set15sMvtRIiS	t	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85N	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:30.076+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.685597+00	2021-12-03 11:26:58.685616+00	PERSONAL	{}	\N	f	\N	orHe8CpW2hyN	\N	\N	\N	\N	\N	\N	f
-174	admin1@fyleforintacct.in	Food	Food	Project 2	txcKVVELn1Vl	E/2021/12/T/2	C/2021/12/R/1	130	USD	\N	\N	set15sMvtRIiS	f	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85N	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:49.51+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.702183+00	2021-12-03 11:26:58.702209+00	CCC	{}	\N	f	\N	orHe8CpW2hyN	\N	\N	\N	\N	\N	\N	f
+COPY public.expenses (id, employee_email, category, sub_category, project, expense_id, expense_number, claim_number, amount, currency, foreign_amount, foreign_currency, settlement_id, reimbursable, state, vendor, cost_center, purpose, report_id, spent_at, approved_at, expense_created_at, expense_updated_at, created_at, updated_at, fund_source, custom_properties, verified_at, paid_on_netsuite, billable, org_id, tax_amount, tax_group_id, project_id, file_ids, corporate_card_id, is_skipped, report_title) FROM stdin;
+1	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txjvDntD9ZXR	E/2021/11/T/11	C/2021/11/R/5	50	USD	\N	\N	set6GUp6tcEEp	t	PAYMENT_PROCESSING	\N	Treasury	\N	rpuN3bgphxbK	2021-11-15 00:00:00+00	2021-11-15 00:00:00+00	2021-11-15 10:27:53.649+00	2021-11-15 10:28:46.775+00	2021-11-15 10:29:07.597095+00	2021-11-15 10:29:07.597111+00	PERSONAL	{"Team": "", "Class": "", "Klass": "", "Team 2": "", "Location": "", "Team Copy": "", "Tax Groups": "", "Departments": "", "User Dimension": "", "Location Entity": "", "Operating System": "", "System Operating": "", "User Dimension Copy": ""}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N	f	\N
+2	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txy6folbrG2j	E/2021/11/T/12	C/2021/11/R/6	100	USD	\N	\N	setNVTcPkZ6on	f	PAYMENT_PROCESSING	Ashwin Vendor	\N	\N	rpHLA9Dfp9hN	2021-11-15 00:00:00+00	2021-11-15 00:00:00+00	2021-11-15 13:11:22.304+00	2021-11-15 13:11:58.032+00	2021-11-15 13:12:12.250613+00	2021-11-15 13:12:12.250638+00	CCC	{"Team": "", "Class": "", "Klass": "Klass", "Team 2": "", "Location": "", "Team Copy": "", "Tax Groups": "", "Departments": "", "User Dimension": "", "Location Entity": "", "Operating System": "", "System Operating": "", "User Dimension Copy": ""}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N	f	\N
+3	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txeLau9Rdu4X	E/2021/11/T/1	C/2021/11/R/2	80	USD	\N	\N	setqgvGQnsAya	t	PAYMENT_PROCESSING	\N	\N	\N	rpu5W0LYrk6e	2021-11-16 00:00:00+00	2021-11-16 00:00:00+00	2021-11-16 04:24:18.688+00	2021-11-16 04:25:21.996+00	2021-11-16 04:25:49.174565+00	2021-11-16 04:25:49.174584+00	PERSONAL	{"Klass": "Klass", "Device Type": "", "Fyle Category": ""}	\N	f	\N	oraWFQlEpjbb	4.53	tg31j9m4PoEO	\N	\N	\N	f	\N
+4	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txMLGb6Xy8m8	E/2021/11/T/2	C/2021/11/R/1	100	USD	\N	\N	setqgvGQnsAya	f	PAYMENT_PROCESSING	\N	\N	\N	rprqDvARHUnv	2021-11-16 00:00:00+00	2021-11-16 00:00:00+00	2021-11-16 04:24:38.141+00	2021-11-16 04:25:21.996+00	2021-11-16 04:25:49.192351+00	2021-11-16 04:25:49.192367+00	CCC	{"Device Type": "", "Fyle Category": ""}	\N	f	\N	oraWFQlEpjbb	16.67	tgSYjXsBCviv	\N	\N	\N	f	\N
+173	admin1@fyleforintacct.in	Food	Food	Project 2	tx7A5QpesrV5	E/2021/12/T/1	C/2021/12/R/1	120	USD	\N	\N	set15sMvtRIiS	t	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85N	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:30.076+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.685597+00	2021-12-03 11:26:58.685616+00	PERSONAL	{}	\N	f	\N	orHe8CpW2hyN	\N	\N	\N	\N	\N	f	\N
+174	admin1@fyleforintacct.in	Food	Food	Project 2	txcKVVELn1Vl	E/2021/12/T/2	C/2021/12/R/1	130	USD	\N	\N	set15sMvtRIiS	f	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85N	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:49.51+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.702183+00	2021-12-03 11:26:58.702209+00	CCC	{}	\N	f	\N	orHe8CpW2hyN	\N	\N	\N	\N	\N	f	\N
 \.
 
 
@@ -11289,7 +11288,7 @@ COPY public.journal_entry_lineitems (id, debit_account_id, account_id, departmen
 
 COPY public.mapping_settings (id, source_field, destination_field, created_at, updated_at, workspace_id, import_to_fyle, is_custom, source_placeholder) FROM stdin;
 1	TAX_GROUP	TAX_ITEM	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	2	f	f	\N
-5	PROJECT	PROJECT	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	1	f	f	\N
+5	PROJECT	PROJECT	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	1	t	f	\N
 6	COST_CENTER	DEPARTMENT	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	1	t	f	\N
 10	DUMMY	ASHWINTEST1	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	49	t	t	\N
 30	CORPORATE_CARD	CREDIT_CARD_ACCOUNT	2022-05-10 11:54:10.731264+00	2022-05-10 11:54:10.731264+00	49	t	f	\N
@@ -11490,7 +11489,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 42, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 144, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 143, true);
 
 
 --

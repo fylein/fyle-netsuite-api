@@ -187,7 +187,6 @@ def sync_dimensions(fyle_credentials: FyleCredential, workspace_id: int) -> None
     platform.import_fyle_dimensions(import_taxes=True)
    
 
-
 def construct_expense_filter(expense_filter:ExpenseFilter):
     constructed_expense_filter = {}
     if expense_filter.is_custom and expense_filter.operator != 'isnull':

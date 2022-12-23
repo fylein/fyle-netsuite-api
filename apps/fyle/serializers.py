@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from fyle_accounting_mappings.models import ExpenseAttribute
 
-from .models import Expense, ExpenseGroup, ExpenseGroupSettings
+from .models import Expense, ExpenseFilter, ExpenseGroup, ExpenseGroupSettings
 
 
 class ExpenseGroupSerializer(serializers.ModelSerializer):
@@ -39,3 +39,17 @@ class ExpenseFieldSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExpenseAttribute
         fields = ['attribute_type', 'display_name']
+
+
+class ExpenseFilterSerializer(serializers.ModelSerializer):
+    """
+    Expense Filter Serializer
+    """
+    class Meta:
+        model = ExpenseFilter
+        fields = '__all__'
+        read_only_fields = ('id', 'workspace')
+
+    def create(self, validated_data):
+        workspace_id = self.context['request'].parser_context.get('kwargs').get('workspace_id')
+        return

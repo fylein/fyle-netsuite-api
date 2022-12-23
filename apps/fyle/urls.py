@@ -4,7 +4,7 @@ from django.urls import path
 
 from .views import ExpenseGroupView, ExpenseGroupByIdView, ExpenseGroupScheduleView, FyleFieldsView, ExpenseView,\
     ExpenseAttributesView, ExpenseGroupSettingsView, SyncFyleDimensionView, RefreshFyleDimensionView,\
-    ExpenseGroupCountView
+    ExpenseGroupCountView, ExpenseFilterView
 
 expense_groups_paths = [
     path('expense_groups/', ExpenseGroupView.as_view(), name='expense-groups'),
@@ -22,7 +22,8 @@ fyle_dimension_paths = [
 
 other_paths = [
     path('expense_attributes/', ExpenseAttributesView.as_view(), name='expense-attributes'),
-    path('fyle_fields/', FyleFieldsView.as_view(), name='fyle-fields')
+    path('fyle_fields/', FyleFieldsView.as_view(), name='fyle-fields'),
+    path('expense_filters/', ExpenseFilterView.as_view(), name='expense-filters')
 ]
 
 urlpatterns = list(itertools.chain(expense_groups_paths, fyle_dimension_paths, other_paths))
