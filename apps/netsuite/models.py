@@ -189,11 +189,11 @@ def get_custom_segments(expense_group: ExpenseGroup, lineitem: Expense):
                     workspace_id=expense_group.workspace_id
                 ).first()
                 source_value = lineitem.custom_properties.get(attribute.display_name, None)
-            
+
             mapping: Mapping = get_filtered_mapping(
                setting.source_field, setting.destination_field, expense_group.workspace_id, source_value, source_id
             )
-            
+
             if mapping:
                 # trim -CS from custom segment name
                 name = setting.destination_field.split('-')[0] if '-CS' in setting.destination_field else setting.destination_field
