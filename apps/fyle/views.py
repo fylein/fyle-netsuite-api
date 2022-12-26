@@ -262,21 +262,6 @@ class ExpenseFilterView(generics.ListCreateAPIView):
     """
     serializer_class = ExpenseFilterSerializer
 
-    def get(self, request, *args, **kwargs):
-        """
-        Get Expense filter
-        """
-        try:
-            expense_filters = ExpenseFilter.objects.filter(workspace_id=kwargs['workspace_id']).order_by('-rank')
-            return Response(
-                data=ExpenseFilterSerializer(expense_filters, many=True).data,
-                status=status.HTTP_200_OK
-            )
-
-        except ExpenseFilter.DoesNotExist:
-            return Response(
-                data={
-                    'message': 'Expense filter not found'
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
+    def get_queryset(self):
+        queryset = ExpenseFilter.objects.filter(workspace_id=self.kwargs['workspace_id']).order_by('rank')
+        return queryset

@@ -470,13 +470,21 @@ class ExpenseFilter(models.Model):
     """
     id = models.AutoField(primary_key=True)
     condition = models.CharField(max_length=255, help_text='Condition for the filter')
-    operator = models.CharField(max_length=255,choices=EXPENSE_FILTER_OPERATOR, help_text='Operator for the filter')
-    values = ArrayField(base_field=models.CharField(max_length=255),null=True ,help_text='Values for the operator')
+    operator = models.CharField(max_length=255, choices=EXPENSE_FILTER_OPERATOR, help_text='Operator for the filter')
+    values = ArrayField(base_field=models.CharField(max_length=255), null=True, help_text='Values for the operator')
     rank = models.IntegerField(choices=EXPENSE_FILTER_RANK, help_text='Rank for the filter')
-    join_by = models.CharField(max_length=255,null=True,choices=EXPENSE_FILTER_JOIN_BY, help_text='Used to join the filter (AND/OR)')
+    join_by = models.CharField(
+        max_length=255,
+        null=True,
+        choices=EXPENSE_FILTER_JOIN_BY,
+        help_text='Used to join the filter (AND/OR)'
+    )
     is_custom = models.BooleanField(default=False, help_text='Custom Field or not')
     workspace = models.ForeignKey(
-        Workspace, on_delete=models.PROTECT, help_text='To which workspace these filters belongs to', related_name='expense_filters')
+        Workspace, 
+        on_delete=models.PROTECT,
+        help_text='To which workspace these filters belongs to'
+    )
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 

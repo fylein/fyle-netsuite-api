@@ -48,8 +48,15 @@ class ExpenseFilterSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExpenseFilter
         fields = '__all__'
-        read_only_fields = ('id', 'workspace')
+        read_only_fields = ('id', 'workspace', 'created_at', 'updated_at') 
 
     def create(self, validated_data):
         workspace_id = self.context['request'].parser_context.get('kwargs').get('workspace_id')
-        return
+
+        expense_filter, _ = ExpenseFilter.objects.update_or_create(
+            workspace_id=workspace_id,
+            rank=validated_data['rank'],
+            defaults=validated_data
+        )
+
+        return expense_filter
