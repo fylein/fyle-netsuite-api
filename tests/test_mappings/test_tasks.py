@@ -44,8 +44,11 @@ def test_create_fyle_category_payload(mocker, db):
     category_map = get_all_categories_from_fyle(platform=platform)
 
     fyle_category_payload = create_fyle_categories_payload(netsuite_attributes, category_map)
+    assert len(fyle_category_payload) == 98
 
-    assert len(fyle_category_payload) == len(data['fyle_category_payload'])
+    expense_attributes = ExpenseAttribute.objects.filter(workspace_id=1, active=True, attribute_type='CATEGORY')
+    fyle_category_payload = create_fyle_categories_payload([], {}, expense_attributes, 'EXPENSE_CATEGORY')
+    assert len(fyle_category_payload) == 1
 
 
 @pytest.mark.parametrize(
@@ -62,17 +65,37 @@ def test_construct_filter_based_on_destination(test_input, expected):
 
 def test_create_fyle_projects_payload(db):
     existing_project_names = ExpenseAttribute.objects.filter(
-        attribute_type='PROJECT', workspace_id=1).values_list('value', flat=True)
+        attribute_type='PROJECT', workspace_id=2).values_list('value', flat=True)
     
     paginated_ns_attributes = DestinationAttribute.objects.filter(
             attribute_type='PROJECT', workspace_id=2).order_by('value', 'id')
+
+    destination_attributes = DestinationAttribute.objects.get(workspace_id=2, value='Nilesh Pant')
+
+    expense_attributes = ExpenseAttribute.objects.get(workspace_id=2, value=destination_attributes.value)
+    expense_attributes.value = 'sample'
+    expense_attributes.save()
 
     paginated_ns_attributes = remove_duplicates(paginated_ns_attributes)
 
     fyle_payload = create_fyle_projects_payload(
         paginated_ns_attributes, existing_project_names)
+
+    assert fyle_payload[0]['name'] == data['fyle_project_payload'][0]['name']
+
+    expense_attributes.value = 'Nilesh Pant'
+    expense_attributes.save()
+    expense_attributes = ExpenseAttribute.objects.filter(workspace_id=2, value='Nilesh Pant')
+
+    mapping = Mapping.objects.get(source_type='PROJECT')
+    mapping.workspace_id = 2
+    mapping.source = expense_attributes.first()
+    mapping.save()
+
+    fyle_payload = create_fyle_projects_payload(
+        projects=[], existing_project_names=[], updated_projects=expense_attributes)
     
-    assert fyle_payload == data['fyle_project_payload']
+    assert fyle_payload[0]['name'] == data['fyle_project_payload'][0]['name']
 
 
 def test_create_cost_center_payload(db):
@@ -282,21 +305,29 @@ def test_auto_create_category_mappings(db, mocker):
     configuration.reimbursable_expenses_object = 'BILL'
     configuration.save()
 
+    destination_attribute = DestinationAttribute.objects.filter(
+        destination_account__isnull=False,
+        attribute_type='ACCOUNT',
+        workspace_id=49
+	).first()
+
+    destination_attribute.active = False
+    destination_attribute.save()
+
     response = auto_create_category_mappings(workspace_id=49)
 
     mappings_count = CategoryMapping.objects.filter(workspace_id=49).count()
     assert mappings_count == 53
 
-    fyle_credentials = FyleCredential.objects.all()
+    with mock.patch('apps.workspaces.models.FyleCredential.objects.get') as mock_call:
+        mock_call.side_effect = WrongParamsError(msg='wrong parameter error', response="wrong parameter error")
+        response = auto_create_category_mappings(workspace_id=1)
+
     fyle_credentials = FyleCredential.objects.get(workspace_id=1)
     fyle_credentials.delete()
 
     response = auto_create_category_mappings(workspace_id=1)
     assert response == None
-
-    with mock.patch('apps.workspaces.models.FyleCredential.objects.get') as mock_call:
-        mock_call.side_effect = WrongParamsError(msg='wrong parameter error', response="wrong parameter error")
-        response = auto_create_category_mappings(workspace_id=1)
 
 
 def test_auto_create_project_mappings(db, mocker):
@@ -329,15 +360,15 @@ def test_auto_create_project_mappings(db, mocker):
     )
     workspace_id = 1
 
-    expense_attributes_to_enable = ExpenseAttribute.objects.filter(
+    destination_attribute = DestinationAttribute.objects.filter(
         mapping__isnull=False,
-        mapping__source_type='PROJECT',
+        mapping__destination_type='PROJECT',
         attribute_type='PROJECT',
         workspace_id=workspace_id
 	).first()
 
-    expense_attributes_to_enable.active = False
-    expense_attributes_to_enable.save()
+    destination_attribute.active = False
+    destination_attribute.save()
 
     response = auto_create_project_mappings(workspace_id=workspace_id)
     assert response == None
@@ -347,18 +378,18 @@ def test_auto_create_project_mappings(db, mocker):
 
     assert mappings == projects
 
-    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-    fyle_credentials.delete()
-
-    response = auto_create_project_mappings(workspace_id=workspace_id)
-    assert response == None
-
     with mock.patch('apps.netsuite.connector.NetSuiteConnector.sync_projects') as mock_call:
         mock_call.side_effect = WrongParamsError(msg='wrong parameter error', response="wrong parameter error")
         response = auto_create_project_mappings(workspace_id=1)
 
         mock_call.side_effect = Exception()
         response = auto_create_project_mappings(workspace_id=1)
+
+    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+    fyle_credentials.delete()
+
+    response = auto_create_project_mappings(workspace_id=workspace_id)
+    assert response == None
 
 
 def test_auto_create_cost_center_mappings(db, mocker):
@@ -745,7 +776,7 @@ def test_post_merchants(db, mocker):
     fyle_credentials = FyleCredential.objects.all()
     fyle_credentials = FyleCredential.objects.get(workspace_id=49) 
     fyle_connection = PlatformConnector(fyle_credentials)
-    post_merchants(fyle_connection, 49, False)
+    post_merchants(fyle_connection, 49)
 
     expense_attribute = ExpenseAttribute.objects.filter(attribute_type='MERCHANT', workspace_id=49).count()
     assert expense_attribute == 12
