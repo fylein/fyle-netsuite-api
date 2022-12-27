@@ -10,6 +10,7 @@ workspaces_app_paths = [
     path('<int:workspace_id>/configuration/', ConfigurationsView.as_view(), name='workspace-configurations'),
     path('ready/', ReadyView.as_view({'get': 'get'}), name='ready'),
     path('<int:workspace_id>/admins/', WorkspaceAdminsView.as_view({'get': 'get'}), name='admin')
+    path('<int:workspace_id>/setup_e2e_test/', SetupE2ETestView.as_view({'post': 'post'}), name='setup-e2e-test'),
 ]
 
 fyle_connection_api_paths = [
