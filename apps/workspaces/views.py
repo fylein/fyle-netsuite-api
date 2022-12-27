@@ -457,7 +457,7 @@ class WorkspaceAdminsView(viewsets.ViewSet):
                 data=admin_email,
                 status=status.HTTP_200_OK
             )
-            
+
 class SetupE2ETestView(viewsets.ViewSet):
     """
     NetSuite Workspace
@@ -480,8 +480,7 @@ class SetupE2ETestView(viewsets.ViewSet):
                     with connection.cursor() as cursor:
                         cursor.execute('select reset_workspace(%s)', [workspace.id])
 
-                error_message = 'Not e2e test worksoace'
-            return Response(status=status.HTTP_400_BAD_REQUEST, data={'message': error_message})
+            return Response(status=status.HTTP_200_OK, data={'message': {}})
 
         except Exception as error:
             logger.error(error)
