@@ -29,6 +29,7 @@ from .models import Workspace, FyleCredential, NetSuiteCredentials, Configuratio
 from .tasks import schedule_sync
 from .serializers import WorkspaceSerializer, FyleCredentialSerializer, NetSuiteCredentialSerializer, \
     ConfigurationSerializer, WorkspaceScheduleSerializer
+from .permissions import IsAuthenticatedForTest
 
 
 User = get_user_model()
@@ -456,6 +457,7 @@ class WorkspaceAdminsView(viewsets.ViewSet):
                 data=admin_email,
                 status=status.HTTP_200_OK
             )
+            
 class SetupE2ETestView(viewsets.ViewSet):
     """
     NetSuite Workspace
@@ -473,7 +475,7 @@ class SetupE2ETestView(viewsets.ViewSet):
 
             # Filter out prod orgs
             if 'fyle for' in workspace.name.lower():
-                transaction.atomic():
+                with transaction.atomic():
                     # Reset the workspace completely
                     with connection.cursor() as cursor:
                         cursor.execute('select reset_workspace(%s)', [workspace.id])

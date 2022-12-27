@@ -31,3 +31,19 @@ class WorkspacePermissions(permissions.BasePermission):
         else:
             workspace_users = Workspace.objects.filter(pk=workspace_id).values_list('user', flat=True)
             return self.validate_and_cache(workspace_users, user, workspace_id, True)
+
+class IsAuthenticatedForTest(permissions.BasePermission):
+    """
+    Custom auth for preparing a workspace for e2e tests
+    """
+    def has_permission(self, request, view):
+        # Client sends a token in the header, which we decrypt and compare with the Client Secret
+        cipher_suite = Fernet(settings.ENCRYPTION_KEY)
+        try:
+            decrypted_password = cipher_suite.decrypt(request.headers['X-E2E-Tests-Client-ID'].encode('utf-8')).decode('utf-8')
+            if decrypted_password == settings.E2E_TESTS_CLIENT_SECRET:
+                return True
+        except:
+            return False
+
+        return False
