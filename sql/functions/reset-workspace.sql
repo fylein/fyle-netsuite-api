@@ -187,17 +187,17 @@ BEGIN
     GET DIAGNOSTICS rcount = ROW_COUNT;
     RAISE NOTICE 'Deleted % netsuite_credentials', rcount;
 
-    DELETE
-    FROM expense_attributes ea
-    WHERE ea.workspace_id = _workspace_id;
-    GET DIAGNOSTICS rcount = ROW_COUNT;
-    RAISE NOTICE 'Deleted % expense_attributes', rcount;
+    -- DELETE
+    -- FROM expense_attributes ea
+    -- WHERE ea.workspace_id = _workspace_id;
+    -- GET DIAGNOSTICS rcount = ROW_COUNT;
+    -- RAISE NOTICE 'Deleted % expense_attributes', rcount;
 
-    DELETE
-    FROM destination_attributes da
-    WHERE da.workspace_id = _workspace_id;
-    GET DIAGNOSTICS rcount = ROW_COUNT;
-    RAISE NOTICE 'Deleted % destination_attributes', rcount;
+    -- DELETE
+    -- FROM destination_attributes da
+    -- WHERE da.workspace_id = _workspace_id;
+    -- GET DIAGNOSTICS rcount = ROW_COUNT;
+    -- RAISE NOTICE 'Deleted % destination_attributes', rcount;
 
     DELETE
     FROM workspace_schedules wsch
