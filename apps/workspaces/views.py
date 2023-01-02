@@ -29,6 +29,7 @@ from .models import Workspace, FyleCredential, NetSuiteCredentials, Configuratio
 from .tasks import schedule_sync
 from .serializers import WorkspaceSerializer, FyleCredentialSerializer, NetSuiteCredentialSerializer, \
     ConfigurationSerializer, WorkspaceScheduleSerializer
+from .permissions import IsAuthenticatedForTest
 
 
 User = get_user_model()
@@ -456,3 +457,31 @@ class WorkspaceAdminsView(viewsets.ViewSet):
                 data=admin_email,
                 status=status.HTTP_200_OK
             )
+
+class SetupE2ETestView(viewsets.ViewSet):
+    """
+    NetSuite Workspace
+    """
+    authentication_classes = []
+    permission_classes = [IsAuthenticatedForTest]
+
+    def post(self, request, **kwargs):
+        """
+        Setup end to end test for a given workspace
+        """
+        try:
+            workspace = Workspace.objects.get(pk=kwargs['workspace_id'])
+            error_message = 'Something unexpected has happened. Please try again later.'
+
+            # Filter out prod orgs
+            if 'fyle for' in workspace.name.lower():
+                with transaction.atomic():
+                    # Reset the workspace completely
+                    with connection.cursor() as cursor:
+                        cursor.execute('select reset_workspace(%s)', [workspace.id])
+
+            return Response(status=status.HTTP_200_OK, data={'message': {}})
+
+        except Exception as error:
+            logger.error(error)
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={'message': 'Not e2e test workspace'})
