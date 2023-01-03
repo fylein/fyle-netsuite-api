@@ -253,6 +253,10 @@ BEGIN
     -- GET DIAGNOSTICS rcount = ROW_COUNT;
     -- RAISE NOTICE 'Deleted % workspaces', rcount;
 
+    UPDATE workspaces
+    SET last_synced_at = null
+    WHERE id = _workspace_id;
+
 RETURN;
 END
 $$ LANGUAGE plpgsql;
