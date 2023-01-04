@@ -1,6 +1,9 @@
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from rest_framework import permissions
+from django.conf import settings
+
+from cryptography.fernet import Fernet
 
 from apps.workspaces.models import Workspace
 
