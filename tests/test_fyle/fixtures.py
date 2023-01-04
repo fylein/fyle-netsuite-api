@@ -10,6 +10,7 @@ data = {
             'expense_number': 'E/2021/12/T/3',
             'org_id': 'orsO0VW86WLQ',
             'claim_number': 'C/2021/12/R/2',
+            'employee_name': 'ashwin T',
             'amount': 150,
             'tax_amount': 0,
             'tax_group_id': 'tgWdIdEwcKlK',
@@ -38,6 +39,7 @@ data = {
                   'Vehicle Type': '',
                   'Fyle Categories': '',
             },
+            'is_skipped': False
         },
         {
             'id': 'tx6wOnBVaumk',
@@ -58,6 +60,7 @@ data = {
             'foreign_currency': None,
             'report_title': 'report 2',
             'settlement_id': 'set5PSfKaloaC',
+            'employee_name': 'ashwin T',
             'reimbursable': True,
             'billable': False,
             'state': 'PAID',
@@ -77,12 +80,14 @@ data = {
                 'Vehicle Type': '',
                 'Fyle Categories': '',
             },
+            'is_skipped': False
         },
     ],
     "expense_group_expenses": [
         {
             "id": 150,
             "employee_email": "admin1@fylefornt.com",
+            'employee_name': 'ashwin T',
             "category": "Food",
             "sub_category": "Food",
             "project": "Project 9",

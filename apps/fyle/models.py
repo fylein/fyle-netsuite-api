@@ -68,6 +68,7 @@ class Expense(models.Model):
     """
     id = models.AutoField(primary_key=True)
     employee_email = models.EmailField(max_length=255, unique=False, help_text='Email id of the Fyle employee')
+    employee_name = models.CharField(max_length=255, null=True, help_text='Name of the Fyle employee')
     category = models.CharField(max_length=255, null=True, blank=True, help_text='Fyle Expense Category')
     sub_category = models.CharField(max_length=255, null=True, blank=True, help_text='Fyle Expense Sub-Category')
     project = models.CharField(max_length=255, null=True, blank=True, help_text='Project')
@@ -125,6 +126,7 @@ class Expense(models.Model):
                 expense_id=expense['id'],
                 defaults={
                     'employee_email': expense['employee_email'],
+                    'employee_name': expense['employee_name'],
                     'category': expense['category'],
                     'sub_category': expense['sub_category'],
                     'project': expense['project'],

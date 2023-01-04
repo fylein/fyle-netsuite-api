@@ -14,9 +14,9 @@ class ExpenseGroupSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class ExpenseSerializer(serializers.ModelSerializer):
+class ExpenseGroupExpenseSerializer(serializers.ModelSerializer):
     """
-    Expense serializer
+    Expense Group Expense serializer
     """
     class Meta:
         model = Expense
@@ -60,3 +60,12 @@ class ExpenseFilterSerializer(serializers.ModelSerializer):
         )
 
         return expense_filter
+
+
+class ExpenseSerializer(serializers.ModelSerializer):
+    """
+    Expense serializer
+    """
+    class Meta:
+        model = Expense
+        fields = ['created_at', 'expense_number', 'employee_email', 'employee_name', 'fund_source']

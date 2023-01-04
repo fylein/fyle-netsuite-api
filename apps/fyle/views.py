@@ -14,8 +14,10 @@ from .tasks import schedule_expense_group_creation
 from .helpers import check_interval_and_sync_dimension, sync_dimensions
 from .models import Expense, ExpenseGroup, ExpenseGroupSettings, ExpenseFilter
 from .serializers import ExpenseGroupSerializer, ExpenseSerializer, ExpenseFieldSerializer, \
-    ExpenseGroupSettingsSerializer, ExpenseFilterSerializer
+    ExpenseGroupSettingsSerializer, ExpenseFilterSerializer, ExpenseGroupExpenseSerializer
 
+from fyle.platform import Platform
+from fyle_netsuite_api import settings
 
 class ExpenseGroupView(generics.ListCreateAPIView):
     """
@@ -156,9 +158,9 @@ class ExpenseGroupByIdView(generics.RetrieveAPIView):
     queryset = ExpenseGroup.objects.all()
 
 
-class ExpenseView(generics.RetrieveAPIView):
+class ExpenseGroupExpenseView(generics.RetrieveAPIView):
     """
-    Expense view
+    ExpenseGroup Expense view
     """
 
     def get(self, request, *args, **kwargs):
@@ -172,7 +174,7 @@ class ExpenseView(generics.RetrieveAPIView):
             expenses = Expense.objects.filter(
                 id__in=expense_group.expenses.values_list('id', flat=True)).order_by('-updated_at')
             return Response(
-                data=ExpenseSerializer(expenses, many=True).data,
+                data=ExpenseGroupExpenseSerializer(expenses, many=True).data,
                 status=status.HTTP_200_OK
             )
 
@@ -265,3 +267,78 @@ class ExpenseFilterView(generics.ListCreateAPIView):
     def get_queryset(self):
         queryset = ExpenseFilter.objects.filter(workspace_id=self.kwargs['workspace_id']).order_by('rank')
         return queryset
+
+
+class ExpenseView(generics.ListAPIView):
+    """
+    Expense view
+    """
+
+    serializer_class = ExpenseSerializer
+
+    def get_queryset(self):
+        start_date = self.request.query_params.get('start_date', None)
+        end_date = self.request.query_params.get('end_date', None)
+        org_id = Workspace.objects.get(id=self.kwargs['workspace_id']).fyle_org_id
+
+        filters = {
+            'org_id': org_id,
+            'is_skipped': True
+        }
+
+        if start_date and end_date:
+            filters['created_at__range'] = [start_date, end_date]
+
+        queryset = Expense.objects.filter(**filters).values('created_at', 'expense_number', 'employee_email', 'employee_name', 'fund_source').order_by('created_at')
+
+        return queryset
+
+
+class CustomFieldView(generics.RetrieveAPIView):
+    """
+    Custom Field view
+    """
+    def get(self, request, *args, **kwargs):
+        """
+        Get Custom Fields
+        """
+        try:
+            client_id = settings.FYLE_CLIENT_ID
+            client_secret = settings.FYLE_CLIENT_SECRET
+            token_url = settings.FYLE_TOKEN_URI
+            fyle_credentials = FyleCredential.objects.get(workspace_id=self.kwargs['workspace_id'])
+
+            fyle = Platform(
+                server_url="{}/platform/v1beta".format(fyle_credentials.cluster_domain),
+                token_url=token_url,
+                refresh_token=fyle_credentials.refresh_token,
+                client_id=client_id,
+                client_secret=client_secret
+            )
+
+            query_params = {
+                'is_custom':'eq.true',
+                'is_enabled':'eq.true'
+            }
+            custom_fields = fyle.v1beta.admin.expense_fields.get(query_params)['data']
+
+            reponse = []
+            for custom_field in custom_fields:
+                reponse.append({
+                    'field_name': custom_field['field_name'],
+                    'type': custom_field['type']
+                })
+
+            return Response(
+                data=reponse,
+                status=status.HTTP_200_OK
+            )
+
+
+        except Exception as e:
+            return Response(
+                data={
+                    'message': 'Something went wrong'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )

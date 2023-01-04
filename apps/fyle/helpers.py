@@ -11,6 +11,7 @@ from django.db.models import Q
 from apps.fyle.models import ExpenseGroupSettings, ExpenseFilter
 from apps.mappings.models import GeneralMapping
 from apps.workspaces.models import FyleCredential, Workspace
+from typing import List
 
 logger = logging.getLogger(__name__)
 
@@ -185,7 +186,21 @@ def sync_dimensions(fyle_credentials: FyleCredential, workspace_id: int) -> None
     platform = PlatformConnector(fyle_credentials)
 
     platform.import_fyle_dimensions(import_taxes=True)
-   
+
+def construct_expense_filter_query(expense_filters: List[ExpenseFilter]):
+    final_filter = None
+    for expense_filter in expense_filters:
+        constructed_expense_filter = construct_expense_filter(expense_filter)
+        if expense_filter.rank == 1:
+            final_filter = (constructed_expense_filter)
+        elif expense_filter.rank != 1 and join_by == 'AND':
+            final_filter = final_filter & (constructed_expense_filter)
+        elif expense_filter.rank != 1 and join_by == 'OR':
+            final_filter = final_filter | (constructed_expense_filter)
+
+        join_by = expense_filter.join_by
+
+    return final_filter
 
 def construct_expense_filter(expense_filter: ExpenseFilter):
     constructed_expense_filter = {}

@@ -1,8 +1,5 @@
 import json
 from os import path
-from typing import List
-from apps.fyle.models import ExpenseFilter
-from apps.fyle.helpers import construct_expense_filter
 
 def dict_compare_keys(d1, d2, key_path=''):
     """
@@ -37,18 +34,3 @@ def get_response_dict(filename):
     mock_json = open(filepath, 'r').read()
     mock_dict = json.loads(mock_json)
     return mock_dict
-
-def get_multiple_expense_filter_query(expense_filters: List[ExpenseFilter]):
-    final_filter = None
-    for expense_filter in expense_filters:
-        constructed_expense_filter = construct_expense_filter(expense_filter)
-        if expense_filter.rank == 1:
-            final_filter = (constructed_expense_filter)
-        elif expense_filter.rank != 1 and join_by == 'AND':
-            final_filter = final_filter & (constructed_expense_filter)
-        elif expense_filter.rank != 1 and join_by == 'OR':
-            final_filter = final_filter | (constructed_expense_filter)
-
-        join_by = expense_filter.join_by
-
-    return final_filter
