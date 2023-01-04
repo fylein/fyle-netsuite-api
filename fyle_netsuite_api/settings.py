@@ -148,16 +148,17 @@ LOGGING = {
         },
         'fyle_netsuite_api': {
             'handlers': ['debug_logs'],
-            'level': 'ERROR',
+            'level': 'INFO',
             'propagate': False
         },
         'apps': {
             'handlers': ['debug_logs'],
-            'level': 'ERROR',
+            'level': 'INFO',
             'propagate': False
         },
         'django_q': {
             'handlers': ['debug_logs'],
+            'level': 'INFO',
             'propagate': True,
         },
         'fyle_integrations_platform_connector': {

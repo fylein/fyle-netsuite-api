@@ -5,6 +5,8 @@ from django.utils.module_loading import import_string
 
 from rest_framework.exceptions import AuthenticationFailed
 
+from memory_profiler import profile
+
 from apps.workspaces.models import Configuration, Workspace, NetSuiteCredentials
 
 from .tasks import schedule_vendor_payment_creation, schedule_netsuite_objects_status_sync, \
@@ -50,6 +52,7 @@ def check_interval_and_sync_dimension(workspace: Workspace, netsuite_credentials
 
     return False
 
+@profile
 def sync_dimensions(ns_credentials: NetSuiteCredentials, workspace_id: int, dimensions: list = []) -> None:
     netsuite_connection = import_string('apps.netsuite.connector.NetSuiteConnector')(ns_credentials, workspace_id)
     if not dimensions:

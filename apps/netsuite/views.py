@@ -12,6 +12,8 @@ from netsuitesdk.internal.exceptions import NetSuiteRequestError
 from fyle_accounting_mappings.models import DestinationAttribute
 from fyle_accounting_mappings.serializers import DestinationAttributeSerializer
 
+from memory_profiler import profile
+
 from apps.workspaces.models import NetSuiteCredentials, Workspace, Configuration
 
 from .serializers import NetSuiteFieldSerializer, CustomSegmentSerializer
@@ -187,6 +189,7 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
     """
     Refresh NetSuite Dimensions view
     """
+    @profile
     def post(self, request, *args, **kwargs):
         """
         Sync data from NetSuite

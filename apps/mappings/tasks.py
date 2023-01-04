@@ -7,6 +7,8 @@ from typing import List, Dict
 from dateutil import parser
 from django_q.models import Schedule
 
+from memory_profiler import profile
+
 from fyle.platform.exceptions import WrongParamsError
 
 from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttribute, DestinationAttribute,\
@@ -24,6 +26,7 @@ from .constants import FYLE_EXPENSE_SYSTEM_FIELDS
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
+@profile
 def remove_duplicates(ns_attributes: List[DestinationAttribute]):
     unique_attributes = []
 
@@ -36,7 +39,7 @@ def remove_duplicates(ns_attributes: List[DestinationAttribute]):
 
     return unique_attributes
 
-
+@profile
 def disable_expense_attributes(source_field, destination_field, workspace_id):
 
     # Get All the inactive destination attribute ids
@@ -91,7 +94,7 @@ def disable_expense_attributes(source_field, destination_field, workspace_id):
 
     return expense_attributes_ids
 
-
+@profile
 def get_all_categories_from_fyle(platform: PlatformConnector):
 
     categories_generator = platform.connection.v1beta.admin.categories.list_all(query_params={
@@ -112,7 +115,7 @@ def get_all_categories_from_fyle(platform: PlatformConnector):
 
     return category_name_map
 
-
+@profile
 def create_fyle_categories_payload(categories: List[DestinationAttribute], category_map: Dict, updated_categories: List[ExpenseAttribute] = [], destination_type: str = None):
     """
     Create Fyle Categories Payload from NetSuite Customer / Categories
@@ -147,7 +150,7 @@ def create_fyle_categories_payload(categories: List[DestinationAttribute], categ
 
     return payload
 
-
+@profile
 def sync_expense_categories_and_accounts(reimbursable_expenses_object: str, corporate_credit_card_expenses_object: str,
     netsuite_connection: NetSuiteConnector):
     if reimbursable_expenses_object == 'EXPENSE REPORT' or corporate_credit_card_expenses_object == 'EXPENSE REPORT':
@@ -157,7 +160,7 @@ def sync_expense_categories_and_accounts(reimbursable_expenses_object: str, corp
         corporate_credit_card_expenses_object in ('BILL', 'JOURNAL ENTRY', 'CREDIT CARD CHARGE'):
         netsuite_connection.sync_accounts()
 
-
+@profile
 def upload_categories_to_fyle(workspace_id: int, reimbursable_expenses_object: str,
     corporate_credit_card_expenses_object: str):
     """
@@ -199,7 +202,7 @@ def upload_categories_to_fyle(workspace_id: int, reimbursable_expenses_object: s
 
     return netsuite_attributes
 
-
+@profile
 def bulk_create_ccc_category_mappings(workspace_id: int):
     """
     Create Category Mappings for CCC Expenses
@@ -247,7 +250,7 @@ def bulk_create_ccc_category_mappings(workspace_id: int):
             mapping_updation_batch, fields=['destination_account'], batch_size=50
         )
 
-
+@profile
 def construct_filter_based_on_destination(reimbursable_destination_type: str):
     """
     Construct Filter Based on Destination
@@ -262,7 +265,7 @@ def construct_filter_based_on_destination(reimbursable_destination_type: str):
 
     return filters
 
-
+@profile
 def filter_unmapped_destinations(reimbursable_destination_type: str,
     destination_attributes: List[DestinationAttribute]):
     """
@@ -282,7 +285,7 @@ def filter_unmapped_destinations(reimbursable_destination_type: str,
 
     return destination_attributes
 
-
+@profile
 def bulk_create_update_category_mappings(mapping_creation_batch: List[CategoryMapping]):
     """
     Bulk Create and Update Category Mappings
@@ -306,7 +309,7 @@ def bulk_create_update_category_mappings(mapping_creation_batch: List[CategoryMa
         ExpenseAttribute.objects.bulk_update(
             expense_attributes_to_be_updated, fields=['auto_mapped'], batch_size=50)
 
-
+@profile
 def create_category_mappings(destination_attributes: List[DestinationAttribute],
     reimbursable_destination_type: str, workspace_id: int):
     """
@@ -426,6 +429,7 @@ def post_tax_groups(platform_connection: PlatformConnector, workspace_id: int):
     platform_connection.tax_groups.sync()
     Mapping.bulk_create_mappings(netsuite_attributes, 'TAX_GROUP', 'TAX_ITEM', workspace_id)
 
+@profile
 def auto_create_category_mappings(workspace_id):
     """
     Create Category Mappings
@@ -522,6 +526,7 @@ def create_fyle_tax_group_payload(netsuite_attributes: List[DestinationAttribute
             )
     return fyle_tax_group_payload
 
+@profile
 def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_project_names: list,
                                      updated_projects: List[ExpenseAttribute] = None):
     """
@@ -559,7 +564,7 @@ def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_
 
     return payload
 
-
+@profile
 def post_projects_in_batches(platform: PlatformConnector, workspace_id: int, destination_field: str):
     existing_project_names = ExpenseAttribute.objects.filter(
         attribute_type='PROJECT', workspace_id=workspace_id).values_list('value', flat=True)
@@ -590,7 +595,7 @@ def post_projects_in_batches(platform: PlatformConnector, workspace_id: int, des
             platform.projects.post_bulk(fyle_payload)
             platform.projects.sync()
 
-
+@profile
 def auto_create_project_mappings(workspace_id):
     """
     Create Project Mappings
@@ -720,7 +725,7 @@ def schedule_auto_map_ccc_employees(workspace_id: int):
         if schedule:
             schedule.delete()
 
-
+@profile
 def sync_netsuite_attribute(netsuite_attribute_type: str, workspace_id: int):
     ns_credentials: NetSuiteCredentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
 
@@ -754,7 +759,7 @@ def sync_netsuite_attribute(netsuite_attribute_type: str, workspace_id: int):
     else:
         ns_connection.sync_custom_segments()
 
-
+@profile
 def create_fyle_cost_centers_payload(netsuite_attributes: List[DestinationAttribute], existing_fyle_cost_centers: list):
     """
     Create Fyle Cost Centers Payload from NetSuite Objects
@@ -777,7 +782,7 @@ def create_fyle_cost_centers_payload(netsuite_attributes: List[DestinationAttrib
 
     return fyle_cost_centers_payload
 
-
+@profile
 def post_cost_centers_in_batches(platform: PlatformConnector, workspace_id: int, netsuite_attribute_type: str):
     existing_cost_center_names = ExpenseAttribute.objects.filter(
         attribute_type='COST_CENTER', workspace_id=workspace_id).values_list('value', flat=True)
@@ -803,7 +808,7 @@ def post_cost_centers_in_batches(platform: PlatformConnector, workspace_id: int,
 
         Mapping.bulk_create_mappings(paginated_ns_attributes, 'COST_CENTER', netsuite_attribute_type, workspace_id)
 
-
+@profile
 def auto_create_cost_center_mappings(workspace_id):
     """
     Create Cost Center Mappings
@@ -860,7 +865,7 @@ def schedule_cost_centers_creation(import_to_fyle, workspace_id):
         if schedule:
             schedule.delete()
 
-
+@profile
 def create_fyle_expense_custom_field_payload(netsuite_attributes: List[DestinationAttribute], workspace_id: int,
                                              fyle_attribute: str, platform: PlatformConnector):
     """
@@ -901,7 +906,7 @@ def create_fyle_expense_custom_field_payload(netsuite_attributes: List[Destinati
 
         return expense_custom_field_payload
 
-
+@profile
 def upload_attributes_to_fyle(workspace_id: int, netsuite_attribute_type: str, fyle_attribute_type: str):
     """
     Upload attributes to Fyle
@@ -929,7 +934,7 @@ def upload_attributes_to_fyle(workspace_id: int, netsuite_attribute_type: str, f
 
     return netsuite_attributes
 
-
+@profile
 def auto_create_expense_fields_mappings(workspace_id: int, netsuite_attribute_type: str, fyle_attribute_type: str):
     """
     Create Fyle Attributes Mappings
@@ -954,7 +959,7 @@ def auto_create_expense_fields_mappings(workspace_id: int, netsuite_attribute_ty
             'Error while creating %s workspace_id - %s error: %s', fyle_attribute_type, workspace_id, error
         )
 
-
+@profile
 def async_auto_create_custom_field_mappings(workspace_id):
     mapping_settings = MappingSetting.objects.filter(
         is_custom=True, import_to_fyle=True, workspace_id=workspace_id
@@ -1016,6 +1021,7 @@ def post_merchants(platform_connection: PlatformConnector, workspace_id: int):
 
     platform_connection.merchants.sync(workspace_id)
 
+@profile
 def auto_create_vendors_as_merchants(workspace_id):
     try:
         fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
@@ -1040,6 +1046,7 @@ def auto_create_vendors_as_merchants(workspace_id):
             'Error while posting vendors as merchants to fyle for workspace_id - %s error: %s',
             workspace_id, error)
 
+@profile
 def schedule_vendors_as_merchants_creation(import_vendors_as_merchants, workspace_id):
     if import_vendors_as_merchants:
         schedule, _ = Schedule.objects.update_or_create(
@@ -1060,7 +1067,7 @@ def schedule_vendors_as_merchants_creation(import_vendors_as_merchants, workspac
         if schedule:
             schedule.delete()
 
-
+@profile
 def create_fyle_department_payload(department_name: str, parent_department: str, existing_departments: Dict):
     """
     Search and create Fyle Departments Payload from NetSuite Objects if not already present or disabled on Fyle
@@ -1106,7 +1113,7 @@ def create_fyle_department_payload(department_name: str, parent_department: str,
             })
     return departments_payload
 
-
+@profile
 def create_fyle_employee_payload(platform_connection: PlatformConnector, employees: List[DestinationAttribute]):
     """
     Create Fyle Employee, Approver, Departments Payload from NetSuite Objects
@@ -1168,7 +1175,7 @@ def create_fyle_employee_payload(platform_connection: PlatformConnector, employe
 
     return employee_payload, employee_approver_payload, department_payload
 
-
+@profile
 def post_employees(platform_connection: PlatformConnector, workspace_id: int):
     """
     Post Employees and Departments to Fyle
@@ -1209,7 +1216,7 @@ def post_employees(platform_connection: PlatformConnector, workspace_id: int):
 
     platform_connection.employees.sync()
 
-
+@profile
 def auto_create_netsuite_employees_on_fyle(workspace_id):
     try:
         fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
