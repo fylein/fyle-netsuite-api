@@ -270,8 +270,7 @@ NS_CONSUMER_SECRET = os.environ.get('NS_CONSUMER_SECRET')
 SENDGRID_API_KEY = os.environ.get('SENDGRID_KEY')
 EMAIL = os.environ.get('SENDGRID_EMAIL')
 EMAIL_BACKEND = 'sendgrid_backend.SendgridBackend'
-ENCRYPTION_KEY = os.environ.get('ENCRYPTION_KEY')
-E2E_TESTS_CLIENT_SECRET = os.environ.get('E2E_TESTS_CLIENT_SECRET')
+
 
 CACHE_EXPIRY = 3600
 
