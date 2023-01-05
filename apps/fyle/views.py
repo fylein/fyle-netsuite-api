@@ -5,6 +5,7 @@ from rest_framework.views import status
 from rest_framework import generics
 from rest_framework.response import Response
 
+from fyle_integrations_platform_connector import PlatformConnector
 from fyle_accounting_mappings.models import ExpenseAttribute
 from fyle_accounting_mappings.serializers import ExpenseAttributeSerializer
 
@@ -15,6 +16,7 @@ from .helpers import check_interval_and_sync_dimension, sync_dimensions
 from .models import Expense, ExpenseGroup, ExpenseGroupSettings, ExpenseFilter
 from .serializers import ExpenseGroupSerializer, ExpenseSerializer, ExpenseFieldSerializer, \
     ExpenseGroupSettingsSerializer, ExpenseFilterSerializer, ExpenseGroupExpenseSerializer
+from .constants import DEFAULT_FYLE_CONDITIONS
 
 from fyle.platform import Platform
 from fyle_netsuite_api import settings
@@ -287,9 +289,9 @@ class ExpenseView(generics.ListAPIView):
         }
 
         if start_date and end_date:
-            filters['created_at__range'] = [start_date, end_date]
+            filters['updated_at__range'] = [start_date, end_date]
 
-        queryset = Expense.objects.filter(**filters).values('created_at', 'expense_number', 'employee_email', 'employee_name', 'fund_source').order_by('created_at')
+        queryset = Expense.objects.filter(**filters).order_by('-updated_at')
 
         return queryset
 
@@ -303,37 +305,23 @@ class CustomFieldView(generics.RetrieveAPIView):
         Get Custom Fields
         """
         try:
-            client_id = settings.FYLE_CLIENT_ID
-            client_secret = settings.FYLE_CLIENT_SECRET
-            token_url = settings.FYLE_TOKEN_URI
-            fyle_credentials = FyleCredential.objects.get(workspace_id=self.kwargs['workspace_id'])
+            fyle_credentails = FyleCredential.objects.get(workspace_id=self.kwargs['workspace_id'])
+            platform = PlatformConnector(fyle_credentails)
+            custom_fields = platform.expense_custom_fields.list_all()
 
-            fyle = Platform(
-                server_url="{}/platform/v1beta".format(fyle_credentials.cluster_domain),
-                token_url=token_url,
-                refresh_token=fyle_credentials.refresh_token,
-                client_id=client_id,
-                client_secret=client_secret
-            )
+            reponse = DEFAULT_FYLE_CONDITIONS
 
-            query_params = {
-                'is_custom':'eq.true',
-                'is_enabled':'eq.true'
-            }
-            custom_fields = fyle.v1beta.admin.expense_fields.get(query_params)['data']
-
-            reponse = []
             for custom_field in custom_fields:
                 reponse.append({
                     'field_name': custom_field['field_name'],
-                    'type': custom_field['type']
+                    'type': custom_field['type'],
+                    'is_custom': custom_field['is_custom']
                 })
 
             return Response(
                 data=reponse,
                 status=status.HTTP_200_OK
             )
-
 
         except Exception as e:
             return Response(

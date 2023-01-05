@@ -313,3 +313,55 @@ def test_expense_group_schedule_view(api_client, access_token):
    
    response = api_client.post(url)
    assert response.status_code == 200
+
+@pytest.mark.django_db(databases=['default'])
+def test_expense_filters(api_client, access_token):
+
+   url = reverse('expense-filters', 
+      kwargs={
+         'workspace_id': 1,
+      }
+   )
+   
+   api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
+
+   response = api_client.post(url,data=data['expense_filter_1'])
+   assert response.status_code == 201
+   response = json.loads(response.content)
+
+   assert dict_compare_keys(response, data['expense_filter_1_response']) == [], 'expense group api return diffs in keys'
+
+   response = api_client.post(url,data=data['expense_filter_2'])
+   assert response.status_code == 201
+   response = json.loads(response.content)
+
+   assert dict_compare_keys(response, data['expense_filter_2_response']) == [], 'expense group api return diffs in keys'
+
+   response = api_client.get(url)
+   assert response.status_code == 200
+   response = json.loads(response.content)
+
+   assert dict_compare_keys(response, data['expense_filters_response']) == [], 'expense group api return diffs in keys'
+
+@pytest.mark.django_db(databases=['default'])
+def test_custom_fields(mocker, api_client, access_token):
+
+   url = reverse('custom-field', 
+      kwargs={
+         'workspace_id': 1,
+      }
+   )
+
+   mocker.patch(
+      'fyle.platform.apis.v1beta.admin.expense_fields.list_all',
+      return_value=data['get_all_custom_fields']
+   )
+   
+   api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
+
+   response = api_client.get(url)
+   assert response.status_code == 200
+   response = json.loads(response.content)
+
+   assert dict_compare_keys(response, data['custom_fields_response']) == [], 'expense group api return diffs in keys'
+

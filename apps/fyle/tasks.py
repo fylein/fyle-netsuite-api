@@ -103,16 +103,17 @@ def create_expense_groups(workspace_id: int, configuration: Configuration, fund_
 
             workspace.save()
 
-            Expense.create_expense_objects(expenses)
+            expenses_object = Expense.create_expense_objects(expenses)
+
+            expenses_object_ids = [expense_object.id for expense_object in expenses_object]
 
             expense_filters = ExpenseFilter.objects.filter(workspace_id=workspace_id)
 
             if expense_filters:
                 final_query = construct_expense_filter_query(expense_filters)
-                Expense.objects.filter(final_query, expensegroup__isnull=True, org_id=workspace.fyle_org_id).update(is_skipped=True)  
+                Expense.objects.filter(final_query, id__in=expenses_object_ids, expensegroup__isnull=True, org_id=workspace.fyle_org_id).update(is_skipped=True)
 
-            filtered_expenses = Expense.objects.filter(is_skipped=False, expensegroup__isnull=True, org_id=workspace.fyle_org_id)
-
+            filtered_expenses = Expense.objects.filter(is_skipped=False, id__in=expenses_object_ids, expensegroup__isnull=True, org_id=workspace.fyle_org_id)
             ExpenseGroup.create_expense_groups_by_report_id_fund_source(
                 filtered_expenses, configuration, workspace_id
             )
