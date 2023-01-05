@@ -47,7 +47,7 @@ def run_pre_mapping_settings_triggers(sender, instance: MappingSetting, **kwargs
 
     instance.source_field = instance.source_field.upper().replace(' ', '_')
 
-    if instance.source_field not in default_attributes:
+    if instance.source_field not in default_attributes and instance.import_to_fyle:
         upload_attributes_to_fyle(
             workspace_id=int(instance.workspace_id),
             netsuite_attribute_type=instance.destination_field,
