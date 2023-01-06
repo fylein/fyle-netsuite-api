@@ -1,8 +1,9 @@
+import logging
+
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.core.cache import cache
-
-
+from django.db import transaction, connection
 
 from rest_framework.response import Response
 from rest_framework.views import status
@@ -31,6 +32,8 @@ from .serializers import WorkspaceSerializer, FyleCredentialSerializer, NetSuite
     ConfigurationSerializer, WorkspaceScheduleSerializer
 from .permissions import IsAuthenticatedForTest
 
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 User = get_user_model()
 auth_utils = AuthUtils()
