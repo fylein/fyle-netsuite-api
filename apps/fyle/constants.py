@@ -1,22 +1,22 @@
 DEFAULT_FYLE_CONDITIONS=[
     {
         'field_name': 'employee_email',
-        'type': None,
+        'type': 'SELECT',
         'is_custom': False
     },
     {
         'field_name': 'report_id',
-        'type': None,
+        'type': 'TEXT',
         'is_custom': False
     },
     {
         'field_name': 'report_title',
-        'type': None,
+        'type': 'TEXT',
         'is_custom': False
     },
     {
         'field_name': 'spent_at',
-        'type': None,
+        'type': 'DATE',
         'is_custom': False
     }
 ]
