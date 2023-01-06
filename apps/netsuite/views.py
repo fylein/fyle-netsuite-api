@@ -195,6 +195,30 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
         Sync data from NetSuite
         """
         try:
+            from django_q.tasks import async_task
+            async_task('apps.netsuite.tasks.dummy')
+            arr = []
+            arr2 = []
+            for _ in range(0, 2000):
+                arr.append({
+                    'id': _,
+                    'name': '{} name'.format(_),
+                    'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'random': '{} random'.format(_),
+                })
+
+                arr[_]['id'] += 100000
+
+            for _ in range(0, 2000):
+                arr2.append({
+                    'id': _,
+                    'name': '{} name'.format(_),
+                    'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'random': '{} random'.format(_),
+                })
+
+                arr2[_]['id'] += 100000
+
             dimensions_to_sync = request.data.get('dimensions_to_sync', [])
             workspace = Workspace.objects.get(pk=kwargs['workspace_id'])
 
@@ -207,6 +231,7 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
                 workspace.save(update_fields=['destination_synced_at'])
 
             return Response(
+                data={'arr': arr},
                 status=status.HTTP_200_OK
             )
         except NetSuiteCredentials.DoesNotExist:

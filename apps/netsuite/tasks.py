@@ -11,6 +11,8 @@ from django.db.models import Q
 from django_q.models import Schedule
 from django_q.tasks import Chain
 
+from memory_profiler import profile
+
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
 
 from fyle_accounting_mappings.models import ExpenseAttribute, Mapping, DestinationAttribute, CategoryMapping, EmployeeMapping
@@ -314,6 +316,29 @@ def create_bill(expense_group, task_log_id):
         task_log.save()
         __log_error(task_log)
 
+@profile
+def dummy():
+    arr = []
+    arr2 = []
+    for _ in range(0, 20000):
+        arr.append({
+            'id': _,
+            'name': '{} name'.format(_),
+            'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'random': '{} random'.format(_),
+        })
+
+        arr[_]['id'] += 100000
+
+    for _ in range(0, 2000):
+        arr2.append({
+            'id': _,
+            'name': '{} name'.format(_),
+            'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'random': '{} random'.format(_),
+        })
+
+        arr2[_]['id'] += 100000
 
 def create_credit_card_charge(expense_group, task_log_id):
     task_log = TaskLog.objects.get(id=task_log_id)

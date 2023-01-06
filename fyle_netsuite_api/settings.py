@@ -178,7 +178,7 @@ CACHES = {
 Q_CLUSTER = {
     'name': 'fyle_netsuite_api',
     'save_limit': 0,
-    'workers': int(os.environ.get('NO_WORKERS', 4)),
+    'workers': int(os.environ.get('NO_WORKERS', 8)),
     'queue_limit': 30,
     'cached': False,
     'orm': 'default',
