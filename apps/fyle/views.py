@@ -309,17 +309,18 @@ class CustomFieldView(generics.RetrieveAPIView):
             platform = PlatformConnector(fyle_credentails)
             custom_fields = platform.expense_custom_fields.list_all()
 
-            reponse = DEFAULT_FYLE_CONDITIONS
+            response = [] 
+            response.extend(DEFAULT_FYLE_CONDITIONS)
 
             for custom_field in custom_fields:
-                reponse.append({
+                response.append({
                     'field_name': custom_field['field_name'],
                     'type': custom_field['type'],
                     'is_custom': custom_field['is_custom']
                 })
 
             return Response(
-                data=reponse,
+                data=response,
                 status=status.HTTP_200_OK
             )
 
