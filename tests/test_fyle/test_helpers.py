@@ -205,23 +205,51 @@ def test_construct_expense_filter(mocker, add_fyle_credentials):
     constructed_expense_filter = construct_expense_filter(expense_filter)
 
     filter_1 = {'employee_email__in':['killua.z@fyle.in', 'naruto.u@fyle.in']}
-    respone = Q(**filter_1)
+    response = Q(**filter_1)
 
-    assert constructed_expense_filter == respone
+    assert constructed_expense_filter == response
 
-    #report-id-is-equal
+    #employee-email-is-equal-one-email-only
     expense_filter = ExpenseFilter(
-        condition = 'report_id',
+        condition = 'employee_email',
+        operator = 'in',
+        values = ['killua.z@fyle.in'],
+        rank = 1
+    )
+    constructed_expense_filter = construct_expense_filter(expense_filter)
+
+    filter_1 = {'employee_email__in':['killua.z@fyle.in']}
+    response = Q(**filter_1)
+
+    assert constructed_expense_filter == response
+
+    #claim-number-is-equal
+    expense_filter = ExpenseFilter(
+        condition = 'claim_number',
         operator = 'in',
         values = ['ajdnwjnadw', 'ajdnwjnlol'],
         rank = 1
     )
     constructed_expense_filter = construct_expense_filter(expense_filter)
 
-    filter_1 = {'report_id__in':['ajdnwjnadw', 'ajdnwjnlol']}
-    respone = Q(**filter_1)
+    filter_1 = {'claim_number__in':['ajdnwjnadw', 'ajdnwjnlol']}
+    response = Q(**filter_1)
 
-    assert constructed_expense_filter == respone
+    assert constructed_expense_filter == response
+
+    #claim-number-is-equal-one-claim_number-only
+    expense_filter = ExpenseFilter(
+        condition = 'claim_number',
+        operator = 'in',
+        values = ['ajdnwjnadw'],
+        rank = 1
+    )
+    constructed_expense_filter = construct_expense_filter(expense_filter)
+
+    filter_1 = {'claim_number__in':['ajdnwjnadw']}
+    response = Q(**filter_1)
+
+    assert constructed_expense_filter == response
 
     #report-name-is-equal
     expense_filter = ExpenseFilter(
@@ -233,9 +261,9 @@ def test_construct_expense_filter(mocker, add_fyle_credentials):
     constructed_expense_filter = construct_expense_filter(expense_filter)
 
     filter_1 = {'report_title__iexact':'#17:  Dec 2022'}
-    respone = Q(**filter_1)
+    response = Q(**filter_1)
 
-    assert constructed_expense_filter == respone
+    assert constructed_expense_filter == response
 
     #report-name-contains
     expense_filter = ExpenseFilter(
@@ -247,9 +275,9 @@ def test_construct_expense_filter(mocker, add_fyle_credentials):
     constructed_expense_filter = construct_expense_filter(expense_filter)
 
     filter_1 = {'report_title__icontains':'Dec 2022'}
-    respone = Q(**filter_1)
+    response = Q(**filter_1)
 
-    assert constructed_expense_filter == respone
+    assert constructed_expense_filter == response
 
     #spent-at-is-before
     expense_filter = ExpenseFilter(
@@ -261,9 +289,9 @@ def test_construct_expense_filter(mocker, add_fyle_credentials):
     constructed_expense_filter = construct_expense_filter(expense_filter)
 
     filter_1 = {'spent_at__lt':'2020-04-20 23:59:59+00'}
-    respone = Q(**filter_1)
+    response = Q(**filter_1)
 
-    assert constructed_expense_filter == respone
+    assert constructed_expense_filter == response
 
     #spent-at-is-on-or-before
     expense_filter = ExpenseFilter(
@@ -275,9 +303,9 @@ def test_construct_expense_filter(mocker, add_fyle_credentials):
     constructed_expense_filter = construct_expense_filter(expense_filter)
 
     filter_1 = {'spent_at__lte':'2020-04-20 23:59:59+00'}
-    respone = Q(**filter_1)
+    response = Q(**filter_1)
 
-    assert constructed_expense_filter == respone
+    assert constructed_expense_filter == response
 
     #custom-properties-number-is-equal
     expense_filter = ExpenseFilter(
@@ -290,9 +318,9 @@ def test_construct_expense_filter(mocker, add_fyle_credentials):
     constructed_expense_filter = construct_expense_filter(expense_filter)
 
     filter_1 = {'custom_properties__Gon Number__in':[102, 108]}
-    respone = Q(**filter_1)
+    response = Q(**filter_1)
 
-    assert constructed_expense_filter == respone
+    assert constructed_expense_filter == response
 
     #custom-properties-number-is-not-empty
     expense_filter = ExpenseFilter(
@@ -305,9 +333,9 @@ def test_construct_expense_filter(mocker, add_fyle_credentials):
     constructed_expense_filter = construct_expense_filter(expense_filter)
 
     filter_1 = {'custom_properties__Gon Number__exact': None}
-    respone = ~Q(**filter_1)
+    response = ~Q(**filter_1)
 
-    assert constructed_expense_filter == respone
+    assert constructed_expense_filter == response
 
     #custom-properties-number-is--empty
     expense_filter = ExpenseFilter(
@@ -321,9 +349,9 @@ def test_construct_expense_filter(mocker, add_fyle_credentials):
 
     filter_1 = {'custom_properties__Gon Number__isnull': True}
     filter_2 = {'custom_properties__Gon Number__exact': None}
-    respone = Q(**filter_1) | Q(**filter_2)
+    response = Q(**filter_1) | Q(**filter_2)
 
-    assert constructed_expense_filter == respone
+    assert constructed_expense_filter == response
 
     #custom-properties-text-is-equal
     expense_filter = ExpenseFilter(
@@ -336,9 +364,9 @@ def test_construct_expense_filter(mocker, add_fyle_credentials):
     constructed_expense_filter = construct_expense_filter(expense_filter)
 
     filter_1 = {'custom_properties__Killua Text__in':['hunter', 'naruto', 'sasuske']}
-    respone = Q(**filter_1)
+    response = Q(**filter_1)
 
-    assert constructed_expense_filter == respone
+    assert constructed_expense_filter == response
 
     #custom-properties-text-is-not-empty
     expense_filter = ExpenseFilter(
@@ -351,9 +379,9 @@ def test_construct_expense_filter(mocker, add_fyle_credentials):
     constructed_expense_filter = construct_expense_filter(expense_filter)
 
     filter_1 = {'custom_properties__Killua Text__exact': None}
-    respone = ~Q(**filter_1)
+    response = ~Q(**filter_1)
 
-    assert constructed_expense_filter == respone
+    assert constructed_expense_filter == response
 
     #custom-properties-text-is--empty
     expense_filter = ExpenseFilter(
@@ -367,9 +395,9 @@ def test_construct_expense_filter(mocker, add_fyle_credentials):
 
     filter_1 = {'custom_properties__Killua Text__isnull': True}
     filter_2 = {'custom_properties__Killua Text__exact': None}
-    respone = Q(**filter_1) | Q(**filter_2)
+    response = Q(**filter_1) | Q(**filter_2)
 
-    assert constructed_expense_filter == respone
+    assert constructed_expense_filter == response
 
     #custom-properties-select-is-equal
     expense_filter = ExpenseFilter(
@@ -382,9 +410,24 @@ def test_construct_expense_filter(mocker, add_fyle_credentials):
     constructed_expense_filter = construct_expense_filter(expense_filter)
 
     filter_1 = {'custom_properties__Kratos__in':['BOOK', 'Dev-D']}
-    respone = Q(**filter_1)
+    response = Q(**filter_1)
 
-    assert constructed_expense_filter == respone
+    assert constructed_expense_filter == response
+
+    #custom-properties-select-is-equal-one-value
+    expense_filter = ExpenseFilter(
+        condition = 'Kratos',
+        operator = 'in',
+        values = ['BOOK'],
+        rank = 1,
+        is_custom = True
+    )
+    constructed_expense_filter = construct_expense_filter(expense_filter)
+
+    filter_1 = {'custom_properties__Kratos__in':['BOOK']}
+    response = Q(**filter_1)
+
+    assert constructed_expense_filter == response
 
     #custom-properties-select-is-not-empty
     expense_filter = ExpenseFilter(
@@ -397,9 +440,9 @@ def test_construct_expense_filter(mocker, add_fyle_credentials):
     constructed_expense_filter = construct_expense_filter(expense_filter)
 
     filter_1 = {'custom_properties__Kratos__exact': None}
-    respone = ~Q(**filter_1)
+    response = ~Q(**filter_1)
 
-    assert constructed_expense_filter == respone
+    assert constructed_expense_filter == response
 
     #custom-properties-select-is--empty
     expense_filter = ExpenseFilter(
@@ -413,14 +456,14 @@ def test_construct_expense_filter(mocker, add_fyle_credentials):
 
     filter_1 = {'custom_properties__Kratos__isnull': True}
     filter_2 = {'custom_properties__Kratos__exact': None}
-    respone = Q(**filter_1) | Q(**filter_2)
+    response = Q(**filter_1) | Q(**filter_2)
 
-    assert constructed_expense_filter == respone
+    assert constructed_expense_filter == response
 
 
 @pytest.mark.django_db()
 def test_multiple_construct_expense_filter(mocker, add_fyle_credentials):
-    #employee-email-is-equal and report-id-is-equal
+    #employee-email-is-equal and claim-number-is-equal
     expense_filters = [
         ExpenseFilter(
             condition = 'employee_email',
@@ -430,7 +473,7 @@ def test_multiple_construct_expense_filter(mocker, add_fyle_credentials):
             join_by = 'AND'
         ), 
         ExpenseFilter(
-        condition = 'report_id',
+        condition = 'claim_number',
         operator = 'in',
         values = ['ajdnwjnadw', 'ajdnwjnlol'],
         rank = 2,
@@ -440,12 +483,12 @@ def test_multiple_construct_expense_filter(mocker, add_fyle_credentials):
     final_filter = construct_expense_filter_query(expense_filters)
 
     filter_1 = {'employee_email__in':['killua.z@fyle.in', 'naruto.u@fyle.in']}
-    filter_2 = {'report_id__in':['ajdnwjnadw', 'ajdnwjnlol']}
-    respone = Q(**filter_1) & Q(**filter_2)
+    filter_2 = {'claim_number__in':['ajdnwjnadw', 'ajdnwjnlol']}
+    response = Q(**filter_1) & Q(**filter_2)
 
-    assert final_filter == respone
+    assert final_filter == response
 
-    #employee-email-is-equal or report-id-is-equal
+    #employee-email-is-equal or claim-number-is-equal
     expense_filters = [
         ExpenseFilter(
             condition = 'employee_email',
@@ -455,7 +498,7 @@ def test_multiple_construct_expense_filter(mocker, add_fyle_credentials):
             join_by = 'OR'
         ), 
         ExpenseFilter(
-        condition = 'report_id',
+        condition = 'claim_number',
         operator = 'in',
         values = ['ajdnwjnadw', 'ajdnwjnlol'],
         rank = 2,
@@ -465,10 +508,10 @@ def test_multiple_construct_expense_filter(mocker, add_fyle_credentials):
     final_filter = construct_expense_filter_query(expense_filters)
     
     filter_1 = {'employee_email__in':['killua.z@fyle.in', 'naruto.u@fyle.in']}
-    filter_2 = {'report_id__in':['ajdnwjnadw', 'ajdnwjnlol']}
-    respone = Q(**filter_1) | Q(**filter_2)
+    filter_2 = {'claim_number__in':['ajdnwjnadw', 'ajdnwjnlol']}
+    response = Q(**filter_1) | Q(**filter_2)
 
-    assert final_filter == respone
+    assert final_filter == response
 
     #employee-email-is-equal or report-title-contains
     expense_filters = [
@@ -491,9 +534,9 @@ def test_multiple_construct_expense_filter(mocker, add_fyle_credentials):
     
     filter_1 = {'employee_email__in':['killua.z@fyle.in', 'naruto.u@fyle.in']}
     filter_2 = {'report_title__icontains':'Dec 2022'}
-    respone = Q(**filter_1) | Q(**filter_2)
+    response = Q(**filter_1) | Q(**filter_2)
 
-    assert final_filter == respone
+    assert final_filter == response
 
     #custom-properties-number-is-empty and spent-at-less-than
     expense_filters = [
@@ -518,9 +561,9 @@ def test_multiple_construct_expense_filter(mocker, add_fyle_credentials):
     filter_1 = {'custom_properties__Gon Number__isnull': True}
     filter_2 = {'custom_properties__Gon Number__exact': None}
     filter_3 = {'spent_at__lt':'2020-04-20 23:59:59+00'}
-    respone = (Q(**filter_1) | Q(**filter_2)) & (Q(**filter_3))
+    response = (Q(**filter_1) | Q(**filter_2)) & (Q(**filter_3))
 
-    assert final_filter == respone
+    assert final_filter == response
 
     #custom-properties-number-is-empty and custom-properties-select-is-not-empty
     expense_filters = [
@@ -546,9 +589,9 @@ def test_multiple_construct_expense_filter(mocker, add_fyle_credentials):
     filter_1 = {'custom_properties__Gon Number__isnull': True}
     filter_2 = {'custom_properties__Gon Number__exact': None}
     filter_3 = {'custom_properties__Kratos__exact': None}
-    respone = (Q(**filter_1) | Q(**filter_2)) & (~Q(**filter_3))
+    response = (Q(**filter_1) | Q(**filter_2)) & (~Q(**filter_3))
 
-    assert final_filter == respone
+    assert final_filter == response
 
     #report-name-is-equal or custom-properties-number-is-equal  
     expense_filters = [
@@ -572,9 +615,9 @@ def test_multiple_construct_expense_filter(mocker, add_fyle_credentials):
     
     filter_1 = {'report_title__iexact':'#17:  Dec 2022'}
     filter_2 = {'custom_properties__Gon Number__in':[102, 108]}
-    respone = (Q(**filter_1)) | (Q(**filter_2))
+    response = (Q(**filter_1)) | (Q(**filter_2))
 
-    assert final_filter == respone
+    assert final_filter == response
 
     #custom-properties-number-is-equal and custom-properties-text-is-equal
     expense_filters = [
@@ -599,9 +642,9 @@ def test_multiple_construct_expense_filter(mocker, add_fyle_credentials):
 
     filter_1 = {'custom_properties__Gon Number__in':[102, 108]}
     filter_2 = {'custom_properties__Killua Text__in':['hunter', 'naruto', 'sasuske']}
-    respone = (Q(**filter_1)) & (Q(**filter_2))
+    response = (Q(**filter_1)) & (Q(**filter_2))
 
-    assert final_filter == respone
+    assert final_filter == response
 
     #custom-properties-select-is-equal and custom-properties-text-is--empty
     expense_filters = [
@@ -627,11 +670,11 @@ def test_multiple_construct_expense_filter(mocker, add_fyle_credentials):
     filter_1 = {'custom_properties__Kratos__in':['BOOK', 'Dev-D']}
     filter_2 = {'custom_properties__Killua Text__isnull': True}
     filter_3 = {'custom_properties__Killua Text__exact': None}
-    respone = (Q(**filter_1)) & (Q(**filter_2) | Q(**filter_3))
+    response = (Q(**filter_1)) & (Q(**filter_2) | Q(**filter_3))
 
-    assert final_filter == respone
+    assert final_filter == response
 
-    #custom-properties-select-is-equal and custom-properties-text-is--empty
+    #custom-properties-select-is-equal
     expense_filters = [
         ExpenseFilter(
             condition = 'Kratos',
@@ -646,10 +689,10 @@ def test_multiple_construct_expense_filter(mocker, add_fyle_credentials):
     final_filter = construct_expense_filter_query(expense_filters)
 
     filter_1 = {'custom_properties__Kratos__in':['BOOK', 'Dev-D']}
-    respone = (Q(**filter_1))
+    response = (Q(**filter_1))
 
-    assert final_filter == respone
-
+    assert final_filter == response
+    #custom-properties-text-is-null
     expense_filters = [
         ExpenseFilter(
             condition = 'Killua Text',
@@ -664,6 +707,30 @@ def test_multiple_construct_expense_filter(mocker, add_fyle_credentials):
 
     filter_2 = {'custom_properties__Killua Text__isnull': True}
     filter_3 = {'custom_properties__Killua Text__exact': None}
-    respone = (Q(**filter_2) | Q(**filter_3))
+    response = (Q(**filter_2) | Q(**filter_3))
 
-    assert final_filter == respone
+    assert final_filter == response
+
+    #employee-email-is-equal
+    expense_filters = [
+        ExpenseFilter(
+            condition = 'employee_email',
+            operator = 'in',
+            values = ['killua.z@fyle.in'],
+            rank = 1
+        ),
+        ExpenseFilter(
+            condition = 'Killua Text',
+            operator = 'isnull',
+            values = ['True'],
+            rank = 2,
+            is_custom = True
+        )
+    ]
+
+    final_filter = construct_expense_filter_query(expense_filters)
+
+    filter_1 = {'employee_email__in':['killua.z@fyle.in']}
+    response = Q(**filter_1)
+
+    assert final_filter == response

@@ -365,3 +365,20 @@ def test_custom_fields(mocker, api_client, access_token):
 
    assert dict_compare_keys(response, data['custom_fields_response']) == [], 'expense group api return diffs in keys'
 
+
+@pytest.mark.django_db(databases=['default'])
+def test_expenses(mocker, api_client, access_token):
+
+   url = reverse('expenses', 
+      kwargs={
+         'workspace_id': 1,
+      }
+   )
+   
+   api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
+
+   response = api_client.get(url)
+   assert response.status_code == 200
+   response = json.loads(response.content)
+
+   assert dict_compare_keys(response, data['skipped_expenses']) == [], 'expense group api return diffs in keys'

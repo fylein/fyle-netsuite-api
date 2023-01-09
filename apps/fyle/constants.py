@@ -5,7 +5,7 @@ DEFAULT_FYLE_CONDITIONS=[
         'is_custom': False
     },
     {
-        'field_name': 'report_id',
+        'field_name': 'claim_number',
         'type': 'TEXT',
         'is_custom': False
     },

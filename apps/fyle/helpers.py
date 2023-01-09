@@ -210,7 +210,7 @@ def construct_expense_filter(expense_filter: ExpenseFilter):
             'custom_properties__{0}__{1}'.format(
                 expense_filter.condition,
                 expense_filter.operator
-            ): expense_filter.values if len(expense_filter.values) > 1 else expense_filter.values[0]
+            ): expense_filter.values if len(expense_filter.values) > 1 or expense_filter.operator == 'in' else expense_filter.values[0]
         }
         constructed_expense_filter = Q(**filter1)
 
@@ -239,7 +239,7 @@ def construct_expense_filter(expense_filter: ExpenseFilter):
             '{0}__{1}'.format(
                 expense_filter.condition,
                 expense_filter.operator
-            ):expense_filter.values if len(expense_filter.values) > 1 else expense_filter.values[0]
+            ):expense_filter.values if len(expense_filter.values) > 1 or expense_filter.operator == 'in' else expense_filter.values[0]
         }
         constructed_expense_filter = Q(**filter1)
 

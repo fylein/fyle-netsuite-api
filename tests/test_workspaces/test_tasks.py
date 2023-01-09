@@ -18,6 +18,9 @@ def test_schedule_sync(db):
     assert ws_schedule.enabled == False
 
 def test_run_sync_schedule(db, access_token, add_fyle_credentials, add_netsuite_credentials, mocker):
+    expense_group_count = ExpenseGroup.objects.filter(workspace_id=1).count()
+    expenses_count = Expense.objects.filter(org_id='or79Cob97KSh').count()
+
     mocker.patch(
         'fyle_integrations_platform_connector.apis.Expenses.get',
         return_value=fyle_data['expenses']
@@ -36,8 +39,8 @@ def test_run_sync_schedule(db, access_token, add_fyle_credentials, add_netsuite_
 
     expense_group = ExpenseGroup.objects.filter(workspace_id=1).count()
     expenses = Expense.objects.filter(org_id='or79Cob97KSh').count()
-    assert expense_group == 4
-    assert expenses == 2
+    assert expense_group == expense_group_count+2
+    assert expenses == expenses_count+2
 
     run_sync_schedule(2)
 
