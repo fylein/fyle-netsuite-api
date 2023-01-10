@@ -847,6 +847,9 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str]):
 
         chain = Chain(cached=False)
 
+        fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+        chain.append('apps.fyle.helpers.sync_dimensions', fyle_credentials, workspace_id)
+
         for expense_group in expense_groups:
             task_log, _ = TaskLog.objects.get_or_create(
                 workspace_id=expense_group.workspace_id,
@@ -865,7 +868,7 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str]):
             chain.append('apps.netsuite.tasks.create_bill', expense_group, task_log.id)
 
             task_log.save()
-        if chain.length():
+        if chain.length() > 1:
             chain.run()
 
 
@@ -884,6 +887,10 @@ def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: L
         ).all()
 
         chain = Chain(cached=False)
+
+        fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+        chain.append('apps.fyle.helpers.sync_dimensions', fyle_credentials, workspace_id)
+
         for expense_group in expense_groups:
             expense_amount = expense_group.expenses.first().amount
             export_type = 'CREATING_CREDIT_CARD_CHARGE'
@@ -907,7 +914,7 @@ def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: L
             chain.append('apps.netsuite.tasks.create_credit_card_charge', expense_group, task_log.id)
 
             task_log.save()
-        if chain.length():
+        if chain.length() > 1:
             chain.run()
 
 
@@ -927,6 +934,9 @@ def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List
 
         chain = Chain(cached=False)
 
+        fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+        chain.append('apps.fyle.helpers.sync_dimensions', fyle_credentials, workspace_id)
+
         for expense_group in expense_groups:
             task_log, _ = TaskLog.objects.get_or_create(
                 workspace_id=expense_group.workspace_id,
@@ -944,7 +954,7 @@ def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List
 
             chain.append('apps.netsuite.tasks.create_expense_report', expense_group, task_log.id)
             task_log.save()
-        if chain.length():
+        if chain.length() > 1:
             chain.run()
 
 
@@ -963,6 +973,9 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
 
         chain = Chain(cached=False)
 
+        fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+        chain.append('apps.fyle.helpers.sync_dimensions', fyle_credentials, workspace_id)
+
         for expense_group in expense_groups:
             task_log, _ = TaskLog.objects.get_or_create(
                 workspace_id=expense_group.workspace_id,
@@ -980,7 +993,7 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
 
             chain.append('apps.netsuite.tasks.create_journal_entry', expense_group, task_log.id)
             task_log.save()
-        if chain.length():
+        if chain.length() > 1:
             chain.run()
 
 
