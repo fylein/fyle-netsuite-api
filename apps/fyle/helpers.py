@@ -184,5 +184,3 @@ def sync_dimensions(fyle_credentials: FyleCredential, workspace_id: int) -> None
     platform = PlatformConnector(fyle_credentials)
 
     platform.import_fyle_dimensions(import_taxes=True)
-   
-    
