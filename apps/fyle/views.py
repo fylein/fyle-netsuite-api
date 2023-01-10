@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from django.db.models import Q
 
@@ -21,6 +22,8 @@ from .constants import DEFAULT_FYLE_CONDITIONS
 from fyle.platform import Platform
 from fyle_netsuite_api import settings
 
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 class ExpenseGroupView(generics.ListCreateAPIView):
     """
     List Fyle Expenses
@@ -305,7 +308,8 @@ class CustomFieldView(generics.RetrieveAPIView):
         Get Custom Fields
         """
         try:
-            fyle_credentails = FyleCredential.objects.get(workspace_id=self.kwargs['workspace_id'])
+            workspace_id = self.kwargs['workspace_id']
+            fyle_credentails = FyleCredential.objects.get(workspace_id=workspace_id)
             platform = PlatformConnector(fyle_credentails)
             custom_fields = platform.expense_custom_fields.list_all()
 
@@ -324,7 +328,11 @@ class CustomFieldView(generics.RetrieveAPIView):
                 status=status.HTTP_200_OK
             )
 
-        except Exception as e:
+        except Exception as exception:
+            logger.error(
+                'Something went wrong - %s in Fyle %s %s',
+                workspace_id, exception.message, {'error': exception.response}
+            )
             return Response(
                 data={
                     'message': 'Something went wrong'
