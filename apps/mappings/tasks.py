@@ -237,13 +237,14 @@ def bulk_create_ccc_category_mappings(workspace_id: int):
         ccc_account_id = destination_id_pk_map[category_mapping.destination_expense_head.detail['account_internal_id'].lower()] \
             if category_mapping.destination_expense_head.detail['account_internal_id'].lower() in destination_id_pk_map else None        
 
-        mapping_updation_batch.append(
-            CategoryMapping(
-                id=category_mapping.id,
-                source_category_id=category_mapping.source_category.id,
-                destination_account_id=ccc_account_id
+        if ccc_account_id:
+            mapping_updation_batch.append(
+                CategoryMapping(
+                    id=category_mapping.id,
+                    source_category_id=category_mapping.source_category.id,
+                    destination_account_id=ccc_account_id
+                )
             )
-        )
 
     if mapping_updation_batch:
         CategoryMapping.objects.bulk_update(
