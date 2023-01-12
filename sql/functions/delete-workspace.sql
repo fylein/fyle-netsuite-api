@@ -194,6 +194,12 @@ BEGIN
     RAISE NOTICE 'Deleted % expense_attributes', rcount;
 
     DELETE
+    FROM expense_filters ef
+    WHERE ef.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % expense_filters', rcount;
+
+    DELETE
     FROM destination_attributes da
     WHERE da.workspace_id = _workspace_id;
     GET DIAGNOSTICS rcount = ROW_COUNT;
