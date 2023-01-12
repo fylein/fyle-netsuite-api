@@ -482,6 +482,11 @@ class ExpenseFilter(models.Model):
         help_text='Used to join the filter (AND/OR)'
     )
     is_custom = models.BooleanField(default=False, help_text='Custom Field or not')
+    custom_field_type = models.CharField(
+        max_length=255,
+        null=True,
+        help_text='Custom field type'
+    )
     workspace = models.ForeignKey(
         Workspace, 
         on_delete=models.PROTECT,

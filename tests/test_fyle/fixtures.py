@@ -104,6 +104,7 @@ data = {
                 "workspace" : 1,
                 "join_by" : "AND",
                 "is_custom" : False,
+                "custom_field_type": "SELECT",
                 "created_at": "2023-01-04T17:48:16.064064Z",
                 "updated_at": "2023-01-05T08:05:23.660746Z",
                 "workspace": 1
@@ -117,6 +118,7 @@ data = {
                 "workspace" : 1,
                 "join_by" : None,
                 "is_custom" : False,
+                "custom_field_type": "SELECT",
                 "created_at": "2023-01-04T17:48:16.064064Z",
                 "updated_at": "2023-01-05T08:05:23.660746Z",
                 "workspace": 1
@@ -142,6 +144,7 @@ data = {
         "rank": 1,
         "join_by": None,
         "is_custom": False,
+        "custom_field_type": None,
         "created_at": "2023-01-04T17:48:16.064064Z",
         "updated_at": "2023-01-06T17:06:21.592546Z",
         "workspace": 1
@@ -168,6 +171,7 @@ data = {
         "rank": 1,
         "join_by": "AND",
         "is_custom": False,
+        "custom_field_type": "TEXT",
         "created_at": "2023-01-04T17:48:16.064064Z",
         "updated_at": "2023-01-05T07:58:13.806447Z",
         "workspace": 1
@@ -188,6 +192,7 @@ data = {
         "rank": 2,
         "join_by": None,
         "is_custom": False,
+        "custom_field_type": "DATE",
         "created_at": "2023-01-04T17:48:16.064064Z",
         "updated_at": "2023-01-05T07:58:13.806447Z",
         "workspace": 1

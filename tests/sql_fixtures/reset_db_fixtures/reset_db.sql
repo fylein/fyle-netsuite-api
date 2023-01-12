@@ -745,7 +745,7 @@ CREATE TABLE public.expense_attributes (
     id integer NOT NULL,
     attribute_type character varying(255) NOT NULL,
     display_name character varying(255) NOT NULL,
-    value character varying(255) NOT NULL,
+    value character varying(1000) NOT NULL,
     source_id character varying(255) NOT NULL,
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
@@ -773,7 +773,8 @@ CREATE TABLE public.expense_filters (
     is_custom boolean NOT NULL,
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
-    workspace_id integer NOT NULL
+    workspace_id integer NOT NULL,
+    custom_field_type character varying(255)
 );
 
 
@@ -7622,6 +7623,8 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 142	workspaces	0029_auto_20221202_0620	2022-12-02 10:24:43.568383+00
 143	fyle	0021_auto_20221222_1447	2022-12-22 15:01:00.742292+00
 144	fyle	0022_expense_employee_name	2023-01-03 18:20:04.807654+00
+145	fyle	0023_expensefilter_custom_field_type	2023-01-12 13:09:21.981484+00
+146	fyle_accounting_mappings	0019_auto_20230105_1104	2023-01-12 13:09:22.000825+00
 \.
 
 
@@ -11176,7 +11179,7 @@ COPY public.expense_attributes (id, attribute_type, display_name, value, source_
 -- Data for Name: expense_filters; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.expense_filters (id, condition, operator, "values", rank, join_by, is_custom, created_at, updated_at, workspace_id) FROM stdin;
+COPY public.expense_filters (id, condition, operator, "values", rank, join_by, is_custom, created_at, updated_at, workspace_id, custom_field_type) FROM stdin;
 \.
 
 
@@ -11246,8 +11249,8 @@ COPY public.expenses (id, employee_email, category, sub_category, project, expen
 4	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txMLGb6Xy8m8	E/2021/11/T/2	C/2021/11/R/1	100	USD	\N	\N	setqgvGQnsAya	f	PAYMENT_PROCESSING	\N	\N	\N	rprqDvARHUnv	2021-11-16 00:00:00+00	2021-11-16 00:00:00+00	2021-11-16 04:24:38.141+00	2021-11-16 04:25:21.996+00	2021-11-16 04:25:49.192351+00	2021-11-16 04:25:49.192367+00	CCC	{"Device Type": "", "Fyle Category": ""}	\N	f	\N	oraWFQlEpjbb	16.67	tgSYjXsBCviv	\N	\N	\N	f	\N	\N
 173	admin1@fyleforintacct.in	Food	Food	Project 2	tx7A5QpesrV5	E/2021/12/T/1	C/2021/12/R/1	120	USD	\N	\N	set15sMvtRIiS	t	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85N	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:30.076+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.685597+00	2021-12-03 11:26:58.685616+00	PERSONAL	{}	\N	f	\N	orHe8CpW2hyN	\N	\N	\N	\N	\N	f	\N	\N
 174	admin1@fyleforintacct.in	Food	Food	Project 2	txcKVVELn1Vl	E/2021/12/T/2	C/2021/12/R/1	130	USD	\N	\N	set15sMvtRIiS	f	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85N	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:49.51+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.702183+00	2021-12-03 11:26:58.702209+00	CCC	{}	\N	f	\N	orHe8CpW2hyN	\N	\N	\N	\N	\N	f	\N	\N
-600	jhonsnoww@fyle.in	Food	Food	Project 2	txcKVVELn1Vlkill	E/2021/12/T/298	    C/2021/12/R/198	    130	USD	\N	\N	set15sMvtRIiSkill	f	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85Nkill	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:49.51+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.702183+00	2021-12-03 11:26:58.702209+00	CCC	{}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N	t	\N	\N
-601	jhonsnoww@fyle.in	Food	Food	Project 2	txcKVVELn1Vlgon	    E/2021/12/T/299	    C/2021/12/R/199	    130	USD	\N	\N	set15sMvtRIiSgon	f	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85Ngon	    2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:49.51+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.702183+00	2021-12-03 11:26:58.702209+00	CCC	{}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N	t	\N	\N
+600	jhonsnoww@fyle.in	Food	Food	Project 2	txcKVVELn1Vlkill	E/2021/12/T/298	    C/2021/12/R/198	130	USD	\N	\N	set15sMvtRIiSkill	f	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85Nkill	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:49.51+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.702183+00	2021-12-03 11:26:58.702209+00	CCC	{}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N	t	\N	\N
+601	jhonsnoww@fyle.in	Food	Food	Project 2	txcKVVELn1Vlgon	    E/2021/12/T/299	    C/2021/12/R/199	130	USD	\N	\N	set15sMvtRIiSgon	f	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85Ngon	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:49.51+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.702183+00	2021-12-03 11:26:58.702209+00	CCC	{}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N	t	\N	\N
 \.
 
 
@@ -11493,7 +11496,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 42, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 144, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 146, true);
 
 
 --

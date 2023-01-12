@@ -206,6 +206,9 @@ def construct_expense_filter(expense_filter: ExpenseFilter):
     constructed_expense_filter = {}
     if expense_filter.is_custom and expense_filter.operator != 'isnull':
         #This block is for custom-field with not null check 
+        if expense_filter.custom_field_type == 'NUMBER':
+            expense_filter.values = [int(expense_filter_value) for expense_filter_value in expense_filter.values]
+
         filter1 = {
             'custom_properties__{0}__{1}'.format(
                 expense_filter.condition,
