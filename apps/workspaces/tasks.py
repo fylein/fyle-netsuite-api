@@ -214,3 +214,9 @@ def delete_cards_mapping_settings(configuration: Configuration):
 
         if mapping_setting:
             mapping_setting.delete()
+
+def async_update_fyle_credentials(fyle_org_id: str, refresh_token: str):
+    fyle_credentials = FyleCredential.objects.get(workspace__fyle_org_id=fyle_org_id)
+    if fyle_credentials:
+        fyle_credentials.refresh_token = refresh_token
+        fyle_credentials.save()
