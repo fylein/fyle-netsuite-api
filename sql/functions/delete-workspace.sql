@@ -102,6 +102,12 @@ BEGIN
     RAISE NOTICE 'Deleted % expenses', rcount;
 
     DELETE
+    FROM expenses 
+    WHERE is_skipped=true and org_id = (SELECT fyle_org_id FROM workspaces WHERE id=_workspace_id);
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % skipped expenses', rcount;
+
+    DELETE
     FROM expense_groups_expenses ege
     WHERE ege.expensegroup_id IN (
         SELECT eg.id FROM expense_groups eg WHERE eg.workspace_id = _workspace_id
