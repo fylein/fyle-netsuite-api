@@ -769,7 +769,7 @@ CREATE TABLE public.expense_filters (
     operator character varying(255) NOT NULL,
     "values" character varying(255)[],
     rank integer NOT NULL,
-    join_by character varying(255),
+    join_by character varying(3),
     is_custom boolean NOT NULL,
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
@@ -7625,6 +7625,7 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 144	fyle	0022_expense_employee_name	2023-01-03 18:20:04.807654+00
 145	fyle	0023_expensefilter_custom_field_type	2023-01-12 13:09:21.981484+00
 146	fyle_accounting_mappings	0019_auto_20230105_1104	2023-01-12 13:09:22.000825+00
+147	fyle	0024_auto_20230116_1305	2023-01-16 13:13:09.266934+00
 \.
 
 
@@ -11496,7 +11497,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 42, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 146, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 147, true);
 
 
 --
