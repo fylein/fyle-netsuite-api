@@ -1,4 +1,4 @@
-DEFAULT_FYLE_CONDITIONS=[
+DEFAULT_FYLE_CONDITIONS = [
     {
         'field_name': 'employee_email',
         'type': 'SELECT',

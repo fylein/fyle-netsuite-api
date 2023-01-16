@@ -53,6 +53,12 @@ EXPENSE_FILTER_JOIN_BY = (
     ('OR', 'OR')
 )
 
+EXPENSE_FILTER_CUSTOM_FIELD_TYPE = (
+    ('SELECT', 'SELECT'),
+    ('NUMBER', 'NUMBER'),
+    ('TEXT','TEXT')
+)
+
 EXPENSE_FILTER_OPERATOR = (
 	('isnull', 'isnull'),
 	('in', 'in'),
@@ -476,7 +482,7 @@ class ExpenseFilter(models.Model):
     values = ArrayField(base_field=models.CharField(max_length=255), null=True, help_text='Values for the operator')
     rank = models.IntegerField(choices=EXPENSE_FILTER_RANK, help_text='Rank for the filter')
     join_by = models.CharField(
-        max_length=255,
+        max_length=3,
         null=True,
         choices=EXPENSE_FILTER_JOIN_BY,
         help_text='Used to join the filter (AND/OR)'
@@ -485,7 +491,8 @@ class ExpenseFilter(models.Model):
     custom_field_type = models.CharField(
         max_length=255,
         null=True,
-        help_text='Custom field type'
+        help_text='Custom field type',
+        choices=EXPENSE_FILTER_CUSTOM_FIELD_TYPE
     )
     workspace = models.ForeignKey(
         Workspace, 
