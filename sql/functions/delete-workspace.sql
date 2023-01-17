@@ -103,7 +103,7 @@ BEGIN
 
     DELETE
     FROM expenses 
-    WHERE is_skipped=true and org_id = (SELECT fyle_org_id FROM workspaces WHERE id=_workspace_id);
+    WHERE is_skipped=true and org_id in (SELECT fyle_org_id FROM workspaces WHERE id=_workspace_id);
     GET DIAGNOSTICS rcount = ROW_COUNT;
     RAISE NOTICE 'Deleted % skipped expenses', rcount;
 
