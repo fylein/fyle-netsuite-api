@@ -263,7 +263,7 @@ class RefreshFyleDimensionView(generics.ListCreateAPIView):
             )
 
 
-class ExpenseFilterView(generics.ListCreateAPIView):
+class ExpenseFilterView(generics.ListCreateAPIView, generics.DestroyAPIView):
     """
     Expense Filter view
     """
@@ -272,6 +272,30 @@ class ExpenseFilterView(generics.ListCreateAPIView):
     def get_queryset(self):
         queryset = ExpenseFilter.objects.filter(workspace_id=self.kwargs['workspace_id']).order_by('rank')
         return queryset
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            workspace_id = self.kwargs['workspace_id']
+            rank = self.request.query_params.get('rank')
+            ExpenseFilter.objects.filter(workspace_id=workspace_id,rank=rank).delete()
+
+            return Response(data={
+                'workspace_id': workspace_id,
+                'rank' : rank, 
+                'message': 'Expense filter deleted'
+            })
+
+        except Exception as exception:
+            logger.error(
+                'Something went wrong - %s in Fyle %s %s',
+                workspace_id, exception.message, {'error': exception.response}
+            )
+            return Response(
+                data={
+                    'message': 'Something went wrong'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class ExpenseView(generics.ListAPIView):
