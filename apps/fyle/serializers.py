@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from fyle_accounting_mappings.models import ExpenseAttribute
 
-from .models import Expense, ExpenseGroup, ExpenseGroupSettings
+from .models import Expense, ExpenseFilter, ExpenseGroup, ExpenseGroupSettings
 
 
 class ExpenseGroupSerializer(serializers.ModelSerializer):
@@ -14,9 +14,9 @@ class ExpenseGroupSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class ExpenseSerializer(serializers.ModelSerializer):
+class ExpenseGroupExpenseSerializer(serializers.ModelSerializer):
     """
-    Expense serializer
+    Expense Group Expense serializer
     """
     class Meta:
         model = Expense
@@ -39,3 +39,33 @@ class ExpenseFieldSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExpenseAttribute
         fields = ['attribute_type', 'display_name']
+
+
+class ExpenseFilterSerializer(serializers.ModelSerializer):
+    """
+    Expense Filter Serializer
+    """
+    class Meta:
+        model = ExpenseFilter
+        fields = '__all__'
+        read_only_fields = ('id', 'workspace', 'created_at', 'updated_at') 
+
+    def create(self, validated_data):
+        workspace_id = self.context['request'].parser_context.get('kwargs').get('workspace_id')
+
+        expense_filter, _ = ExpenseFilter.objects.update_or_create(
+            workspace_id=workspace_id,
+            rank=validated_data['rank'],
+            defaults=validated_data
+        )
+
+        return expense_filter
+
+
+class ExpenseSerializer(serializers.ModelSerializer):
+    """
+    Expense serializer
+    """
+    class Meta:
+        model = Expense
+        fields = ['updated_at', 'claim_number', 'employee_email', 'employee_name', 'fund_source']
