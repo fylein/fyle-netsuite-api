@@ -486,5 +486,5 @@ class SetupE2ETestView(viewsets.ViewSet):
             return Response(status=status.HTTP_200_OK, data={'message': {}})
 
         except Exception as error:
-            logger.error(error)
+            logger.info(error)
             return Response(status=status.HTTP_400_BAD_REQUEST, data={'message': 'Not e2e test workspace'})

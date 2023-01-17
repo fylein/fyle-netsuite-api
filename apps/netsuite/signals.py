@@ -71,5 +71,5 @@ def validate_custom_segment(sender, instance: CustomSegment, **kwargs):
             custom_segment = ns_connector.connection.custom_segments.get(instance.internal_id)
             instance.name = custom_segment['recordType']['name'].upper().replace(' ', '_')
     except Exception as e:
-        logger.exception(e)
+        logger.info(e)
         raise NotFound()

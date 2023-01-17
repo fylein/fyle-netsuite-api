@@ -60,7 +60,7 @@ class NetSuiteConnector:
     @staticmethod
     def get_message_and_code(raw_response):
         response = eval(raw_response.text)
-        logger.error('Charge Card Error - %s', response)
+        logger.info('Charge Card Error - %s', response)
         code = response['error']['code']
         message = json.loads(response['error']['message'])['message']
 
@@ -480,7 +480,7 @@ class NetSuiteConnector:
         try:
             vendor_response = self.connection.vendors.post(vendor)
         except NetSuiteRequestError as exception:
-            logger.exception({'error': exception})
+            logger.info({'error': exception})
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
             if 'representingsubsidiary' in detail['message']:
@@ -1196,7 +1196,7 @@ class NetSuiteConnector:
             return json.loads(raw_response.text)
 
         elif configuration.change_accounting_period:
-            logger.error('Charge Card Error - %s', raw_response.text)
+            logger.info('Charge Card Error - %s', raw_response.text)
 
             error_message = json.loads(eval(raw_response.text)['error']['message'])['message']
             if error_message == 'The transaction date you specified is not within the date range of your accounting period.':

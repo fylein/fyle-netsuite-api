@@ -201,7 +201,7 @@ def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_conn
                 mapping.destination_vendor.save()
 
         except NetSuiteRequestError as exception:
-            logger.exception({'error': exception})
+            logger.info({'error': exception})
 
 
 def __handle_netsuite_connection_error(expense_group: ExpenseGroup, task_log: TaskLog) -> None:
@@ -282,7 +282,7 @@ def create_bill(expense_group, task_log_id):
 
     except NetSuiteRequestError as exception:
         all_details = []
-        logger.exception({'error': exception})
+        logger.info({'error': exception})
         detail = json.dumps(exception.__dict__)
         detail = json.loads(detail)
         task_log.status = 'FAILED'
@@ -385,7 +385,7 @@ def create_credit_card_charge(expense_group, task_log_id):
 
     except NetSuiteRequestError as exception:
         all_details = []
-        logger.exception({'error': exception})
+        logger.info({'error': exception})
         detail = json.dumps(exception.__dict__)
         detail = json.loads(detail)
         task_log.status = 'FAILED'
@@ -474,7 +474,7 @@ def create_expense_report(expense_group, task_log_id):
 
     except NetSuiteRequestError as exception:
         all_details = []
-        logger.exception({'error': exception})
+        logger.info({'error': exception})
         detail = json.dumps(exception.__dict__)
         detail = json.loads(detail)
         task_log.status = 'FAILED'
@@ -563,7 +563,7 @@ def create_journal_entry(expense_group, task_log_id):
 
     except NetSuiteRequestError as exception:
         all_details = []
-        logger.exception({'error': exception})
+        logger.info({'error': exception})
         detail = json.dumps(exception.__dict__)
         detail = json.loads(detail)
         task_log.status = 'FAILED'
@@ -1131,7 +1131,7 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
 
     except NetSuiteRequestError as exception:
         all_details = []
-        logger.exception({'error': exception})
+        logger.info({'error': exception})
         detail = json.dumps(exception.__dict__)
         detail = json.loads(detail)
         task_log.status = 'FAILED'
@@ -1257,7 +1257,7 @@ def check_netsuite_object_status(workspace_id):
                     bill.payment_synced = True
                     bill.save()
             except NetSuiteRequestError as exception:
-                logger.exception({'error': exception})
+                logger.info({'error': exception})
                 pass
 
     if expense_reports:
@@ -1278,7 +1278,7 @@ def check_netsuite_object_status(workspace_id):
                     expense_report.payment_synced = True
                     expense_report.save()
             except NetSuiteRequestError as exception:
-                logger.exception({'error': exception})
+                logger.info({'error': exception})
                 pass
 
 
@@ -1369,8 +1369,12 @@ def process_reimbursements(workspace_id):
                 try:
                     platform.reimbursements.bulk_post_reimbursements(reimbursements_list)
                     platform.reimbursements.sync()
-                except InternalServerError as exception:
-                    logger.exception(exception)
+                except Exception as error:
+                    error = traceback.format_exc()
+                    error = {
+                        'error': error
+                    }
+                    logger.exception(error)
 
 
 def schedule_reimbursements_sync(sync_netsuite_to_fyle_payments, workspace_id):
