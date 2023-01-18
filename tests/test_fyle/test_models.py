@@ -10,12 +10,13 @@ from .fixtures import data
 @pytest.mark.django_db()
 def test_create_expense(create_temp_workspace):
     mock_expenes = data['expenses']
+    expense_count = len(Expense.objects.filter(org_id='or79Cob97KSh'))
     Expense.create_expense_objects(
         mock_expenes
     )
 
-    expense = Expense.objects.filter(org_id='orsO0VW86WLQ')
-    assert len(expense) == 2
+    expense = Expense.objects.filter(org_id='or79Cob97KSh').order_by('created_at')
+    assert len(expense) == expense_count+2
 
     expense = expense.last()
     assert expense.employee_email == 'jhonsnow@fyle.in'

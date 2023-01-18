@@ -11,7 +11,8 @@ from fyle_integrations_platform_connector import PlatformConnector
 from apps.workspaces.models import FyleCredential, Workspace, Configuration
 from apps.tasks.models import TaskLog
 
-from .models import Expense, ExpenseGroup, ExpenseGroupSettings
+from .models import Expense, ExpenseFilter, ExpenseGroup, ExpenseGroupSettings
+from .helpers import construct_expense_filter_query
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -103,9 +104,18 @@ def create_expense_groups(workspace_id: int, configuration: Configuration, fund_
             workspace.save()
 
             expense_objects = Expense.create_expense_objects(expenses)
+            expense_filters = ExpenseFilter.objects.filter(workspace_id=workspace_id)
+
+            if expense_filters:
+                expenses_object_ids = [expense_object.id for expense_object in expense_objects]
+                final_query = construct_expense_filter_query(expense_filters)
+                Expense.objects.filter(final_query, id__in=expenses_object_ids, expensegroup__isnull=True, org_id=workspace.fyle_org_id).update(is_skipped=True)
+                filtered_expenses = Expense.objects.filter(is_skipped=False, id__in=expenses_object_ids, expensegroup__isnull=True, org_id=workspace.fyle_org_id)
+            else:
+                filtered_expenses = expense_objects
 
             ExpenseGroup.create_expense_groups_by_report_id_fund_source(
-                expense_objects, configuration, workspace_id
+                filtered_expenses, configuration, workspace_id
             )
 
             task_log.status = 'COMPLETE'
