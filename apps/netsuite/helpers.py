@@ -63,4 +63,4 @@ def sync_dimensions(ns_credentials: NetSuiteCredentials, workspace_id: int, dime
             sync = getattr(netsuite_connection, 'sync_{}'.format(dimension))
             sync()
         except Exception as exception:
-            logger.exception(exception)
+            logger.info(exception)
