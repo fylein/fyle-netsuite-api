@@ -325,14 +325,16 @@ class NetSuiteConnector:
                         'attribute_type': 'LOCATION',
                         'display_name': 'Location',
                         'value': location['name'],
-                        'destination_id': location['internalId']
+                        'destination_id': location['internalId'],
+                        'active': not location['isInactive']
                     })
             else:
                 location_attributes.append({
                     'attribute_type': 'LOCATION',
                     'display_name': 'Location',
                     'value': location['name'],
-                    'destination_id': location['internalId']
+                    'destination_id': location['internalId'],
+                    'active': not location['isInactive']
                 })
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(
@@ -353,7 +355,8 @@ class NetSuiteConnector:
                 'attribute_type': 'CLASS',
                 'display_name': 'Class',
                 'value': classification['name'],
-                'destination_id': classification['internalId']
+                'destination_id': classification['internalId'],
+                'active': not classification['isInactive']
             })
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(
@@ -374,7 +377,8 @@ class NetSuiteConnector:
                 'attribute_type': 'DEPARTMENT',
                 'display_name': 'Department',
                 'value': department['name'],
-                'destination_id': department['internalId']
+                'destination_id': department['internalId'],
+                'active': not department['isInactive']
             })
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(
@@ -403,7 +407,8 @@ class NetSuiteConnector:
                             'display_name': 'Vendor',
                             'value': unidecode.unidecode(u'{0}'.format(vendor['entityId'])),
                             'destination_id': vendor['internalId'],
-                            'detail': detail
+                            'detail': detail,
+                            'active': not vendor['isInactive']
                         })
                 else:
                     attributes.append({
@@ -411,7 +416,8 @@ class NetSuiteConnector:
                         'display_name': 'Vendor',
                         'value': unidecode.unidecode(u'{0}'.format(vendor['entityId'])),
                         'destination_id': vendor['internalId'],
-                        'detail': detail
+                        'detail': detail,
+                        'active': not vendor['isInactive']
                     })
 
             DestinationAttribute.bulk_create_or_update_destination_attributes(
