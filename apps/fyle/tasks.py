@@ -104,7 +104,7 @@ def create_expense_groups(workspace_id: int, configuration: Configuration, fund_
             workspace.save()
 
             expense_objects = Expense.create_expense_objects(expenses)
-            expense_filters = ExpenseFilter.objects.filter(workspace_id=workspace_id)
+            expense_filters = ExpenseFilter.objects.filter(workspace_id=workspace_id).order_by('rank')
 
             if expense_filters:
                 expenses_object_ids = [expense_object.id for expense_object in expense_objects]
