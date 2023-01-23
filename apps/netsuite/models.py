@@ -524,7 +524,7 @@ class CreditCardCharge(models.Model):
 
         vendor = DestinationAttribute.objects.filter(
             value__iexact=merchant, attribute_type='VENDOR', workspace_id=expense_group.workspace_id
-        ).first()
+        ).order_by('-updated_at').first()
 
         expense_group.description['spent_at'] = expense.spent_at.strftime("%Y-%m-%d")
         expense_group.save()
