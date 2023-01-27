@@ -549,8 +549,9 @@ def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_
                 'is_enabled': project.active
             })
     else:
+        existing_project_names = [project_name.lower() for project_name in existing_project_names]
         for project in projects:
-            if project.value not in existing_project_names:
+            if project.value.lower() not in existing_project_names:
                 payload.append({
                     'name': project.value,
                     'code': project.destination_id,
