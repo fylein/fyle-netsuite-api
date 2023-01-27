@@ -626,6 +626,9 @@ def auto_create_project_mappings(workspace_id):
             workspace_id, exception.message, {'error': exception.response}
         )
 
+    except NetSuiteRateLimitError:
+        logger.info('Rate limit error, workspace_id - %s', workspace_id)
+
     except Exception:
         error = traceback.format_exc()
         error = {
