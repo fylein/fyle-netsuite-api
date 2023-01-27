@@ -833,6 +833,8 @@ class ExpenseReportLineItem(models.Model):
                                                            attribute_type='CURRENCY').first()
 
             class_id = None
+            department_id = None
+
             if general_mappings.use_employee_class and employee_field_mapping == 'EMPLOYEE':
                 class_id = entity.destination_employee.detail.get('class_id')
             else:
@@ -1051,6 +1053,8 @@ class JournalEntryLineItem(models.Model):
             ).first()
 
             class_id = None
+            department_id = None
+
             if general_mappings.use_employee_class and employee_field_mapping == 'EMPLOYEE' and employee_mapping and employee_mapping.destination_employee:
                 class_id = employee_mapping.destination_employee.detail.get('class_id')
             else:
