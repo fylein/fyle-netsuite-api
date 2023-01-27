@@ -619,7 +619,8 @@ class CreditCardChargeLineItem(models.Model):
                 workspace_id=expense_group.workspace_id
             ).first()
             if employee_mapping and employee_mapping.destination_employee:
-                department_id = employee_mapping.destination_employee.detail.get('department_id')
+                if employee_mapping.destination_employee.detail.get('department_id'):
+                    department_id = employee_mapping.destination_employee.detail.get('department_id')
 
         location_id = get_location_id_or_none(expense_group, lineitem)
 
@@ -840,7 +841,9 @@ class ExpenseReportLineItem(models.Model):
             if general_mappings.use_employee_department and \
                 general_mappings.department_level in ('ALL', 'TRANSACTION_LINE') and \
                     employee_field_mapping == 'EMPLOYEE':
-                department_id = entity.destination_employee.detail.get('department_id')
+                if entity.destination_employee.detail.get('department_id'):
+                    department_id = entity.destination_employee.detail.get('department_id')
+
             else:
                 department_id = get_department_id_or_none(expense_group, lineitem)
 
@@ -1059,7 +1062,9 @@ class JournalEntryLineItem(models.Model):
             
             if general_mappings.use_employee_department and general_mappings.department_level in ('ALL', 'TRANSACTION_LINE') \
                 and employee_field_mapping == 'EMPLOYEE'and employee_mapping and employee_mapping.destination_employee:    
-                department_id = employee_mapping.destination_employee.detail.get('department_id')
+                if employee_mapping.destination_employee.detail.get('department_id'):
+                    department_id = employee_mapping.destination_employee.detail.get('department_id')
+
             elif expense_group.fund_source == 'PERSONAL':
                 department_id = get_department_id_or_none(expense_group, lineitem)
             
