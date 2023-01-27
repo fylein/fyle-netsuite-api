@@ -427,7 +427,8 @@ class BillLineitem(models.Model):
                     workspace_id=expense_group.workspace_id
                 ).first()
                 if employee_mapping and employee_mapping.destination_employee:
-                    department_id = employee_mapping.destination_employee.detail.get('department_id')
+                    if employee_mapping.destination_employee.detail.get('department_id'):
+                        department_id = employee_mapping.destination_employee.detail.get('department_id')
 
             location_id = get_location_id_or_none(expense_group, lineitem)
 
