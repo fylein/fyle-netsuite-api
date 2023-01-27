@@ -83,7 +83,7 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense: Expense, e
         return receipt_url
     except Exception:
         error = traceback.format_exc()
-        logger.error(
+        logger.info(
             'Attachment failed for expense group id %s / workspace id %s Error: %s',
             expense.expense_id, workspace_id, {'error': error}
         )
