@@ -193,7 +193,7 @@ Q_CLUSTER = {
     # The number of tasks a worker will process before recycling.
     # Useful to release memory resources on a regular basis.
     'recycle': 50,
-    'max_rss': '100mb'
+    'max_rss': 100000 # 100mb
 }
 
 # Database
