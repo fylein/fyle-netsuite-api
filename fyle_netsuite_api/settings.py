@@ -178,7 +178,7 @@ Q_CLUSTER = {
     'name': 'fyle_netsuite_api',
     'save_limit': 0,
     'workers': int(os.environ.get('NO_WORKERS', 4)),
-    # How many tasks are kept in memory by a single cluster. 
+    # How many tasks are kept in memory by a single cluster.
     # Helps balance the workload and the memory overhead of each individual cluster
     'queue_limit': 10,
     'cached': False,
@@ -190,7 +190,7 @@ Q_CLUSTER = {
     'retry': 14400,
     'timeout': 3600,
     'catch_up': False,
-    # The number of tasks a worker will process before recycling. 
+    # The number of tasks a worker will process before recycling.
     # Useful to release memory resources on a regular basis.
     'recycle': 50,
     'max_rss': '100mb'
