@@ -12,6 +12,7 @@ from django_q.models import Schedule
 from django_q.tasks import Chain
 
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
+from netsuitesdk import NetSuiteRateLimitError
 
 from fyle_accounting_mappings.models import ExpenseAttribute, Mapping, DestinationAttribute, CategoryMapping, EmployeeMapping
 from fyle_integrations_platform_connector import PlatformConnector
@@ -305,6 +306,15 @@ def create_bill(expense_group, task_log_id):
 
         task_log.save()
 
+    except NetSuiteRateLimitError:
+        logger.info('Rate limit error, workspace_id - %s', expense_group.workspace_id)
+        task_log.status = 'FAILED'
+        task_log.detail = {
+            'error': 'Rate limit error'
+        }
+
+        task_log.save()
+
     except Exception:
         error = traceback.format_exc()
         task_log.detail = {
@@ -408,6 +418,15 @@ def create_credit_card_charge(expense_group, task_log_id):
 
         task_log.save()
 
+    except NetSuiteRateLimitError:
+        logger.info('Rate limit error, workspace_id - %s', expense_group.workspace_id)
+        task_log.status = 'FAILED'
+        task_log.detail = {
+            'error': 'Rate limit error'
+        }
+
+        task_log.save()
+
     except Exception:
         error = traceback.format_exc()
         task_log.detail = {
@@ -497,6 +516,15 @@ def create_expense_report(expense_group, task_log_id):
 
         task_log.save()
 
+    except NetSuiteRateLimitError:
+        logger.info('Rate limit error, workspace_id - %s', expense_group.workspace_id)
+        task_log.status = 'FAILED'
+        task_log.detail = {
+            'error': 'Rate limit error'
+        }
+
+        task_log.save()
+
     except Exception:
         error = traceback.format_exc()
         task_log.detail = {
@@ -583,6 +611,15 @@ def create_journal_entry(expense_group, task_log_id):
         detail = exception.response
         task_log.status = 'FAILED'
         task_log.detail = detail
+
+        task_log.save()
+
+    except NetSuiteRateLimitError:
+        logger.info('Rate limit error, workspace_id - %s', expense_group.workspace_id)
+        task_log.status = 'FAILED'
+        task_log.detail = {
+            'error': 'Rate limit error'
+        }
 
         task_log.save()
 
@@ -1014,7 +1051,11 @@ def create_netsuite_payment_objects(netsuite_objects, object_type, workspace_id)
 
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
 
-    netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
+    try:
+        netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
+    except NetSuiteRateLimitError:
+        logger.info('Rate limit error, workspace_id - %s', workspace_id)
+        return
 
     for netsuite_object in netsuite_objects:
         entity_id = netsuite_object.entity_id
@@ -1145,6 +1186,15 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
 
         task_log.save()
 
+    except NetSuiteRateLimitError:
+        logger.info('Rate limit error, workspace_id - %s', workspace_id)
+        task_log.status = 'FAILED'
+        task_log.detail = {
+            'error': 'Rate limit error'
+        }
+
+        task_log.save()
+
     except BulkError as exception:
         logger.info(exception.response)
         detail = exception.response
@@ -1231,7 +1281,11 @@ def get_all_internal_ids(netsuite_objects):
 def check_netsuite_object_status(workspace_id):
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
 
-    netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
+    try:
+        netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
+    except NetSuiteRateLimitError:
+        logger.info('Rate limit error, workspace_id - %s', workspace_id)
+        return
 
     bills = Bill.objects.filter(
         expense_group__workspace_id=workspace_id, paid_on_netsuite=False, expense_group__fund_source='PERSONAL'
