@@ -187,7 +187,12 @@ Q_CLUSTER = {
     'attempt_count': 1,
     'retry': 14400,
     'timeout': 3600,
-    'catch_up': False
+    'catch_up': False,
+    # The number of tasks a worker will process before recycling . Useful to release memory resources on a regular basis.
+    'recycle': 50,
+    # How many tasks are kept in memory by a single cluster. Helps balance the workload and the memory overhead of each individual cluster
+    'queue_limit': 10,
+    'max_rss': '100mb'
 }
 
 # Database
