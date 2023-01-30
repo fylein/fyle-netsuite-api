@@ -7,6 +7,8 @@ from typing import List, Dict
 from dateutil import parser
 from django_q.models import Schedule
 
+from netsuitesdk import NetSuiteRateLimitError
+
 from fyle.platform.exceptions import WrongParamsError
 
 from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttribute, DestinationAttribute,\
@@ -475,6 +477,10 @@ def auto_create_category_mappings(workspace_id):
             'Error while creating categories workspace_id - %s in Fyle %s %s',
             workspace_id, exception.message, {'error': exception.response}
         )
+
+    except NetSuiteRateLimitError:
+        logger.info('Rate limit error, workspace_id - %s', workspace_id)
+
     except Exception:
         error = traceback.format_exc()
         error = {
@@ -620,6 +626,9 @@ def auto_create_project_mappings(workspace_id):
             workspace_id, exception.message, {'error': exception.response}
         )
 
+    except NetSuiteRateLimitError:
+        logger.info('Rate limit error, workspace_id - %s', workspace_id)
+
     except Exception:
         error = traceback.format_exc()
         error = {
@@ -660,16 +669,19 @@ def async_auto_map_employees(workspace_id: int):
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
-    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
+    try:
+        netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+        netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
 
-    platform.employees.sync()
-    if destination_type == 'EMPLOYEE':
-        netsuite_connection.sync_employees()
-    else:
-        netsuite_connection.sync_vendors()
+        platform.employees.sync()
+        if destination_type == 'EMPLOYEE':
+            netsuite_connection.sync_employees()
+        else:
+            netsuite_connection.sync_vendors()
 
-    EmployeesAutoMappingHelper(workspace_id, destination_type, employee_mapping_preference).reimburse_mapping()
+        EmployeesAutoMappingHelper(workspace_id, destination_type, employee_mapping_preference).reimburse_mapping()
+    except NetSuiteRateLimitError:
+        logger.info('Rate limit error, workspace_id - %s', workspace_id)
 
 
 def schedule_auto_map_employees(employee_mapping_preference: str, workspace_id: int):
@@ -834,6 +846,9 @@ def auto_create_cost_center_mappings(workspace_id):
             workspace_id, exception.message, {'error': exception.response}
         )
 
+    except NetSuiteRateLimitError:
+        logger.info('Rate limit error, workspace_id - %s', workspace_id)
+
     except Exception:
         error = traceback.format_exc()
         error = {
@@ -967,10 +982,13 @@ def async_auto_create_custom_field_mappings(workspace_id):
 
     for mapping_setting in mapping_settings:
         if mapping_setting.import_to_fyle:
-            sync_netsuite_attribute(mapping_setting.destination_field, workspace_id)
-            auto_create_expense_fields_mappings(
-                workspace_id, mapping_setting.destination_field, mapping_setting.source_field
-            )
+            try:
+                sync_netsuite_attribute(mapping_setting.destination_field, workspace_id)
+                auto_create_expense_fields_mappings(
+                    workspace_id, mapping_setting.destination_field, mapping_setting.source_field
+                )
+            except NetSuiteRateLimitError:
+                logger.info('Rate limit error, workspace_id - %s', workspace_id)
 
 
 def schedule_fyle_attributes_creation(workspace_id: int):
@@ -1035,6 +1053,9 @@ def auto_create_vendors_as_merchants(workspace_id):
             'Error while posting vendors as merchants to fyle for workspace_id - %s in Fyle %s %s',
             workspace_id, exception.message, {'error': exception.response}
         )
+
+    except NetSuiteRateLimitError:
+        logger.info('Rate limit error, workspace_id - %s', workspace_id)
 
     except Exception:
         error = traceback.format_exc()
@@ -1231,6 +1252,9 @@ def auto_create_netsuite_employees_on_fyle(workspace_id):
             'Error while posting netsuite employees to fyle for workspace_id - %s in Fyle %s %s',
             workspace_id, exception.message, {'error': exception.response}
         )
+
+    except NetSuiteRateLimitError:
+        logger.info('Rate limit error, workspace_id - %s', workspace_id)
 
     except Exception:
         error = traceback.format_exc()
