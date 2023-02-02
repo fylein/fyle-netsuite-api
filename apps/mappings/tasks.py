@@ -7,7 +7,7 @@ from typing import List, Dict
 from dateutil import parser
 from django_q.models import Schedule
 
-from netsuitesdk import NetSuiteRateLimitError
+from netsuitesdk import NetSuiteRateLimitError, NetSuiteLoginError
 
 from fyle.platform.exceptions import WrongParamsError
 
@@ -481,6 +481,9 @@ def auto_create_category_mappings(workspace_id):
     except NetSuiteRateLimitError:
         logger.info('Rate limit error, workspace_id - %s', workspace_id)
 
+    except NetSuiteLoginError:
+        logger.info('Invalid credentials, workspace_id - %s', workspace_id)
+
     except Exception:
         error = traceback.format_exc()
         error = {
@@ -629,6 +632,9 @@ def auto_create_project_mappings(workspace_id):
     except NetSuiteRateLimitError:
         logger.info('Rate limit error, workspace_id - %s', workspace_id)
 
+    except NetSuiteLoginError:
+        logger.info('Invalid credentials, workspace_id - %s', workspace_id)
+
     except Exception:
         error = traceback.format_exc()
         error = {
@@ -682,6 +688,8 @@ def async_auto_map_employees(workspace_id: int):
         EmployeesAutoMappingHelper(workspace_id, destination_type, employee_mapping_preference).reimburse_mapping()
     except NetSuiteRateLimitError:
         logger.info('Rate limit error, workspace_id - %s', workspace_id)
+    except NetSuiteLoginError:
+        logger.info('Invalid credentials, workspace_id - %s', workspace_id)
 
 
 def schedule_auto_map_employees(employee_mapping_preference: str, workspace_id: int):
@@ -849,6 +857,9 @@ def auto_create_cost_center_mappings(workspace_id):
     except NetSuiteRateLimitError:
         logger.info('Rate limit error, workspace_id - %s', workspace_id)
 
+    except NetSuiteLoginError:
+        logger.info('Invalid credentials, workspace_id - %s', workspace_id)
+
     except Exception:
         error = traceback.format_exc()
         error = {
@@ -989,6 +1000,8 @@ def async_auto_create_custom_field_mappings(workspace_id):
                 )
             except NetSuiteRateLimitError:
                 logger.info('Rate limit error, workspace_id - %s', workspace_id)
+            except NetSuiteLoginError:
+                logger.info('Invalid credentials, workspace_id - %s', workspace_id)
 
 
 def schedule_fyle_attributes_creation(workspace_id: int):
@@ -1056,6 +1069,9 @@ def auto_create_vendors_as_merchants(workspace_id):
 
     except NetSuiteRateLimitError:
         logger.info('Rate limit error, workspace_id - %s', workspace_id)
+
+    except NetSuiteLoginError:
+        logger.info('Invalid credentials, workspace_id - %s', workspace_id)
 
     except Exception:
         error = traceback.format_exc()
@@ -1255,6 +1271,9 @@ def auto_create_netsuite_employees_on_fyle(workspace_id):
 
     except NetSuiteRateLimitError:
         logger.info('Rate limit error, workspace_id - %s', workspace_id)
+
+    except NetSuiteLoginError:
+        logger.info('Invalid credentials, workspace_id - %s', workspace_id)
 
     except Exception:
         error = traceback.format_exc()
