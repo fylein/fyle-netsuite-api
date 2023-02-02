@@ -7,4 +7,4 @@ python manage.py migrate
 python manage.py createcachetable --database cache_db
 
 # Running development server
-gunicorn -c gunicorn_config.py fyle_netsuite_api.wsgi -b 0.0.0.0:8000
+python manage.py runserver 0.0.0.0:8000
