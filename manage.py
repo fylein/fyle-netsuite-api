@@ -5,6 +5,7 @@ import sys
 
 
 def main():
+    print('asdasdasdads')
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'fyle_netsuite_api.settings')
     try:
         from django.core.management import execute_from_command_line

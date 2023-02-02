@@ -4,13 +4,13 @@ import os
 
 port_number = 8001
 bind = '0.0.0.0:{0}'.format(port_number)
-proc_name = 'fyle_intacct_api'
+proc_name = 'fyle_netsuite_api'
 
 # The maximum number of pending connections.
 backlog = int(os.environ.get('GUNICORN_BACKLOG', 2048))
 
 # The number of worker processes for handling requests.
-workers = int(os.environ.get('GUNICORN_NUMBER_WORKERS', 2))
+workers = int(os.environ.get('GUNICORN_NUMBER_WORKERS', 4))
 
 # Workers silent for more than this many seconds are killed and restarted.
 # TODO: Check sync dimension stuff
@@ -27,16 +27,16 @@ worker_connections = int(os.environ.get('GUNICORN_WORKER_CONNECTIONS', 1000))
 loglevel = os.environ.get('GUNICORN_LOG _LEVEL', 'debug')
 
 # The type of workers to use.
-worker_class = os.environ.get('GUNICORN_WORKER_CLASS', 'sync')
+worker_class = os.environ.get('GUNICORN_WORKER_CLASS', 'gevent')
 
 # The number of worker threads for handling requests.
 threads = int(os.environ.get('GUNICORN_NUMBER_WORKER_THREADS', 1))
 
 # The maximum number of requests a worker will process before restarting.
-max_requests = int(os.environ.get('GUNICORN_MAX_REQUESTS', 0))
+max_requests = int(os.environ.get('GUNICORN_MAX_REQUESTS', 20))
 
 # The jitter causes the restart per worker to be randomized by randint(0, max_requests_jitter).
-max_requests_jitter = int(os.environ.get('GUNICORN_MAX_REQUESTS_JITTER', 5))
+max_requests_jitter = int(os.environ.get('GUNICORN_MAX_REQUESTS_JITTER', 0))
 
 # Timeout for graceful workers restart.
 graceful_timeout = int(os.environ.get('GUNICORN_WORKER_GRACEFUL_TIMEOUT', 5))
