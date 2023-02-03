@@ -5,6 +5,8 @@ from datetime import datetime
 
 from django.db import transaction
 from django_q.tasks import async_task
+
+from fyle.platform.exceptions import InvalidTokenError
 from fyle_integrations_platform_connector import PlatformConnector
 
 
@@ -123,10 +125,10 @@ def create_expense_groups(workspace_id: int, configuration: Configuration, fund_
 
             task_log.save()
 
-    except FyleCredential.DoesNotExist:
-        logger.info('Fyle credentials not found %s', workspace_id)
+    except (FyleCredential.DoesNotExist, InvalidTokenError):
+        logger.info('Fyle credentials not found / Invalid token %s', workspace_id)
         task_log.detail = {
-            'message': 'Fyle credentials do not exist in workspace'
+            'message': 'Fyle credentials do not exist in workspace / Invalid token'
         }
         task_log.status = 'FAILED'
         task_log.save()

@@ -213,7 +213,7 @@ if os.environ.get('DATABASE_URL', ''):
 else:
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'ENGINE': 'django_db_geventpool.backends.postgresql_psycopg2',
             'OPTIONS': {
                 'options': '-c search_path={0}'.format(os.environ.get('DB_SCHEMA'))
             },

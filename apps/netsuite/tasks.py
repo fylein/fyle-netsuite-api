@@ -16,7 +16,7 @@ from netsuitesdk import NetSuiteRateLimitError
 
 from fyle_accounting_mappings.models import ExpenseAttribute, Mapping, DestinationAttribute, CategoryMapping, EmployeeMapping
 from fyle_integrations_platform_connector import PlatformConnector
-from fyle.platform.exceptions import InternalServerError
+from fyle.platform.exceptions import InternalServerError, InvalidTokenError
 
 from fyle_netsuite_api.exceptions import BulkError
 
@@ -82,6 +82,10 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense: Expense, e
                 receipt_url = file['url']
 
         return receipt_url
+
+    except InvalidTokenError:
+        logger.info('Invalid Fyle refresh token for workspace %s', workspace_id)
+
     except Exception:
         error = traceback.format_exc()
         logger.info(
@@ -1207,7 +1211,11 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
 def create_vendor_payment(workspace_id):
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
 
-    platform = PlatformConnector(fyle_credentials=fyle_credentials)
+    try:
+        platform = PlatformConnector(fyle_credentials=fyle_credentials)
+    except InvalidTokenError:
+        logger.info('Invalid Fyle refresh token for workspace %s', workspace_id)
+        return
     platform.reimbursements.sync()
 
     bills = Bill.objects.filter(
@@ -1386,7 +1394,12 @@ def get_valid_reimbursement_ids(reimbursement_ids: List, platform: PlatformConne
 def process_reimbursements(workspace_id):
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
 
-    platform = PlatformConnector(fyle_credentials=fyle_credentials)
+    try:
+        platform = PlatformConnector(fyle_credentials=fyle_credentials)
+    except InvalidTokenError:
+        logger.info('Invalid Fyle refresh token for workspace %s', workspace_id)
+        return
+
     platform.reimbursements.sync()
 
     reimbursements = Reimbursement.objects.filter(state='PENDING', workspace_id=workspace_id).all()

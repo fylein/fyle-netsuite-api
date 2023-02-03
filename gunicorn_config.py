@@ -1,4 +1,5 @@
 import os
+from psycogreen.gevent import patch_psycopg
 
 # https://docs.gunicorn.org/en/stable/settings.html
 
@@ -36,7 +37,7 @@ threads = int(os.environ.get('GUNICORN_NUMBER_WORKER_THREADS', 1))
 max_requests = int(os.environ.get('GUNICORN_MAX_REQUESTS', 20))
 
 # The jitter causes the restart per worker to be randomized by randint(0, max_requests_jitter).
-max_requests_jitter = int(os.environ.get('GUNICORN_MAX_REQUESTS_JITTER', 0))
+max_requests_jitter = int(os.environ.get('GUNICORN_MAX_REQUESTS_JITTER', 20))
 
 # Timeout for graceful workers restart.
 graceful_timeout = int(os.environ.get('GUNICORN_WORKER_GRACEFUL_TIMEOUT', 5))
@@ -65,6 +66,7 @@ access_log_format = '%({X-Real-IP}i)s - - - %(t)s "%(r)s" "%(f)s" "%(a)s" %({X-R
 
 
 def post_fork(server, worker):
+    patch_psycopg()
     server.log.info("Worker spawned (pid: %s)", worker.pid)
 
 
