@@ -1063,14 +1063,14 @@ class JournalEntryLineItem(models.Model):
                 department_id = get_department_id_or_none(expense_group, lineitem)
                 location_id = get_location_id_or_none(expense_group, lineitem)
             
+            elif expense_group.fund_source == 'PERSONAL':
+                department_id = get_department_id_or_none(expense_group, lineitem)
+
             if not department_id and general_mappings.use_employee_department and general_mappings.department_level in ('ALL', 'TRANSACTION_LINE') \
                 and employee_field_mapping == 'EMPLOYEE'and employee_mapping and employee_mapping.destination_employee:    
                 if employee_mapping.destination_employee.detail.get('department_id'):
                     department_id = employee_mapping.destination_employee.detail.get('department_id')
 
-            elif expense_group.fund_source == 'PERSONAL':
-                department_id = get_department_id_or_none(expense_group, lineitem)
-            
             if not department_id and general_mappings.use_employee_location and general_mappings.location_level in ('ALL', 'TRANSACTION_LINE')\
                 and employee_field_mapping == 'EMPLOYEE'and employee_mapping and employee_mapping.destination_employee:
                 location_id = employee_mapping.destination_employee.detail.get('location_id')
