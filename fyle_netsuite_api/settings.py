@@ -206,23 +206,15 @@ Q_CLUSTER = {
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
-if os.environ.get('DATABASE_URL', ''):
+
+# Defaulting django engine for qcluster
+if len(sys.argv) > 0 and sys.argv[1] == 'qcluster':
     DATABASES = {
         'default': dj_database_url.config()
     }
 else:
     DATABASES = {
-        'default': {
-            'ENGINE': 'django_db_geventpool.backends.postgresql_psycopg2',
-            'OPTIONS': {
-                'options': '-c search_path={0}'.format(os.environ.get('DB_SCHEMA'))
-            },
-            'NAME': os.environ.get('DB_NAME'),
-            'USER': os.environ.get('DB_USER'),
-            'PASSWORD': os.environ.get('DB_PASSWORD'),
-            'HOST': os.environ.get('DB_HOST'),
-            'PORT': os.environ.get('DB_PORT'),
-        }
+        'default': dj_database_url.config(engine='django_db_geventpool.backends.postgresql_psycopg2')
     }
 
 DATABASES['cache_db'] = {

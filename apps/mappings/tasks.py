@@ -1259,7 +1259,6 @@ def post_employees(platform_connection: PlatformConnector, workspace_id: int):
 
     platform_connection.employees.sync()
 
-
 def auto_create_netsuite_employees_on_fyle(workspace_id):
     try:
         fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
