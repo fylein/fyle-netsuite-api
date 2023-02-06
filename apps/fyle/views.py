@@ -239,11 +239,9 @@ class RefreshFyleDimensionView(generics.ListCreateAPIView):
         Sync data from Fyle
         """
         try:
-            from time import sleep
-            sleep(5)
             workspace = Workspace.objects.get(id=kwargs['workspace_id'])
             fyle_credentials = FyleCredential.objects.get(workspace_id=workspace.id)
-            # sync_dimensions(fyle_credentials, workspace.id)
+            sync_dimensions(fyle_credentials, workspace.id)
 
             workspace.source_synced_at = datetime.now()
             workspace.save(update_fields=['source_synced_at'])
