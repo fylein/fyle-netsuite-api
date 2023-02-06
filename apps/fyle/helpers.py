@@ -205,17 +205,26 @@ def construct_expense_filter_query(expense_filters: List[ExpenseFilter]):
 def construct_expense_filter(expense_filter: ExpenseFilter):
     constructed_expense_filter = {}
     if expense_filter.is_custom and expense_filter.operator != 'isnull':
-        #This block is for custom-field with not null check 
-        if expense_filter.custom_field_type == 'NUMBER':
-            expense_filter.values = [int(expense_filter_value) for expense_filter_value in expense_filter.values]
+        #This block is for custom-field with not null check
+        if expense_filter.custom_field_type == 'SELECT' and expense_filter.operator == 'not_in':
+            filter1 = {
+                'custom_properties__{0}__{1}'.format(
+                    expense_filter.condition,
+                    'in'
+                ): expense_filter.values
+            }
+            constructed_expense_filter = ~Q(**filter1)
+        else:
+            if expense_filter.custom_field_type == 'NUMBER':
+                expense_filter.values = [int(expense_filter_value) for expense_filter_value in expense_filter.values]
 
-        filter1 = {
-            'custom_properties__{0}__{1}'.format(
-                expense_filter.condition,
-                expense_filter.operator
-            ): expense_filter.values if len(expense_filter.values) > 1 or expense_filter.operator == 'in' else expense_filter.values[0]
-        }
-        constructed_expense_filter = Q(**filter1)
+            filter1 = {
+                'custom_properties__{0}__{1}'.format(
+                    expense_filter.condition,
+                    expense_filter.operator
+                ): expense_filter.values if len(expense_filter.values) > 1 or expense_filter.operator == 'in' else expense_filter.values[0]
+            }
+            constructed_expense_filter = Q(**filter1)
 
     elif expense_filter.is_custom and expense_filter.operator == 'isnull':
         #This block is for custom-field is null check

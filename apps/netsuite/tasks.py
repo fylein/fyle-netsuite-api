@@ -12,7 +12,7 @@ from django_q.models import Schedule
 from django_q.tasks import Chain
 
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
-from netsuitesdk import NetSuiteRateLimitError
+from netsuitesdk import NetSuiteRateLimitError, NetSuiteLoginError
 
 from fyle_accounting_mappings.models import ExpenseAttribute, Mapping, DestinationAttribute, CategoryMapping, EmployeeMapping
 from fyle_integrations_platform_connector import PlatformConnector
@@ -284,8 +284,7 @@ def create_bill(expense_group, task_log_id):
     except NetSuiteCredentials.DoesNotExist:
         __handle_netsuite_connection_error(expense_group, task_log)
 
-
-    except NetSuiteRequestError as exception:
+    except (NetSuiteRequestError, NetSuiteLoginError) as exception:
         all_details = []
         logger.info({'error': exception})
         detail = json.dumps(exception.__dict__)
@@ -397,7 +396,7 @@ def create_credit_card_charge(expense_group, task_log_id):
     except NetSuiteCredentials.DoesNotExist:
         __handle_netsuite_connection_error(expense_group, task_log)
 
-    except NetSuiteRequestError as exception:
+    except (NetSuiteRequestError, NetSuiteLoginError) as exception:
         all_details = []
         logger.info({'error': exception})
         detail = json.dumps(exception.__dict__)
@@ -495,7 +494,7 @@ def create_expense_report(expense_group, task_log_id):
     except NetSuiteCredentials.DoesNotExist:
         __handle_netsuite_connection_error(expense_group, task_log)
 
-    except NetSuiteRequestError as exception:
+    except (NetSuiteRequestError, NetSuiteLoginError) as exception:
         all_details = []
         logger.info({'error': exception})
         detail = json.dumps(exception.__dict__)
@@ -593,7 +592,7 @@ def create_journal_entry(expense_group, task_log_id):
     except NetSuiteCredentials.DoesNotExist:
         __handle_netsuite_connection_error(expense_group, task_log)
 
-    except NetSuiteRequestError as exception:
+    except (NetSuiteRequestError, NetSuiteLoginError) as exception:
         all_details = []
         logger.info({'error': exception})
         detail = json.dumps(exception.__dict__)
@@ -1060,6 +1059,9 @@ def create_netsuite_payment_objects(netsuite_objects, object_type, workspace_id)
     except NetSuiteRateLimitError:
         logger.info('Rate limit error, workspace_id - %s', workspace_id)
         return
+    except NetSuiteLoginError:
+        logger.info('Invalid credentials, workspace_id - %s', workspace_id)
+        return
 
     for netsuite_object in netsuite_objects:
         entity_id = netsuite_object.entity_id
@@ -1174,7 +1176,7 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
 
         task_log.save()
 
-    except NetSuiteRequestError as exception:
+    except (NetSuiteRequestError, NetSuiteLoginError) as exception:
         all_details = []
         logger.info({'error': exception})
         detail = json.dumps(exception.__dict__)
@@ -1293,6 +1295,9 @@ def check_netsuite_object_status(workspace_id):
         netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
     except NetSuiteRateLimitError:
         logger.info('Rate limit error, workspace_id - %s', workspace_id)
+        return
+    except NetSuiteLoginError:
+        logger.error('NetSuite login error, workspace_id - %s', workspace_id)
         return
 
     bills = Bill.objects.filter(

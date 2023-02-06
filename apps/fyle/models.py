@@ -65,7 +65,8 @@ EXPENSE_FILTER_OPERATOR = (
 	('iexact' , 'iexact'),
 	('icontains', 'icontains'),
 	('lt', 'lt'),
-	('lte', 'lte')
+	('lte', 'lte'),
+    ('not_in', 'not_in')
 )
 
 class Expense(models.Model):
