@@ -14,11 +14,9 @@ backlog = int(os.environ.get('GUNICORN_BACKLOG', 2048))
 workers = int(os.environ.get('GUNICORN_NUMBER_WORKERS', 4))
 
 # Workers silent for more than this many seconds are killed and restarted.
-# TODO: Check sync dimension stuff
 timeout = int(os.environ.get('GUNICORN_WORKER_TIMEOUT', 60))
 
 # The number of seconds to wait for requests on a Keep-Alive connection.
-# TODO: Check sync dimension stuff
 keepalive = int(os.environ.get('GUNICORN_KEEPALIVE', 2))
 
 # The maximum number of simultaneous clients.
