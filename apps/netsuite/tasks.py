@@ -466,6 +466,7 @@ def create_credit_card_charge(expense_group, task_log_id):
             refund = False
             if expense.amount < 0:
                 refund = True
+            # TODO
             attachment_link = load_attachments(netsuite_connection, expense, expense_group)
 
             if attachment_link:
@@ -569,6 +570,7 @@ def create_expense_report(expense_group, task_log_id):
 
             attachment_links = {}
 
+            # TODO
             for expense in expense_group.expenses.all():
                 attachment_link = load_attachments(netsuite_connection, expense, expense_group)
                 if attachment_link:
@@ -667,6 +669,7 @@ def create_journal_entry(expense_group, task_log_id):
             attachment_links = {}
 
             for expense in expense_group.expenses.all():
+                # TODO
                 attachment_link = load_attachments(netsuite_connection, expense, expense_group)
 
                 if attachment_link:
