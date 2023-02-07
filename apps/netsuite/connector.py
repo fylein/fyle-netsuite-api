@@ -825,8 +825,7 @@ class NetSuiteConnector:
 
         return []
 
-    @staticmethod
-    def __construct_bill_lineitems(bill_lineitems: List[BillLineitem],
+    def construct_bill_lineitems(self, bill_lineitems: List[BillLineitem],
                                    attachment_links: Dict, cluster_domain: str, org_id: str) -> List[Dict]:
         """
         Create bill line items
@@ -922,7 +921,7 @@ class NetSuiteConnector:
 
         return lines
 
-    def __construct_bill(self, bill: Bill, bill_lineitems: List[BillLineitem], attachment_links: Dict) -> Dict:
+    def __construct_bill(self, bill: Bill, bill_lineitems: List[BillLineitem]) -> Dict:
         """
         Create a bill
         :return: constructed bill
@@ -999,8 +998,8 @@ class NetSuiteConnector:
             'landedCostMethod': None,
             'landedCostPerLine': None,
             'transactionNumber': None,
-            'expenseList': self.__construct_bill_lineitems(
-                bill_lineitems, attachment_links, cluster_domain, org_id
+            'expenseList': self.construct_bill_lineitems(
+                bill_lineitems, {}, cluster_domain, org_id
             ),
             'accountingBookDetailList': None,
             'itemList': None,
@@ -1014,13 +1013,13 @@ class NetSuiteConnector:
 
         return bill_payload
 
-    def post_bill(self, bill: Bill, bill_lineitems: List[BillLineitem], attachment_links: Dict):
+    def post_bill(self, bill: Bill, bill_lineitems: List[BillLineitem]):
         """
         Post vendor bills to NetSuite
         """
         configuration = Configuration.objects.get(workspace_id=self.workspace_id)
         try:
-            bills_payload = self.__construct_bill(bill, bill_lineitems, attachment_links)
+            bills_payload = self.__construct_bill(bill, bill_lineitems)
             created_bill = self.connection.vendor_bills.post(bills_payload)
             return created_bill
 
@@ -1030,7 +1029,7 @@ class NetSuiteConnector:
             message = 'An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'
             if configuration.change_accounting_period and detail['message'] == message:
                 first_day_of_month = datetime.today().date().replace(day=1)
-                bills_payload = self.__construct_bill(bill, bill_lineitems, attachment_links)
+                bills_payload = self.__construct_bill(bill, bill_lineitems)
                 bills_payload['tranDate'] = first_day_of_month
                 created_bill = self.connection.vendor_bills.post(bills_payload)
                 
@@ -1046,9 +1045,8 @@ class NetSuiteConnector:
         bill = self.connection.vendor_bills.get(internal_id)
         return bill
 
-    @staticmethod
-    def __construct_credit_card_charge_lineitems(
-            credit_card_charge_lineitem: CreditCardChargeLineItem,
+    def construct_credit_card_charge_lineitems(
+            self, credit_card_charge_lineitem: CreditCardChargeLineItem,
             attachment_links: Dict, cluster_domain: str, org_id: str) -> List[Dict]:
         """
         Create credit_card_charge line items
@@ -1147,7 +1145,7 @@ class NetSuiteConnector:
             },
             'tranDate': transaction_date,
             'memo': credit_card_charge.memo,
-            'expenses': self.__construct_credit_card_charge_lineitems(
+            'expenses': self.construct_credit_card_charge_lineitems(
                 credit_card_charge_lineitem, attachment_links, cluster_domain, org_id
             ),
             'externalId': credit_card_charge.external_id
@@ -1227,9 +1225,8 @@ class NetSuiteConnector:
         code, message = self.get_message_and_code(raw_response)
         raise NetSuiteRequestError(code=code, message=message)
 
-    @staticmethod
-    def __construct_expense_report_lineitems(
-            expense_report_lineitems: List[ExpenseReportLineItem], attachment_links: Dict, cluster_domain: str,
+    def construct_expense_report_lineitems(
+            self, expense_report_lineitems: List[ExpenseReportLineItem], attachment_links: Dict, cluster_domain: str,
             org_id: str
     ) -> List[Dict]:
         """
@@ -1415,7 +1412,7 @@ class NetSuiteConnector:
                 'externalId': None,
                 'type': 'location'
             },
-            'expenseList': self.__construct_expense_report_lineitems(
+            'expenseList': self.construct_expense_report_lineitems(
                 expense_report_lineitems, attachment_links, cluster_domain, org_id
             ),
             'accountingBookDetailList': None,
@@ -1466,8 +1463,7 @@ class NetSuiteConnector:
         return expense_report
 
 
-    @staticmethod
-    def __construct_journal_entry_lineitems(journal_entry_lineitems: List[JournalEntryLineItem], org_id: str,
+    def construct_journal_entry_lineitems(self, journal_entry_lineitems: List[JournalEntryLineItem], org_id: str,
                                             credit=None, debit=None, attachment_links: Dict = None,
                                             cluster_domain: str = None) -> List[Dict]:
         """
@@ -1588,8 +1584,8 @@ class NetSuiteConnector:
         cluster_domain = fyle_credentials.cluster_domain
         org_id = Workspace.objects.get(id=journal_entry.expense_group.workspace_id).fyle_org_id
 
-        credit_line = self.__construct_journal_entry_lineitems(journal_entry_lineitems, credit='Credit', org_id=org_id)
-        debit_line = self.__construct_journal_entry_lineitems(
+        credit_line = self.construct_journal_entry_lineitems(journal_entry_lineitems, credit='Credit', org_id=org_id)
+        debit_line = self.construct_journal_entry_lineitems(
             journal_entry_lineitems,
             debit='Debit', attachment_links=attachment_links,
             cluster_domain=cluster_domain, org_id=org_id
