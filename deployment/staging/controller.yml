@@ -36,9 +36,9 @@ spec:
           image: docker.io/{{DOCKERHUB_USERNAME}}/fyle_netsuite-api:{{RELEASE_VERSION}}
           resources:
             limits:
-              memory: 600Mi
+              memory: 450Mi
             requests:
-              memory: 600Mi
+              memory: 450Mi
           env:
             - name: GET_HOSTS_FROM
               value: dns

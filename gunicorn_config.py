@@ -11,7 +11,7 @@ proc_name = 'fyle_netsuite_api'
 backlog = int(os.environ.get('GUNICORN_BACKLOG', 2048))
 
 # The number of worker processes for handling requests.
-workers = int(os.environ.get('GUNICORN_NUMBER_WORKERS', 4))
+workers = int(os.environ.get('GUNICORN_NUMBER_WORKERS', 2))
 
 # Workers silent for more than this many seconds are killed and restarted.
 timeout = int(os.environ.get('GUNICORN_WORKER_TIMEOUT', 60))
