@@ -235,7 +235,7 @@ def test_fyle_refresh_dimension(api_client, access_token, mocker):
 
    response = api_client.post(url)
    assert response.status_code == 400
-   assert response.data['message'] == 'Fyle credentials not found in workspace'
+   assert response.data['message'] == 'Fyle credentials not found in workspace / Invalid Token'
 
 
 @pytest.mark.django_db(databases=['default'])
@@ -298,7 +298,7 @@ def test_fyle_sync_dimension(api_client, access_token, mocker):
 
    response = api_client.post(url)
    assert response.status_code == 400
-   assert response.data['message'] == 'Fyle credentials not found in workspace'\
+   assert response.data['message'] == 'Fyle credentials not found in workspace / Invalid Token'
 
 
 def test_expense_group_schedule_view(api_client, access_token):

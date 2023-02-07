@@ -6,6 +6,8 @@ from rest_framework.views import status
 from rest_framework import generics
 from rest_framework.response import Response
 
+from fyle.platform.exceptions import InvalidTokenError
+
 from fyle_integrations_platform_connector import PlatformConnector
 from fyle_accounting_mappings.models import ExpenseAttribute
 from fyle_accounting_mappings.serializers import ExpenseAttributeSerializer
@@ -212,10 +214,10 @@ class SyncFyleDimensionView(generics.ListCreateAPIView):
             return Response(
                 status=status.HTTP_200_OK
             )
-        except FyleCredential.DoesNotExist:
+        except (FyleCredential.DoesNotExist, InvalidTokenError):
             return Response(
                 data={
-                    'message': 'Fyle credentials not found in workspace'
+                    'message': 'Fyle credentials not found in workspace / Invalid Token'
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
@@ -247,14 +249,15 @@ class RefreshFyleDimensionView(generics.ListCreateAPIView):
             return Response(
                 status=status.HTTP_200_OK
             )
-        except FyleCredential.DoesNotExist:
+        except (FyleCredential.DoesNotExist, InvalidTokenError):
+            logger.info('Fyle credentials not found in workspace / Invalid Token')
             return Response(
                 data={
-                    'message': 'Fyle credentials not found in workspace'
+                    'message': 'Fyle credentials not found in workspace / Invalid Token'
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
-        except Exception: 
+        except Exception:
             return Response(
                 data={
                     'message': 'Error in refreshing Dimensions'
@@ -352,6 +355,9 @@ class CustomFieldView(generics.RetrieveAPIView):
                 data=response,
                 status=status.HTTP_200_OK
             )
+
+        except InvalidTokenError:
+            logger.info('Invalid Fyle refresh token for workspace %s', workspace_id)
 
         except Exception as exception:
             logger.error(
