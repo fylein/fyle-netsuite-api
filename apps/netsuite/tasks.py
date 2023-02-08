@@ -51,15 +51,15 @@ TASK_TYPE_EXPORT_COL_MAP = {
 }
 
 TASK_TYPE_LINE_ITEM_COL_MAP = {
-    'CREATING_EXPENSE_REPORT': 'expense_report_lineitems',
-    'CREATING_BILL': 'bill_lineitems',
-    'CREATING_JOURNAL_ENTRY': 'journal_entry_lineitems',
-    'CREATING_CREDIT_CARD_CHARGE': 'credit_card_charge_lineitems'
+    'CREATING_EXPENSE_REPORT': 'ExpenseReportLineItem',
+    'CREATING_BILL': 'BillLineitem',
+    'CREATING_JOURNAL_ENTRY': 'JournalEntryLineItem',
+    'CREATING_CREDIT_CARD_CHARGE': 'CreditCardChargeLineItem'
 }
 
 TASK_TYPE_EXPORT_MAP = {
     'CREATING_EXPENSE_REPORT': 'expense_reports',
-    'CREATING_BILL': 'bills',
+    'CREATING_BILL': 'vendor_bills',
     'CREATING_JOURNAL_ENTRY': 'journal_entries'
 }
 
@@ -264,33 +264,43 @@ def construct_payload_and_update_export(expense_id_receipt_url_map: dict, task_l
         func = TASK_TYPE_CONSTRUCT_LINE_FUNC_MAP[task_log.type]
 
         export_instance = getattr(task_log, TASK_TYPE_EXPORT_COL_MAP[task_log.type])
-        export_line_items = getattr(export_instance, TASK_TYPE_LINE_ITEM_COL_MAP[task_log.type])
+
+        line_items_filter = {
+            '{}_id'.format(TASK_TYPE_EXPORT_COL_MAP[task_log.type]): export_instance.id
+        }
+
+        line_item_model = import_string('apps.netsuite.models.{}'.format(TASK_TYPE_LINE_ITEM_COL_MAP[task_log.type]))
+        export_line_items = line_item_model.objects.filter(**line_items_filter)
 
         lines = []
         payload = {}
 
         if task_log.type == 'CREATING_JOURNAL_ENTRY':
-            credit_line = globals()[func](export_line_items, credit='Credit', org_id=workspace.fyle_org_id)
-            debit_line = globals()[func](
+            construct_lines = getattr(netsuite_connection, func)
+            credit_line = construct_lines(export_line_items, credit='Credit', org_id=workspace.fyle_org_id)
+            debit_line = construct_lines(
                 export_line_items, debit='Debit', attachment_links=expense_id_receipt_url_map,
                 cluster_domain=cluster_domain, org_id=workspace.fyle_org_id
             )
             lines.extend(credit_line)
             lines.extend(debit_line)
         else:
-            lines = globals()[func](export_line_items, expense_id_receipt_url_map, cluster_domain, workspace.fyle_org_id)
+            construct_lines = getattr(netsuite_connection, func)
+            lines = construct_lines(export_line_items, expense_id_receipt_url_map, cluster_domain, workspace.fyle_org_id)
 
         payload = {
             TASK_TYPE_LINES_MAP[task_log.type]: lines,
             'externalId': export_instance.external_id
         }
 
-        # TODO: handle credit card charge
         getattr(netsuite_connection.connection, TASK_TYPE_EXPORT_MAP[task_log.type]).post(payload)
 
-def upload_attachments_and_update_export(expenses: List[Expense], netsuite_connection: NetSuiteConnector,
-    platform: PlatformConnector, task_log: TaskLog, cluster_domain: str):
-    workspace = netsuite_connection.workspace
+def upload_attachments_and_update_export(expenses: List[Expense], task_log: TaskLog, fyle_credentials: FyleCredential, workspace_id: int):
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
+    workspace = netsuite_credentials.workspace
+
+    platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
     expense_id_receipt_url_map = {}
 
@@ -318,7 +328,7 @@ def upload_attachments_and_update_export(expenses: List[Expense], netsuite_conne
                 receipt_url = file['url']
                 expense_id_receipt_url_map[expense.expense_id] = receipt_url
 
-    construct_payload_and_update_export(expense_id_receipt_url_map, task_log, workspace, cluster_domain, netsuite_connection)
+    construct_payload_and_update_export(expense_id_receipt_url_map, task_log, workspace, fyle_credentials.cluster_domain, netsuite_connection)
 
 
 def create_bill(expense_group, task_log_id):
@@ -334,13 +344,10 @@ def create_bill(expense_group, task_log_id):
     general_mappings: GeneralMapping = GeneralMapping.objects.filter(workspace_id=expense_group.workspace_id).first()
 
     try:
+        fyle_credentials = FyleCredential.objects.get(workspace_id=expense_group.workspace_id)
         netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
 
         netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
-
-        fyle_credentials = FyleCredential.objects.get(workspace_id=expense_group.workspace_id)
-
-        platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
         if expense_group.fund_source == 'PERSONAL' and configuration.auto_map_employees \
                 and configuration.auto_create_destination_entity:
@@ -374,8 +381,8 @@ def create_bill(expense_group, task_log_id):
             expense_group.save()
 
             async_task(
-                'apps.workspaces.tasks.upload_attachments_and_update_export',
-                expense_group.expenses.all(), netsuite_connection, platform, task_log, fyle_credentials.cluster_domain
+                'apps.netsuite.tasks.upload_attachments_and_update_export',
+                expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
             )
 
     except NetSuiteCredentials.DoesNotExist:
@@ -466,7 +473,7 @@ def create_credit_card_charge(expense_group, task_log_id):
             refund = False
             if expense.amount < 0:
                 refund = True
-            # TODO
+
             attachment_link = load_attachments(netsuite_connection, expense, expense_group)
 
             if attachment_link:
@@ -550,8 +557,8 @@ def create_expense_report(expense_group, task_log_id):
     configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
 
     try:
+        fyle_credentials = FyleCredential.objects.get(workspace_id=expense_group.workspace_id)
         netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
-
         netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
         if configuration.auto_map_employees and configuration.auto_create_destination_entity:
@@ -568,16 +575,8 @@ def create_expense_report(expense_group, task_log_id):
                 expense_group, configuration
             )
 
-            attachment_links = {}
-
-            # TODO
-            for expense in expense_group.expenses.all():
-                attachment_link = load_attachments(netsuite_connection, expense, expense_group)
-                if attachment_link:
-                    attachment_links[expense.expense_id] = attachment_link
-
             created_expense_report = netsuite_connection.post_expense_report(
-                expense_report_object, expense_report_lineitems_objects, attachment_links
+                expense_report_object, expense_report_lineitems_objects
             )
 
             task_log.detail = created_expense_report
@@ -589,6 +588,11 @@ def create_expense_report(expense_group, task_log_id):
             expense_group.exported_at = datetime.now()
             expense_group.response_logs = created_expense_report
             expense_group.save()
+
+            async_task(
+                'apps.netsuite.tasks.upload_attachments_and_update_export',
+                expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
+            )
 
     except NetSuiteCredentials.DoesNotExist:
         __handle_netsuite_connection_error(expense_group, task_log)
@@ -649,6 +653,7 @@ def create_journal_entry(expense_group, task_log_id):
     configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
 
     try:
+        fyle_credentials = FyleCredential.objects.get(workspace_id=expense_group.workspace_id)
         netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
 
         netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
@@ -666,17 +671,8 @@ def create_journal_entry(expense_group, task_log_id):
                 expense_group, configuration
             )
 
-            attachment_links = {}
-
-            for expense in expense_group.expenses.all():
-                # TODO
-                attachment_link = load_attachments(netsuite_connection, expense, expense_group)
-
-                if attachment_link:
-                    attachment_links[expense.expense_id] = attachment_link
-
             created_journal_entry = netsuite_connection.post_journal_entry(
-                journal_entry_object, journal_entry_lineitems_objects, attachment_links
+                journal_entry_object, journal_entry_lineitems_objects
             )
 
             task_log.detail = created_journal_entry
@@ -688,6 +684,11 @@ def create_journal_entry(expense_group, task_log_id):
             expense_group.exported_at = datetime.now()
             expense_group.response_logs = created_journal_entry
             expense_group.save()
+
+            async_task(
+                'apps.netsuite.tasks.upload_attachments_and_update_export',
+                expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
+            )
 
     except NetSuiteCredentials.DoesNotExist:
         __handle_netsuite_connection_error(expense_group, task_log)

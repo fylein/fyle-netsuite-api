@@ -1328,8 +1328,7 @@ class NetSuiteConnector:
         return lines
 
     def __construct_expense_report(self, expense_report: ExpenseReport,
-                                   expense_report_lineitems: List[ExpenseReportLineItem],
-                                   attachment_links: Dict) -> Dict:
+                                   expense_report_lineitems: List[ExpenseReportLineItem]) -> Dict:
         """
         Create a expense report
         :return: constructed expense report
@@ -1413,7 +1412,7 @@ class NetSuiteConnector:
                 'type': 'location'
             },
             'expenseList': self.construct_expense_report_lineitems(
-                expense_report_lineitems, attachment_links, cluster_domain, org_id
+                expense_report_lineitems, {}, cluster_domain, org_id
             ),
             'accountingBookDetailList': None,
             'customFieldList': None,
@@ -1425,14 +1424,14 @@ class NetSuiteConnector:
 
     def post_expense_report(
             self, expense_report: ExpenseReport,
-            expense_report_lineitems: List[ExpenseReportLineItem], attachment_links: Dict):
+            expense_report_lineitems: List[ExpenseReportLineItem]):
         """
         Post expense reports to NetSuite
         """
         configuration = Configuration.objects.get(workspace_id=self.workspace_id)
         try:
             expense_report_payload = self.__construct_expense_report(expense_report,
-                                                                    expense_report_lineitems, attachment_links)
+                                                                    expense_report_lineitems)
             created_expense_report = self.connection.expense_reports.post(expense_report_payload)
             return created_expense_report
 
@@ -1443,7 +1442,7 @@ class NetSuiteConnector:
 
             if configuration.change_accounting_period and detail['message'] == message:
                 expense_report_payload = self.__construct_expense_report(expense_report,
-                                                                    expense_report_lineitems, attachment_links)
+                                                                    expense_report_lineitems)
 
                 first_day_of_month = datetime.today().date().replace(day=1)
                 expense_report_payload['tranDate'] = first_day_of_month.strftime('%Y-%m-%dT%H:%M:%S')
@@ -1573,8 +1572,7 @@ class NetSuiteConnector:
         return lines
 
     def __construct_journal_entry(self, journal_entry: JournalEntry,
-                                  journal_entry_lineitems: List[JournalEntryLineItem],
-                                  attachment_links: Dict) -> Dict:
+                                  journal_entry_lineitems: List[JournalEntryLineItem]) -> Dict:
         """
         Create a journal entry report
         :return: constructed journal entry
@@ -1587,7 +1585,7 @@ class NetSuiteConnector:
         credit_line = self.construct_journal_entry_lineitems(journal_entry_lineitems, credit='Credit', org_id=org_id)
         debit_line = self.construct_journal_entry_lineitems(
             journal_entry_lineitems,
-            debit='Debit', attachment_links=attachment_links,
+            debit='Debit', attachment_links={},
             cluster_domain=cluster_domain, org_id=org_id
         )
         lines = []
@@ -1654,13 +1652,13 @@ class NetSuiteConnector:
         return journal_entry_payload
 
     def post_journal_entry(self, journal_entry: JournalEntry,
-                           journal_entry_lineitems: List[JournalEntryLineItem], attachment_links: Dict):
+                           journal_entry_lineitems: List[JournalEntryLineItem]):
         """
         Post journal entries to NetSuite
         """
         configuration = Configuration.objects.get(workspace_id=self.workspace_id)
         try:
-            journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems, attachment_links)
+            journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems)
             created_journal_entry = self.connection.journal_entries.post(journal_entry_payload)
             return created_journal_entry
 
@@ -1671,7 +1669,7 @@ class NetSuiteConnector:
 
             if configuration.change_accounting_period and detail['message'] == message:
                 first_day_of_month = datetime.today().date().replace(day=1)
-                journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems, attachment_links)
+                journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems)
                 journal_entry_payload['tranDate'] = first_day_of_month
                 created_journal_entry = self.connection.journal_entries.post(journal_entry_payload)
                 
