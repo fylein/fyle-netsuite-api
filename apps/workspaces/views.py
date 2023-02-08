@@ -174,11 +174,6 @@ class ConnectNetSuiteView(viewsets.ViewSet):
                     ns_token_secret=ns_token_secret,
                     workspace=workspace
                 )
-                # TODO: move this to NetSuiteCredentials signal and write a script to create this for existing workspace as a safety measure
-                # folder = netsuite_connection.connection.folders.post({
-                #     "externalId": workspace.fyle_org_id,
-                #     "name": 'Fyle Attachments - {0}'.format(workspace.name)
-                # })
                 workspace.ns_account_id = ns_account_id
                 workspace.save()
 
