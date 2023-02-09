@@ -377,6 +377,7 @@ class BillLineitem(models.Model):
     billable = models.BooleanField(null=True, help_text='Expense Billable or not')
     memo = models.TextField(help_text='NetSuite bill lineitem memo', null=True)
     netsuite_custom_segments = JSONField(null=True, help_text='NetSuite Custom Segments')
+    netsuite_receipt_url = models.TextField(null=True, help_text='NetSuite Receipt URL')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
@@ -789,6 +790,7 @@ class ExpenseReportLineItem(models.Model):
     tax_item_id = models.CharField(max_length=255, help_text='Tax Item ID', null=True)
     memo = models.TextField(help_text='NetSuite ExpenseReport lineitem memo', null=True)
     netsuite_custom_segments = JSONField(null=True, help_text='NetSuite Custom Segments')
+    netsuite_receipt_url = models.TextField(null=True, help_text='NetSuite Receipt URL')
     transaction_date = models.DateTimeField(help_text='Expense Report transaction date')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
@@ -990,6 +992,7 @@ class JournalEntryLineItem(models.Model):
     tax_item_id = models.CharField(max_length=255, help_text='Tax Item ID', null=True)
     memo = models.TextField(help_text='NetSuite JournalEntry lineitem description', null=True)
     netsuite_custom_segments = JSONField(null=True, help_text='NetSuite Custom Segments')
+    netsuite_receipt_url = models.TextField(null=True, help_text='NetSuite Receipt URL')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
