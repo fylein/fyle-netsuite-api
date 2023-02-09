@@ -3,7 +3,7 @@
 --
 
 -- Dumped from database version 14.2 (Debian 14.2-1.pgdg110+1)
--- Dumped by pg_dump version 14.2 (Debian 14.2-1.pgdg100+1)
+-- Dumped by pg_dump version 14.4 (Debian 14.4-1.pgdg100+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -171,7 +171,8 @@ CREATE TABLE public.bill_lineitems (
     billable boolean,
     customer_id character varying(255),
     tax_amount double precision,
-    tax_item_id character varying(255)
+    tax_item_id character varying(255),
+    netsuite_receipt_url text
 );
 
 
@@ -876,7 +877,8 @@ CREATE TABLE public.expense_report_lineitems (
     netsuite_custom_segments jsonb,
     billable boolean,
     tax_amount double precision,
-    tax_item_id character varying(255)
+    tax_item_id character varying(255),
+    netsuite_receipt_url text
 );
 
 
@@ -1371,7 +1373,8 @@ CREATE TABLE public.journal_entry_lineitems (
     journal_entry_id integer NOT NULL,
     netsuite_custom_segments jsonb,
     tax_amount double precision,
-    tax_item_id character varying(255)
+    tax_item_id character varying(255),
+    netsuite_receipt_url text
 );
 
 
@@ -2360,7 +2363,7 @@ COPY public.auth_tokens (id, refresh_token, user_id) FROM stdin;
 -- Data for Name: bill_lineitems; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.bill_lineitems (id, account_id, location_id, department_id, class_id, amount, memo, created_at, updated_at, bill_id, expense_id, netsuite_custom_segments, billable, customer_id, tax_amount, tax_item_id) FROM stdin;
+COPY public.bill_lineitems (id, account_id, location_id, department_id, class_id, amount, memo, created_at, updated_at, bill_id, expense_id, netsuite_custom_segments, billable, customer_id, tax_amount, tax_item_id, netsuite_receipt_url) FROM stdin;
 \.
 
 
@@ -7626,6 +7629,7 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 145	fyle	0023_expensefilter_custom_field_type	2023-01-12 13:09:21.981484+00
 146	fyle_accounting_mappings	0019_auto_20230105_1104	2023-01-12 13:09:22.000825+00
 147	fyle	0024_auto_20230116_1305	2023-01-16 13:13:09.266934+00
+148	netsuite	0019_auto_20230209_0950	2023-02-09 11:44:42.42825+00
 \.
 
 
@@ -11227,7 +11231,7 @@ COPY public.expense_groups_expenses (id, expensegroup_id, expense_id) FROM stdin
 -- Data for Name: expense_report_lineitems; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.expense_report_lineitems (id, amount, category, class_id, customer_id, location_id, department_id, currency, memo, created_at, updated_at, expense_id, expense_report_id, transaction_date, netsuite_custom_segments, billable, tax_amount, tax_item_id) FROM stdin;
+COPY public.expense_report_lineitems (id, amount, category, class_id, customer_id, location_id, department_id, currency, memo, created_at, updated_at, expense_id, expense_report_id, transaction_date, netsuite_custom_segments, billable, tax_amount, tax_item_id, netsuite_receipt_url) FROM stdin;
 \.
 
 
@@ -11286,7 +11290,7 @@ COPY public.journal_entries (id, currency, subsidiary_id, memo, external_id, cre
 -- Data for Name: journal_entry_lineitems; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.journal_entry_lineitems (id, debit_account_id, account_id, department_id, location_id, class_id, entity_id, amount, memo, created_at, updated_at, expense_id, journal_entry_id, netsuite_custom_segments, tax_amount, tax_item_id) FROM stdin;
+COPY public.journal_entry_lineitems (id, debit_account_id, account_id, department_id, location_id, class_id, entity_id, amount, memo, created_at, updated_at, expense_id, journal_entry_id, netsuite_custom_segments, tax_amount, tax_item_id, netsuite_receipt_url) FROM stdin;
 \.
 
 
@@ -11497,7 +11501,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 42, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 147, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 148, true);
 
 
 --
