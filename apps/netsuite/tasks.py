@@ -260,23 +260,39 @@ def __handle_netsuite_connection_error(expense_group: ExpenseGroup, task_log: Ta
 
 def construct_payload_and_update_export(expense_id_receipt_url_map: dict, task_log: TaskLog, workspace: Workspace,
     cluster_domain: str, netsuite_connection: NetSuiteConnector):
+    """
+    Construct payload and update export
+    :param expense_id_receipt_url_map: expense_id_receipt_url_map ex - {'tx4ziVSAyIsv': 'receipt_url_1', 'tx4ziVSAyIs2': 'receipt_url_2'}
+    :param task_log: task_log
+    :param workspace: workspace
+    :param cluster_domain: cluster_domain
+    :param netsuite_connection: netsuite_connection
+    :return: None
+    """
     if expense_id_receipt_url_map:
+        # target function that constructs lines payload, ex - construct_expense_report_lineitems
         func = TASK_TYPE_CONSTRUCT_LINE_FUNC_MAP[task_log.type]
 
+        # this holds the export instance, ex - ExpenseReport / JournalEntry / Bill
         export_instance = getattr(task_log, TASK_TYPE_EXPORT_COL_MAP[task_log.type])
 
+        # this holds the line items filter for a given export instance, ex - {'expense_report_id': 1}
         line_items_filter = {
             '{}_id'.format(TASK_TYPE_EXPORT_COL_MAP[task_log.type]): export_instance.id
         }
 
+        # this holds the line item model, ex - ExpenseReportLineitem / JournalEntryLineitem / BillLineitem
         line_item_model = import_string('apps.netsuite.models.{}'.format(TASK_TYPE_LINE_ITEM_COL_MAP[task_log.type]))
         export_line_items = line_item_model.objects.filter(**line_items_filter)
 
         lines = []
         payload = {}
 
+        # Since we have credit and debit for Journal Entry lines, we need to construct them separately
         if task_log.type == 'CREATING_JOURNAL_ENTRY':
             construct_lines = getattr(netsuite_connection, func)
+
+            # calling the target construct payload function with credit and debit
             credit_line = construct_lines(export_line_items, credit='Credit', org_id=workspace.fyle_org_id)
             debit_line = construct_lines(
                 export_line_items, debit='Debit', attachment_links=expense_id_receipt_url_map,
@@ -286,49 +302,72 @@ def construct_payload_and_update_export(expense_id_receipt_url_map: dict, task_l
             lines.extend(debit_line)
         else:
             construct_lines = getattr(netsuite_connection, func)
+            # calling the target construct payload function
             lines = construct_lines(export_line_items, expense_id_receipt_url_map, cluster_domain, workspace.fyle_org_id)
 
+        # final payload to be sent to netsuite, since this is an update operation, we need to pass the external id
         payload = {
             TASK_TYPE_LINES_MAP[task_log.type]: lines,
             'externalId': export_instance.external_id
         }
 
+        # calling the target netsuite post function, ex - netsuite_connection.connection.expense_reports.post(payload)
         getattr(netsuite_connection.connection, TASK_TYPE_EXPORT_MAP[task_log.type]).post(payload)
 
+
 def upload_attachments_and_update_export(expenses: List[Expense], task_log: TaskLog, fyle_credentials: FyleCredential, workspace_id: int):
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
-    netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
-    workspace = netsuite_credentials.workspace
+    """
+    Upload attachments and update export
+    :param expenses: list of expenses
+    :param task_log: task_log
+    :param fyle_credentials: fyle_credentials
+    :param workspace_id: workspace_id
+    :return: None
+    """
+    try:
+        netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+        netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
+        workspace = netsuite_credentials.workspace
 
-    platform = PlatformConnector(fyle_credentials=fyle_credentials)
+        platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
-    expense_id_receipt_url_map = {}
+        expense_id_receipt_url_map = {}
 
-    for expense in expenses:
-        if expense.file_ids and len(expense.file_ids):
-            payload = [{'id': expense.file_ids[0]}]
-            attachments = platform.files.bulk_generate_file_urls(payload)
+        for expense in expenses:
+            if expense.file_ids and len(expense.file_ids):
+                # Grabbing 1st attachment since we can upload only 1 attachment per expense
+                payload = [{'id': expense.file_ids[0]}]
+                attachments = platform.files.bulk_generate_file_urls(payload)
 
-            attachment = attachments[0] if len(attachments) else None
+                attachment = attachments[0] if len(attachments) else None
 
-            if attachment:
-                netsuite_connection.connection.files.post({
-                    'externalId': expense.expense_id,
-                    'name': '{0}_{1}'.format(attachment['id'], attachment['name']),
-                    'content': base64.b64decode(attachment['download_url']),
-                    'folder': {
-                        'name': None,
-                        'internalId': None,
-                        'externalId': workspace.fyle_org_id,
-                        'type': 'folder'
-                    }
-                })
+                if attachment:
+                    netsuite_connection.connection.files.post({
+                        'externalId': expense.expense_id,
+                        'name': '{0}_{1}'.format(attachment['id'], attachment['name']),
+                        'content': base64.b64decode(attachment['download_url']),
+                        'folder': {
+                            'name': None,
+                            'internalId': None,
+                            'externalId': workspace.fyle_org_id,
+                            'type': 'folder'
+                        }
+                    })
 
-                file = netsuite_connection.connection.files.get(externalId=expense.expense_id)
-                receipt_url = file['url']
-                expense_id_receipt_url_map[expense.expense_id] = receipt_url
+                    file = netsuite_connection.connection.files.get(externalId=expense.expense_id)
+                    receipt_url = file['url']
+                    expense_id_receipt_url_map[expense.expense_id] = receipt_url
 
-    construct_payload_and_update_export(expense_id_receipt_url_map, task_log, workspace, fyle_credentials.cluster_domain, netsuite_connection)
+        construct_payload_and_update_export(expense_id_receipt_url_map, task_log, workspace, fyle_credentials.cluster_domain, netsuite_connection)
+
+    except (NetSuiteRateLimitError, NetSuiteRequestError, NetSuiteLoginError, InvalidTokenError) as exception:
+        logger.info('Error while uploading attachments to netsuite workspace_id - %s %s', workspace_id, exception.__dict__)
+
+    except Exception as exception:
+        logger.error(
+            'Error while uploading attachments to netsuite workspace_id - %s %s %s',
+            workspace_id, exception, traceback.format_exc()
+        )
 
 
 def create_bill(expense_group, task_log_id):
