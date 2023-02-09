@@ -314,6 +314,11 @@ def construct_payload_and_update_export(expense_id_receipt_url_map: dict, task_l
         # calling the target netsuite post function, ex - netsuite_connection.connection.expense_reports.post(payload)
         getattr(netsuite_connection.connection, TASK_TYPE_EXPORT_MAP[task_log.type]).post(payload)
 
+        # Update netsuite_receipt_url in line_items table
+        for line_item in export_line_items:
+            line_item.netsuite_receipt_url = expense_id_receipt_url_map.get(line_item.expense.expense_id, None)
+            line_item.save()
+
 
 def upload_attachments_and_update_export(expenses: List[Expense], task_log: TaskLog, fyle_credentials: FyleCredential, workspace_id: int):
     """
