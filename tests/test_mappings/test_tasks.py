@@ -688,27 +688,6 @@ def test_auto_create_vendors_as_merchants(db, mocker):
         response = auto_create_vendors_as_merchants(workspace_id=1)
 
 
-def test_schedule_vendors_as_merchants_creation(db):
-    workspace_id=2
-    schedule_vendors_as_merchants_creation(import_vendors_as_merchants=True, workspace_id=workspace_id)
-
-    schedule = Schedule.objects.filter(
-        func='apps.mappings.tasks.auto_create_vendors_as_merchants',
-        args='{}'.format(workspace_id),
-    ).first()
-    
-    assert schedule.func == 'apps.mappings.tasks.auto_create_vendors_as_merchants'
-
-    schedule_vendors_as_merchants_creation(import_vendors_as_merchants=False, workspace_id=workspace_id)
-
-    schedule = Schedule.objects.filter(
-        func='apps.mappings.tasks.auto_create_vendors_as_merchants',
-        args='{}'.format(workspace_id),
-    ).first()
-
-    assert schedule == None
-
-
 def test_auto_create_expense_fields_mappings(db, mocker):
     mocker.patch(
         'fyle_integrations_platform_connector.apis.ExpenseCustomFields.post',

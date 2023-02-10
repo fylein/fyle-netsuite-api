@@ -5,8 +5,7 @@ from django_q.models import Schedule
 from fyle_accounting_mappings.models import MappingSetting
 
 from apps.mappings.tasks import schedule_auto_map_employees, \
-    schedule_auto_map_ccc_employees, schedule_tax_groups_creation, schedule_vendors_as_merchants_creation, \
-        schedule_netsuite_employee_creation_on_fyle
+    schedule_auto_map_ccc_employees, schedule_tax_groups_creation, schedule_netsuite_employee_creation_on_fyle
 from apps.mappings.models import GeneralMapping
 from apps.workspaces.models import Configuration
 
@@ -21,8 +20,6 @@ def schedule_or_delete_auto_mapping_tasks(configuration: Configuration):
         employee_mapping_preference=configuration.auto_map_employees, workspace_id=int(configuration.workspace_id))
     schedule_tax_groups_creation(
         import_tax_items=configuration.import_tax_items, workspace_id=int(configuration.workspace_id))
-    schedule_vendors_as_merchants_creation(
-        import_vendors_as_merchants=configuration.import_vendors_as_merchants, workspace_id = configuration.workspace_id)
     schedule_netsuite_employee_creation_on_fyle(
         import_netsuite_employees=configuration.import_netsuite_employees, workspace_id=int(configuration.workspace_id)
     )

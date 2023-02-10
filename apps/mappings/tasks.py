@@ -1086,26 +1086,6 @@ def auto_create_vendors_as_merchants(workspace_id):
             'Error while posting vendors as merchants to fyle for workspace_id - %s error: %s',
             workspace_id, error)
 
-def schedule_vendors_as_merchants_creation(import_vendors_as_merchants, workspace_id):
-    if import_vendors_as_merchants:
-        schedule, _ = Schedule.objects.update_or_create(
-            func='apps.mappings.tasks.auto_create_vendors_as_merchants',
-            args='{}'.format(workspace_id),
-            defaults={
-                'schedule_type': Schedule.MINUTES,
-                'minutes': 24 * 60,
-                'next_run': datetime.now()
-            }
-        )
-    else:
-        schedule: Schedule = Schedule.objects.filter(
-            func='apps.mappings.tasks.auto_create_vendors_as_merchants',
-            args='{}'.format(workspace_id),
-        ).first()
-
-        if schedule:
-            schedule.delete()
-
 
 def create_fyle_department_payload(department_name: str, parent_department: str, existing_departments: Dict):
     """
