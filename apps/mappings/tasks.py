@@ -511,7 +511,7 @@ def auto_import_and_map_fyle_fields(workspace_id):
     chain = Chain()
 
     if configuration.import_vendors_as_merchants:
-        chain.append('apps.mappings.tasks.auto_create_vendor_mappings', workspace_id)
+        chain.append('apps.mappings.tasks.auto_create_vendors_as_merchants', workspace_id)
 
     if configuration.import_categories:
         chain.append('apps.mappings.tasks.auto_create_category_mappings', workspace_id)
