@@ -501,14 +501,17 @@ def auto_create_category_mappings(workspace_id):
             workspace_id, error
         )
 
-def auto_import_categories_and_projects(workspace_id):
+def auto_import_and_map_fyle_fields(workspace_id):
     """
-    Import Categories (and / or) Projects
+    Auto import and map fyle fields
     """
     configuration: Configuration = Configuration.objects.get(workspace_id=workspace_id)
     project_mapping = MappingSetting.objects.filter(source_field='PROJECT', workspace_id=configuration.workspace_id).first()
 
     chain = Chain()
+
+    if configuration.import_vendors_as_merchants:
+        chain.append('apps.mappings.tasks.auto_create_vendor_mappings', workspace_id)
 
     if configuration.import_categories:
         chain.append('apps.mappings.tasks.auto_create_category_mappings', workspace_id)

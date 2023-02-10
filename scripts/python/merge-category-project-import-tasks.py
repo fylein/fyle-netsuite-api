@@ -6,7 +6,7 @@ from django_q.models import Schedule
 
 # grouping by workspace_id
 existing_import_enabled_schedules = Schedule.objects.filter(
-    func__in=['apps.mappings.tasks.auto_create_category_mappings', 'apps.mappings.tasks.auto_create_project_mappings']
+    func__in=['apps.mappings.tasks.auto_create_category_mappings', 'apps.mappings.tasks.auto_create_project_mappings', 'apps.mappings.tasks.auto_create_vendors_as_merchants']
 ).annotate(workspace_id=Count('args'))
 
 try:
@@ -14,7 +14,7 @@ try:
     with transaction.atomic():
         for schedule in existing_import_enabled_schedules:
             Schedule.objects.create(
-                func='apps.mappings.tasks.auto_import_categories_and_projects',
+                func='apps.mappings.tasks.auto_import_and_map_fyle_fields',
                 args=schedule.args,
                 schedule_type= Schedule.MINUTES,
                 minutes=24 * 60,
@@ -24,7 +24,7 @@ try:
 
         # Delete the old schedules
         Schedule.objects.filter(
-            func__in=['apps.mappings.tasks.auto_create_category_mappings', 'apps.mappings.tasks.auto_create_project_mappings']
+            func__in=['apps.mappings.tasks.auto_create_category_mappings', 'apps.mappings.tasks.auto_create_project_mappings', 'apps.mappings.tasks.auto_create_vendors_as_merchants']
         ).delete()
     
 except Exception as e:
