@@ -1,6 +1,10 @@
-from django_q.tasks import Chain
+from datetime import datetime
 
-from apps.mappings.tasks import schedule_categories_creation, schedule_auto_map_employees, \
+from django_q.tasks import Chain
+from django_q.models import Schedule
+from fyle_accounting_mappings.models import MappingSetting
+
+from apps.mappings.tasks import schedule_auto_map_employees, \
     schedule_auto_map_ccc_employees, schedule_tax_groups_creation, schedule_vendors_as_merchants_creation, \
         schedule_netsuite_employee_creation_on_fyle
 from apps.mappings.models import GeneralMapping
@@ -12,8 +16,7 @@ def schedule_or_delete_auto_mapping_tasks(configuration: Configuration):
     :param configuration: Workspace Configuration Instance
     :return: None
     """
-    schedule_categories_creation(
-        import_categories=configuration.import_categories, workspace_id=configuration.workspace_id)
+    schedule_or_delete_categories_projects_tasks(configuration)
     schedule_auto_map_employees(
         employee_mapping_preference=configuration.auto_map_employees, workspace_id=int(configuration.workspace_id))
     schedule_tax_groups_creation(
@@ -40,3 +43,27 @@ def validate_and_trigger_auto_map_employees(workspace_id: int):
         chain.append('apps.mappings.tasks.async_auto_map_ccc_account', workspace_id)
 
     chain.run()
+
+
+def schedule_or_delete_categories_projects_tasks(configuration: Configuration):
+    """
+    :param configuration: Workspace Configuration Instance
+    :return: None
+    """
+    project_mapping = MappingSetting.objects.filter(source_field='PROJECT', workspace_id=configuration.workspace_id).first()
+    if configuration.import_categories or (project_mapping and project_mapping.import_to_fyle):
+        start_datetime = datetime.now()
+        Schedule.objects.update_or_create(
+            func='apps.mappings.tasks.auto_import_categories_and_projects',
+            args='{}'.format(configuration.workspace_id),
+            defaults={
+                'schedule_type': Schedule.MINUTES,
+                'minutes': 24 * 60,
+                'next_run': start_datetime
+            }
+        )
+    elif not configuration.import_categories and not (project_mapping and project_mapping.import_to_fyle):
+        Schedule.objects.filter(
+            func='apps.mappings.tasks.auto_import_categories_and_projects',
+            args='{}'.format(configuration.workspace_id)
+        ).delete()

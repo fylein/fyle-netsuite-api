@@ -5,6 +5,7 @@ from django.db.models import Q
 
 from typing import List, Dict
 from dateutil import parser
+from django_q.tasks import Chain
 from django_q.models import Schedule
 
 from netsuitesdk import NetSuiteRateLimitError, NetSuiteLoginError
@@ -500,27 +501,24 @@ def auto_create_category_mappings(workspace_id):
             workspace_id, error
         )
 
+def auto_import_categories_and_projects(workspace_id):
+    """
+    Import Categories (and / or) Projects
+    """
+    configuration: Configuration = Configuration.objects.get(workspace_id=workspace_id)
+    project_mapping = MappingSetting.objects.filter(source_field='PROJECT', workspace_id=configuration.workspace_id).first()
 
-def schedule_categories_creation(import_categories, workspace_id):
-    if import_categories:
-        start_datetime = datetime.now()
-        schedule, _ = Schedule.objects.update_or_create(
-            func='apps.mappings.tasks.auto_create_category_mappings',
-            args='{}'.format(workspace_id),
-            defaults={
-                'schedule_type': Schedule.MINUTES,
-                'minutes': 24 * 60,
-                'next_run': start_datetime
-            }
-        )
-    else:
-        schedule: Schedule = Schedule.objects.filter(
-            func='apps.mappings.tasks.auto_create_category_mappings',
-            args='{}'.format(workspace_id)
-        ).first()
+    chain = Chain()
 
-        if schedule:
-            schedule.delete()
+    if configuration.import_categories:
+        chain.append('apps.mappings.tasks.auto_create_category_mappings', workspace_id)
+
+    if project_mapping and project_mapping.import_to_fyle:
+        chain.append('apps.mappings.tasks.auto_create_project_mappings', workspace_id)
+
+    if chain.length() > 0:
+        chain.run()
+
 
 def create_fyle_tax_group_payload(netsuite_attributes: List[DestinationAttribute], existing_fyle_tax_groups: list):
     """
@@ -653,27 +651,6 @@ def auto_create_project_mappings(workspace_id):
             'Error while creating projects workspace_id - %s error: %s',
             workspace_id, error
         )
-
-
-def schedule_projects_creation(import_to_fyle, workspace_id):
-    if import_to_fyle:
-        schedule, _ = Schedule.objects.update_or_create(
-            func='apps.mappings.tasks.auto_create_project_mappings',
-            args='{}'.format(workspace_id),
-            defaults={
-                'schedule_type': Schedule.MINUTES,
-                'minutes': 24 * 60,
-                'next_run': datetime.now()
-            }
-        )
-    else:
-        schedule: Schedule = Schedule.objects.filter(
-            func='apps.mappings.tasks.auto_create_project_mappings',
-            args='{}'.format(workspace_id)
-        ).first()
-
-        if schedule:
-            schedule.delete()
 
 
 def async_auto_map_employees(workspace_id: int):
