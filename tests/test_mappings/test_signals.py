@@ -17,11 +17,11 @@ def test_run_post_mapping_settings_triggers(access_token):
     mapping_setting.save()
 
     schedule = Schedule.objects.filter(
-        func='apps.mappings.tasks.auto_create_project_mappings',
+        func='apps.mappings.tasks.auto_import_and_map_fyle_fields',
         args='{}'.format(2),
     ).first()
 
-    assert schedule.func == 'apps.mappings.tasks.auto_create_project_mappings'
+    assert schedule.func == 'apps.mappings.tasks.auto_import_and_map_fyle_fields'
     assert schedule.args == '2'
 
     mapping_setting = MappingSetting(

@@ -248,20 +248,6 @@ def test_filter_unmapped_destinations(db, mocker):
 
 
 def test_schedule_creation(db):
-
-    schedule_categories_creation(True, 3)
-    schedule = Schedule.objects.filter(
-        func='apps.mappings.tasks.auto_create_category_mappings',
-        args='{}'.format(3),
-    ).first()
-    
-    schedule_categories_creation(False, 3)
-    schedule: Schedule = Schedule.objects.filter(
-        func='apps.mappings.tasks.auto_create_category_mappings',
-        args='{}'.format(3)
-    ).first()
-    assert schedule == None
-
     schedule_cost_centers_creation(True, 1)
 
     schedule = Schedule.objects.filter(
@@ -700,49 +686,6 @@ def test_auto_create_vendors_as_merchants(db, mocker):
     with mock.patch('fyle_integrations_platform_connector.apis.Merchants.sync') as mock_call:
         mock_call.side_effect = WrongParamsError(msg='wrong parameter error', response="wrong parameter error")
         response = auto_create_vendors_as_merchants(workspace_id=1)
-
-
-def test_schedule_vendors_as_merchants_creation(db):
-    workspace_id=2
-    schedule_vendors_as_merchants_creation(import_vendors_as_merchants=True, workspace_id=workspace_id)
-
-    schedule = Schedule.objects.filter(
-        func='apps.mappings.tasks.auto_create_vendors_as_merchants',
-        args='{}'.format(workspace_id),
-    ).first()
-    
-    assert schedule.func == 'apps.mappings.tasks.auto_create_vendors_as_merchants'
-
-    schedule_vendors_as_merchants_creation(import_vendors_as_merchants=False, workspace_id=workspace_id)
-
-    schedule = Schedule.objects.filter(
-        func='apps.mappings.tasks.auto_create_vendors_as_merchants',
-        args='{}'.format(workspace_id),
-    ).first()
-
-    assert schedule == None
-
-
-@pytest.mark.django_db
-def test_schedule_projects_creation():
-    workspace_id=2
-    schedule_projects_creation(import_to_fyle=True, workspace_id=workspace_id)
-
-    schedule = Schedule.objects.filter(
-        func='apps.mappings.tasks.auto_create_project_mappings',
-        args='{}'.format(workspace_id),
-    ).first()
-    
-    assert schedule.func == 'apps.mappings.tasks.auto_create_project_mappings'
-
-    schedule_projects_creation(import_to_fyle=False, workspace_id=workspace_id)
-
-    schedule = Schedule.objects.filter(
-        func='apps.mappings.tasks.auto_create_project_mappings',
-        args='{}'.format(workspace_id),
-    ).first()
-
-    assert schedule == None
 
 
 def test_auto_create_expense_fields_mappings(db, mocker):

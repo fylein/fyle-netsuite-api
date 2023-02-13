@@ -36,21 +36,6 @@ def run_post_configration_triggers(sender, instance: Configuration, **kwargs):
 
     schedule_or_delete_auto_mapping_tasks(configuration=instance)
 
-    merchant_import_schedule = Schedule.objects.filter(
-        func='apps.mappings.tasks.auto_create_vendors_as_merchants',
-        args=str(instance.workspace_id)
-    ).first()
-
-    if merchant_import_schedule:
-        category_import_schedule = Schedule.objects.filter(
-            func='apps.mappings.tasks.auto_create_category_mappings',
-            args=str(instance.workspace_id)
-        ).first()
-
-        if category_import_schedule:
-            category_import_schedule.next_run = merchant_import_schedule.next_run + timedelta(minutes=10)
-            category_import_schedule.save()
-
     schedule_payment_sync(configuration=instance)
 
 
