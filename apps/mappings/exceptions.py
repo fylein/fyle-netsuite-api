@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
 
-# TODO: add all possible exceptions
 def handle_exceptions(task_name):
     def decorator(func):
         def new_fn(workspace_id: int, *args):
