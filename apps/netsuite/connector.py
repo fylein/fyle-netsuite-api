@@ -23,6 +23,7 @@ from apps.netsuite.models import Bill, BillLineitem, ExpenseReport, ExpenseRepor
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Workspace
 
 logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 SYNC_UPPER_LIMIT = {
     'projects': 7000,
