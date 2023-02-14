@@ -1,7 +1,7 @@
 import logging
 import traceback
 
-from netsuitesdk import NetSuiteRateLimitError, NetSuiteLoginError
+from netsuitesdk import NetSuiteRateLimitError, NetSuiteLoginError, NetSuiteRequestError
 from fyle.platform.exceptions import WrongParamsError, InvalidTokenError
 
 
@@ -34,6 +34,10 @@ def handle_exceptions(task_name):
 
             except NetSuiteLoginError:
                 error['message'] = 'Invalid netsuite credentials'
+
+            except NetSuiteRequestError as exception:
+                error['message'] = 'NetSuite request error - '.format(exception.code)
+                error['response'] = exception.message
 
             except Exception:
                 response = traceback.format_exc()

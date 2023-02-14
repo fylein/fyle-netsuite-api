@@ -1,7 +1,7 @@
 from unittest import mock
 
 from fyle.platform.exceptions import WrongParamsError, InvalidTokenError
-from netsuitesdk import NetSuiteRateLimitError, NetSuiteLoginError
+from netsuitesdk import NetSuiteRateLimitError, NetSuiteLoginError, NetSuiteRequestError
 
 from tests.test_netsuite.fixtures import data as netsuite_data
 from apps.mappings.tasks import auto_create_project_mappings
@@ -55,4 +55,7 @@ def test_exception_decarator(db, mocker):
         auto_create_project_mappings(workspace_id=1)
 
         mock_call.side_effect = NetSuiteLoginError('NetSuite login error')
+        auto_create_project_mappings(workspace_id=1)
+
+        mock_call.side_effect = NetSuiteRequestError(code='INSUFFICIENT_PERMISSION', message='An error occured in a search request: Permission Violation: You need  the \'Lists -> Tax Records\' permission to access this page. Please contact your account administrator.\n')
         auto_create_project_mappings(workspace_id=1)
