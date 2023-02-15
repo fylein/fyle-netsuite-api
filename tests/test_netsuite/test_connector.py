@@ -19,7 +19,7 @@ def test_construct_expense_report(create_expense_report):
 
     expense_report, expense_report_lineitem = create_expense_report
 
-    expense_report = netsuite_connection._NetSuiteConnector__construct_expense_report(expense_report, expense_report_lineitem, [])
+    expense_report = netsuite_connection._NetSuiteConnector__construct_expense_report(expense_report, expense_report_lineitem)
 
     data['expense_report_payload'][0]['tranDate'] = expense_report['tranDate']
     data['expense_report_payload'][0]['expenseList'][0]['expenseDate'] = expense_report['expenseList'][0]['expenseDate']
@@ -31,7 +31,7 @@ def test_construct_bill(create_bill):
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
     bill, bill_lineitem = create_bill
-    bill_object = netsuite_connection._NetSuiteConnector__construct_bill(bill, bill_lineitem, [])
+    bill_object = netsuite_connection._NetSuiteConnector__construct_bill(bill, bill_lineitem)
 
     data['bill_payload'][0]['tranDate'] = bill_object['tranDate']
 
@@ -43,7 +43,7 @@ def test_construct_journal_entry(create_journal_entry):
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
     journal_entry, journal_entry_lineitem = create_journal_entry
-    journal_entry_object = netsuite_connection._NetSuiteConnector__construct_journal_entry(journal_entry, journal_entry_lineitem, [])
+    journal_entry_object = netsuite_connection._NetSuiteConnector__construct_journal_entry(journal_entry, journal_entry_lineitem)
 
     journal_entry_object['tranDate'] = data['journal_entry_without_single_line'][0]['tranDate']
 
@@ -498,7 +498,7 @@ def test_post_bill_exception(db, mocker, create_bill):
 
     with mock.patch('netsuitesdk.api.vendor_bills.VendorBills.post') as mock_call:
         mock_call.side_effect = [NetSuiteRequestError('An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'), None]
-        netsuite_connection.post_bill(bill_transaction, bill_transaction_lineitems, {})
+        netsuite_connection.post_bill(bill_transaction, bill_transaction_lineitems)
 
 
 def test_post_expense_report_exception(db, mocker, create_expense_report):
@@ -515,7 +515,7 @@ def test_post_expense_report_exception(db, mocker, create_expense_report):
 
     with mock.patch('netsuitesdk.api.expense_reports.ExpenseReports.post') as mock_call:
         mock_call.side_effect = [NetSuiteRequestError('An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'), None]
-        netsuite_connection.post_expense_report(expense_report_transaction, expense_report_transaction_lineitems, {})
+        netsuite_connection.post_expense_report(expense_report_transaction, expense_report_transaction_lineitems)
 
 
 def test_post_journal_entry_exception(db, mocker, create_journal_entry):
@@ -532,4 +532,4 @@ def test_post_journal_entry_exception(db, mocker, create_journal_entry):
 
     with mock.patch('netsuitesdk.api.journal_entries.JournalEntries.post') as mock_call:
         mock_call.side_effect = [NetSuiteRequestError('An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'), None]
-        netsuite_connection.post_journal_entry(journal_entry_transaction, journal_entry_transaction_lineitems, {})
+        netsuite_connection.post_journal_entry(journal_entry_transaction, journal_entry_transaction_lineitems)
