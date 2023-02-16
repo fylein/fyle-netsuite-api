@@ -979,7 +979,7 @@ class NetSuiteConnector:
             'terms': None,
             'dueDate': None,
             'discountDate': None,
-            'tranId': None,
+            'tranId': bill.reference_number,
             'userTotal': None,
             'discountAmount': None,
             'taxTotal': None,
@@ -1145,6 +1145,7 @@ class NetSuiteConnector:
             },
             'tranDate': transaction_date,
             'memo': credit_card_charge.memo,
+            'tranid': credit_card_charge.reference_number,
             'expenses': self.construct_credit_card_charge_lineitems(
                 credit_card_charge_lineitem, attachment_links, cluster_domain, org_id
             ),
