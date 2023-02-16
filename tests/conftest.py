@@ -121,6 +121,12 @@ def default_session_fixture(request):
     )
     patched_6.__enter__()
 
+    patched_7 = mock.patch(
+        'netsuitesdk.api.journal_entries.JournalEntries.__init__',
+        return_value=None
+    )
+    patched_7.__enter__()
+
     def unpatch():
         patched_1.__exit__()
 
