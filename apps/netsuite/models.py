@@ -277,7 +277,7 @@ def get_ccc_account_id(configuration: Configuration, general_mappings: GeneralMa
 def get_report_or_expense_number(expense_group: ExpenseGroup) -> str:       
         expense: Expense = expense_group.expenses.first()
         expense_group_settings: ExpenseGroupSettings = ExpenseGroupSettings.objects.get(workspace_id= expense_group.workspace_id)
-        if expense_group.fund_source == "CCC":
+        if expense_group.fund_source == 'CCC':
                 return expense.expense_number
         else:
             if 'expense_id' in expense_group_settings.reimbursable_expense_group_fields:
