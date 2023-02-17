@@ -739,6 +739,7 @@ data = {
             'currency': {'internalId': '1'},
             'tranDate': '12/03/2021',
             'memo': 'Credit card expenses by admin1@fyleforintacct.in',
+            'tranid':'CR/27/B/8',
             'expenses': [{
                 'account': {'internalId': '65'},
                 'amount': 130.0,
@@ -772,6 +773,7 @@ data = {
             'currency': {'internalId': '1'},
             'tranDate': '12/03/2021',
             'memo': 'Credit card expenses by admin1@fyleforintacct.in',
+            'tranid':'CR/27/B/8',
             'expenses': [{
                 'account': {'internalId': '65'},
                 'amount': 130.0,

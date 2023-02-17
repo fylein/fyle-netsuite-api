@@ -9,7 +9,7 @@ from django.db.models import JSONField
 from fyle_accounting_mappings.models import Mapping, MappingSetting, DestinationAttribute, CategoryMapping,\
     EmployeeMapping
 
-from apps.fyle.models import ExpenseGroup, Expense, ExpenseAttribute
+from apps.fyle.models import ExpenseGroup, Expense, ExpenseAttribute, ExpenseGroupSettings
 from apps.mappings.models import GeneralMapping, SubsidiaryMapping
 from apps.workspaces.models import Workspace, Configuration
 
@@ -274,6 +274,17 @@ def get_ccc_account_id(configuration: Configuration, general_mappings: GeneralMa
 
     return ccc_account_id
 
+def get_report_or_expense_number(expense_group: ExpenseGroup) -> str:       
+        expense: Expense = expense_group.expenses.first()
+        expense_group_settings: ExpenseGroupSettings = ExpenseGroupSettings.objects.get(workspace_id= expense_group.workspace_id)
+        if expense_group.fund_source == 'CCC':
+                return expense.expense_number
+        else:
+            if 'expense_id' in expense_group_settings.reimbursable_expense_group_fields:
+                return expense.expense_number 
+            else:
+                return expense.claim_number
+
 class CustomSegment(models.Model):
     """
     NetSuite Custom Segment
@@ -304,6 +315,7 @@ class Bill(models.Model):
     location_id = models.CharField(max_length=255, help_text='NetSuite Location id', null=True)
     currency = models.CharField(max_length=255, help_text='Bill Currency')
     memo = models.TextField(help_text='Bill Description')
+    reference_number = models.CharField(max_length=255, help_text='NetSuite reference number', null=True)
     external_id = models.CharField(max_length=255, unique=True, help_text='Fyle reimbursement id')
     transaction_date = models.DateTimeField(help_text='Bill transaction date')
     payment_synced = models.BooleanField(help_text='Payment synced status', default=False)
@@ -351,6 +363,7 @@ class Bill(models.Model):
                 'memo': 'Reimbursable expenses by {0}'.format(description.get('employee_email')) if
                 expense_group.fund_source == 'PERSONAL' else
                 'Credit card expenses by {0}'.format(description.get('employee_email')),
+                'reference_number': get_report_or_expense_number(expense_group),
                 'currency': currency.destination_id if currency else '1',
                 'transaction_date': get_transaction_date(expense_group),
                 'external_id': 'bill {} - {}'.format(expense_group.id, description.get('employee_email'))
@@ -493,6 +506,7 @@ class CreditCardCharge(models.Model):
     location_id = models.CharField(max_length=255, help_text='NetSuite Location id', null=True)
     currency = models.CharField(max_length=255, help_text='CC Charge Currency')
     memo = models.TextField(help_text='CC Charge Description')
+    reference_number = models.CharField(max_length=255, help_text='NetSuite reference number', null=True)
     external_id = models.CharField(max_length=255, unique=True, help_text='Fyle reimbursement id')
     transaction_date = models.DateTimeField(help_text='CC Charge transaction date')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
@@ -545,6 +559,7 @@ class CreditCardCharge(models.Model):
                 'location_id': general_mappings.location_id if general_mappings.location_level in [
                     'TRANSACTION_BODY', 'ALL'] else None,
                 'memo': 'Credit card expenses by {0}'.format(description.get('employee_email')),
+                'reference_number': get_report_or_expense_number(expense_group),
                 'currency': currency.destination_id if currency else '1',
                 'transaction_date': get_transaction_date(expense_group),
                 'external_id': 'cc-charge {} - {}'.format(expense_group.id, description.get('employee_email'))
