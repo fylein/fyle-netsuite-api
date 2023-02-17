@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 14.2 (Debian 14.2-1.pgdg110+1)
--- Dumped by pg_dump version 14.4 (Debian 14.4-1.pgdg100+1)
+-- Dumped from database version 14.7 (Debian 14.7-1.pgdg110+1)
+-- Dumped by pg_dump version 14.7 (Debian 14.7-1.pgdg100+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -218,7 +218,8 @@ CREATE TABLE public.bills (
     expense_group_id integer NOT NULL,
     transaction_date timestamp with time zone NOT NULL,
     payment_synced boolean NOT NULL,
-    paid_on_netsuite boolean NOT NULL
+    paid_on_netsuite boolean NOT NULL,
+    reference_number character varying(255)
 );
 
 
@@ -381,7 +382,8 @@ CREATE TABLE public.credit_card_charges (
     transaction_date timestamp with time zone NOT NULL,
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
-    expense_group_id integer NOT NULL
+    expense_group_id integer NOT NULL,
+    reference_number character varying(255)
 );
 
 
@@ -2371,7 +2373,7 @@ COPY public.bill_lineitems (id, account_id, location_id, department_id, class_id
 -- Data for Name: bills; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.bills (id, entity_id, accounts_payable_id, subsidiary_id, location_id, currency, memo, external_id, created_at, updated_at, expense_group_id, transaction_date, payment_synced, paid_on_netsuite) FROM stdin;
+COPY public.bills (id, entity_id, accounts_payable_id, subsidiary_id, location_id, currency, memo, external_id, created_at, updated_at, expense_group_id, transaction_date, payment_synced, paid_on_netsuite, reference_number) FROM stdin;
 \.
 
 
@@ -2411,7 +2413,7 @@ COPY public.credit_card_charge_lineitems (id, account_id, location_id, departmen
 -- Data for Name: credit_card_charges; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.credit_card_charges (id, credit_card_account_id, entity_id, subsidiary_id, location_id, currency, memo, external_id, transaction_date, created_at, updated_at, expense_group_id) FROM stdin;
+COPY public.credit_card_charges (id, credit_card_account_id, entity_id, subsidiary_id, location_id, currency, memo, external_id, transaction_date, created_at, updated_at, expense_group_id, reference_number) FROM stdin;
 \.
 
 
@@ -7630,6 +7632,8 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 146	fyle_accounting_mappings	0019_auto_20230105_1104	2023-01-12 13:09:22.000825+00
 147	fyle	0024_auto_20230116_1305	2023-01-16 13:13:09.266934+00
 148	netsuite	0019_auto_20230209_0950	2023-02-09 11:44:42.42825+00
+149	fyle	0025_auto_20230216_0455	2023-02-17 10:32:23.653833+00
+150	netsuite	0020_auto_20230216_0455	2023-02-17 10:32:23.708715+00
 \.
 
 
@@ -11501,7 +11505,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 42, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 148, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 150, true);
 
 
 --
