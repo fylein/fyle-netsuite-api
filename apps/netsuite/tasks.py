@@ -159,8 +159,13 @@ def __log_error(task_log: TaskLog) -> None:
 def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_connection: NetSuiteConnector,
                                       auto_map_employees_preference: str, employee_field_mapping: str):
     try:
+        employee = get_employee_expense_attribute(expense_group.description.get('employee_email'), expense_group.workspace_id)
+        if not employee:
+            # Sync inactive employee and gracefully handle export failure
+            employee = sync_inactive_employee(expense_group)
+
         mapping = EmployeeMapping.objects.get(
-            source_employee__value=expense_group.description.get('employee_email'),
+            source_employee=employee,
             workspace_id=expense_group.workspace_id
         )
 
