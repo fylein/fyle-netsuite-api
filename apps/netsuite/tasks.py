@@ -159,8 +159,13 @@ def __log_error(task_log: TaskLog) -> None:
 def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_connection: NetSuiteConnector,
                                       auto_map_employees_preference: str, employee_field_mapping: str):
     try:
+        employee = get_employee_expense_attribute(expense_group.description.get('employee_email'), expense_group.workspace_id)
+        if not employee:
+            # Sync inactive employee and gracefully handle export failure
+            employee = sync_inactive_employee(expense_group)
+
         mapping = EmployeeMapping.objects.get(
-            source_employee__value=expense_group.description.get('employee_email'),
+            source_employee=employee,
             workspace_id=expense_group.workspace_id
         )
 
@@ -405,9 +410,8 @@ def create_bill(expense_group, task_log_id):
                 expense_group, netsuite_connection, configuration.auto_map_employees,
                 configuration.employee_field_mapping)
 
+        __validate_expense_group(expense_group, configuration)
         with transaction.atomic():
-            __validate_expense_group(expense_group, configuration)
-
             bill_object = Bill.create_bill(expense_group)
 
             bill_lineitems_objects = BillLineitem.create_bill_lineitems(expense_group, configuration)
@@ -503,9 +507,8 @@ def create_credit_card_charge(expense_group, task_log_id):
         auto_create_merchants = configuration.auto_create_merchants
         get_or_create_credit_card_vendor(expense_group, merchant, auto_create_merchants)
 
+        __validate_expense_group(expense_group, configuration)
         with transaction.atomic():
-            __validate_expense_group(expense_group, configuration)
-
             credit_card_charge_object = CreditCardCharge.create_credit_card_charge(expense_group)
 
             credit_card_charge_lineitems_object = CreditCardChargeLineItem.create_credit_card_charge_lineitem(
@@ -610,9 +613,8 @@ def create_expense_report(expense_group, task_log_id):
                 expense_group, netsuite_connection, configuration.auto_map_employees,
                 configuration.employee_field_mapping)
 
+        __validate_expense_group(expense_group, configuration)
         with transaction.atomic():
-            __validate_expense_group(expense_group, configuration)
-
             expense_report_object = ExpenseReport.create_expense_report(expense_group)
 
             expense_report_lineitems_objects = ExpenseReportLineItem.create_expense_report_lineitems(
@@ -706,9 +708,8 @@ def create_journal_entry(expense_group, task_log_id):
             create_or_update_employee_mapping(
                 expense_group, netsuite_connection, configuration.auto_map_employees,
                 configuration.employee_field_mapping)
+        __validate_expense_group(expense_group, configuration)
         with transaction.atomic():
-            __validate_expense_group(expense_group, configuration)
-
             journal_entry_object = JournalEntry.create_journal_entry(expense_group)
 
             journal_entry_lineitems_objects = JournalEntryLineItem.create_journal_entry_lineitems(
@@ -920,13 +921,58 @@ def __validate_tax_group_mapping(expense_group: ExpenseGroup, configuration: Con
     return bulk_errors
 
 
+def get_employee_expense_attribute(value: str, workspace_id: int) -> ExpenseAttribute:
+    """
+    Get employee expense attribute
+    :param value: value
+    :param workspace_id: workspace id
+    """
+    return ExpenseAttribute.objects.filter(
+        attribute_type='EMPLOYEE',
+        value=value,
+        workspace_id=workspace_id
+    ).first()
+
+def sync_inactive_employee(expense_group: ExpenseGroup) -> ExpenseAttribute:
+    fyle_credentials = FyleCredential.objects.get(workspace_id=expense_group.workspace_id)
+    platform = PlatformConnector(fyle_credentials=fyle_credentials)
+    fyle_employee = platform.employees.get_employee_by_email(expense_group.description.get('employee_email'))
+    if len(fyle_employee):
+        fyle_employee = fyle_employee[0]
+        attribute = {
+            'attribute_type': 'EMPLOYEE',
+            'display_name': 'Employee',
+            'value': fyle_employee['user']['email'],
+            'source_id': fyle_employee['id'],
+            'active': True if fyle_employee['is_enabled'] and fyle_employee['has_accepted_invite'] else False,
+            'detail': {
+                'user_id': fyle_employee['user_id'],
+                'employee_code': fyle_employee['code'],
+                'full_name': fyle_employee['user']['full_name'],
+                'location': fyle_employee['location'],
+                'department': fyle_employee['department']['name'] if fyle_employee['department'] else None,
+                'department_id': fyle_employee['department_id'],
+                'department_code': fyle_employee['department']['code'] if fyle_employee['department'] else None
+            }
+        }
+        ExpenseAttribute.bulk_create_or_update_expense_attributes([attribute], 'EMPLOYEE', expense_group.workspace_id, True)
+        return get_employee_expense_attribute(expense_group.description.get('employee_email'), expense_group.workspace_id)
+
+    return None
+
 def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Configuration) -> List[BulkError]:
+    employee = get_employee_expense_attribute(expense_group.description.get('employee_email'), expense_group.workspace_id)
+
+    if not employee:
+        # Sync inactive employee and gracefully handle export failure
+        employee = sync_inactive_employee(expense_group)
+
     bulk_errors = []
     if expense_group.fund_source == 'PERSONAL' or \
             (expense_group.fund_source == 'CCC' and configuration.corporate_credit_card_expenses_object == 'EXPENSE REPORT'):
         try:
             entity = EmployeeMapping.objects.get(
-                source_employee__value=expense_group.description.get('employee_email'),
+                source_employee=employee,
                 workspace_id=expense_group.workspace_id
             )
 

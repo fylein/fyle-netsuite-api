@@ -87,6 +87,16 @@ def test_get_transaction_date(test_input, expected):
     transaction_date =  get_transaction_date(expense_group)
     assert transaction_date >= expected
 
+@pytest.mark.django_db(databases=['default'])
+def test_get_report_or_expense_number():
+    expense_group = ExpenseGroup.objects.get(id=1)
+    report_number =  get_report_or_expense_number(expense_group)
+    assert report_number == 'C/2021/11/R/5'
+
+    #For CCC
+    expense_group = ExpenseGroup.objects.get(id=4)
+    report_number =  get_report_or_expense_number(expense_group)
+    assert report_number == 'E/2021/11/T/2'
 
 @pytest.mark.django_db(databases=['default'])
 def test_get_expense_purpose():
