@@ -337,8 +337,11 @@ def test_post_expense_report(mocker, db):
     assert task_log.detail['message'] == 'NetSuite Account not connected'
 
 
-def test_post_expense_report_mapping_error(db):
-
+def test_post_expense_report_mapping_error(mocker, db):
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.Employees.get_employee_by_email',
+        return_value=[data['inactive_employee']],
+    )
     task_log = TaskLog.objects.filter(workspace_id=1).first()
     task_log.status = 'READY'
     task_log.save()
@@ -468,8 +471,11 @@ def test_post_journal_entry(mocker, db):
     assert task_log.detail['message'] == 'NetSuite Account not connected'
 
 
-def test_post_journal_entry_mapping_error(db):
-
+def test_post_journal_entry_mapping_error(mocker, db):
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.Employees.get_employee_by_email',
+        return_value=[data['inactive_employee']],
+    )
     task_log = TaskLog.objects.filter(workspace_id=1).first()
     task_log.status = 'READY'
     task_log.save()
@@ -604,6 +610,10 @@ def test_create_credit_card_charge(mocker, db):
 
 
 def test_post_credit_card_charge_mapping_error(mocker, db):
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.Employees.get_employee_by_email',
+        return_value=[data['inactive_employee']],
+    )
     mocker.patch(
         'netsuitesdk.api.vendors.Vendors.search',
         return_value={}
