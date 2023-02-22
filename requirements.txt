@@ -34,7 +34,7 @@ lazy-object-proxy==1.6.0
 lxml==4.6.5
 mccabe==0.6.1
 netsuitesdk==2.16.4
-oauthlib==3.2.1
+oauthlib==3.2.2
 packaging==21.3
 platformdirs==2.4.0
 pluggy==1.0.0
