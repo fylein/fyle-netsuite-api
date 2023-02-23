@@ -804,8 +804,10 @@ def create_fyle_expense_custom_field_payload(netsuite_attributes: List[Destinati
             attribute_type=fyle_attribute, workspace_id=workspace_id).values_list('detail', flat=True).first()
 
         custom_field_id = None
+        placeholder_value = None
         if existing_attribute is not None:
             custom_field_id = existing_attribute['custom_field_id']
+            placeholder_value = existing_attribute['placeholder']
 
         fyle_attribute = fyle_attribute.replace('_', ' ').title()
 
@@ -818,6 +820,9 @@ def create_fyle_expense_custom_field_payload(netsuite_attributes: List[Destinati
             'options': fyle_expense_custom_field_options,
             'code': None
         }
+
+        if placeholder_value:
+            expense_custom_field_payload['placeholder']= placeholder_value
 
         if custom_field_id:
             expense_field = platform.expense_custom_fields.get_by_id(custom_field_id)
