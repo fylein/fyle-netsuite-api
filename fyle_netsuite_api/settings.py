@@ -165,6 +165,10 @@ LOGGING = {
             'handlers': ['debug_logs'],
             'propagate': True,
         },
+        'fyle_rest_auth': {
+            'handlers': ['debug_logs'],
+            'propagate': True,
+        },
         'gunicorn': {
             'handlers': ['request_logs'],
             'level': 'INFO',
@@ -178,6 +182,10 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
         'LOCATION': 'auth_cache',
     }
+}
+
+FYLE_REST_AUTH_SETTINGS = {
+    'async_update_user': True
 }
 
 Q_CLUSTER = {

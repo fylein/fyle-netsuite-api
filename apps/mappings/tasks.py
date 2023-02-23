@@ -822,7 +822,7 @@ def create_fyle_expense_custom_field_payload(netsuite_attributes: List[Destinati
         }
 
         if placeholder_value:
-            expense_custom_field_payload['placeholder']= placeholder_value
+            expense_custom_field_payload['placeholder'] = placeholder_value
 
         if custom_field_id:
             expense_field = platform.expense_custom_fields.get_by_id(custom_field_id)
