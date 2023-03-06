@@ -2,6 +2,17 @@ from collections import OrderedDict
 from datetime import datetime, timezone
 
 data = {
+    "inactive_employee": {
+        'user': {'email': 'sam@fyle.in', 'full_name': 'Joanna', 'id': 'usqywo0f3nBYJKH'},
+        'id': 'usqywo0f3nBYJKH',
+        'is_enabled': False,
+        'has_accepted_invite': False,
+        'user_id': 'usqywo0f3nBYJKH',
+        'code': 'Z',
+        'location': None,
+        'department': None,
+        'department_id': None
+    },
     "vendor": [
         {
             "nullFieldList": None,
@@ -739,6 +750,7 @@ data = {
             'currency': {'internalId': '1'},
             'tranDate': '12/03/2021',
             'memo': 'Credit card expenses by admin1@fyleforintacct.in',
+            'tranid':'CR/27/B/8',
             'expenses': [{
                 'account': {'internalId': '65'},
                 'amount': 130.0,
@@ -772,6 +784,7 @@ data = {
             'currency': {'internalId': '1'},
             'tranDate': '12/03/2021',
             'memo': 'Credit card expenses by admin1@fyleforintacct.in',
+            'tranid':'CR/27/B/8',
             'expenses': [{
                 'account': {'internalId': '65'},
                 'amount': 130.0,

@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 14.2 (Debian 14.2-1.pgdg110+1)
--- Dumped by pg_dump version 14.4 (Debian 14.4-1.pgdg100+1)
+-- Dumped from database version 14.7 (Debian 14.7-1.pgdg110+1)
+-- Dumped by pg_dump version 14.7 (Debian 14.7-1.pgdg100+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -218,7 +218,8 @@ CREATE TABLE public.bills (
     expense_group_id integer NOT NULL,
     transaction_date timestamp with time zone NOT NULL,
     payment_synced boolean NOT NULL,
-    paid_on_netsuite boolean NOT NULL
+    paid_on_netsuite boolean NOT NULL,
+    reference_number character varying(255)
 );
 
 
@@ -381,7 +382,8 @@ CREATE TABLE public.credit_card_charges (
     transaction_date timestamp with time zone NOT NULL,
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
-    expense_group_id integer NOT NULL
+    expense_group_id integer NOT NULL,
+    reference_number character varying(255)
 );
 
 
@@ -2371,7 +2373,7 @@ COPY public.bill_lineitems (id, account_id, location_id, department_id, class_id
 -- Data for Name: bills; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.bills (id, entity_id, accounts_payable_id, subsidiary_id, location_id, currency, memo, external_id, created_at, updated_at, expense_group_id, transaction_date, payment_synced, paid_on_netsuite) FROM stdin;
+COPY public.bills (id, entity_id, accounts_payable_id, subsidiary_id, location_id, currency, memo, external_id, created_at, updated_at, expense_group_id, transaction_date, payment_synced, paid_on_netsuite, reference_number) FROM stdin;
 \.
 
 
@@ -2411,7 +2413,7 @@ COPY public.credit_card_charge_lineitems (id, account_id, location_id, departmen
 -- Data for Name: credit_card_charges; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.credit_card_charges (id, credit_card_account_id, entity_id, subsidiary_id, location_id, currency, memo, external_id, transaction_date, created_at, updated_at, expense_group_id) FROM stdin;
+COPY public.credit_card_charges (id, credit_card_account_id, entity_id, subsidiary_id, location_id, currency, memo, external_id, transaction_date, created_at, updated_at, expense_group_id, reference_number) FROM stdin;
 \.
 
 
@@ -7630,6 +7632,8 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 146	fyle_accounting_mappings	0019_auto_20230105_1104	2023-01-12 13:09:22.000825+00
 147	fyle	0024_auto_20230116_1305	2023-01-16 13:13:09.266934+00
 148	netsuite	0019_auto_20230209_0950	2023-02-09 11:44:42.42825+00
+149	fyle	0025_auto_20230216_0455	2023-02-17 10:32:23.653833+00
+150	netsuite	0020_auto_20230216_0455	2023-02-17 10:32:23.708715+00
 \.
 
 
@@ -9275,74 +9279,74 @@ COPY public.expense_attributes (id, attribute_type, display_name, value, source_
 1572	PROJECT	Project	Zucca Electric Agency	247926	2021-11-15 08:55:55.715741+00	2021-11-15 08:55:55.715762+00	1	\N	\N	f	f
 1573	PROJECT	Project	Zucconi Telecom Sales	247927	2021-11-15 08:55:55.715827+00	2021-11-15 08:55:55.715844+00	1	\N	\N	f	f
 1574	PROJECT	Project	Zurasky Markets Dynamics	247928	2021-11-15 08:55:55.716684+00	2021-11-15 08:55:55.717907+00	1	\N	\N	f	f
-1575	CLASS	Class	Adidas	expense_custom_field.class.1	2021-11-15 08:55:57.305795+00	2021-11-15 08:55:57.305831+00	1	\N	{"custom_field_id": 190717}	f	f
-1576	CLASS	Class	FAE	expense_custom_field.class.2	2021-11-15 08:55:57.305904+00	2021-11-15 08:55:57.30592+00	1	\N	{"custom_field_id": 190717}	f	f
-1577	DEPARTMENTS	Departments	Finance	expense_custom_field.departments.1	2021-11-15 08:55:57.312176+00	2021-11-15 08:55:57.31221+00	1	\N	{"custom_field_id": 174997}	f	f
-1578	DEPARTMENTS	Departments	Admin	expense_custom_field.departments.2	2021-11-15 08:55:57.312253+00	2021-11-15 08:55:57.312263+00	1	\N	{"custom_field_id": 174997}	f	f
-1579	DEPARTMENTS	Departments	Marketing	expense_custom_field.departments.3	2021-11-15 08:55:57.312301+00	2021-11-15 08:55:57.31231+00	1	\N	{"custom_field_id": 174997}	f	f
-1580	DEPARTMENTS	Departments	Operations	expense_custom_field.departments.4	2021-11-15 08:55:57.312346+00	2021-11-15 08:55:57.312355+00	1	\N	{"custom_field_id": 174997}	f	f
-1581	DEPARTMENTS	Departments	Sales	expense_custom_field.departments.5	2021-11-15 08:55:57.312392+00	2021-11-15 08:55:57.312401+00	1	\N	{"custom_field_id": 174997}	f	f
-1582	DEPARTMENTS	Departments	IT	expense_custom_field.departments.6	2021-11-15 08:55:57.312437+00	2021-11-15 08:55:57.312446+00	1	\N	{"custom_field_id": 174997}	f	f
-1583	DEPARTMENTS	Departments	any title of my choice	expense_custom_field.departments.7	2021-11-15 08:55:57.312482+00	2021-11-15 08:55:57.312491+00	1	\N	{"custom_field_id": 174997}	f	f
-1584	KLASS	Klass	Klass	expense_custom_field.klass.1	2021-11-15 08:55:57.320068+00	2021-11-15 08:55:57.320093+00	2	\N	{"custom_field_id": 196452}	f	f
-1585	KLASS	Klass	Fixed Fee Project with Five Tasks	expense_custom_field.klass.2	2021-11-15 08:55:57.320134+00	2021-11-15 08:55:57.320145+00	1	\N	{"custom_field_id": 196452}	f	f
-1586	KLASS	Klass	General Overhead	expense_custom_field.klass.3	2021-11-15 08:55:57.320182+00	2021-11-15 08:55:57.320191+00	1	\N	{"custom_field_id": 196452}	f	f
-1587	KLASS	Klass	General Overhead-Current	expense_custom_field.klass.4	2021-11-15 08:55:57.320227+00	2021-11-15 08:55:57.320236+00	1	\N	{"custom_field_id": 196452}	f	f
-1588	KLASS	Klass	Mobile App Redesign	expense_custom_field.klass.5	2021-11-15 08:55:57.320273+00	2021-11-15 08:55:57.320282+00	1	\N	{"custom_field_id": 196452}	f	f
-1589	KLASS	Klass	Platform APIs	expense_custom_field.klass.6	2021-11-15 08:55:57.320319+00	2021-11-15 08:55:57.320328+00	1	\N	{"custom_field_id": 196452}	f	f
-1590	KLASS	Klass	Fyle NetSuite Integration	expense_custom_field.klass.7	2021-11-15 08:55:57.320365+00	2021-11-15 08:55:57.320374+00	1	\N	{"custom_field_id": 196452}	f	f
-1591	KLASS	Klass	Fyle Sage Intacct Integration	expense_custom_field.klass.8	2021-11-15 08:55:57.32041+00	2021-11-15 08:55:57.320419+00	1	\N	{"custom_field_id": 196452}	f	f
-1592	KLASS	Klass	Support Taxes	expense_custom_field.klass.9	2021-11-15 08:55:57.320455+00	2021-11-15 08:55:57.320464+00	1	\N	{"custom_field_id": 196452}	f	f
-1593	KLASS	Klass	Fyle Engineering	expense_custom_field.klass.10	2021-11-15 08:55:57.320539+00	2021-11-15 08:55:57.320574+00	1	\N	{"custom_field_id": 196452}	f	f
-1594	KLASS	Klass	Integrations	expense_custom_field.klass.11	2021-11-15 08:55:57.320662+00	2021-11-15 08:55:57.32068+00	1	\N	{"custom_field_id": 196452}	f	f
-1595	LOCATION	Location	02: Boston	expense_custom_field.location.1	2021-11-15 08:55:57.329313+00	2021-11-15 08:55:57.329337+00	1	\N	{"custom_field_id": 845}	f	f
-1596	LOCATION	Location	01: San Francisco	expense_custom_field.location.2	2021-11-15 08:55:57.329379+00	2021-11-15 08:55:57.329389+00	1	\N	{"custom_field_id": 845}	f	f
-1597	LOCATION	Location	Overstock	expense_custom_field.location.3	2021-11-15 08:55:57.329427+00	2021-11-15 08:55:57.329437+00	1	\N	{"custom_field_id": 845}	f	f
-1598	LOCATION	Location	Receiving Insp.	expense_custom_field.location.4	2021-11-15 08:55:57.329474+00	2021-11-15 08:55:57.329483+00	1	\N	{"custom_field_id": 845}	f	f
-1599	LOCATION	Location	QA Hold	expense_custom_field.location.5	2021-11-15 08:55:57.329519+00	2021-11-15 08:55:57.329528+00	1	\N	{"custom_field_id": 845}	f	f
-1600	LOCATION	Location	VendorTest	expense_custom_field.location.6	2021-11-15 08:55:57.329565+00	2021-11-15 08:55:57.329574+00	1	\N	{"custom_field_id": 845}	f	f
-1601	LOCATION	Location	Fyle	expense_custom_field.location.7	2021-11-15 08:55:57.329611+00	2021-11-15 08:55:57.32962+00	1	\N	{"custom_field_id": 845}	f	f
+1575	CLASS	Class	Adidas	expense_custom_field.class.1	2021-11-15 08:55:57.305795+00	2021-11-15 08:55:57.305831+00	1	\N	{"custom_field_id": 190717, "placeholder" : "Select Fyle Category"}	f	f
+1576	CLASS	Class	FAE	expense_custom_field.class.2	2021-11-15 08:55:57.305904+00	2021-11-15 08:55:57.30592+00	1	\N	{"custom_field_id": 190717, "placeholder" : "Select Fyle Category"}	f	f
+1577	DEPARTMENTS	Departments	Finance	expense_custom_field.departments.1	2021-11-15 08:55:57.312176+00	2021-11-15 08:55:57.31221+00	1	\N	{"custom_field_id": 174997, "placeholder" : "Select Fyle Category"}	f	f
+1578	DEPARTMENTS	Departments	Admin	expense_custom_field.departments.2	2021-11-15 08:55:57.312253+00	2021-11-15 08:55:57.312263+00	1	\N	{"custom_field_id": 174997, "placeholder" : "Select Fyle Category"}	f	f
+1579	DEPARTMENTS	Departments	Marketing	expense_custom_field.departments.3	2021-11-15 08:55:57.312301+00	2021-11-15 08:55:57.31231+00	1	\N	{"custom_field_id": 174997, "placeholder" : "Select Fyle Category"}	f	f
+1580	DEPARTMENTS	Departments	Operations	expense_custom_field.departments.4	2021-11-15 08:55:57.312346+00	2021-11-15 08:55:57.312355+00	1	\N	{"custom_field_id": 174997, "placeholder" : "Select Fyle Category"}	f	f
+1581	DEPARTMENTS	Departments	Sales	expense_custom_field.departments.5	2021-11-15 08:55:57.312392+00	2021-11-15 08:55:57.312401+00	1	\N	{"custom_field_id": 174997, "placeholder" : "Select Fyle Category"}	f	f
+1582	DEPARTMENTS	Departments	IT	expense_custom_field.departments.6	2021-11-15 08:55:57.312437+00	2021-11-15 08:55:57.312446+00	1	\N	{"custom_field_id": 174997, "placeholder" : "Select Fyle Category"}	f	f
+1583	DEPARTMENTS	Departments	any title of my choice	expense_custom_field.departments.7	2021-11-15 08:55:57.312482+00	2021-11-15 08:55:57.312491+00	1	\N	{"custom_field_id": 174997, "placeholder" : "Select Fyle Category"}	f	f
+1584	KLASS	Klass	Klass	expense_custom_field.klass.1	2021-11-15 08:55:57.320068+00	2021-11-15 08:55:57.320093+00	2	\N	{"custom_field_id": 196452, "placeholder" : "Select Fyle Category"}	f	f
+1585	KLASS	Klass	Fixed Fee Project with Five Tasks	expense_custom_field.klass.2	2021-11-15 08:55:57.320134+00	2021-11-15 08:55:57.320145+00	1	\N	{"custom_field_id": 196452, "placeholder" : "Select Fyle Category"}	f	f
+1586	KLASS	Klass	General Overhead	expense_custom_field.klass.3	2021-11-15 08:55:57.320182+00	2021-11-15 08:55:57.320191+00	1	\N	{"custom_field_id": 196452, "placeholder" : "Select Fyle Category"}	f	f
+1587	KLASS	Klass	General Overhead-Current	expense_custom_field.klass.4	2021-11-15 08:55:57.320227+00	2021-11-15 08:55:57.320236+00	1	\N	{"custom_field_id": 196452, "placeholder" : "Select Fyle Category"}	f	f
+1588	KLASS	Klass	Mobile App Redesign	expense_custom_field.klass.5	2021-11-15 08:55:57.320273+00	2021-11-15 08:55:57.320282+00	1	\N	{"custom_field_id": 196452, "placeholder" : "Select Fyle Category"}	f	f
+1589	KLASS	Klass	Platform APIs	expense_custom_field.klass.6	2021-11-15 08:55:57.320319+00	2021-11-15 08:55:57.320328+00	1	\N	{"custom_field_id": 196452, "placeholder" : "Select Fyle Category"}	f	f
+1590	KLASS	Klass	Fyle NetSuite Integration	expense_custom_field.klass.7	2021-11-15 08:55:57.320365+00	2021-11-15 08:55:57.320374+00	1	\N	{"custom_field_id": 196452, "placeholder" : "Select Fyle Category"}	f	f
+1591	KLASS	Klass	Fyle Sage Intacct Integration	expense_custom_field.klass.8	2021-11-15 08:55:57.32041+00	2021-11-15 08:55:57.320419+00	1	\N	{"custom_field_id": 196452, "placeholder" : "Select Fyle Category"}	f	f
+1592	KLASS	Klass	Support Taxes	expense_custom_field.klass.9	2021-11-15 08:55:57.320455+00	2021-11-15 08:55:57.320464+00	1	\N	{"custom_field_id": 196452, "placeholder" : "Select Fyle Category"}	f	f
+1593	KLASS	Klass	Fyle Engineering	expense_custom_field.klass.10	2021-11-15 08:55:57.320539+00	2021-11-15 08:55:57.320574+00	1	\N	{"custom_field_id": 196452, "placeholder" : "Select Fyle Category"}	f	f
+1594	KLASS	Klass	Integrations	expense_custom_field.klass.11	2021-11-15 08:55:57.320662+00	2021-11-15 08:55:57.32068+00	1	\N	{"custom_field_id": 196452, "placeholder" : "Select Fyle Category"}	f	f
+1595	LOCATION	Location	02: Boston	expense_custom_field.location.1	2021-11-15 08:55:57.329313+00	2021-11-15 08:55:57.329337+00	1	\N	{"custom_field_id": 845, "placeholder" : "Select Fyle Category"}	f	f
+1596	LOCATION	Location	01: San Francisco	expense_custom_field.location.2	2021-11-15 08:55:57.329379+00	2021-11-15 08:55:57.329389+00	1	\N	{"custom_field_id": 845, "placeholder" : "Select Fyle Category"}	f	f
+1597	LOCATION	Location	Overstock	expense_custom_field.location.3	2021-11-15 08:55:57.329427+00	2021-11-15 08:55:57.329437+00	1	\N	{"custom_field_id": 845, "placeholder" : "Select Fyle Category"}	f	f
+1598	LOCATION	Location	Receiving Insp.	expense_custom_field.location.4	2021-11-15 08:55:57.329474+00	2021-11-15 08:55:57.329483+00	1	\N	{"custom_field_id": 845, "placeholder" : "Select Fyle Category"}	f	f
+1599	LOCATION	Location	QA Hold	expense_custom_field.location.5	2021-11-15 08:55:57.329519+00	2021-11-15 08:55:57.329528+00	1	\N	{"custom_field_id": 845, "placeholder" : "Select Fyle Category"}	f	f
+1600	LOCATION	Location	VendorTest	expense_custom_field.location.6	2021-11-15 08:55:57.329565+00	2021-11-15 08:55:57.329574+00	1	\N	{"custom_field_id": 845, "placeholder" : "Select Fyle Category"}	f	f
+1601	LOCATION	Location	Fyle	expense_custom_field.location.7	2021-11-15 08:55:57.329611+00	2021-11-15 08:55:57.32962+00	1	\N	{"custom_field_id": 845, "placeholder" : "Select Fyle Category"}	f	f
 1743	CATEGORY	Category	Build Price Variance	141410	2021-11-16 04:17:41.28513+00	2021-11-16 04:17:41.285138+00	2	\N	\N	f	f
-1602	LOCATION	Location	hubajuba	expense_custom_field.location.8	2021-11-15 08:55:57.329656+00	2021-11-15 08:55:57.329665+00	1	\N	{"custom_field_id": 845}	f	f
-1603	LOCATION	Location	Custom Location	expense_custom_field.location.9	2021-11-15 08:55:57.329701+00	2021-11-15 08:55:57.32971+00	1	\N	{"custom_field_id": 845}	f	f
-1604	LOCATION_ENTITY	Location Entity	USA1	expense_custom_field.location entity.1	2021-11-15 08:55:57.337872+00	2021-11-15 08:55:57.337908+00	1	\N	{"custom_field_id": 179638}	f	f
-1605	LOCATION_ENTITY	Location Entity	USA2	expense_custom_field.location entity.2	2021-11-15 08:55:57.33798+00	2021-11-15 08:55:57.337997+00	1	\N	{"custom_field_id": 179638}	f	f
-1606	LOCATION_ENTITY	Location Entity	USA3	expense_custom_field.location entity.3	2021-11-15 08:55:57.338062+00	2021-11-15 08:55:57.338079+00	1	\N	{"custom_field_id": 179638}	f	f
-1607	LOCATION_ENTITY	Location Entity	India	expense_custom_field.location entity.4	2021-11-15 08:55:57.338145+00	2021-11-15 08:55:57.338161+00	1	\N	{"custom_field_id": 179638}	f	f
-1608	OPERATING_SYSTEM	Operating System	USA1	expense_custom_field.operating system.1	2021-11-15 08:55:57.344987+00	2021-11-15 08:55:57.345014+00	1	\N	{"custom_field_id": 133433}	f	f
-1609	OPERATING_SYSTEM	Operating System	USA2	expense_custom_field.operating system.2	2021-11-15 08:55:57.345059+00	2021-11-15 08:55:57.345069+00	1	\N	{"custom_field_id": 133433}	f	f
-1610	OPERATING_SYSTEM	Operating System	USA3	expense_custom_field.operating system.3	2021-11-15 08:55:57.345108+00	2021-11-15 08:55:57.345117+00	1	\N	{"custom_field_id": 133433}	f	f
-1611	OPERATING_SYSTEM	Operating System	India	expense_custom_field.operating system.4	2021-11-15 08:55:57.345155+00	2021-11-15 08:55:57.345164+00	1	\N	{"custom_field_id": 133433}	f	f
-1612	SYSTEM_OPERATING	System Operating	Andriod	expense_custom_field.system operating.1	2021-11-15 08:55:57.350384+00	2021-11-15 08:55:57.350408+00	1	\N	{"custom_field_id": 174995}	f	f
-1613	SYSTEM_OPERATING	System Operating	Linux	expense_custom_field.system operating.2	2021-11-15 08:55:57.35045+00	2021-11-15 08:55:57.35046+00	1	\N	{"custom_field_id": 174995}	f	f
-1614	SYSTEM_OPERATING	System Operating	IOS	expense_custom_field.system operating.3	2021-11-15 08:55:57.350498+00	2021-11-15 08:55:57.350507+00	1	\N	{"custom_field_id": 174995}	f	f
-1615	SYSTEM_OPERATING	System Operating	MacOS	expense_custom_field.system operating.4	2021-11-15 08:55:57.350544+00	2021-11-15 08:55:57.350553+00	1	\N	{"custom_field_id": 174995}	f	f
-1616	TAX_GROUPS	Tax Groups	Tax 1	expense_custom_field.tax groups.1	2021-11-15 08:55:57.360372+00	2021-11-15 08:55:57.360417+00	1	\N	{"custom_field_id": 195201}	f	f
-1617	TEAM	Team	Team Nilesh	expense_custom_field.team.1	2021-11-15 08:55:57.36543+00	2021-11-15 08:55:57.365453+00	1	\N	{"custom_field_id": 174175}	f	f
-1618	TEAM	Team	Team 2	expense_custom_field.team.2	2021-11-15 08:55:57.365495+00	2021-11-15 08:55:57.365505+00	1	\N	{"custom_field_id": 174175}	f	f
-1619	TEAM	Team	Team 1	expense_custom_field.team.3	2021-11-15 08:55:57.365544+00	2021-11-15 08:55:57.365553+00	1	\N	{"custom_field_id": 174175}	f	f
-1620	TEAM	Team	Team 3	expense_custom_field.team.4	2021-11-15 08:55:57.36559+00	2021-11-15 08:55:57.365598+00	1	\N	{"custom_field_id": 174175}	f	f
-1621	TEAM_2	Team 2	Team 2	expense_custom_field.team 2.1	2021-11-15 08:55:57.373622+00	2021-11-15 08:55:57.373662+00	1	\N	{"custom_field_id": 174994}	f	f
-1622	TEAM_2	Team 2	Team 1	expense_custom_field.team 2.2	2021-11-15 08:55:57.37374+00	2021-11-15 08:55:57.373759+00	1	\N	{"custom_field_id": 174994}	f	f
-1623	TEAM_2	Team 2	Team 3	expense_custom_field.team 2.3	2021-11-15 08:55:57.37383+00	2021-11-15 08:55:57.373848+00	1	\N	{"custom_field_id": 174994}	f	f
-1624	TEAM_COPY	Team Copy	Team 2	expense_custom_field.team copy.1	2021-11-15 08:55:57.381278+00	2021-11-15 08:55:57.381303+00	1	\N	{"custom_field_id": 174993}	f	f
-1625	TEAM_COPY	Team Copy	Team 1	expense_custom_field.team copy.2	2021-11-15 08:55:57.381348+00	2021-11-15 08:55:57.381358+00	1	\N	{"custom_field_id": 174993}	f	f
-1626	TEAM_COPY	Team Copy	Team 3	expense_custom_field.team copy.3	2021-11-15 08:55:57.381397+00	2021-11-15 08:55:57.381406+00	1	\N	{"custom_field_id": 174993}	f	f
-1627	USER_DIMENSION	User Dimension	Ashwin	expense_custom_field.user dimension.1	2021-11-15 08:55:57.39048+00	2021-11-15 08:55:57.390524+00	1	\N	{"custom_field_id": 174176}	f	f
-1628	USER_DIMENSION	User Dimension	Intern	expense_custom_field.user dimension.2	2021-11-15 08:55:57.390607+00	2021-11-15 08:55:57.39152+00	1	\N	{"custom_field_id": 174176}	f	f
-1629	USER_DIMENSION	User Dimension	John Cena	expense_custom_field.user dimension.3	2021-11-15 08:55:57.392451+00	2021-11-15 08:55:57.392492+00	1	\N	{"custom_field_id": 174176}	f	f
-1630	USER_DIMENSION_COPY	User Dimension Copy	Admin	expense_custom_field.user dimension copy.1	2021-11-15 08:55:57.410583+00	2021-11-15 08:55:57.410665+00	1	\N	{"custom_field_id": 174991}	f	f
-1631	USER_DIMENSION_COPY	User Dimension Copy	Sales	expense_custom_field.user dimension copy.2	2021-11-15 08:55:57.410813+00	2021-11-15 08:55:57.41084+00	1	\N	{"custom_field_id": 174991}	f	f
-1632	USER_DIMENSION_COPY	User Dimension Copy	Service	expense_custom_field.user dimension copy.3	2021-11-15 08:55:57.410917+00	2021-11-15 08:55:57.410935+00	1	\N	{"custom_field_id": 174991}	f	f
-1633	USER_DIMENSION_COPY	User Dimension Copy	Marketing	expense_custom_field.user dimension copy.4	2021-11-15 08:55:57.411009+00	2021-11-15 08:55:57.411028+00	1	\N	{"custom_field_id": 174991}	f	f
-1634	USER_DIMENSION_COPY	User Dimension Copy	Production	expense_custom_field.user dimension copy.5	2021-11-15 08:55:57.411185+00	2021-11-15 08:55:57.41121+00	1	\N	{"custom_field_id": 174991}	f	f
-1635	USER_DIMENSION_COPY	User Dimension Copy	Machine Shop	expense_custom_field.user dimension copy.6	2021-11-15 08:55:57.411258+00	2021-11-15 08:55:57.411268+00	1	\N	{"custom_field_id": 174991}	f	f
-1636	USER_DIMENSION_COPY	User Dimension Copy	Assembly	expense_custom_field.user dimension copy.7	2021-11-15 08:55:57.411306+00	2021-11-15 08:55:57.411316+00	1	\N	{"custom_field_id": 174991}	f	f
-1637	USER_DIMENSION_COPY	User Dimension Copy	Inspection	expense_custom_field.user dimension copy.8	2021-11-15 08:55:57.411353+00	2021-11-15 08:55:57.411362+00	1	\N	{"custom_field_id": 174991}	f	f
-1638	USER_DIMENSION_COPY	User Dimension Copy	Fabrication	expense_custom_field.user dimension copy.9	2021-11-15 08:55:57.411399+00	2021-11-15 08:55:57.411408+00	1	\N	{"custom_field_id": 174991}	f	f
-1639	USER_DIMENSION_COPY	User Dimension Copy	Engineering	expense_custom_field.user dimension copy.10	2021-11-15 08:55:57.411446+00	2021-11-15 08:55:57.411455+00	1	\N	{"custom_field_id": 174991}	f	f
-1640	USER_DIMENSION_COPY	User Dimension Copy	Product	expense_custom_field.user dimension copy.11	2021-11-15 08:55:57.411492+00	2021-11-15 08:55:57.411501+00	1	\N	{"custom_field_id": 174991}	f	f
-1641	USER_DIMENSION_COPY	User Dimension Copy	Fyle	expense_custom_field.user dimension copy.12	2021-11-15 08:55:57.411539+00	2021-11-15 08:55:57.411548+00	1	\N	{"custom_field_id": 174991}	f	f
+1602	LOCATION	Location	hubajuba	expense_custom_field.location.8	2021-11-15 08:55:57.329656+00	2021-11-15 08:55:57.329665+00	1	\N	{"custom_field_id": 845, "placeholder" : "Select Fyle Category"}	f	f
+1603	LOCATION	Location	Custom Location	expense_custom_field.location.9	2021-11-15 08:55:57.329701+00	2021-11-15 08:55:57.32971+00	1	\N	{"custom_field_id": 845, "placeholder" : "Select Fyle Category"}	f	f
+1604	LOCATION_ENTITY	Location Entity	USA1	expense_custom_field.location entity.1	2021-11-15 08:55:57.337872+00	2021-11-15 08:55:57.337908+00	1	\N	{"custom_field_id": 179638, "placeholder" : "Select Fyle Category"}	f	f
+1605	LOCATION_ENTITY	Location Entity	USA2	expense_custom_field.location entity.2	2021-11-15 08:55:57.33798+00	2021-11-15 08:55:57.337997+00	1	\N	{"custom_field_id": 179638, "placeholder" : "Select Fyle Category"}	f	f
+1606	LOCATION_ENTITY	Location Entity	USA3	expense_custom_field.location entity.3	2021-11-15 08:55:57.338062+00	2021-11-15 08:55:57.338079+00	1	\N	{"custom_field_id": 179638, "placeholder" : "Select Fyle Category"}	f	f
+1607	LOCATION_ENTITY	Location Entity	India	expense_custom_field.location entity.4	2021-11-15 08:55:57.338145+00	2021-11-15 08:55:57.338161+00	1	\N	{"custom_field_id": 179638, "placeholder" : "Select Fyle Category"}	f	f
+1608	OPERATING_SYSTEM	Operating System	USA1	expense_custom_field.operating system.1	2021-11-15 08:55:57.344987+00	2021-11-15 08:55:57.345014+00	1	\N	{"custom_field_id": 133433, "placeholder" : "Select Fyle Category"}	f	f
+1609	OPERATING_SYSTEM	Operating System	USA2	expense_custom_field.operating system.2	2021-11-15 08:55:57.345059+00	2021-11-15 08:55:57.345069+00	1	\N	{"custom_field_id": 133433, "placeholder" : "Select Fyle Category"}	f	f
+1610	OPERATING_SYSTEM	Operating System	USA3	expense_custom_field.operating system.3	2021-11-15 08:55:57.345108+00	2021-11-15 08:55:57.345117+00	1	\N	{"custom_field_id": 133433, "placeholder" : "Select Fyle Category"}	f	f
+1611	OPERATING_SYSTEM	Operating System	India	expense_custom_field.operating system.4	2021-11-15 08:55:57.345155+00	2021-11-15 08:55:57.345164+00	1	\N	{"custom_field_id": 133433, "placeholder" : "Select Fyle Category"}	f	f
+1612	SYSTEM_OPERATING	System Operating	Andriod	expense_custom_field.system operating.1	2021-11-15 08:55:57.350384+00	2021-11-15 08:55:57.350408+00	1	\N	{"custom_field_id": 174995, "placeholder" : "Select Fyle Category"}	f	f
+1613	SYSTEM_OPERATING	System Operating	Linux	expense_custom_field.system operating.2	2021-11-15 08:55:57.35045+00	2021-11-15 08:55:57.35046+00	1	\N	{"custom_field_id": 174995, "placeholder" : "Select Fyle Category"}	f	f
+1614	SYSTEM_OPERATING	System Operating	IOS	expense_custom_field.system operating.3	2021-11-15 08:55:57.350498+00	2021-11-15 08:55:57.350507+00	1	\N	{"custom_field_id": 174995, "placeholder" : "Select Fyle Category"}	f	f
+1615	SYSTEM_OPERATING	System Operating	MacOS	expense_custom_field.system operating.4	2021-11-15 08:55:57.350544+00	2021-11-15 08:55:57.350553+00	1	\N	{"custom_field_id": 174995, "placeholder" : "Select Fyle Category"}	f	f
+1616	TAX_GROUPS	Tax Groups	Tax 1	expense_custom_field.tax groups.1	2021-11-15 08:55:57.360372+00	2021-11-15 08:55:57.360417+00	1	\N	{"custom_field_id": 195201, "placeholder" : "Select Fyle Category"}	f	f
+1617	TEAM	Team	Team Nilesh	expense_custom_field.team.1	2021-11-15 08:55:57.36543+00	2021-11-15 08:55:57.365453+00	1	\N	{"custom_field_id": 174175, "placeholder" : "Select Fyle Category"}	f	f
+1618	TEAM	Team	Team 2	expense_custom_field.team.2	2021-11-15 08:55:57.365495+00	2021-11-15 08:55:57.365505+00	1	\N	{"custom_field_id": 174175, "placeholder" : "Select Fyle Category"}	f	f
+1619	TEAM	Team	Team 1	expense_custom_field.team.3	2021-11-15 08:55:57.365544+00	2021-11-15 08:55:57.365553+00	1	\N	{"custom_field_id": 174175, "placeholder" : "Select Fyle Category"}	f	f
+1620	TEAM	Team	Team 3	expense_custom_field.team.4	2021-11-15 08:55:57.36559+00	2021-11-15 08:55:57.365598+00	1	\N	{"custom_field_id": 174175, "placeholder" : "Select Fyle Category"}	f	f
+1621	TEAM_2	Team 2	Team 2	expense_custom_field.team 2.1	2021-11-15 08:55:57.373622+00	2021-11-15 08:55:57.373662+00	1	\N	{"custom_field_id": 174994, "placeholder" : "Select Fyle Category"}	f	f
+1622	TEAM_2	Team 2	Team 1	expense_custom_field.team 2.2	2021-11-15 08:55:57.37374+00	2021-11-15 08:55:57.373759+00	1	\N	{"custom_field_id": 174994, "placeholder" : "Select Fyle Category"}	f	f
+1623	TEAM_2	Team 2	Team 3	expense_custom_field.team 2.3	2021-11-15 08:55:57.37383+00	2021-11-15 08:55:57.373848+00	1	\N	{"custom_field_id": 174994, "placeholder" : "Select Fyle Category"}	f	f
+1624	TEAM_COPY	Team Copy	Team 2	expense_custom_field.team copy.1	2021-11-15 08:55:57.381278+00	2021-11-15 08:55:57.381303+00	1	\N	{"custom_field_id": 174993, "placeholder" : "Select Fyle Category"}	f	f
+1625	TEAM_COPY	Team Copy	Team 1	expense_custom_field.team copy.2	2021-11-15 08:55:57.381348+00	2021-11-15 08:55:57.381358+00	1	\N	{"custom_field_id": 174993, "placeholder" : "Select Fyle Category"}	f	f
+1626	TEAM_COPY	Team Copy	Team 3	expense_custom_field.team copy.3	2021-11-15 08:55:57.381397+00	2021-11-15 08:55:57.381406+00	1	\N	{"custom_field_id": 174993, "placeholder" : "Select Fyle Category"}	f	f
+1627	USER_DIMENSION	User Dimension	Ashwin	expense_custom_field.user dimension.1	2021-11-15 08:55:57.39048+00	2021-11-15 08:55:57.390524+00	1	\N	{"custom_field_id": 174176, "placeholder" : "Select Fyle Category"}	f	f
+1628	USER_DIMENSION	User Dimension	Intern	expense_custom_field.user dimension.2	2021-11-15 08:55:57.390607+00	2021-11-15 08:55:57.39152+00	1	\N	{"custom_field_id": 174176, "placeholder" : "Select Fyle Category"}	f	f
+1629	USER_DIMENSION	User Dimension	John Cena	expense_custom_field.user dimension.3	2021-11-15 08:55:57.392451+00	2021-11-15 08:55:57.392492+00	1	\N	{"custom_field_id": 174176, "placeholder" : "Select Fyle Category"}	f	f
+1630	USER_DIMENSION_COPY	User Dimension Copy	Admin	expense_custom_field.user dimension copy.1	2021-11-15 08:55:57.410583+00	2021-11-15 08:55:57.410665+00	1	\N	{"custom_field_id": 174991, "placeholder" : "Select Fyle Category"}	f	f
+1631	USER_DIMENSION_COPY	User Dimension Copy	Sales	expense_custom_field.user dimension copy.2	2021-11-15 08:55:57.410813+00	2021-11-15 08:55:57.41084+00	1	\N	{"custom_field_id": 174991, "placeholder" : "Select Fyle Category"}	f	f
+1632	USER_DIMENSION_COPY	User Dimension Copy	Service	expense_custom_field.user dimension copy.3	2021-11-15 08:55:57.410917+00	2021-11-15 08:55:57.410935+00	1	\N	{"custom_field_id": 174991, "placeholder" : "Select Fyle Category"}	f	f
+1633	USER_DIMENSION_COPY	User Dimension Copy	Marketing	expense_custom_field.user dimension copy.4	2021-11-15 08:55:57.411009+00	2021-11-15 08:55:57.411028+00	1	\N	{"custom_field_id": 174991, "placeholder" : "Select Fyle Category"}	f	f
+1634	USER_DIMENSION_COPY	User Dimension Copy	Production	expense_custom_field.user dimension copy.5	2021-11-15 08:55:57.411185+00	2021-11-15 08:55:57.41121+00	1	\N	{"custom_field_id": 174991, "placeholder" : "Select Fyle Category"}	f	f
+1635	USER_DIMENSION_COPY	User Dimension Copy	Machine Shop	expense_custom_field.user dimension copy.6	2021-11-15 08:55:57.411258+00	2021-11-15 08:55:57.411268+00	1	\N	{"custom_field_id": 174991, "placeholder" : "Select Fyle Category"}	f	f
+1636	USER_DIMENSION_COPY	User Dimension Copy	Assembly	expense_custom_field.user dimension copy.7	2021-11-15 08:55:57.411306+00	2021-11-15 08:55:57.411316+00	1	\N	{"custom_field_id": 174991, "placeholder" : "Select Fyle Category"}	f	f
+1637	USER_DIMENSION_COPY	User Dimension Copy	Inspection	expense_custom_field.user dimension copy.8	2021-11-15 08:55:57.411353+00	2021-11-15 08:55:57.411362+00	1	\N	{"custom_field_id": 174991, "placeholder" : "Select Fyle Category"}	f	f
+1638	USER_DIMENSION_COPY	User Dimension Copy	Fabrication	expense_custom_field.user dimension copy.9	2021-11-15 08:55:57.411399+00	2021-11-15 08:55:57.411408+00	1	\N	{"custom_field_id": 174991, "placeholder" : "Select Fyle Category"}	f	f
+1639	USER_DIMENSION_COPY	User Dimension Copy	Engineering	expense_custom_field.user dimension copy.10	2021-11-15 08:55:57.411446+00	2021-11-15 08:55:57.411455+00	1	\N	{"custom_field_id": 174991, "placeholder" : "Select Fyle Category"}	f	f
+1640	USER_DIMENSION_COPY	User Dimension Copy	Product	expense_custom_field.user dimension copy.11	2021-11-15 08:55:57.411492+00	2021-11-15 08:55:57.411501+00	1	\N	{"custom_field_id": 174991, "placeholder" : "Select Fyle Category"}	f	f
+1641	USER_DIMENSION_COPY	User Dimension Copy	Fyle	expense_custom_field.user dimension copy.12	2021-11-15 08:55:57.411539+00	2021-11-15 08:55:57.411548+00	1	\N	{"custom_field_id": 174991, "placeholder" : "Select Fyle Category"}	f	f
 1642	TAX_GROUP	Tax Group	GST: NCF-AU @0.0%	tg09S3rMTTpo	2021-11-15 08:55:57.603008+00	2021-11-15 08:55:57.603044+00	1	\N	{"tax_rate": 0.0}	f	f
 1643	TAX_GROUP	Tax Group	CGST	tg0fPRBFMZj7	2021-11-15 08:55:57.603116+00	2021-11-15 08:55:57.603133+00	1	\N	{"tax_rate": 0.5}	f	f
 1644	TAX_GROUP	Tax Group	VAT: UNDEF-GB @0.0%	tg3Luhktgf4N	2021-11-15 08:55:57.603201+00	2021-11-15 08:55:57.603217+00	1	\N	{"tax_rate": 0.0}	f	f
@@ -10931,36 +10935,36 @@ COPY public.expense_attributes (id, attribute_type, display_name, value, source_
 3228	PROJECT	Project	Zucca Electric Agency	284347	2021-11-16 04:17:43.584912+00	2021-11-16 04:17:43.58492+00	2	\N	\N	f	f
 3229	PROJECT	Project	Zucconi Telecom Sales	284348	2021-11-16 04:17:43.58495+00	2021-11-16 04:17:43.584958+00	2	\N	\N	f	f
 3230	PROJECT	Project	Zurasky Markets Dynamics	284349	2021-11-16 04:17:43.584989+00	2021-11-16 04:17:43.584997+00	2	\N	\N	f	f
-3231	DEVICE_TYPE	Device Type	Mac Os	expense_custom_field.device type.1	2021-11-16 04:17:43.781548+00	2021-11-16 04:17:43.781597+00	2	\N	{"custom_field_id": 104401}	f	f
-3232	DEVICE_TYPE	Device Type	Windows	expense_custom_field.device type.2	2021-11-16 04:17:43.781718+00	2021-11-16 04:17:43.781738+00	2	\N	{"custom_field_id": 104401}	f	f
-3233	DEVICE_TYPE	Device Type	Andriod	expense_custom_field.device type.3	2021-11-16 04:17:43.78179+00	2021-11-16 04:17:43.781803+00	2	\N	{"custom_field_id": 104401}	f	f
-3234	DEVICE_TYPE	Device Type	IOS	expense_custom_field.device type.4	2021-11-16 04:17:43.781853+00	2021-11-16 04:17:43.781864+00	2	\N	{"custom_field_id": 104401}	f	f
-3235	FYLE_CATEGORY	Fyle Category	Category 1	expense_custom_field.fyle category.1	2021-11-16 04:17:43.787712+00	2021-11-16 04:17:43.787737+00	2	\N	{"custom_field_id": 104346}	f	f
-3236	FYLE_CATEGORY	Fyle Category	Category 2	expense_custom_field.fyle category.2	2021-11-16 04:17:43.787784+00	2021-11-16 04:17:43.787793+00	2	\N	{"custom_field_id": 104346}	f	f
-3237	FYLE_CATEGORY	Fyle Category	Category 3	expense_custom_field.fyle category.3	2021-11-16 04:17:43.787828+00	2021-11-16 04:17:43.787836+00	2	\N	{"custom_field_id": 104346}	f	f
-3238	FYLE_CATEGORY	Fyle Category	Category 4	expense_custom_field.fyle category.4	2021-11-16 04:17:43.78787+00	2021-11-16 04:17:43.787878+00	2	\N	{"custom_field_id": 104346}	f	f
-3239	TAX_GROUP	Tax Group	City : New York City ( 0.50% ) 	expense_custom_field.tax group.1	2021-11-16 04:17:43.793812+00	2021-11-16 04:17:43.793835+00	2	\N	{"custom_field_id": 195218}	f	f
-3240	TAX_GROUP	Tax Group	County : New York County ( 1.50% ) 	expense_custom_field.tax group.2	2021-11-16 04:17:43.793873+00	2021-11-16 04:17:43.793882+00	2	\N	{"custom_field_id": 195218}	f	f
-3241	TAX_GROUP	Tax Group	State : New York State ( 6.50% ) 	expense_custom_field.tax group.3	2021-11-16 04:17:43.793917+00	2021-11-16 04:17:43.793925+00	2	\N	{"custom_field_id": 195218}	f	f
-3242	TAX_GROUP	Tax Group	Other 2 Sales Tax : GST ( 18.00% ) 	expense_custom_field.tax group.4	2021-11-16 04:17:43.793959+00	2021-11-16 04:17:43.793968+00	2	\N	{"custom_field_id": 195218}	f	f
-3243	TAX_GROUP	Tax Group	GST : UNDEF-AU ( 0.00% ) 	expense_custom_field.tax group.5	2021-11-16 04:17:43.794001+00	2021-11-16 04:17:43.794009+00	2	\N	{"custom_field_id": 195218}	f	f
-3244	TAX_GROUP	Tax Group	GST : ADJ-AU ( 0.00% ) 	expense_custom_field.tax group.6	2021-11-16 04:17:43.794043+00	2021-11-16 04:17:43.794051+00	2	\N	{"custom_field_id": 195218}	f	f
-3245	TAX_GROUP	Tax Group	GST : TS-AU ( 10.00% ) 	expense_custom_field.tax group.7	2021-11-16 04:17:43.794084+00	2021-11-16 04:17:43.794092+00	2	\N	{"custom_field_id": 195218}	f	f
-3246	TAX_GROUP	Tax Group	GST : ITS-AU ( 0.00% ) 	expense_custom_field.tax group.8	2021-11-16 04:17:43.794126+00	2021-11-16 04:17:43.794134+00	2	\N	{"custom_field_id": 195218}	f	f
-3247	TAX_GROUP	Tax Group	GST : TFS-AU ( 0.00% ) 	expense_custom_field.tax group.9	2021-11-16 04:17:43.794167+00	2021-11-16 04:17:43.794175+00	2	\N	{"custom_field_id": 195218}	f	f
-3248	TAX_GROUP	Tax Group	GST : EXPS-AU ( 0.00% ) 	expense_custom_field.tax group.10	2021-11-16 04:17:43.794209+00	2021-11-16 04:17:43.794217+00	2	\N	{"custom_field_id": 195218}	f	f
-3249	TAX_GROUP	Tax Group	GST : CPF-AU ( 0.00% ) 	expense_custom_field.tax group.11	2021-11-16 04:17:43.794251+00	2021-11-16 04:17:43.794259+00	2	\N	{"custom_field_id": 195218}	f	f
-3250	TAX_GROUP	Tax Group	GST : CPT-AU ( 10.00% ) 	expense_custom_field.tax group.12	2021-11-16 04:17:43.794293+00	2021-11-16 04:17:43.794301+00	2	\N	{"custom_field_id": 195218}	f	f
-3251	TAX_GROUP	Tax Group	GST : CPI-AU ( 0.00% ) 	expense_custom_field.tax group.13	2021-11-16 04:17:43.794334+00	2021-11-16 04:17:43.794342+00	2	\N	{"custom_field_id": 195218}	f	f
-3252	TAX_GROUP	Tax Group	GST : NCF-AU ( 0.00% ) 	expense_custom_field.tax group.14	2021-11-16 04:17:43.794375+00	2021-11-16 04:17:43.794383+00	2	\N	{"custom_field_id": 195218}	f	f
-3253	TAX_GROUP	Tax Group	GST : NCT-AU ( 10.00% ) 	expense_custom_field.tax group.15	2021-11-16 04:17:43.794417+00	2021-11-16 04:17:43.794424+00	2	\N	{"custom_field_id": 195218}	f	f
-3254	TAX_GROUP	Tax Group	GST : NCI-AU ( 0.00% ) 	expense_custom_field.tax group.16	2021-11-16 04:17:43.794458+00	2021-11-16 04:17:43.794465+00	2	\N	{"custom_field_id": 195218}	f	f
-3255	TAX_GROUP	Tax Group	GST : NA-AU ( 0.00% ) 	expense_custom_field.tax group.17	2021-11-16 04:17:43.794499+00	2021-11-16 04:17:43.794506+00	2	\N	{"custom_field_id": 195218}	f	f
-3256	TAX_GROUP	Tax Group	LCT : LCT-AU ( 25.00% ) 	expense_custom_field.tax group.18	2021-11-16 04:17:43.79454+00	2021-11-16 04:17:43.794548+00	2	\N	{"custom_field_id": 195218}	f	f
+3231	DEVICE_TYPE	Device Type	Mac Os	expense_custom_field.device type.1	2021-11-16 04:17:43.781548+00	2021-11-16 04:17:43.781597+00	2	\N	{"custom_field_id": 104401, "placeholder" : "Select Fyle Category"}	f	f
+3232	DEVICE_TYPE	Device Type	Windows	expense_custom_field.device type.2	2021-11-16 04:17:43.781718+00	2021-11-16 04:17:43.781738+00	2	\N	{"custom_field_id": 104401, "placeholder" : "Select Fyle Category"}	f	f
+3233	DEVICE_TYPE	Device Type	Andriod	expense_custom_field.device type.3	2021-11-16 04:17:43.78179+00	2021-11-16 04:17:43.781803+00	2	\N	{"custom_field_id": 104401, "placeholder" : "Select Fyle Category"}	f	f
+3234	DEVICE_TYPE	Device Type	IOS	expense_custom_field.device type.4	2021-11-16 04:17:43.781853+00	2021-11-16 04:17:43.781864+00	2	\N	{"custom_field_id": 104401, "placeholder" : "Select Fyle Category"}	f	f
+3235	FYLE_CATEGORY	Fyle Category	Category 1	expense_custom_field.fyle category.1	2021-11-16 04:17:43.787712+00	2021-11-16 04:17:43.787737+00	2	\N	{"custom_field_id": 104346, "placeholder" : "Select Fyle Category"}	f	f
+3236	FYLE_CATEGORY	Fyle Category	Category 2	expense_custom_field.fyle category.2	2021-11-16 04:17:43.787784+00	2021-11-16 04:17:43.787793+00	2	\N	{"custom_field_id": 104346, "placeholder" : "Select Fyle Category"}	f	f
+3237	FYLE_CATEGORY	Fyle Category	Category 3	expense_custom_field.fyle category.3	2021-11-16 04:17:43.787828+00	2021-11-16 04:17:43.787836+00	2	\N	{"custom_field_id": 104346, "placeholder" : "Select Fyle Category"}	f	f
+3238	FYLE_CATEGORY	Fyle Category	Category 4	expense_custom_field.fyle category.4	2021-11-16 04:17:43.78787+00	2021-11-16 04:17:43.787878+00	2	\N	{"custom_field_id": 104346, "placeholder" : "Select Fyle Category"}	f	f
+3239	TAX_GROUP	Tax Group	City : New York City ( 0.50% ) 	expense_custom_field.tax group.1	2021-11-16 04:17:43.793812+00	2021-11-16 04:17:43.793835+00	2	\N	{"custom_field_id": 195218, "placeholder" : "Select Fyle Category"}	f	f
+3240	TAX_GROUP	Tax Group	County : New York County ( 1.50% ) 	expense_custom_field.tax group.2	2021-11-16 04:17:43.793873+00	2021-11-16 04:17:43.793882+00	2	\N	{"custom_field_id": 195218, "placeholder" : "Select Fyle Category"}	f	f
+3241	TAX_GROUP	Tax Group	State : New York State ( 6.50% ) 	expense_custom_field.tax group.3	2021-11-16 04:17:43.793917+00	2021-11-16 04:17:43.793925+00	2	\N	{"custom_field_id": 195218, "placeholder" : "Select Fyle Category"}	f	f
+3242	TAX_GROUP	Tax Group	Other 2 Sales Tax : GST ( 18.00% ) 	expense_custom_field.tax group.4	2021-11-16 04:17:43.793959+00	2021-11-16 04:17:43.793968+00	2	\N	{"custom_field_id": 195218, "placeholder" : "Select Fyle Category"}	f	f
+3243	TAX_GROUP	Tax Group	GST : UNDEF-AU ( 0.00% ) 	expense_custom_field.tax group.5	2021-11-16 04:17:43.794001+00	2021-11-16 04:17:43.794009+00	2	\N	{"custom_field_id": 195218, "placeholder" : "Select Fyle Category"}	f	f
+3244	TAX_GROUP	Tax Group	GST : ADJ-AU ( 0.00% ) 	expense_custom_field.tax group.6	2021-11-16 04:17:43.794043+00	2021-11-16 04:17:43.794051+00	2	\N	{"custom_field_id": 195218, "placeholder" : "Select Fyle Category"}	f	f
+3245	TAX_GROUP	Tax Group	GST : TS-AU ( 10.00% ) 	expense_custom_field.tax group.7	2021-11-16 04:17:43.794084+00	2021-11-16 04:17:43.794092+00	2	\N	{"custom_field_id": 195218, "placeholder" : "Select Fyle Category"}	f	f
+3246	TAX_GROUP	Tax Group	GST : ITS-AU ( 0.00% ) 	expense_custom_field.tax group.8	2021-11-16 04:17:43.794126+00	2021-11-16 04:17:43.794134+00	2	\N	{"custom_field_id": 195218, "placeholder" : "Select Fyle Category"}	f	f
+3247	TAX_GROUP	Tax Group	GST : TFS-AU ( 0.00% ) 	expense_custom_field.tax group.9	2021-11-16 04:17:43.794167+00	2021-11-16 04:17:43.794175+00	2	\N	{"custom_field_id": 195218, "placeholder" : "Select Fyle Category"}	f	f
+3248	TAX_GROUP	Tax Group	GST : EXPS-AU ( 0.00% ) 	expense_custom_field.tax group.10	2021-11-16 04:17:43.794209+00	2021-11-16 04:17:43.794217+00	2	\N	{"custom_field_id": 195218, "placeholder" : "Select Fyle Category"}	f	f
+3249	TAX_GROUP	Tax Group	GST : CPF-AU ( 0.00% ) 	expense_custom_field.tax group.11	2021-11-16 04:17:43.794251+00	2021-11-16 04:17:43.794259+00	2	\N	{"custom_field_id": 195218, "placeholder" : "Select Fyle Category"}	f	f
+3250	TAX_GROUP	Tax Group	GST : CPT-AU ( 10.00% ) 	expense_custom_field.tax group.12	2021-11-16 04:17:43.794293+00	2021-11-16 04:17:43.794301+00	2	\N	{"custom_field_id": 195218, "placeholder" : "Select Fyle Category"}	f	f
+3251	TAX_GROUP	Tax Group	GST : CPI-AU ( 0.00% ) 	expense_custom_field.tax group.13	2021-11-16 04:17:43.794334+00	2021-11-16 04:17:43.794342+00	2	\N	{"custom_field_id": 195218, "placeholder" : "Select Fyle Category"}	f	f
+3252	TAX_GROUP	Tax Group	GST : NCF-AU ( 0.00% ) 	expense_custom_field.tax group.14	2021-11-16 04:17:43.794375+00	2021-11-16 04:17:43.794383+00	2	\N	{"custom_field_id": 195218, "placeholder" : "Select Fyle Category"}	f	f
+3253	TAX_GROUP	Tax Group	GST : NCT-AU ( 10.00% ) 	expense_custom_field.tax group.15	2021-11-16 04:17:43.794417+00	2021-11-16 04:17:43.794424+00	2	\N	{"custom_field_id": 195218, "placeholder" : "Select Fyle Category"}	f	f
+3254	TAX_GROUP	Tax Group	GST : NCI-AU ( 0.00% ) 	expense_custom_field.tax group.16	2021-11-16 04:17:43.794458+00	2021-11-16 04:17:43.794465+00	2	\N	{"custom_field_id": 195218, "placeholder" : "Select Fyle Category"}	f	f
+3255	TAX_GROUP	Tax Group	GST : NA-AU ( 0.00% ) 	expense_custom_field.tax group.17	2021-11-16 04:17:43.794499+00	2021-11-16 04:17:43.794506+00	2	\N	{"custom_field_id": 195218, "placeholder" : "Select Fyle Category"}	f	f
+3256	TAX_GROUP	Tax Group	LCT : LCT-AU ( 25.00% ) 	expense_custom_field.tax group.18	2021-11-16 04:17:43.79454+00	2021-11-16 04:17:43.794548+00	2	\N	{"custom_field_id": 195218, "placeholder" : "Select Fyle Category"}	f	f
 3567	CATEGORY	Category	Job Expenses:Job Materials:Plants and Soil	138869	2021-12-03 11:03:50.976115+00	2021-12-03 11:03:50.976123+00	49	\N	\N	f	f
-3257	TAX_GROUP	Tax Group	WET : WET-AU ( 29.00% ) 	expense_custom_field.tax group.19	2021-11-16 04:17:43.79458+00	2021-11-16 04:17:43.794588+00	2	\N	{"custom_field_id": 195218}	f	f
-3258	TAX_GROUP	Tax Group	ABN : ABNW ( -48.50% ) 	expense_custom_field.tax group.20	2021-11-16 04:17:43.794621+00	2021-11-16 04:17:43.794629+00	2	\N	{"custom_field_id": 195218}	f	f
-3259	TAX_GROUP	Tax Group	PAYG : PAYGW-AU ( -48.50% ) 	expense_custom_field.tax group.21	2021-11-16 04:17:43.794662+00	2021-11-16 04:17:43.79467+00	2	\N	{"custom_field_id": 195218}	f	f
+3257	TAX_GROUP	Tax Group	WET : WET-AU ( 29.00% ) 	expense_custom_field.tax group.19	2021-11-16 04:17:43.79458+00	2021-11-16 04:17:43.794588+00	2	\N	{"custom_field_id": 195218, "placeholder" : "Select Fyle Category"}	f	f
+3258	TAX_GROUP	Tax Group	ABN : ABNW ( -48.50% ) 	expense_custom_field.tax group.20	2021-11-16 04:17:43.794621+00	2021-11-16 04:17:43.794629+00	2	\N	{"custom_field_id": 195218, "placeholder" : "Select Fyle Category"}	f	f
+3259	TAX_GROUP	Tax Group	PAYG : PAYGW-AU ( -48.50% ) 	expense_custom_field.tax group.21	2021-11-16 04:17:43.794662+00	2021-11-16 04:17:43.79467+00	2	\N	{"custom_field_id": 195218, "placeholder" : "Select Fyle Category"}	f	f
 3260	TAX_GROUP	Tax Group	County: New York County @1.50%	tg0HTZ85fjzn	2021-11-16 04:17:43.942255+00	2021-11-16 04:17:43.942278+00	2	\N	{"tax_rate": 0.01}	f	f
 3261	TAX_GROUP	Tax Group	GST: CPT-AU @10.00%	tg0IFRmjiRzS	2021-11-16 04:17:43.942352+00	2021-11-16 04:17:43.942362+00	2	\N	{"tax_rate": 0.1}	f	f
 3266	TAX_GROUP	Tax Group	GST: NCF-AU @0.00%	tg6wp0pHkviJ	2021-11-16 04:17:43.942579+00	2021-11-16 04:17:43.942587+00	2	\N	{"tax_rate": 0}	f	f
@@ -11501,7 +11505,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 42, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 148, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 150, true);
 
 
 --

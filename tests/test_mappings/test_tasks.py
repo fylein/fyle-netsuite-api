@@ -282,7 +282,7 @@ def test_auto_create_category_mappings(db, mocker):
     )
 
     response = auto_create_category_mappings(workspace_id=1)
-    assert response == []
+    assert response == None
 
     mappings_count = CategoryMapping.objects.filter(workspace_id=1).count()
     assert mappings_count == 34

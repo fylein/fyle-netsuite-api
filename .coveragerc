@@ -1,2 +1,2 @@
 [run]
-omit = ./venv/*, tests/*, fyle_netsuite_api/*, *forms.py, *apps.py,*manage.py,*__init__.py,*migrations*,*asgi*,*wsgi*,*admin.py,*urls.py, q_cluster_watcher.py, *settings.py,
+omit = ./venv/*, tests/*, fyle_netsuite_api/*, *forms.py, *apps.py,*manage.py,*__init__.py,*migrations*,*asgi*,*wsgi*,*admin.py,*urls.py, q_cluster_watcher.py, *settings.py, *gunicorn*,

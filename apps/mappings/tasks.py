@@ -21,7 +21,7 @@ from apps.mappings.models import GeneralMapping
 from apps.netsuite.connector import NetSuiteConnector
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configuration, Workspace
 
-
+from .exceptions import handle_exceptions
 from .constants import FYLE_EXPENSE_SYSTEM_FIELDS
 
 logger = logging.getLogger(__name__)
@@ -359,44 +359,25 @@ def create_category_mappings(destination_attributes: List[DestinationAttribute],
 
     bulk_create_update_category_mappings(mapping_creation_batch)
 
-
+@handle_exceptions(task_name='Import Tax Group to Fyle and Auto Create Mappings')
 def auto_create_tax_group_mappings(workspace_id):
     """
     Create Tax Groups Mappings
     :return: None
     """
-    try:
-        fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
+    fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
 
-        fyle_connection = PlatformConnector(fyle_credentials)
+    fyle_connection = PlatformConnector(fyle_credentials)
 
-        fyle_connection.tax_groups.sync()
+    fyle_connection.tax_groups.sync()
 
-        mapping_setting = MappingSetting.objects.get(
-            source_field='TAX_GROUP', workspace_id=workspace_id
-        )
+    mapping_setting = MappingSetting.objects.get(
+        source_field='TAX_GROUP', workspace_id=workspace_id
+    )
 
-        sync_netsuite_attribute(mapping_setting.destination_field, workspace_id)
-        post_tax_groups(fyle_connection, workspace_id)
+    sync_netsuite_attribute(mapping_setting.destination_field, workspace_id)
+    post_tax_groups(fyle_connection, workspace_id)
 
-    except InvalidTokenError:
-        logger.info('Invalid Fyle refresh token for workspace %s', workspace_id)
-
-    except WrongParamsError as exception:
-        logger.error(
-            'Error while creating taxgroups workspace_id - %s in Fyle %s %s',
-            workspace_id, exception.message, {'error': exception.response}
-        )
-
-    except Exception:
-        error = traceback.format_exc()
-        error = {
-            'error': error
-        }
-        logger.exception(
-            'Error while creating taxgroups workspace_id - %s error: %s',
-            workspace_id, error
-        )
 
 def schedule_tax_groups_creation(import_tax_items, workspace_id):
     if import_tax_items:
@@ -436,6 +417,7 @@ def post_tax_groups(platform_connection: PlatformConnector, workspace_id: int):
     platform_connection.tax_groups.sync()
     Mapping.bulk_create_mappings(netsuite_attributes, 'TAX_GROUP', 'TAX_ITEM', workspace_id)
 
+@handle_exceptions(task_name='Import Category to Fyle and Auto Create Mappings')
 def auto_create_category_mappings(workspace_id):
     """
     Create Category Mappings
@@ -451,55 +433,28 @@ def auto_create_category_mappings(workspace_id):
     else:
         reimbursable_destination_type = 'ACCOUNT'
 
-    try:
+    fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
+    platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
-        fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
-        platform = PlatformConnector(fyle_credentials=fyle_credentials)
+    fyle_categories = upload_categories_to_fyle(
+        workspace_id=workspace_id, reimbursable_expenses_object=reimbursable_expenses_object,
+        corporate_credit_card_expenses_object=corporate_credit_card_expenses_object)
 
-        fyle_categories = upload_categories_to_fyle(
-            workspace_id=workspace_id, reimbursable_expenses_object=reimbursable_expenses_object,
-            corporate_credit_card_expenses_object=corporate_credit_card_expenses_object)
+    create_category_mappings(fyle_categories, reimbursable_destination_type, workspace_id)
 
-        create_category_mappings(fyle_categories, reimbursable_destination_type, workspace_id)
+    # auto-sync categories and expense accounts
+    category_ids_to_be_changed = disable_expense_attributes('CATEGORY', reimbursable_destination_type, workspace_id)
+    if category_ids_to_be_changed:
+        expense_attributes = ExpenseAttribute.objects.filter(id__in=category_ids_to_be_changed)
+        fyle_payload: List[Dict] = create_fyle_categories_payload(categories=[], category_map={}, updated_categories=expense_attributes, destination_type=reimbursable_destination_type)
 
-        # auto-sync categories and expense accounts
-        category_ids_to_be_changed = disable_expense_attributes('CATEGORY', reimbursable_destination_type, workspace_id)
-        if category_ids_to_be_changed:
-            expense_attributes = ExpenseAttribute.objects.filter(id__in=category_ids_to_be_changed)
-            fyle_payload: List[Dict] = create_fyle_categories_payload(categories=[], category_map={}, updated_categories=expense_attributes, destination_type=reimbursable_destination_type)
+        platform.categories.post_bulk(fyle_payload)
+        platform.categories.sync()
 
-            platform.categories.post_bulk(fyle_payload)
-            platform.categories.sync()
+    if reimbursable_expenses_object == 'EXPENSE REPORT' and \
+        corporate_credit_card_expenses_object in ('BILL', 'JOURNAL ENTRY', 'CREDIT CARD CHARGE'):
+        bulk_create_ccc_category_mappings(workspace_id)
 
-        if reimbursable_expenses_object == 'EXPENSE REPORT' and \
-            corporate_credit_card_expenses_object in ('BILL', 'JOURNAL ENTRY', 'CREDIT CARD CHARGE'):
-            bulk_create_ccc_category_mappings(workspace_id)
-
-        return []
-    except InvalidTokenError:
-            logger.info('Invalid Fyle refresh token for workspace %s', workspace_id)
-
-    except WrongParamsError as exception:
-        logger.error(
-            'Error while creating categories workspace_id - %s in Fyle %s %s',
-            workspace_id, exception.message, {'error': exception.response}
-        )
-
-    except NetSuiteRateLimitError:
-        logger.info('Rate limit error, workspace_id - %s', workspace_id)
-
-    except NetSuiteLoginError:
-        logger.info('Invalid credentials, workspace_id - %s', workspace_id)
-
-    except Exception:
-        error = traceback.format_exc()
-        error = {
-            'error': error
-        }
-        logger.exception(
-            'Error while creating categories workspace_id - %s error: %s',
-            workspace_id, error
-        )
 
 def auto_import_and_map_fyle_fields(workspace_id):
     """
@@ -612,50 +567,27 @@ def post_projects_in_batches(platform: PlatformConnector, workspace_id: int, des
             platform.projects.sync()
 
 
+
+@handle_exceptions(task_name='Import Project to Fyle and Auto Create Mappings')
 def auto_create_project_mappings(workspace_id):
     """
     Create Project Mappings
     """
-    try:
-        fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
+    fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
 
-        platform = PlatformConnector(fyle_credentials=fyle_credentials)
-        platform.projects.sync()
+    platform = PlatformConnector(fyle_credentials=fyle_credentials)
+    platform.projects.sync()
 
-        mapping_setting = MappingSetting.objects.get(
-            source_field='PROJECT', workspace_id=workspace_id
-        )
+    mapping_setting = MappingSetting.objects.get(
+        source_field='PROJECT', workspace_id=workspace_id
+    )
 
-        sync_netsuite_attribute(mapping_setting.destination_field, workspace_id)
+    sync_netsuite_attribute(mapping_setting.destination_field, workspace_id)
 
-        post_projects_in_batches(platform, workspace_id, mapping_setting.destination_field)
-
-    except InvalidTokenError:
-        logger.info('Invalid Fyle refresh token for workspace %s', workspace_id)
-
-    except WrongParamsError as exception:
-        logger.error(
-            'Error while creating projects workspace_id - %s in Fyle %s %s',
-            workspace_id, exception.message, {'error': exception.response}
-        )
-
-    except NetSuiteRateLimitError:
-        logger.info('Rate limit error, workspace_id - %s', workspace_id)
-
-    except NetSuiteLoginError:
-        logger.info('Invalid credentials, workspace_id - %s', workspace_id)
-
-    except Exception:
-        error = traceback.format_exc()
-        error = {
-            'error': error
-        }
-        logger.exception(
-            'Error while creating projects workspace_id - %s error: %s',
-            workspace_id, error
-        )
+    post_projects_in_batches(platform, workspace_id, mapping_setting.destination_field)
 
 
+@handle_exceptions(task_name='Auto Map Employees')
 def async_auto_map_employees(workspace_id: int):
     configuration = Configuration.objects.get(workspace_id=workspace_id)
     employee_mapping_preference = configuration.auto_map_employees
@@ -664,24 +596,16 @@ def async_auto_map_employees(workspace_id: int):
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
-    try:
-        netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
-        netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
 
-        platform.employees.sync()
-        if destination_type == 'EMPLOYEE':
-            netsuite_connection.sync_employees()
-        else:
-            netsuite_connection.sync_vendors()
+    platform.employees.sync()
+    if destination_type == 'EMPLOYEE':
+        netsuite_connection.sync_employees()
+    else:
+        netsuite_connection.sync_vendors()
 
-        EmployeesAutoMappingHelper(workspace_id, destination_type, employee_mapping_preference).reimburse_mapping()
-    except NetSuiteRateLimitError:
-        logger.info('Rate limit error, workspace_id - %s', workspace_id)
-    except NetSuiteLoginError:
-        logger.info('Invalid credentials, workspace_id - %s', workspace_id)
-
-    except InvalidTokenError:
-        logger.info('Invalid Fyle refresh token for workspace %s', workspace_id)
+    EmployeesAutoMappingHelper(workspace_id, destination_type, employee_mapping_preference).reimburse_mapping()
 
 
 def schedule_auto_map_employees(employee_mapping_preference: str, workspace_id: int):
@@ -705,18 +629,16 @@ def schedule_auto_map_employees(employee_mapping_preference: str, workspace_id: 
             schedule.delete()
 
 
+@handle_exceptions(task_name='Auto Map CCC Account')
 def async_auto_map_ccc_account(workspace_id: int):
     general_mappings = GeneralMapping.objects.get(workspace_id=workspace_id)
     default_ccc_account_id = general_mappings.default_ccc_account_id
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-    try:
-        platform = PlatformConnector(fyle_credentials=fyle_credentials)
-        platform.employees.sync()
+    platform = PlatformConnector(fyle_credentials=fyle_credentials)
+    platform.employees.sync()
 
-        EmployeesAutoMappingHelper(workspace_id, 'CREDIT_CARD_ACCOUNT').ccc_mapping(default_ccc_account_id)
-    except InvalidTokenError:
-        logger.info('Invalid Fyle refresh token for workspace %s', workspace_id)
+    EmployeesAutoMappingHelper(workspace_id, 'CREDIT_CARD_ACCOUNT').ccc_mapping(default_ccc_account_id)
 
 
 def schedule_auto_map_ccc_employees(workspace_id: int):
@@ -823,50 +745,24 @@ def post_cost_centers_in_batches(platform: PlatformConnector, workspace_id: int,
 
         Mapping.bulk_create_mappings(paginated_ns_attributes, 'COST_CENTER', netsuite_attribute_type, workspace_id)
 
-
+@handle_exceptions(task_name='Import Cost Center to Fyle and Auto Create Mappings')
 def auto_create_cost_center_mappings(workspace_id):
     """
     Create Cost Center Mappings
     """
-    try:
-        fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
+    fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
 
-        platform = PlatformConnector(fyle_credentials=fyle_credentials)
+    platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
-        mapping_setting = MappingSetting.objects.get(
-            source_field='COST_CENTER', import_to_fyle=True, workspace_id=workspace_id
-        )
+    mapping_setting = MappingSetting.objects.get(
+        source_field='COST_CENTER', import_to_fyle=True, workspace_id=workspace_id
+    )
 
-        platform.cost_centers.sync()
+    platform.cost_centers.sync()
 
-        sync_netsuite_attribute(mapping_setting.destination_field, workspace_id)
+    sync_netsuite_attribute(mapping_setting.destination_field, workspace_id)
 
-        post_cost_centers_in_batches(platform, workspace_id, mapping_setting.destination_field)
-
-    except WrongParamsError as exception:
-        logger.error(
-            'Error while creating cost centers workspace_id - %s in Fyle %s %s',
-            workspace_id, exception.message, {'error': exception.response}
-        )
-
-    except NetSuiteRateLimitError:
-        logger.info('Rate limit error, workspace_id - %s', workspace_id)
-
-    except InvalidTokenError:
-        logger.info('Invalid Fyle refresh token for workspace %s', workspace_id)
-
-    except NetSuiteLoginError:
-        logger.info('Invalid credentials, workspace_id - %s', workspace_id)
-
-    except Exception:
-        error = traceback.format_exc()
-        error = {
-            'error': error
-        }
-        logger.exception(
-            'Error while creating cost centers workspace_id - %s error: %s',
-            workspace_id, error
-        )
+    post_cost_centers_in_batches(platform, workspace_id, mapping_setting.destination_field)
 
 
 def schedule_cost_centers_creation(import_to_fyle, workspace_id):
@@ -908,8 +804,10 @@ def create_fyle_expense_custom_field_payload(netsuite_attributes: List[Destinati
             attribute_type=fyle_attribute, workspace_id=workspace_id).values_list('detail', flat=True).first()
 
         custom_field_id = None
+        placeholder_value = None
         if existing_attribute is not None:
             custom_field_id = existing_attribute['custom_field_id']
+            placeholder_value = existing_attribute['placeholder']
 
         fyle_attribute = fyle_attribute.replace('_', ' ').title()
 
@@ -922,6 +820,9 @@ def create_fyle_expense_custom_field_payload(netsuite_attributes: List[Destinati
             'options': fyle_expense_custom_field_options,
             'code': None
         }
+
+        if placeholder_value:
+            expense_custom_field_payload['placeholder'] = placeholder_value
 
         if custom_field_id:
             expense_field = platform.expense_custom_fields.get_by_id(custom_field_id)
@@ -958,35 +859,18 @@ def upload_attributes_to_fyle(workspace_id: int, netsuite_attribute_type: str, f
 
     return netsuite_attributes
 
-
+@handle_exceptions(task_name='Import Expense Field to Fyle and Auto Create Mappings')
 def auto_create_expense_fields_mappings(workspace_id: int, netsuite_attribute_type: str, fyle_attribute_type: str):
     """
     Create Fyle Attributes Mappings
     :return: mappings
     """
-    try:
-        fyle_attributes = upload_attributes_to_fyle(workspace_id, netsuite_attribute_type, fyle_attribute_type)
-        if fyle_attributes:
-            Mapping.bulk_create_mappings(fyle_attributes, fyle_attribute_type, netsuite_attribute_type, workspace_id)
-
-    except InvalidTokenError:
-        logger.info('Invalid Fyle refresh token for workspace %s', workspace_id)
-
-    except WrongParamsError as exception:
-        logger.error(
-            'Error while creating %s workspace_id - %s in Fyle %s %s',
-            fyle_attribute_type, workspace_id, exception.message, {'error': exception.response}
-        )
-    except Exception:
-        error = traceback.format_exc()
-        error = {
-            'error': error
-        }
-        logger.exception(
-            'Error while creating %s workspace_id - %s error: %s', fyle_attribute_type, workspace_id, error
-        )
+    fyle_attributes = upload_attributes_to_fyle(workspace_id, netsuite_attribute_type, fyle_attribute_type)
+    if fyle_attributes:
+        Mapping.bulk_create_mappings(fyle_attributes, fyle_attribute_type, netsuite_attribute_type, workspace_id)
 
 
+@handle_exceptions(task_name='Import Expense Field to Fyle - Sync NetSuite Attributes')
 def async_auto_create_custom_field_mappings(workspace_id):
     mapping_settings = MappingSetting.objects.filter(
         is_custom=True, import_to_fyle=True, workspace_id=workspace_id
@@ -994,16 +878,10 @@ def async_auto_create_custom_field_mappings(workspace_id):
 
     for mapping_setting in mapping_settings:
         if mapping_setting.import_to_fyle:
-            try:
-                sync_netsuite_attribute(mapping_setting.destination_field, workspace_id)
-                auto_create_expense_fields_mappings(
-                    workspace_id, mapping_setting.destination_field, mapping_setting.source_field
-                )
-            except NetSuiteRateLimitError:
-                logger.info('Rate limit error, workspace_id - %s', workspace_id)
-            except NetSuiteLoginError:
-                logger.info('Invalid credentials, workspace_id - %s', workspace_id)
-
+            sync_netsuite_attribute(mapping_setting.destination_field, workspace_id)
+            auto_create_expense_fields_mappings(
+                workspace_id, mapping_setting.destination_field, mapping_setting.source_field
+            )
 
 def schedule_fyle_attributes_creation(workspace_id: int):
     mapping_settings = MappingSetting.objects.filter(
@@ -1053,38 +931,14 @@ def post_merchants(platform_connection: PlatformConnector, workspace_id: int):
 
     platform_connection.merchants.sync(workspace_id)
 
+@handle_exceptions(task_name='Import Merchant to Fyle from NetSuite')
 def auto_create_vendors_as_merchants(workspace_id):
-    try:
-        fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
-        fyle_connection = PlatformConnector(fyle_credentials)
-        fyle_connection.merchants.sync(workspace_id)
+    fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
+    fyle_connection = PlatformConnector(fyle_credentials)
+    fyle_connection.merchants.sync(workspace_id)
 
-        sync_netsuite_attribute('VENDOR', workspace_id)
-        post_merchants(fyle_connection, workspace_id)
-
-    except WrongParamsError as exception:
-        logger.error(
-            'Error while posting vendors as merchants to fyle for workspace_id - %s in Fyle %s %s',
-            workspace_id, exception.message, {'error': exception.response}
-        )
-
-    except NetSuiteRateLimitError:
-        logger.info('Rate limit error, workspace_id - %s', workspace_id)
-
-    except InvalidTokenError:
-        logger.info('Invalid Fyle refresh token for workspace %s', workspace_id)
-
-    except NetSuiteLoginError:
-        logger.info('Invalid credentials, workspace_id - %s', workspace_id)
-
-    except Exception:
-        error = traceback.format_exc()
-        error = {
-            'error': error
-        }
-        logger.exception(
-            'Error while posting vendors as merchants to fyle for workspace_id - %s error: %s',
-            workspace_id, error)
+    sync_netsuite_attribute('VENDOR', workspace_id)
+    post_merchants(fyle_connection, workspace_id)
 
 
 def create_fyle_department_payload(department_name: str, parent_department: str, existing_departments: Dict):
@@ -1235,40 +1089,16 @@ def post_employees(platform_connection: PlatformConnector, workspace_id: int):
 
     platform_connection.employees.sync()
 
+@handle_exceptions(task_name='Import NetSuite Employees to Fyle')
 def auto_create_netsuite_employees_on_fyle(workspace_id):
-    try:
-        fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
+    fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
 
-        platform_connection = PlatformConnector(fyle_credentials)
+    platform_connection = PlatformConnector(fyle_credentials)
 
-        platform_connection.employees.sync()
+    platform_connection.employees.sync()
 
-        sync_netsuite_attribute('EMPLOYEE', workspace_id)
-        post_employees(platform_connection, workspace_id)
-
-    except WrongParamsError as exception:
-        logger.error(
-            'Error while posting netsuite employees to fyle for workspace_id - %s in Fyle %s %s',
-            workspace_id, exception.message, {'error': exception.response}
-        )
-
-    except InvalidTokenError:
-        logger.info('Invalid Fyle refresh token for workspace %s', workspace_id)
-
-    except NetSuiteRateLimitError:
-        logger.info('Rate limit error, workspace_id - %s', workspace_id)
-
-    except NetSuiteLoginError:
-        logger.info('Invalid credentials, workspace_id - %s', workspace_id)
-
-    except Exception:
-        error = traceback.format_exc()
-        error = {
-            'error': error
-        }
-        logger.exception(
-            'Error while posting netsuite employees to fyle for workspace_id - %s error: %s',
-            workspace_id, error)
+    sync_netsuite_attribute('EMPLOYEE', workspace_id)
+    post_employees(platform_connection, workspace_id)
 
 
 def schedule_netsuite_employee_creation_on_fyle(import_netsuite_employees, workspace_id):

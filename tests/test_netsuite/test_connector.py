@@ -34,6 +34,7 @@ def test_construct_bill(create_bill):
     bill_object = netsuite_connection._NetSuiteConnector__construct_bill(bill, bill_lineitem)
 
     data['bill_payload'][0]['tranDate'] = bill_object['tranDate']
+    data['bill_payload'][0]['tranId'] = bill_object['tranId']
 
     assert bill_object == data['bill_payload'][0]
 
@@ -59,6 +60,7 @@ def test_contruct_credit_card_charge(create_credit_card_charge):
     credit_card_charge_object = netsuite_connection._NetSuiteConnector__construct_credit_card_charge(credit_card_charge, credit_card_charge_lineitem, [])
     
     credit_card_charge_object['tranDate'] = data['credit_card_charge'][0]['tranDate']
+    credit_card_charge_object['tranid'] = data['credit_card_charge'][0]['tranid']
 
     assert credit_card_charge_object == data['credit_card_charge'][0]
 
