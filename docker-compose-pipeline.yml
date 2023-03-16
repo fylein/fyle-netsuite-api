@@ -33,7 +33,7 @@ services:
       NS_CONSUMER_KEY: ''
       NS_CONSUMER_SECRET: ''
   db:
-    image: "postgres:14"
+    image: "postgres:15"
     environment: 
       POSTGRES_DB: dummy
       POSTGRES_USER: postgres
