@@ -155,7 +155,7 @@ class Configuration(models.Model):
         help_text='list of system fields for creating custom memo'
     )
     auto_create_destination_entity = models.BooleanField(default=False, help_text='Auto create vendor / employee')
-    is_simplify_report_closure_enabled = models.BooleanField(default=False, help_text='Simplify report closure is enbaled')
+    is_simplify_report_closure_enabled = models.BooleanField(default=True, help_text='Simplify report closure is enbaled')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
