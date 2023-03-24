@@ -8,7 +8,7 @@ ARG CI
 RUN if [ "$CI" = "ENABLED" ]; then \
         apt-get update; \
         apt-get install gnupg2 lsb-release  wget -y --no-install-recommends; \
-        apt-cache search postgresql | grep postgresql \
+        apt-cache search postgresql-15 | grep postgresql-15 \
         sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'; \
         wget --no-check-certificate --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - ; \
         apt -y update; \
