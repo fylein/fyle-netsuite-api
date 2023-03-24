@@ -6,7 +6,7 @@ RUN apt-get update && apt-get -y install libpq-dev gcc && apt-get install git -y
 
 ARG CI
 RUN if [ "$CI" = "ENABLED" ]; then \
-        apt-get update; \
+        apt-get -y update; \
         apt-get install gnupg2 lsb-release  wget -y --no-install-recommends; \
         apt-cache search postgresql-15 | grep postgresql-15 \
         sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'; \
