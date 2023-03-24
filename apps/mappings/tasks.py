@@ -838,8 +838,16 @@ def upload_attributes_to_fyle(workspace_id: int, netsuite_attribute_type: str, f
 
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
+    filter = {
+        'attribute_type': netsuite_attribute_type,
+        'workspace_id': workspace_id
+    }
+
+    if netsuite_attribute_type == 'DEPARTMENT':
+        filter['active'] = True
+
     netsuite_attributes: List[DestinationAttribute] = DestinationAttribute.objects.filter(
-        workspace_id=workspace_id, attribute_type=netsuite_attribute_type
+        **filter
     )
 
     netsuite_attributes = remove_duplicates(netsuite_attributes)
