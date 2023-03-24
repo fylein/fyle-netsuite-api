@@ -764,10 +764,15 @@ class NetSuiteConnector:
 
             for projects in projects_generator:
                 attributes = []
-                destination_ids = DestinationAttribute.objects.filter(workspace_id=self.workspace_id,\
-                    attribute_type= 'PROJECT', display_name='Project').values_list('destination_id', flat=True)
+                destination_ids = DestinationAttribute.objects.filter(
+                    workspace_id=self.workspace_id,
+                    attribute_type= 'PROJECT',
+                    display_name='Project'
+                ).values_list('destination_id', flat=True)
+
                 for project in projects:
                     value = self.__decode_project_or_customer_name(project['entityId'])
+
                     if project['internalId'] in destination_ids :
                         attributes.append({
                             'attribute_type': 'PROJECT',
