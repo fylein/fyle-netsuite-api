@@ -260,6 +260,20 @@ class NetSuiteConnector:
 
         custom_records = self.connection.custom_record_types.get_all_by_id(record_id)
 
+        # Get all the current destination attributes
+        destination_attributes = DestinationAttribute.objects.filter(
+            workspace_id=self.workspace_id,
+            attribute_type= attribute_type
+        ).values('destination_id', 'value')
+
+        # Create a map of destination_id and value
+        disabled_fields_map = {}
+
+        for destination_attribute in destination_attributes:
+            disabled_fields_map[destination_attribute['destination_id']] = {
+                'value': destination_attribute['value']
+            }
+
         for field in custom_records:
             custom_segment_attributes.append(
                 {
@@ -271,11 +285,41 @@ class NetSuiteConnector:
                 }
             )
 
+            # Pop the value from the map if it exists
+            if field['internalId'] in disabled_fields_map:
+                disabled_fields_map.pop(field['internalId'])
+
+        # Add the disabled fields to the list
+        for key, value in disabled_fields_map.items():
+            custom_segment_attributes.append(
+                {
+                    'attribute_type': attribute_type,
+                    'display_name': custom_records[0]['recType']['name'],
+                    'value': value['value'],
+                    'destination_id': key,
+                    'active': False
+                }
+            )
+
         return custom_segment_attributes
 
     def get_custom_record_attributes(self, attribute_type: str, internal_id: str):
         custom_segment_attributes = []
         custom_records = self.connection.custom_record_types.get_all_by_id(internal_id)
+
+        # Get all the current destination attributes
+        destination_attributes = DestinationAttribute.objects.filter(
+            workspace_id=self.workspace_id,
+            attribute_type= attribute_type
+        ).values('destination_id', 'value')
+
+        # Create a map of destination_id and value
+        disabled_fields_map = {}
+
+        for destination_attribute in destination_attributes:
+            disabled_fields_map[destination_attribute['destination_id']] = {
+                'value': destination_attribute['value']
+            }
 
         for field in custom_records:
             custom_segment_attributes.append(
@@ -285,6 +329,22 @@ class NetSuiteConnector:
                     'value': field['name'],
                     'destination_id': field['internalId'],
                     'active': not field['isInactive']
+                }
+            )
+
+            # Pop the value from the map if it exists
+            if field['internalId'] in disabled_fields_map:
+                disabled_fields_map.pop(field['internalId'])
+
+        # Add the disabled fields to the list
+        for key, value in disabled_fields_map.items():
+            custom_segment_attributes.append(
+                {
+                    'attribute_type': attribute_type,
+                    'display_name': custom_records[0]['recType']['name'],
+                    'value': value['value'],
+                    'destination_id': key,
+                    'active': False
                 }
             )
 

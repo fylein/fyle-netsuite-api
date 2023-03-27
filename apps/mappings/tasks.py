@@ -844,6 +844,7 @@ def upload_attributes_to_fyle(workspace_id: int, netsuite_attribute_type: str, f
     }
 
     if netsuite_attribute_type not in DEFAULT_NETSUITE_IMPORT_TYPES or netsuite_attribute_type == 'DEPARTMENT':
+        print('Importing {0} to Fyle'.format(netsuite_attribute_type))
         filter['active'] = True
 
     netsuite_attributes: List[DestinationAttribute] = DestinationAttribute.objects.filter(
