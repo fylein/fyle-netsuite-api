@@ -209,6 +209,20 @@ class NetSuiteConnector:
         custom_segment_attributes = []
         custom_lists = self.connection.custom_lists.get(internal_id)
 
+        # Get all the current destination attributes
+        destination_attributes = DestinationAttribute.objects.filter(
+            workspace_id=self.workspace_id,
+            attribute_type= attribute_type
+        ).values('destination_id', 'value')
+
+        # Create a map of destination_id and value
+        disabled_fields_map = {}
+
+        for destination_attribute in destination_attributes:
+            disabled_fields_map[destination_attribute['destination_id']] = {
+                'value': destination_attribute['value']
+            }
+
         for field in custom_lists['customValueList']['customValue']:
             custom_segment_attributes.append(
                 {
@@ -217,6 +231,22 @@ class NetSuiteConnector:
                     'value': field['value'],
                     'destination_id': str(field['valueId']),
                     'active': not field['isInactive']
+                }
+            )
+
+            # Pop the value from the map if it exists
+            if str(field['valueId']) in disabled_fields_map:
+                disabled_fields_map.pop(str(field['valueId']))
+
+        # Add the disabled fields to the list
+        for key, value in disabled_fields_map.items():
+            custom_segment_attributes.append(
+                {
+                    'attribute_type': attribute_type,
+                    'display_name': custom_lists['name'],
+                    'value': value['value'],
+                    'destination_id': key,
+                    'active': False
                 }
             )
 
