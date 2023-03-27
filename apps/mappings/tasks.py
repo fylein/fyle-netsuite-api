@@ -22,7 +22,7 @@ from apps.netsuite.connector import NetSuiteConnector
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configuration, Workspace
 
 from .exceptions import handle_exceptions
-from .constants import FYLE_EXPENSE_SYSTEM_FIELDS
+from .constants import FYLE_EXPENSE_SYSTEM_FIELDS, DEFAULT_NETSUITE_IMPORT_TYPES
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -843,7 +843,7 @@ def upload_attributes_to_fyle(workspace_id: int, netsuite_attribute_type: str, f
         'workspace_id': workspace_id
     }
 
-    if netsuite_attribute_type == 'DEPARTMENT':
+    if netsuite_attribute_type not in DEFAULT_NETSUITE_IMPORT_TYPES or netsuite_attribute_type == 'DEPARTMENT':
         filter['active'] = True
 
     netsuite_attributes: List[DestinationAttribute] = DestinationAttribute.objects.filter(
