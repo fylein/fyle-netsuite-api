@@ -43,3 +43,13 @@ FYLE_EXPENSE_SYSTEM_FIELDS = [
     'paid date',
     'expense created date'
 ]
+
+DEFAULT_NETSUITE_IMPORT_TYPES = [
+    'LOCATION',
+    'PROJECT',
+    'DEPARTMENT',
+    'CLASS',
+    'TAX_ITEM',
+    'VENDOR',
+    'EMPLOYEE'
+]
