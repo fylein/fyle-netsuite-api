@@ -252,7 +252,7 @@ class NetSuiteConnector:
 
         return custom_segment_attributes
 
-    def get_custom_segment_attributes(self, attribute_type: str, internal_id:str):
+    def get_custom_segment_attributes(self, attribute_type: str, internal_id: str):
         custom_segment_attributes = []
         custom_segments = self.connection.custom_segments.get(internal_id)
 
