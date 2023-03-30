@@ -236,7 +236,7 @@ data = {
                         {
                             "scriptId": "custcolfyle_expense_url",
                             "type": "String",
-                            "value": "https://staging1.fyle.tech/app/main/#/enterprise/view_expense/txiRmGpGNHyT?org_id=orf6t6jWUnpx",
+                            "value": "None/app/main/#/enterprise/view_expense/txiRmGpGNHyT?org_id=orf6t6jWUnpx",
                         }
                     ],
                     "isBillable": None,
@@ -394,7 +394,7 @@ data = {
                 },
                 'customFieldList': [{'scriptId': 'custcolfyle_expense_url',
                                      'type': 'String',
-                                     'value': 'https://staging1.fyle.tech/app/main/#/enterprise/view_expense/txjvDntD9ZXR?org_id=or79Cob97KSh'
+                                     'value': 'None/app/main/#/enterprise/view_expense/txjvDntD9ZXR?org_id=or79Cob97KSh'
                                      }],
                 'exchangeRate': None,
                 'expenseDate': '2021-12-08T08:30:18',
@@ -533,7 +533,7 @@ data = {
                 },
                 'customFieldList': [{'scriptId': 'custcolfyle_expense_url',
                                      'type': 'String',
-                                     'value': 'https://staging1.fyle.tech/app/main/#/enterprise/view_expense/txy6folbrG2j?org_id=or79Cob97KSh'
+                                     'value': 'None/app/main/#/enterprise/view_expense/txy6folbrG2j?org_id=or79Cob97KSh'
                                      }],
                 'isBillable': None,
                 'projectTask': None,
@@ -633,7 +633,7 @@ data = {
                 'creditTax': None,
                 'customFieldList': [{'scriptId': 'custcolfyle_expense_url',
                                      'type': 'String',
-                                     'value': 'https://staging1.fyle.tech/app/main/#/enterprise/view_expense/tx7A5QpesrV5?org_id=orHe8CpW2hyN'
+                                     'value': 'None/app/main/#/enterprise/view_expense/tx7A5QpesrV5?org_id=orHe8CpW2hyN'
                                      }],
                 'debit': None,
                 'debitTax': None,
@@ -691,7 +691,7 @@ data = {
                 'creditTax': None,
                 'customFieldList': [{'scriptId': 'custcolfyle_expense_url',
                                      'type': 'String',
-                                     'value': 'https://staging1.fyle.tech/app/main/#/enterprise/view_expense/tx7A5QpesrV5?org_id=orHe8CpW2hyN'
+                                     'value': 'None/app/main/#/enterprise/view_expense/tx7A5QpesrV5?org_id=orHe8CpW2hyN'
                                      }],
                 'debit': 120.0,
                 'debitTax': None,
@@ -761,7 +761,7 @@ data = {
                 'location': {'internalId': None},
                 'customer': {'internalId': None},
                 'customFieldList': [{'scriptId': 'custcolfyle_expense_url',
-                                     'value': 'https://staging1.fyle.tech/app/main/#/enterprise/view_expense/txcKVVELn1Vl?org_id=orHe8CpW2hyN'
+                                     'value': 'None/app/main/#/enterprise/view_expense/txcKVVELn1Vl?org_id=orHe8CpW2hyN'
                                      }],
                 'isBillable': False,
                 'taxAmount': None,
@@ -795,7 +795,7 @@ data = {
                 'location': {'internalId': None},
                 'customer': {'internalId': None},
                 'customFieldList': [{'scriptId': 'custcolfyle_expense_url',
-                                     'value': 'https://staging1.fyle.tech/app/main/#/enterprise/view_expense/txcKVVELn1Vl?org_id=orHe8CpW2hyN'
+                                     'value': 'None/app/main/#/enterprise/view_expense/txcKVVELn1Vl?org_id=orHe8CpW2hyN'
                                      }],
                 'isBillable': False,
                 'taxAmount': None,
@@ -1241,7 +1241,7 @@ data = {
                         'customFieldList': {
                             'customField': [
                                 {
-                                    'value': 'https://staging1.fyle.tech/app/main/#/enterprise/view_expense/tx7b3e705y5p?org_id=or7m5SVD9Rv1',
+                                    'value': 'None/app/main/#/enterprise/view_expense/tx7b3e705y5p?org_id=or7m5SVD9Rv1',
                                     'internalId': '4584',
                                     'scriptId': 'custcolfyle_expense_url'
                                 }
@@ -1359,7 +1359,7 @@ data = {
                         'customFieldList': {
                             'customField': [
                                 {
-                                    'value': 'https://staging1.fyle.tech/app/main/#/enterprise/view_expense/tx7b3e705y5p?org_id=or7m5SVD9Rv1',
+                                    'value': 'None/app/main/#/enterprise/view_expense/tx7b3e705y5p?org_id=or7m5SVD9Rv1',
                                     'internalId': '4584',
                                     'scriptId': 'custcolfyle_expense_url'
                                 }
