@@ -4,6 +4,8 @@ import json
 from datetime import datetime,timezone
 from typing import List, Dict
 import logging
+from django.conf import settings
+
 
 from requests_oauthlib import OAuth1Session
 
@@ -948,7 +950,7 @@ class NetSuiteConnector:
                     'scriptId': 'custcolfyle_expense_url',
                     'type': 'String',
                     'value': '{}/app/main/#/enterprise/view_expense/{}?org_id={}'.format(
-                        cluster_domain,
+                        settings.FYLE_EXPENSE_URL,
                         expense.expense_id,
                         org_id
                     )
@@ -1168,7 +1170,7 @@ class NetSuiteConnector:
             {
                 'scriptId': 'custcolfyle_expense_url',
                 'value': '{}/app/main/#/enterprise/view_expense/{}?org_id={}'.format(
-                    cluster_domain,
+                    settings.FYLE_EXPENSE_URL,
                     expense.expense_id,
                     org_id
                 )
@@ -1349,7 +1351,7 @@ class NetSuiteConnector:
                     'scriptId': 'custcolfyle_expense_url',
                     'type': 'String',
                     'value': '{}/app/main/#/enterprise/view_expense/{}?org_id={}'.format(
-                        cluster_domain,
+                        settings.FYLE_EXPENSE_URL,
                         expense.expense_id,
                         org_id
                     )
@@ -1594,7 +1596,7 @@ class NetSuiteConnector:
                         'scriptId': 'custcolfyle_expense_url',
                         'type': 'String',
                         'value': '{}/app/main/#/enterprise/view_expense/{}?org_id={}'.format(
-                            cluster_domain,
+                            settings.FYLE_EXPENSE_URL,
                             expense.expense_id,
                             org_id
                         )
