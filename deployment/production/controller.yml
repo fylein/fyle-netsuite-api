@@ -36,9 +36,9 @@ spec:
           image: docker.io/{{DOCKERHUB_USERNAME}}/fyle_netsuite-api:{{RELEASE_VERSION}}
           resources:
             limits:
-              memory: 450Mi
-            requests:
               memory: 300Mi
+            requests:
+              memory: 250Mi
           env:
             - name: GET_HOSTS_FROM
               value: dns
@@ -81,9 +81,9 @@ spec:
           command: [ '/bin/bash', 'start_qcluster.sh' ]
           resources:
             limits:
-              memory: 600Mi
+              memory: 1000Mi
             requests:
-              memory: 600Mi
+              memory: 800Mi
           env:
             - name: GET_HOSTS_FROM
               value: dns
