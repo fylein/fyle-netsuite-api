@@ -140,7 +140,7 @@ class Expense(models.Model):
                     'project_id': expense['project_id'],
                     'expense_number': expense['expense_number'],
                     'org_id': expense['org_id'],
-                    'tax_amount': expense['tax_amount'],
+                    'tax_amount': expense['tax_amount'] if expense['tax_amount'] else 0,
                     'tax_group_id': expense['tax_group_id'],
                     'claim_number': expense['claim_number'],
                     'amount': round(expense['amount'], 2),
