@@ -2,7 +2,8 @@ import logging
 import traceback
 
 from netsuitesdk import NetSuiteRateLimitError, NetSuiteLoginError, NetSuiteRequestError
-from fyle.platform.exceptions import WrongParamsError, InvalidTokenError
+from fyle.platform.exceptions import WrongParamsError, InvalidTokenError, InternalServerError
+import requests
 
 
 logger = logging.getLogger(__name__)
@@ -38,6 +39,14 @@ def handle_exceptions(task_name):
             except NetSuiteRequestError as exception:
                 error['message'] = 'NetSuite request error - '.format(exception.code)
                 error['response'] = exception.message
+
+            except InternalServerError as exception:
+                error['message'] = 'Internal server error while importing to Fyle'
+                error['response'] = exception.__dict__
+
+            except requests.exceptions.HTTPError as exception:
+                error['message'] = 'Gateway Time-out for netsuite (HTTPError - %s)'.format(exception.code)
+                error['response'] = exception.__dict__
 
             except Exception:
                 response = traceback.format_exc()

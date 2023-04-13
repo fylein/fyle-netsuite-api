@@ -168,12 +168,18 @@ def run_email_notification(workspace_id):
         for admin_email in admin_data.emails_selected:
             attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id, value=admin_email).first()
 
+            admin_name = 'Admin'
             if attribute:
                 admin_name = attribute.detail['full_name']
             else:
                 for data in admin_data.additional_email_options:
                     if data['email'] == admin_email:
                         admin_name = data['name']
+            
+            if workspace.last_synced_at and workspace.ccc_last_synced_at:
+                export_time = max(workspace.last_synced_at, workspace.ccc_last_synced_at)
+            else:
+                export_time =  workspace.last_synced_at or workspace.ccc_last_synced_at
 
             if task_logs and (ws_schedule.error_count is None or len(task_logs) > ws_schedule.error_count):
                 context = {
@@ -183,7 +189,7 @@ def run_email_notification(workspace_id):
                     'netsuite_subsidiary': netsuite_subsidiary,
                     'workspace_id': workspace_id,
                     'year': date.today().year,
-                    'export_time': workspace.last_synced_at.date(),
+                    'export_time': export_time.date() if export_time else datetime.now(),
                     'app_url': "{0}/workspaces/{1}/expense_groups".format(settings.FYLE_APP_URL, workspace_id)
                     }
 
