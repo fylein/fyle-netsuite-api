@@ -41,11 +41,12 @@ def handle_exceptions(task_name):
                 error['response'] = exception.message
 
             except InternalServerError as exception:
-                error['message'] = 'Internal server error while importing to Fyle - %s'.format(exception.dict)
+                error['message'] = 'Internal server error while importing to Fyle'
+                error['response'] = exception.__dict__
 
             except requests.exceptions.HTTPError as exception:
-                error['message'] = 'Gateway Time-out for netsuite (HTTPError - %s)'.format(exception.dict)
-
+                error['message'] = 'Gateway Time-out for netsuite (HTTPError - %s)'.format(exception.code)
+                error['response'] = exception.__dict__
 
             except Exception:
                 response = traceback.format_exc()
