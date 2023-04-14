@@ -32,6 +32,24 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           KUBERNETES_MANIFEST_FILE_PATH: deployment/production/controller.yml
+      - name: Create new Sentry release
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: fyle-technologies-private-limi
+          SENTRY_PROJECT: netsuite-api
+          SENTRY_DEPLOY_ENVIRONMENT: production
+        run: |
+          # Install Sentry CLI
+          curl -sL https://sentry.io/get-cli/ | bash
+
+          # Create new Sentry release
+          export SENTRY_RELEASE=$(sentry-cli releases propose-version)
+          sentry-cli releases new -p $SENTRY_PROJECT $SENTRY_RELEASE
+          sentry-cli releases set-commits --auto $SENTRY_RELEASE
+          sentry-cli releases finalize $SENTRY_RELEASE
+
+          # Create new deploy for this Sentry release
+          sentry-cli releases deploys $SENTRY_RELEASE new -e $SENTRY_DEPLOY_ENVIRONMENT
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2
         env:

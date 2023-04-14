@@ -14,6 +14,7 @@ import os
 
 import dj_database_url
 
+from .sentry import Sentry
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -291,6 +292,9 @@ E2E_TESTS_CLIENT_SECRET = os.environ.get('E2E_TESTS_CLIENT_SECRET')
 CACHE_EXPIRY = 3600
 
 CORS_ORIGIN_ALLOW_ALL = True
+
+# Sentry
+Sentry.init()
 
 CORS_ALLOW_HEADERS = [
     'sentry-trace',
