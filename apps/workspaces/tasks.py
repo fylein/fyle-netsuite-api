@@ -226,8 +226,3 @@ def async_update_fyle_credentials(fyle_org_id: str, refresh_token: str):
     if fyle_credentials:
         fyle_credentials.refresh_token = refresh_token
         fyle_credentials.save()
-
-def codecov_test():
-    x= 0
-    if x == 0:
-        return
