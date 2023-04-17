@@ -1,0 +1,35 @@
+name: Codecov Report Upload
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [labeled]
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    environment: CI Environment
+    steps:
+      - uses: actions/checkout@v2 
+      - uses: satackey/action-docker-layer-caching@v0.0.11
+        continue-on-error: true
+      - name: Bring up Services and Run Tests
+        run: |
+          docker-compose -f docker-compose-pipeline.yml build
+          docker-compose -f docker-compose-pipeline.yml up -d
+          docker-compose -f docker-compose-pipeline.yml exec -T api pytest tests/ --cov --cov-report=xml --cov-fail-under=94
+          echo "STATUS=$(cat pytest-coverage.txt | grep 'Required test' | awk '{ print $1 }')" >> $GITHUB_ENV
+          echo "FAILED=$(cat test-reports/report.xml | awk -F'=' '{print $5}' | awk -F' ' '{gsub(/"/, "", $1); print $1}')" >> $GITHUB_ENV
+        env:
+          FYLE_BASE_URL: ${{ secrets.FYLE_BASE_URL }}
+          FYLE_TOKEN_URI: ${{ secrets.FYLE_TOKEN_URI }}
+          NS_ACCOUNT_ID: ${{ secrets.NS_ACCOUNT_ID }}
+      - name: Upload coverage reports to Codecov with GitHub Action
+        uses: codecov/codecov-action@v3
+      - name: Stop Services
+        run: docker compose -f docker-compose-pipeline.yml down
+      - name: Evaluate Coverage
+        if: ${{ (env.STATUS == 'FAIL') || (env.FAILED > 0) }}
+        run: exit 1
