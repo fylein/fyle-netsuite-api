@@ -6,6 +6,7 @@ from apps.workspaces.tasks import *
 from tests.test_fyle.fixtures import data as fyle_data
 
 def test_schedule_sync(db):
+    dbcf()
     schedule_sync(2, True, 3, ['ashwin.t@fyle.in'], ['ashwin.t@fyle.in'])
 
     ws_schedule = WorkspaceSchedule.objects.filter(workspace_id=2).last()
