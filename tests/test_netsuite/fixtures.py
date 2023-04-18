@@ -3955,7 +3955,7 @@ data = {
             'isInactive': False,
             'rateRequired': False,
             'subsidiaryList': None,
-            'defaultRate': None,
+            'defaultRate': 'asdasd',
             'ratesList': None,
             'translationsList': None,
             'customFieldList': None,
