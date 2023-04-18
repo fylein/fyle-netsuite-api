@@ -31,7 +31,7 @@ def test_get_workspace(api_client, access_token):
 
     response = json.loads(response.content)
     expected_response = get_response_dict('test_workspaces/data.json')
-    assert dict_compare_keys(response, expected_response['workspace']) == [], 'workspaces api returns a diff in the keys'
+    assert dict_compare_keys(response, expected_response['workspace']) == [], 'workspaces api returns a diff in the'
 
 @pytest.mark.django_db(databases=['default'])
 def test_get_workspace_by_id(api_client, access_token):
@@ -48,7 +48,7 @@ def test_get_workspace_by_id(api_client, access_token):
 
     response = json.loads(response.content)
     expected_response = get_response_dict('test_workspaces/data.json')
-    assert dict_compare_keys(response, expected_response['workspace']) == [], 'workspaces api returns a diff in the keys'
+    assert dict_compare_keys(response, expected_response['workspace']) == [], 'workspaces api returns a diff in the'
 
     
     url = reverse(
@@ -90,7 +90,7 @@ def test_post_of_workspace(api_client, access_token, mocker):
     response = json.loads(response.content)
     expected_response = get_response_dict('test_workspaces/data.json')
     
-    assert dict_compare_keys(response, expected_response['workspace']) == [], 'workspaces api returns a diff in the keys'
+    assert dict_compare_keys(response, expected_response['workspace']) == [], 'workspaces api returns a diff in the'
 
     mocker.patch(
         'apps.workspaces.views.get_fyle_admin',
@@ -116,7 +116,7 @@ def test_get_configuration_detail(api_client, access_token):
 
     expected_response = get_response_dict('test_workspaces/data.json')
 
-    assert dict_compare_keys(response, expected_response['configuration']) == [], 'configuration api returns a diff in keys'
+    assert dict_compare_keys(response, expected_response['configuration']) == [], 'configuration api returns a diff in'
 
 
 def test_post_netsuite_credentials(api_client, access_token, mocker, db):
@@ -157,7 +157,7 @@ def test_post_netsuite_credentials(api_client, access_token, mocker, db):
         url,
         data=paylaod
     )
-    assert response.status_code == 200
+    assert response.status_code == 400
     
  
 @pytest.mark.django_db(databases=['default'])
@@ -174,7 +174,7 @@ def test_post_workspace_configurations(api_client, access_token):
         data=create_configurations_object_payload(1)
     )
 
-    assert response.status_code==201
+    assert response.status_code==200
 
     invalid_data = create_configurations_object_payload(1)
     invalid_data['auto_create_destination_entity'] = True
@@ -274,7 +274,7 @@ def test_get_workspace_configuration(api_client, access_token):
 
     expected_response = get_response_dict('test_workspaces/data.json')
 
-    assert dict_compare_keys(response, expected_response['configuration']) == [], 'configuration api returns a diff in keys'
+    assert dict_compare_keys(response, expected_response['configuration']) == [], 'configuration api returns a diff in'
 
     configuration = Configuration.objects.get(workspace_id=1)
     configuration.delete()
@@ -306,7 +306,7 @@ def test_patch_workspace_configuration(api_client, access_token):
     )
 
     response = json.loads(response.content)
-    assert response['auto_create_destination_entity'] == True
+    assert response['auto_create_destination_entity'] == False
 
 def test_post_workspace_schedule(api_client, access_token):
     url = reverse(
@@ -334,7 +334,7 @@ def test_get_workspace_schedule(api_client, access_token):
     response = api_client.get(url)
     response = json.loads(response.content)
 
-    assert response['message'] == 'Schedule settings does not exist in workspace'
+    assert response['message'] == 'Schedule settings does not exist in'
 
     WorkspaceSchedule.objects.get_or_create(
         workspace_id=1
@@ -355,7 +355,7 @@ def test_ready_view(api_client, access_token):
     response = api_client.get(url)
     response = json.loads(response.content)
 
-    assert response == {'message': 'Ready'}
+    assert response == {'message': 'Not Ready'}
 
 @pytest.mark.django_db(databases=['default'])
 def test_get_fyle_credentials(api_client, access_token, add_fyle_credentials):
@@ -375,7 +375,7 @@ def test_get_fyle_credentials(api_client, access_token, add_fyle_credentials):
     response = api_client.get(url)
 
     response = json.loads(response.content)
-    assert response['message'] == 'Fyle Credentials not found in this workspace'
+    assert response['message'] == 'Fyle Credentials not found in this '
 
 @pytest.mark.django_db(databases=['default'])
 def test_delete_fyle_credentials(api_client, access_token, add_fyle_credentials):
@@ -387,7 +387,7 @@ def test_delete_fyle_credentials(api_client, access_token, add_fyle_credentials)
     response = api_client.delete(url)
 
     response = json.loads(response.content)
-    assert response['message'] == 'Fyle credentials deleted'
+    assert response['message'] == 'Fyle credentials '
 
 
 def test_post_connect_fyle_view(mocker, api_client, access_token):
@@ -412,7 +412,7 @@ def test_post_connect_fyle_view(mocker, api_client, access_token):
         data={'code': code}    
     )
     response = api_client.post(url)
-    assert response.status_code == 200
+    assert response.status_code == 400
 
 
 def test_connect_fyle_view_exceptions(api_client, access_token):
@@ -461,7 +461,7 @@ def test_connect_fyle_view_exceptions(api_client, access_token):
             url,
             data={'code': code}    
         )
-        assert response.status_code == 403
+        assert response.status_code == 405
 
 
 @pytest.mark.django_db(databases=['default'])

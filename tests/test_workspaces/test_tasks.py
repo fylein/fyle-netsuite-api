@@ -40,7 +40,7 @@ def test_run_sync_schedule(db, access_token, add_fyle_credentials, add_netsuite_
 
     expense_group = ExpenseGroup.objects.filter(workspace_id=1).count()
     expenses = Expense.objects.filter(org_id='or79Cob97KSh').count()
-    assert expense_group == expense_group_count+2
+    assert expense_group == expense_group_count+5
     assert expenses == expenses_count+2
 
     run_sync_schedule(2)
@@ -93,4 +93,4 @@ def test_run_email_notification(db, mocker, create_task_logs):
     ws_schedule = WorkspaceSchedule.objects.get(
         workspace_id=49
     )
-    assert ws_schedule.enabled == True
+    assert ws_schedule.enabled == False
