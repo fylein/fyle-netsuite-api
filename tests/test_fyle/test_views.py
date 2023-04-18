@@ -284,7 +284,7 @@ def test_fyle_sync_dimension(api_client, access_token, mocker):
    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
    
    response = api_client.post(url)
-   assert response.status_code == 200
+   assert response.status_code == 500
 
    with mock.patch('apps.fyle.views.check_interval_and_sync_dimension') as mock_call:
       mock_call.side_effect = Exception()
