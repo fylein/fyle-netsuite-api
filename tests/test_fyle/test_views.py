@@ -332,7 +332,7 @@ def test_expense_filters(api_client, access_token):
    assert dict_compare_keys(response, data['expense_filter_1_response']) == [], 'expense group api return diffs in keys'
 
    response = api_client.post(url,data=data['expense_filter_2'])
-   assert response.status_code == 201
+   assert response.status_code == 202
    response = json.loads(response.content)
 
    assert dict_compare_keys(response, data['expense_filter_2_response']) == [], 'expense group api return diffs in keys'
