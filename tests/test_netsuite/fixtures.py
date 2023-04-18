@@ -3965,7 +3965,7 @@ data = {
             'nullFieldList': None,
             'customForm': None,
             'name': 'Mileage',
-            'description': 'Delivery, errands, etc. mileage',
+            'description': 'Delivery,sda errands, etc. mileage',
             'expenseAcct': {
                 'name': '6020 Automobile Expense',
                 'internalId': '67',
