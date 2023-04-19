@@ -20,7 +20,7 @@ jobs:
         uses: fylein/docker-release-action@master
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
           IMAGE_NAME: fyle_netsuite-api
       - name: Deploy to Staging
         uses: fylein/aws-eks-deploy-action@master
