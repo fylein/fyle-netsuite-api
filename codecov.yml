@@ -1,7 +1,7 @@
 codecov:
   require_ci_to_pass: false   #post comment only if ci checks have passed
 comment:
-  behavior: new     #comment post behavior (update existing, post new, delete and post new)
+  behavior: default     #comment post behavior (update existing, post new, delete and post new)
   layout: reach, diff, flags, files     #comment format
   require_base: true   #base report is mandatory to post comment
   require_changes: false  #only post comment if chages are done
