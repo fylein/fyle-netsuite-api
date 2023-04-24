@@ -164,7 +164,7 @@ def run_email_notification(workspace_id):
     netsuite_subsidiary = SubsidiaryMapping.objects.get(workspace_id=workspace_id).subsidiary_name
     admin_data = WorkspaceSchedule.objects.get(workspace_id=workspace_id)
 
-    if ws_schedule.enabled:
+    if ws_schedule.enabled and admin_data.emails_selected:
         for admin_email in admin_data.emails_selected:
             attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id, value=admin_email).first()
 
