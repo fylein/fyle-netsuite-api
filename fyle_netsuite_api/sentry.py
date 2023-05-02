@@ -42,6 +42,6 @@ class Sentry:
             exc_type, exc_value, tb = hint['exc_info'] 
             if isinstance(exc_value, (gevent.GreenletExit)):
                 return None
-            if exc_value.args[0] in ['Error: 502']:
+            elif exc_value.args[0] in ['Error: 502']:
                 return None
         return event
