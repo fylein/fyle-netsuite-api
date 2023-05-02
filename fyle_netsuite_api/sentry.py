@@ -3,6 +3,7 @@ import os
 import sentry_sdk
 
 from sentry_sdk.integrations.django import DjangoIntegration
+from greenlet import GreenletExit
 
 class Sentry:
 
@@ -15,6 +16,7 @@ class Sentry:
             environment=os.environ.get('SENTRY_ENV'),
             traces_sampler=Sentry.traces_sampler,
             attach_stacktrace=True,
+            ignore_errors=[GreenletExit()],
             request_bodies='small',
             in_app_include=['apps.users',
             'apps.workspaces',
@@ -34,3 +36,12 @@ class Sentry:
                 return 0
 
         return 0.5
+    @staticmethod
+    def before_send(event, hint):
+        if 'exc_info' in hint:
+            exc_type, exc_value, tb = hint['exc_info'] 
+            if isinstance(exc_value, (GreenletExit)):
+                return None
+            if exc_value.args[0] in ['Error: 502']:
+                return None
+        return event
