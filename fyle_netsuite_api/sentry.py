@@ -16,7 +16,7 @@ class Sentry:
             environment=os.environ.get('SENTRY_ENV'),
             traces_sampler=Sentry.traces_sampler,
             attach_stacktrace=True,
-            ignore_errors=[GreenletExit()],
+            before_send=Sentry.before_send,
             request_bodies='small',
             in_app_include=['apps.users',
             'apps.workspaces',
