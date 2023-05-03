@@ -1301,7 +1301,7 @@ class NetSuiteConnector:
         elif configuration.change_accounting_period:
             logger.info('Charge Card Error - %s', raw_response.text)
 
-            error_message = json.loads(eval(raw_response.text)['error']['message'])['message']
+            error_message = json.loads((eval(raw_response.text)['error']).replace('"{', '{').replace('}"', '}').replace('\\', '').replace('"https://', "'https://").replace('.html"', ".html'")['message'])['message']
             if error_message == 'The transaction date you specified is not within the date range of your accounting period.':
                 first_day_of_month = datetime.today().date().replace(day=1)
                 credit_card_charges_payload['tranDate'] = first_day_of_month.strftime('%m/%d/%Y')
