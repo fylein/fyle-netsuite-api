@@ -62,14 +62,15 @@ class NetSuiteConnector:
 
     @staticmethod
     def get_message_and_code(raw_response):
-        response = eval(raw_response.text)
-        logger.info('Charge Card Error - %s', response)
-        code = response['error']['code']
         try:
-            message = json.loads(raw_response.replace('"{', '{').replace('}"', '}').replace('\\', '').replace('"https://', "'https://").replace('.html"', ".html'"))['error']['message']['message']
+            response = eval(raw_response.text)
+            logger.info('Charge Card Error - %s', response)
+            code = response['error']['code']
+            message = json.loads((response.replace('"{', '{').replace('}"', '}').replace('\\', '').replace('"https://', "'https://").replace('.html"', ".html'"))['error']['message'])['message']
+            return code, message
         except Exception:
             logger.info('Json Loads fails %s', Exception)
-        return code, message
+        
     
     @staticmethod
     def get_tax_code_name(item_id, tax_type, rate):
