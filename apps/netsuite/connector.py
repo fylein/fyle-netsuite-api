@@ -65,8 +65,10 @@ class NetSuiteConnector:
         response = eval(raw_response.text)
         logger.info('Charge Card Error - %s', response)
         code = response['error']['code']
-        message = json.loads(raw_response.replace('"{', '{').replace('}"', '}').replace('\\', '').replace('"https://', "'https://").replace('.html"', ".html'"))['error']['message']['message']
-
+        try:
+            message = json.loads(raw_response.replace('"{', '{').replace('}"', '}').replace('\\', '').replace('"https://', "'https://").replace('.html"', ".html'"))['error']['message']['message']
+        except Exception:
+            logger.info('Json Loads fails %s', Exception)
         return code, message
     
     @staticmethod
