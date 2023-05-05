@@ -62,12 +62,18 @@ class NetSuiteConnector:
 
     @staticmethod
     def get_message_and_code(raw_response):
-        response = eval(raw_response.text)
-        logger.info('Charge Card Error - %s', response)
-        code = response['error']['code']
-        message = json.loads(response['error']['message'])['message']
-
+        try:
+            response = eval(raw_response.text)
+            logger.info('Charge Card Error - %s', response)
+            code = response['error']['code']
+            message = json.loads(response['error']['message'])['message']
+        except Exception:
+            parsed_response = json.loads((eval(raw_response.text)).replace('"{', '{').replace('}"', '}').replace('\\', '').replace('"https://', "'https://").replace('.html"', ".html'"))
+            message = parsed_response['error']['message']['message']
+            code = parsed_response['error']['code']
         return code, message
+        
+        
     
     @staticmethod
     def get_tax_code_name(item_id, tax_type, rate):
@@ -1300,8 +1306,10 @@ class NetSuiteConnector:
 
         elif configuration.change_accounting_period:
             logger.info('Charge Card Error - %s', raw_response.text)
-
-            error_message = json.loads(eval(raw_response.text)['error']['message'])['message']
+            try:
+                error_message = json.loads((eval(raw_response.text)))['error']['message']['message']
+            except Exception:
+                error_message = json.loads((eval(raw_response.text)).replace('"{', '{').replace('}"', '}').replace('\\', '').replace('"https://', "'https://").replace('.html"', ".html'"))['error']['message']['message']
             if error_message == 'The transaction date you specified is not within the date range of your accounting period.':
                 first_day_of_month = datetime.today().date().replace(day=1)
                 credit_card_charges_payload['tranDate'] = first_day_of_month.strftime('%m/%d/%Y')
