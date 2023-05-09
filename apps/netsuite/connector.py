@@ -67,7 +67,6 @@ class NetSuiteConnector:
         except Exception:
             response = json.loads((raw_response.text.replace('"{', '{').replace('}"', '}').replace('\\', '').replace('"https://', "'https://").replace('.html"', ".html'")))
 
-        # response = eval(raw_response.text)
         logger.info('Charge Card Error - %s', response)
         code = response['error']['code'] if 'error' in response and 'code' in response['error'] else response['code']
         message = response['message']['message']
