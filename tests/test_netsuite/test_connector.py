@@ -4,6 +4,7 @@ from apps.fyle.models import ExpenseGroup
 from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute
 from apps.netsuite.connector import NetSuiteConnector, NetSuiteCredentials
 from apps.workspaces.models import Configuration
+from apps.tasks.models import TaskLog
 from netsuitesdk import NetSuiteConnection, NetSuiteRequestError
 from tests.helper import dict_compare_keys
 from .fixtures import data
@@ -480,6 +481,28 @@ def test_post_credit_card_charge_exception(db, mocker, create_credit_card_charge
         mocker.patch(
             'requests_oauthlib.OAuth1Session.post',
             return_value=mock.MagicMock(status_code=400, text="{'error': {'message': json.dumps({'message': 'The transaction date you specified is not within the date range of your accounting period.'}), 'code': 400}}")
+        )
+        netsuite_connection.post_credit_card_charge(credit_card_charge_transaction, credit_card_charge_transaction_lineitems, {}, True)
+    except:
+        logger.info('accounting period error')
+
+
+def test_post_credit_card_charge_bad_ns_response(db, mocker, create_credit_card_charge):
+    workspace_id = 1
+
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
+
+    credit_card_charge_transaction, credit_card_charge_transaction_lineitems = create_credit_card_charge
+
+    workspace_general_setting = Configuration.objects.get(workspace_id=workspace_id)
+    workspace_general_setting.change_accounting_period = True
+    workspace_general_setting.save()
+
+    try:
+        mocker.patch(
+            'requests_oauthlib.OAuth1Session.post',
+            return_value=mock.MagicMock(status_code=400, text="""{"code" : "UNABLE_TO_SAVE_THE_TRANSACTION_DUE_TO_AN_ERROR_BEING_REPORTED_BY_THE_TAX_CALCULATION_ENGINE_1", "message" : "{\\"type\\":\\"error.SuiteScriptError\\",\\"name\\":\\"UNABLE_TO_SAVE_THE_TRANSACTION_DUE_TO_AN_ERROR_BEING_REPORTED_BY_THE_TAX_CALCULATION_ENGINE_1\\",\\"message\\":\\"Unable to save the transaction due to an error being reported by the tax calculation engine: Tax Calculation Plugin error: NetSuite was not able to estimate the correct Nexus for this transaction. Based on the <a href=\\\\"https://docs.oracle.com/en/cloud/saas/netsuite/ns-online-help/section_4283866360.html\\\\">Nexus Determination Lookup Logic in SuiteTax</a>, NetSuite has determined the Ship From country United States, Ship To country United States and the Subsidiary country United States, these countries do not match any Subsidiary Tax Registration. You must have an active nexus that matches one of the countries identified in the nexus lookup logic. If you want taxes to be calculated for the nexus, set up the nexus and assign a tax engine. Otherwise, mark the nexus as tax-exempt. Go to the <a href=\\\'/app/common/otherlists/subsidiarytype.nl?id=1\\\'>subsidiary</a> to complete the setup. You may need to contact your administrator to perform this action.\\",\\"stack\\":[\\"anonymous(N/serverRecordService)\\",\\"CreateNetSuiteCreditCardCharge(/SuiteBundles/Bundle 355595/create_credit_card_charge.js:122)\\",\\"doPost(/SuiteBundles/Bundle 355595/create_credit_card_charge.js:23)\\"],\\"cause\\":{\\"type\\":\\"internal error\\",\\"code\\":\\"UNABLE_TO_SAVE_THE_TRANSACTION_DUE_TO_AN_ERROR_BEING_REPORTED_BY_THE_TAX_CALCULATION_ENGINE_1\\",\\"details\\":\\"Unable to save the transaction due to an error being reported by the tax calculation engine: Tax Calculation Plugin error: NetSuite was not able to estimate the correct Nexus for this transaction. Based on the <a href=\\\\"https://docs.oracle.com/en/cloud/saas/netsuite/ns-online-help/section_4283866360.html\\\\">Nexus Determination Lookup Logic in SuiteTax</a>, NetSuite has determined the Ship From country United States, Ship To country United States and the Subsidiary country United States, these countries do not match any Subsidiary Tax Registration. You must have an active nexus that matches one of the countries identified in the nexus lookup logic. If you want taxes to be calculated for the nexus, set up the nexus and assign a tax engine. Otherwise, mark the nexus as tax-exempt. Go to the <a href=\\\'/app/common/otherlists/subsidiarytype.nl?id=1\\\'>subsidiary</a> to complete the setup. You may need to contact your administrator to perform this action.\\",\\"userEvent\\":null,\\"stackTrace\\":[\\"anonymous(N/serverRecordService)\\",\\"CreateNetSuiteCreditCardCharge(/SuiteBundles/Bundle 355595/create_credit_card_charge.js:122)\\",\\"doPost(/SuiteBundles/Bundle 355595/create_credit_card_charge.js:23)\\"],\\"notifyOff\\":false},\\"id\\":\\"\\",\\"notifyOff\\":false,\\"userFacing\\":false}"}""")
         )
         netsuite_connection.post_credit_card_charge(credit_card_charge_transaction, credit_card_charge_transaction_lineitems, {}, True)
     except:
