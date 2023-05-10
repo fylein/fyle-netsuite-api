@@ -69,7 +69,7 @@ class NetSuiteConnector:
 
         logger.info('Charge Card Error - %s', response)
         code = response['error']['code'] if 'error' in response and 'code' in response['error'] else response['code']
-        message = response['error']['message']['message']
+        message = response['error']['message']['message'] if 'error' in response and 'message' in response['error'] and 'message' in response['error']['message'] else response['message']['message']
 
         return code, message
     
