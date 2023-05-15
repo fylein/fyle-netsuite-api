@@ -9,10 +9,12 @@ from rest_framework.views import status
 
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
 
-from fyle_accounting_mappings.models import DestinationAttribute
+from fyle_accounting_mappings.models import DestinationAttribute, MappingSetting
 from fyle_accounting_mappings.serializers import DestinationAttributeSerializer
 
 from apps.workspaces.models import NetSuiteCredentials, Workspace, Configuration
+
+from django_q.tasks import async_task
 
 from .serializers import NetSuiteFieldSerializer, CustomSegmentSerializer
 from .tasks import schedule_bills_creation, schedule_expense_reports_creation, schedule_journal_entry_creation,\
@@ -196,6 +198,19 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
             workspace = Workspace.objects.get(pk=kwargs['workspace_id'])
 
             netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace.id)
+
+            project_mappings = MappingSetting.objects.filter(workspace_id=workspace.id)
+            for project_mapping in project_mappings:
+                if project_mapping.source_field == "PROJECT":
+                    # run auto_import_and_map_fyle_fields
+                    async_task("apps.mappings.tasks.auto_import_and_map_fyle_fields",int(workspace.id))
+                if project_mapping.source_field == "COST CENTER":
+                    # run auto_create_cost_center_mappings
+                    async_task("apps.mappings.tasks.auto_create_cost_center_mappings",int(workspace.id))
+                if project_mapping.is_custom:
+                    # run async_auto_create_custom_field_mappings
+                    async_task("apps.mappings.tasks.async_auto_create_custom_field_mappings",int(workspace.id))
+            
             sync_dimensions(netsuite_credentials, workspace.id, dimensions_to_sync)
 
             # Update destination_synced_at to current time only when full refresh happens
