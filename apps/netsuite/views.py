@@ -213,7 +213,9 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
                     # run async_auto_create_custom_field_mappings
                     chain.append('apps.mappings.tasks.async_auto_create_custom_field_mappings', int(workspace.id))
             
-            chain.run()
+            if chain.length() > 0:
+                chain.run()
+            
             sync_dimensions(netsuite_credentials, workspace.id, dimensions_to_sync)
 
             # Update destination_synced_at to current time only when full refresh happens
