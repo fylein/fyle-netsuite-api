@@ -9,10 +9,12 @@ from rest_framework.views import status
 
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
 
-from fyle_accounting_mappings.models import DestinationAttribute
+from fyle_accounting_mappings.models import DestinationAttribute, MappingSetting
 from fyle_accounting_mappings.serializers import DestinationAttributeSerializer
 
 from apps.workspaces.models import NetSuiteCredentials, Workspace, Configuration
+
+from django_q.tasks import Chain
 
 from .serializers import NetSuiteFieldSerializer, CustomSegmentSerializer
 from .tasks import schedule_bills_creation, schedule_expense_reports_creation, schedule_journal_entry_creation,\
@@ -196,6 +198,24 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
             workspace = Workspace.objects.get(pk=kwargs['workspace_id'])
 
             netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace.id)
+
+            mapping_settings = MappingSetting.objects.filter(workspace_id=workspace.id)
+            chain = Chain()
+
+            for mapping_setting in mapping_settings:
+                if mapping_setting.source_field == 'PROJECT':
+                    # run auto_import_and_map_fyle_fields
+                    chain.append('apps.mappings.tasks.auto_import_and_map_fyle_fields', int(workspace.id))
+                elif mapping_setting.source_field == 'COST_CENTER':
+                    # run auto_create_cost_center_mappings
+                    chain.append('apps.mappings.tasks.auto_create_cost_center_mappings', int(workspace.id))
+                elif mapping_setting.is_custom:
+                    # run async_auto_create_custom_field_mappings
+                    chain.append('apps.mappings.tasks.async_auto_create_custom_field_mappings', int(workspace.id))
+            
+            if chain.length() > 0:
+                chain.run()
+            
             sync_dimensions(netsuite_credentials, workspace.id, dimensions_to_sync)
 
             # Update destination_synced_at to current time only when full refresh happens
