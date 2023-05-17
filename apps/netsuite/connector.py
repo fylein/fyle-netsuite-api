@@ -138,7 +138,7 @@ class NetSuiteConnector:
 
                 if account['acctType'] in ['_expense', '_costOfGoodsSold', '_otherCurrentAsset', '_otherExpense',
                     '_fixedAsset', '_deferredExpense', '_otherCurrentLiability', '_income', '_otherAsset']:
-                    # if the account is active append it to the list of account
+                    # if the account is active append it to the list of account as active=true
                     if not account['isInactive']:
                         attributes['account'].append({
                             'attribute_type': 'ACCOUNT',
@@ -160,7 +160,7 @@ class NetSuiteConnector:
                         'active': not account['isInactive']
                     })
 
-            # for all the accounts in the map are inactive so add them to the list of accounts
+            # for all the accounts in the map are inactive so add them to the list of accounts as as active=false
             for destination_id in disabled_fields_map:
                attributes['account'].append({
                     'attribute_type': 'ACCOUNT',
@@ -206,7 +206,7 @@ class NetSuiteConnector:
                     'account_name': category['expenseAcct']['name'],
                     'account_internal_id': category['expenseAcct']['internalId']
                 }
-                # if the category is active append it to the list of expense categories
+                # if the category is active append it to the list of expense categories as active=true
                 if not category['isInactive']:
                     attributes['expense_category'].append(
                         {
@@ -222,7 +222,7 @@ class NetSuiteConnector:
                     if category['internalId'] in disabled_fields_map:
                         disabled_fields_map.pop(category['internalId'])
 
-            # for all the categories in the map are inactive so add them to the list of expense categories
+            # for all the categories in the map are inactive so add them to the list of expense categories as active=false
             for destination_id in disabled_fields_map:
                 attributes['expense_category'].append({
                     'attribute_type': 'EXPENSE_CATEGORY',
