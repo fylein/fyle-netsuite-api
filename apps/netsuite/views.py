@@ -199,7 +199,7 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
 
             netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace.id)
 
-            mapping_settings = MappingSetting.objects.filter(workspace_id=workspace.id)
+            mapping_settings = MappingSetting.objects.filter(workspace_id=workspace.id, import_to_fyle=True)
             chain = Chain()
 
             for mapping_setting in mapping_settings:
