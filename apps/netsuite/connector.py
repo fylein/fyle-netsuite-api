@@ -94,8 +94,17 @@ class NetSuiteConnector:
                 'ccc_account': [],
                 'vendor_payment_account': []
             }
-            destination_ids = DestinationAttribute.objects.filter(workspace_id=self.workspace_id,
-                attribute_type='ACCOUNT', display_name='Account').values_list('destination_id', flat=True)
+            # get all the destination attributes for accounts
+            destination_attributes = DestinationAttribute.objects.filter(workspace_id=self.workspace_id,
+                    attribute_type='ACCOUNT', display_name='Account').values('destination_id', 'value')
+            
+            # store the destination attributes in disabled_fields_map with destination_id as key and value and detail as value
+            # destination_id : {value: value, detail: detail}
+            disabled_fields_map = {}
+            for destination_attribute in destination_attributes:
+                disabled_fields_map[destination_attribute['destination_id']] = {
+                    'value': destination_attribute['value']
+                }
 
             for account in list(accounts):
                 if account['acctType'] != '_expense':
@@ -129,15 +138,8 @@ class NetSuiteConnector:
 
                 if account['acctType'] in ['_expense', '_costOfGoodsSold', '_otherCurrentAsset', '_otherExpense',
                     '_fixedAsset', '_deferredExpense', '_otherCurrentLiability', '_income', '_otherAsset']:
-                    if account['internalId'] in destination_ids:
-                        attributes['account'].append({
-                            'attribute_type': 'ACCOUNT',
-                            'display_name': 'Account',
-                            'value': unidecode.unidecode(u'{0}'.format(account['acctName'])).replace('/', '-'),
-                            'destination_id': account['internalId'],
-                            'active': not account['isInactive']
-                        })
-                    elif not account['isInactive']:
+                    # if the account is active append it to the list of account
+                    if not account['isInactive']:
                         attributes['account'].append({
                             'attribute_type': 'ACCOUNT',
                             'display_name': 'Account',
@@ -145,6 +147,9 @@ class NetSuiteConnector:
                             'destination_id': account['internalId'],
                             'active': True
                         })
+                        # the account is active so remove it from the map
+                        if account['internalId'] in disabled_fields_map:
+                            disabled_fields_map.pop(account['internalId'])
 
                 if account['acctType'] == '_bank' or account['acctType'] == '_creditCard':
                     attributes['vendor_payment_account'].append({
@@ -154,6 +159,16 @@ class NetSuiteConnector:
                         'destination_id': account['internalId'],
                         'active': not account['isInactive']
                     })
+
+            # for all the accounts in the map are inactive so add them to the list of accounts
+            for destination_id in disabled_fields_map:
+               attributes['account'].append({
+                    'attribute_type': 'ACCOUNT',
+                    'display_name': 'Account',
+                    'value': disabled_fields_map[destination_id]['value'],
+                    'destination_id': destination_id,
+                    'active': False
+                })
 
             for attribute_type, attribute in attributes.items():
                 if attribute:
@@ -173,27 +188,26 @@ class NetSuiteConnector:
                 'expense_category': [],
                 'ccc_expense_category': []
             }
-            destination_ids = DestinationAttribute.objects.filter(workspace_id=self.workspace_id,
-                    attribute_type='EXPENSE_CATEGORY', display_name='Expense Category').values_list('destination_id', flat=True)
+            # get all the destination attributes for expense category
+            destination_attributes = DestinationAttribute.objects.filter(workspace_id=self.workspace_id,
+                    attribute_type='EXPENSE_CATEGORY', display_name='Expense Category').values('destination_id', 'value', 'detail')
+            
+            # store the destination attributes in disabled_fields_map with destination_id as key and value and detail as value
+            # destination_id : {value: value, detail: detail} 
+            disabled_fields_map = {}
+            for destination_attribute in destination_attributes:
+                disabled_fields_map[destination_attribute['destination_id']] = {
+                    'value': destination_attribute['value'],
+                    'detail': destination_attribute['detail']
+                }
 
             for category in categories:
                 detail = {
                     'account_name': category['expenseAcct']['name'],
                     'account_internal_id': category['expenseAcct']['internalId']
                 }
-
-                if category['internalId'] in destination_ids:
-                    attributes['expense_category'].append(
-                        {
-                            'attribute_type': 'EXPENSE_CATEGORY',
-                            'display_name': 'Expense Category',
-                            'value': unidecode.unidecode(u'{0}'.format(category['name'])).replace('/', '-'),
-                            'destination_id': category['internalId'],
-                            'detail': detail,
-                            'active': not category['isInactive']
-                        }
-                    )
-                elif not category['isInactive']:
+                # if the category is active append it to the list of expense categories
+                if not category['isInactive']:
                     attributes['expense_category'].append(
                         {
                             'attribute_type': 'EXPENSE_CATEGORY',
@@ -204,6 +218,20 @@ class NetSuiteConnector:
                             'active': True
                         }
                     )
+                    # the category is active so remove it from the map
+                    if category['internalId'] in disabled_fields_map:
+                        disabled_fields_map.pop(category['internalId'])
+
+            # for all the categories in the map are inactive so add them to the list of expense categories
+            for destination_id in disabled_fields_map:
+                attributes['expense_category'].append({
+                    'attribute_type': 'EXPENSE_CATEGORY',
+                    'display_name': 'Expense Category',
+                    'value': disabled_fields_map[destination_id]['value'],
+                    'destination_id': destination_id,
+                    'detail': disabled_fields_map[destination_id]['detail'],
+                    'active': False
+                })
 
             for attribute_type, attribute in attributes.items():
                 DestinationAttribute.bulk_create_or_update_destination_attributes(
