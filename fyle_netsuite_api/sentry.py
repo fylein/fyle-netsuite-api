@@ -35,7 +35,7 @@ class Sentry:
             if 'ready/' in sampling_context['wsgi_environ']['PATH_INFO']:
                 return 0
 
-        return 0.5
+        return 1
     @staticmethod
     def before_send(event, hint):
         if 'exc_info' in hint:
