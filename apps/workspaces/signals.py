@@ -7,6 +7,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from django_q.models import Schedule
+from django_q.tasks import async_task
 
 from apps.fyle.helpers import add_expense_id_to_expense_group_settings, update_import_card_credits_flag, \
     update_use_employee_attributes_flag
@@ -37,6 +38,8 @@ def run_post_configration_triggers(sender, instance: Configuration, **kwargs):
     schedule_or_delete_auto_mapping_tasks(configuration=instance)
 
     schedule_payment_sync(configuration=instance)
+
+    async_task('apps.mappings.tasks.disable_category_for_items_mapping', instance)
 
 
 @receiver(post_save, sender=NetSuiteCredentials)

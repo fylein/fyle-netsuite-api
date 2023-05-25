@@ -173,7 +173,7 @@ class NetSuiteConnector:
             for attribute_type, attribute in attributes.items():
                 if attribute:
                     DestinationAttribute.bulk_create_or_update_destination_attributes(
-                        attribute, attribute_type.upper(), self.workspace_id, True)
+                        attribute, attribute_type.upper(), self.workspace_id, True, attribute_type.title().replace('_',' '))
 
         return []
 
@@ -238,6 +238,56 @@ class NetSuiteConnector:
                     attribute, attribute_type.upper(), self.workspace_id, True)
 
         return []
+    
+    def sync_items(self):
+        """
+        Sync Items
+        """
+
+        item_generator = self.connection.items.get_all_generator()
+        for items in item_generator:
+            attributes = []
+
+            destination_attributes = DestinationAttribute.objects.filter(workspace_id=self.workspace_id,
+                attribute_type='ACCOUNT', display_name='Item').values('destination_id', 'value', 'detail')
+            configuration = Configuration.objects.filter(workspace_id=self.workspace_id).first()
+
+            disabled_fields_map = {}
+            for destination_attribute in destination_attributes:
+                disabled_fields_map[destination_attribute['destination_id']] = {
+                    'value': destination_attribute['value'],
+                    'detail': destination_attribute['detail']
+                }
+
+            for item in items:
+                if not item['isInactive']:
+                    attributes.append({
+                            'attribute_type': 'ACCOUNT',
+                            'display_name': 'Item',
+                            'value': item['itemId'],
+                            'destination_id': item['internalId'],
+                            'detail': item['displayName'],
+                            'active': configuration.import_items if configuration else False
+                        })
+                    # the category is active so remove it from the map
+                    if item['internalId'] in disabled_fields_map:
+                        disabled_fields_map.pop(item['internalId'])
+
+            for destination_id in disabled_fields_map:
+                    attributes.append({
+                        'attribute_type': 'ACCOUNT',
+                        'display_name': 'Item',
+                        'value': disabled_fields_map[destination_id]['value'],
+                        'destination_id': destination_id,
+                        'detail': disabled_fields_map[destination_id]['detail'],
+                        'active': False
+                    })
+
+            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                attributes, 'ACCOUNT', self.workspace_id, True, 'Item')
+
+        return []
+
 
     def get_custom_list_attributes(self, attribute_type: str, internal_id:str):
         custom_segment_attributes = []
@@ -961,7 +1011,8 @@ class NetSuiteConnector:
         Create bill line items
         :return: constructed line items
         """
-        lines = []
+        expense_list = []
+        item_list = []
 
         for line in bill_lineitems:
             expense = Expense.objects.get(pk=line.expense_id)
@@ -982,27 +1033,18 @@ class NetSuiteConnector:
                     'scriptId': 'custcolfyle_expense_url',
                     'type': 'String',
                     'value': '{}/app/main/#/enterprise/view_expense/{}?org_id={}'.format(
-                        settings.FYLE_EXPENSE_URL,
+                        'https://staging1.fyle.tech',
                         expense.expense_id,
                         org_id
                     )
                 }
             )
 
-
             lineitem = {
                 'orderDoc': None,
                 'orderLine': None,
                 'line': None,
-                'category': None,
-                'account': {
-                    'name': None,
-                    'internalId': line.account_id,
-                    'externalId': None,
-                    'type': 'account'
-                },
                 'amount': line.amount - line.tax_amount if (line.tax_item_id and line.tax_amount is not None) else line.amount,
-                'memo': line.memo,
                 'grossAmt': line.amount,
                 'taxDetailsReference': None,
                 'department': {
@@ -1031,7 +1073,6 @@ class NetSuiteConnector:
                 },
                 'customFieldList': netsuite_custom_segments,
                 'isBillable': line.billable,
-                'projectTask': None,
                 'tax1Amt': None,
                 'taxAmount': line.tax_amount if (line.tax_item_id and line.tax_amount is not None) else None,
                 'taxCode':{
@@ -1039,7 +1080,7 @@ class NetSuiteConnector:
                     'internalId': line.tax_item_id if (line.tax_item_id and line.tax_amount is not None) else None,
                     'externalId': None,
                     'type': 'taxGroup'
-                },                
+                },
                 'taxRate1': None,
                 'taxRate2': None,
                 'amortizationSched': None,
@@ -1047,9 +1088,45 @@ class NetSuiteConnector:
                 'amortizationEndDate': None,
                 'amortizationResidual': None,
             }
-            lines.append(lineitem)
 
-        return lines
+            if line.detail_type == 'AccountBasedExpenseLineDetail':
+                lineitem['account'] = {
+                    'name': None,
+                    'internalId': line.account_id,
+                    'externalId': None,
+                    'type': 'account'
+                }
+                lineitem['category'] = None
+                lineitem['memo'] = line.memo
+                lineitem['projectTask'] = None
+
+                expense_list.append(lineitem)
+
+            else:
+                lineitem['item'] = {
+                    'name': None,
+                    'internalId': line.item_id,
+                    'externalId': None,
+                    'type': None
+                }
+                lineitem['vendorName'] = None
+                lineitem['quantity'] = 1.0
+                lineitem['units'] = None
+                lineitem['inventoryDetail'] = None
+                lineitem['description'] = line.memo
+                lineitem['serialNumbers'] = None
+                lineitem['binNumbers'] = None
+                lineitem['expirationDate'] = None
+                lineitem['rate'] = str(line.amount - line.tax_amount if (line.tax_item_id and line.tax_amount is not None) else line.amount)
+                lineitem['options'] = None
+                lineitem['landedCostCategory'] = None
+                lineitem['billVarianceStatus'] = None
+                lineitem['billreceiptsList'] = None
+                lineitem['landedCost'] = None
+
+                item_list.append(lineitem)
+
+        return expense_list, item_list
 
     def __construct_bill(self, bill: Bill, bill_lineitems: List[BillLineitem]) -> Dict:
         """
@@ -1061,6 +1138,8 @@ class NetSuiteConnector:
 
         cluster_domain = fyle_credentials.cluster_domain
         org_id = Workspace.objects.get(id=bill.expense_group.workspace_id).fyle_org_id
+
+        expense_list, item_list = self.construct_bill_lineitems( bill_lineitems, {}, cluster_domain, org_id)
 
         bill_payload = {
             'nullFieldList': None,
@@ -1128,11 +1207,9 @@ class NetSuiteConnector:
             'landedCostMethod': None,
             'landedCostPerLine': None,
             'transactionNumber': None,
-            'expenseList': self.construct_bill_lineitems(
-                bill_lineitems, {}, cluster_domain, org_id
-            ),
+            'expenseList': expense_list if expense_list else None,
+            'itemList': item_list if item_list else None,
             'accountingBookDetailList': None,
-            'itemList': None,
             'landedCostsList': None,
             'purchaseOrderList': None,
             'taxDetailsList': None,
