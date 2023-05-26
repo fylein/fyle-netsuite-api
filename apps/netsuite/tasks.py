@@ -291,6 +291,8 @@ def construct_payload_and_update_export(expense_id_receipt_url_map: dict, task_l
         export_line_items = line_item_model.objects.filter(**line_items_filter)
 
         lines = []
+        expense_list = []
+        item_list = []
         payload = {}
 
         # Since we have credit and debit for Journal Entry lines, we need to construct them separately
@@ -305,16 +307,28 @@ def construct_payload_and_update_export(expense_id_receipt_url_map: dict, task_l
             )
             lines.extend(credit_line)
             lines.extend(debit_line)
+
+        elif task_log.type == 'CREATING_BILL':
+            construct_lines = getattr(netsuite_connection, func)
+            # calling the target construct payload function
+            expense_list, item_list = construct_lines(export_line_items, expense_id_receipt_url_map, cluster_domain, workspace.fyle_org_id)
         else:
             construct_lines = getattr(netsuite_connection, func)
             # calling the target construct payload function
             lines = construct_lines(export_line_items, expense_id_receipt_url_map, cluster_domain, workspace.fyle_org_id)
 
         # final payload to be sent to netsuite, since this is an update operation, we need to pass the external id
-        payload = {
-            TASK_TYPE_LINES_MAP[task_log.type]: lines,
-            'externalId': export_instance.external_id
-        }
+        if task_log.type == 'CREATING_BILL':
+            payload = {
+                TASK_TYPE_LINES_MAP[task_log.type]: expense_list,
+                'itemList': item_list,
+                'externalId': export_instance.external_id
+            }
+        else:
+            payload = {
+                TASK_TYPE_LINES_MAP[task_log.type]: lines,
+                'externalId': export_instance.external_id
+            }
 
         # calling the target netsuite post function, ex - netsuite_connection.connection.expense_reports.post(payload)
         getattr(netsuite_connection.connection, TASK_TYPE_EXPORT_MAP[task_log.type]).post(payload)

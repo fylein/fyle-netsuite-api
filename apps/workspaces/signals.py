@@ -38,8 +38,9 @@ def run_post_configration_triggers(sender, instance: Configuration, **kwargs):
     schedule_or_delete_auto_mapping_tasks(configuration=instance)
 
     schedule_payment_sync(configuration=instance)
-
-    async_task('apps.mappings.tasks.disable_category_for_items_mapping', instance)
+    
+    if not instance.import_items:
+        async_task('apps.mappings.tasks.disable_category_for_items_mapping', instance)
 
 
 @receiver(post_save, sender=NetSuiteCredentials)

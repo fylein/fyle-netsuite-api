@@ -64,9 +64,7 @@ def disable_category_for_items_mapping(configuration: Configuration):
     category_ids_to_be_disabled = disable_expense_attributes('CATEGORY', 'ACCOUNT', workspace_id, display_name='Item')
     if category_ids_to_be_disabled:
         expense_attributes = ExpenseAttribute.objects.filter(id__in=category_ids_to_be_disabled)
-        fyle_payload: List[Dict] = create_fyle_categories_payload(categories=[],
-            workspace_id=workspace_id, updated_categories=expense_attributes)
-
+        fyle_payload: List[Dict] = create_fyle_categories_payload(categories=[], category_map={}, updated_categories=expense_attributes, destination_type='ACCOUNT')
         platform.categories.post_bulk(fyle_payload)
         platform.categories.sync()
 
