@@ -309,12 +309,18 @@ def test_auto_create_category_mappings(db, mocker):
     )
 
     mocker.patch(
+        'netsuitesdk.api.items.Items.get_all_generator',
+        return_value=netsuite_data['get_all_items']  
+    )
+
+    mocker.patch(
         'fyle.platform.apis.v1beta.admin.Categories.list_all',
         return_value=fyle_data['get_all_categories']
     )
 
     configuration = Configuration.objects.filter(workspace_id=1).first()
     configuration.import_categories = True
+    configuration.import_items = True
     configuration.save()
 
     response = auto_create_category_mappings(workspace_id=1)

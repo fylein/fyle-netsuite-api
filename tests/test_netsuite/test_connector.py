@@ -210,6 +210,23 @@ def test_sync_accounts(mocker, db):
     assert new_account_counts == 124
 
 @pytest.mark.django_db()
+def test_sync_items(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.items.Items.get_all_generator',
+        return_value=data['get_all_items']    
+    )
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
+
+    items_count = DestinationAttribute.objects.filter(attribute_type='ACCOUNT',display_name='Item', workspace_id=1).count()
+    assert items_count == 0
+
+    netsuite_connection.sync_items()
+
+    new_items_count = DestinationAttribute.objects.filter(attribute_type='ACCOUNT',display_name='Item', workspace_id=1).count()
+    assert new_items_count == 3
+
+@pytest.mark.django_db()
 def test_sync_expense_categories(mocker, db):
     mocker.patch(
         'netsuitesdk.api.expense_categories.ExpenseCategory.get_all_generator',
