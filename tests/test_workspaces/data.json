@@ -8,6 +8,7 @@
         "import_categories":true,
         "import_tax_items":false,
         "import_projects":true,
+        "import_items": true,
         "import_vendors_as_merchants":true,
         "change_accounting_period":false,
         "sync_fyle_to_netsuite_payments":false,

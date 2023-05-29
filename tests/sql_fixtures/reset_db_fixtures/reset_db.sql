@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.2 (Debian 15.2-1.pgdg110+1)
--- Dumped by pg_dump version 15.2 (Debian 15.2-1.pgdg100+1)
+-- Dumped from database version 15.3 (Debian 15.3-1.pgdg110+1)
+-- Dumped by pg_dump version 15.3 (Debian 15.3-1.pgdg100+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -157,7 +157,7 @@ ALTER TABLE public.auth_tokens OWNER TO postgres;
 
 CREATE TABLE public.bill_lineitems (
     id integer NOT NULL,
-    account_id character varying(255) NOT NULL,
+    account_id character varying(255),
     location_id character varying(255),
     department_id character varying(255),
     class_id character varying(255),
@@ -172,7 +172,9 @@ CREATE TABLE public.bill_lineitems (
     customer_id character varying(255),
     tax_amount double precision,
     tax_item_id character varying(255),
-    netsuite_receipt_url text
+    netsuite_receipt_url text,
+    detail_type character varying(255) NOT NULL,
+    item_id character varying(255)
 );
 
 
@@ -312,7 +314,8 @@ CREATE TABLE public.configurations (
     skip_cards_mapping boolean NOT NULL,
     import_vendors_as_merchants boolean NOT NULL,
     import_netsuite_employees boolean NOT NULL,
-    is_simplify_report_closure_enabled boolean NOT NULL
+    is_simplify_report_closure_enabled boolean NOT NULL,
+    import_items boolean NOT NULL
 );
 
 
@@ -2416,7 +2419,7 @@ COPY public.auth_tokens (id, refresh_token, user_id) FROM stdin;
 -- Data for Name: bill_lineitems; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.bill_lineitems (id, account_id, location_id, department_id, class_id, amount, memo, created_at, updated_at, bill_id, expense_id, netsuite_custom_segments, billable, customer_id, tax_amount, tax_item_id, netsuite_receipt_url) FROM stdin;
+COPY public.bill_lineitems (id, account_id, location_id, department_id, class_id, amount, memo, created_at, updated_at, bill_id, expense_id, netsuite_custom_segments, billable, customer_id, tax_amount, tax_item_id, netsuite_receipt_url, detail_type, item_id) FROM stdin;
 \.
 
 
@@ -2445,10 +2448,10 @@ COPY public.category_mappings (id, created_at, updated_at, destination_account_i
 -- Data for Name: configurations; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.configurations (id, reimbursable_expenses_object, corporate_credit_card_expenses_object, created_at, updated_at, workspace_id, sync_fyle_to_netsuite_payments, sync_netsuite_to_fyle_payments, import_projects, auto_map_employees, import_categories, auto_create_destination_entity, auto_create_merchants, employee_field_mapping, import_tax_items, change_accounting_period, memo_structure, map_fyle_cards_netsuite_account, skip_cards_mapping, import_vendors_as_merchants, import_netsuite_employees, is_simplify_report_closure_enabled) FROM stdin;
-1	EXPENSE REPORT	BILL	2021-11-15 08:56:07.193743+00	2021-11-15 08:56:07.193795+00	1	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f
-2	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-11-16 04:18:15.836271+00	2021-11-16 04:20:09.969589+00	2	f	f	f	\N	f	f	f	EMPLOYEE	t	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f
-3	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-12-03 11:04:00.194287+00	2021-12-03 11:04:00.1943+00	49	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f
+COPY public.configurations (id, reimbursable_expenses_object, corporate_credit_card_expenses_object, created_at, updated_at, workspace_id, sync_fyle_to_netsuite_payments, sync_netsuite_to_fyle_payments, import_projects, auto_map_employees, import_categories, auto_create_destination_entity, auto_create_merchants, employee_field_mapping, import_tax_items, change_accounting_period, memo_structure, map_fyle_cards_netsuite_account, skip_cards_mapping, import_vendors_as_merchants, import_netsuite_employees, is_simplify_report_closure_enabled, import_items) FROM stdin;
+1	EXPENSE REPORT	BILL	2021-11-15 08:56:07.193743+00	2021-11-15 08:56:07.193795+00	1	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f
+2	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-11-16 04:18:15.836271+00	2021-11-16 04:20:09.969589+00	2	f	f	f	\N	f	f	f	EMPLOYEE	t	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f
+3	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-12-03 11:04:00.194287+00	2021-12-03 11:04:00.1943+00	49	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f
 \.
 
 
@@ -7690,6 +7693,11 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 152	fyle_accounting_mappings	0020_auto_20230302_0519	2023-05-09 10:35:00.71405+00
 153	fyle_accounting_mappings	0021_auto_20230323_0557	2023-05-09 10:35:00.728728+00
 154	workspaces	0030_auto_20230321_0734	2023-05-09 10:35:00.738776+00
+155	fyle	0025_auto_20230202_1216	2023-05-29 07:05:46.132009+00
+156	fyle_accounting_mappings	0022_auto_20230411_1118	2023-05-29 07:05:46.175227+00
+157	fyle_accounting_mappings	0023_auto_20230523_1047	2023-05-29 07:05:46.20766+00
+158	netsuite	0021_auto_20230523_1047	2023-05-29 07:05:46.232192+00
+159	workspaces	0031_configuration_import_items	2023-05-29 07:05:46.247343+00
 \.
 
 
@@ -11569,7 +11577,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 43, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 154, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 159, true);
 
 
 --
@@ -11958,11 +11966,11 @@ ALTER TABLE ONLY public.custom_segments
 
 
 --
--- Name: destination_attributes destination_attributes_destination_id_attribute_dfb58751_uniq; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: destination_attributes destination_attributes_destination_id_attribute_d22ab1fe_uniq; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.destination_attributes
-    ADD CONSTRAINT destination_attributes_destination_id_attribute_dfb58751_uniq UNIQUE (destination_id, attribute_type, workspace_id);
+    ADD CONSTRAINT destination_attributes_destination_id_attribute_d22ab1fe_uniq UNIQUE (destination_id, attribute_type, workspace_id, display_name);
 
 
 --
@@ -13080,14 +13088,6 @@ ALTER TABLE ONLY public.expense_reports
 
 
 --
--- Name: mappings fyle_accounting_mapp_destination_id_79497f6e_fk_fyle_acco; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.mappings
-    ADD CONSTRAINT fyle_accounting_mapp_destination_id_79497f6e_fk_fyle_acco FOREIGN KEY (destination_id) REFERENCES public.destination_attributes(id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
 -- Name: mappings fyle_accounting_mapp_workspace_id_10d6edd3_fk_workspace; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13181,6 +13181,14 @@ ALTER TABLE ONLY public.mapping_settings
 
 ALTER TABLE ONLY public.mapping_settings
     ADD CONSTRAINT mapping_settings_workspace_id_590f14f3_fk_workspaces_id FOREIGN KEY (workspace_id) REFERENCES public.workspaces(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: mappings mappings_destination_id_0c60b033_fk_destination_attributes_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.mappings
+    ADD CONSTRAINT mappings_destination_id_0c60b033_fk_destination_attributes_id FOREIGN KEY (destination_id) REFERENCES public.destination_attributes(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
