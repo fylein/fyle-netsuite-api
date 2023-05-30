@@ -126,13 +126,6 @@ class ConfigurationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Cannot enable sync fyle to netsuite if reimbursable expense object is journal entry'
             )
-        
-        if ((attrs['reimbursable_expenses_object'] != 'BILL' and attrs['corporate_credit_card_expenses_object'] != 'BILL')\
-            and attrs['import_items']):
-            raise serializers.ValidationError(
-                'Cannot enable import_items if reimbursable expense object and corporate credit card expense object is not bill'
-            )
-
         return attrs
 
     class Meta:
