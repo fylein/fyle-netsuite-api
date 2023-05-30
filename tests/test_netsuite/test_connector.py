@@ -211,20 +211,46 @@ def test_sync_accounts(mocker, db):
 
 @pytest.mark.django_db()
 def test_sync_items(mocker, db):
-    mocker.patch(
-        'netsuitesdk.api.items.Items.get_all_generator',
-        return_value=data['get_all_items']    
-    )
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
-    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
+    with mock.patch('netsuitesdk.api.items.Items.get_all_generator') as mock_call:
+        # here we have the import_items set to false , So none of the destination attributes should be active
+        configuration = Configuration.objects.get(workspace_id=1)
+        configuration.import_items = False
+        configuration.save()
 
-    items_count = DestinationAttribute.objects.filter(attribute_type='ACCOUNT',display_name='Item', workspace_id=1).count()
-    assert items_count == 0
+        mock_call.return_value = data['get_all_items']
 
-    netsuite_connection.sync_items()
+        netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+        netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
-    new_items_count = DestinationAttribute.objects.filter(attribute_type='ACCOUNT',display_name='Item', workspace_id=1).count()
-    assert new_items_count == 3
+        items_count = DestinationAttribute.objects.filter(attribute_type='ACCOUNT',display_name='Item', workspace_id=1).count()
+        assert items_count == 0
+
+        netsuite_connection.sync_items()
+
+        new_items_count = DestinationAttribute.objects.filter(attribute_type='ACCOUNT',display_name='Item', workspace_id=1, active= True).count()
+        assert new_items_count == 0
+
+        # here we have the import_items set to true, So all the destination attributes will be set to state present in netsuite
+        configuration = Configuration.objects.get(workspace_id=1)
+        configuration.import_items = True
+        configuration.save()
+        mock_call.return_value = data['get_all_items']
+
+        netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+        netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
+
+        netsuite_connection.sync_items()
+
+        new_items_count = DestinationAttribute.objects.filter(attribute_type='ACCOUNT',display_name='Item', workspace_id=1, active= True).count()
+        assert new_items_count == 3
+
+        mock_call.return_value = data['get_all_items_with_inactive_values']
+
+        netsuite_connection.sync_items()
+
+        new_items_count = DestinationAttribute.objects.filter(attribute_type='ACCOUNT',display_name='Item', workspace_id=1, active= True).count()
+        assert new_items_count == 2
+
 
 @pytest.mark.django_db()
 def test_sync_expense_categories(mocker, db):
