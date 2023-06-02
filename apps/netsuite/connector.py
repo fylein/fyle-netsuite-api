@@ -1033,7 +1033,7 @@ class NetSuiteConnector:
                     'scriptId': 'custcolfyle_expense_url',
                     'type': 'String',
                     'value': '{}/app/main/#/enterprise/view_expense/{}?org_id={}'.format(
-                        'https://staging1.fyle.tech',
+                        settings.FYLE_EXPENSE_URL,
                         expense.expense_id,
                         org_id
                     )
