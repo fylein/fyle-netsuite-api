@@ -17,6 +17,66 @@ from fyle.platform.exceptions import WrongParamsError
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
+def test_disable_category_for_items_mapping(db ,mocker):
+    workspace_id = 49
+    configuration = Configuration.objects.filter(workspace_id=workspace_id).first()
+    configuration.import_items = False
+    configuration.save()
+
+    # mocking all the sdk calls
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.Categories.sync',
+        return_value=[]
+    )
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.Categories.post_bulk',
+        return_value=[]
+    )
+    mocker.patch(
+        'netsuitesdk.api.expense_categories.ExpenseCategory.get_all_generator',
+        return_value=[]
+    )
+
+    mocker.patch(
+        'netsuitesdk.api.accounts.Accounts.get_all_generator',
+        return_value=[] 
+    )
+
+    mocker.patch(
+        'netsuitesdk.api.items.Items.get_all_generator',
+        return_value=[]
+    )
+
+    # adding test data to the database
+    destination_attribute = DestinationAttribute.objects.create(
+        attribute_type='ACCOUNT',
+        display_name='Item',
+        value='Concrete',
+        destination_id=3,
+        workspace_id=workspace_id,
+        active=False
+    )
+    expense_attribute = ExpenseAttribute.objects.create(
+        attribute_type='CATEGORY',
+        display_name='Category',
+        value='Concrete',
+        source_id='253737253737',
+        workspace_id=workspace_id,
+        active=True
+    )
+    CategoryMapping.objects.create(
+        destination_account_id = destination_attribute.id,
+        source_category_id = expense_attribute.id,
+        workspace_id=workspace_id
+    )
+
+    disable_category_for_items_mapping(configuration)
+
+    # Querying the database to check if the mapping is disabled
+    expense_attribute = ExpenseAttribute.objects.get(id=expense_attribute.id)
+
+    assert expense_attribute.active == False
+
 
 def test_remove_duplicates(db):
 
