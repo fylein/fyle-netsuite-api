@@ -11,12 +11,12 @@ from netsuitesdk import NetSuiteRequestError
 from fyle.platform.exceptions import InternalServerError
 from apps.fyle.models import ExpenseGroup, Reimbursement, Expense
 from apps.netsuite.connector import NetSuiteConnector
-from apps.netsuite.models import CreditCardCharge, ExpenseReport, Bill, JournalEntry
+from apps.netsuite.models import CreditCardCharge, ExpenseReport, Bill, JournalEntry, BillLineitem, JournalEntryLineItem, ExpenseReportLineItem
 from apps.workspaces.models import Configuration, NetSuiteCredentials, FyleCredential
 from apps.tasks.models import TaskLog
 from apps.netsuite.tasks import __validate_general_mapping, __validate_subsidiary_mapping, check_netsuite_object_status, create_credit_card_charge, create_journal_entry, create_or_update_employee_mapping, create_vendor_payment, get_all_internal_ids, \
      get_or_create_credit_card_vendor, create_bill, create_expense_report, load_attachments, __handle_netsuite_connection_error, process_reimbursements, process_vendor_payment, schedule_bills_creation, schedule_credit_card_charge_creation, schedule_expense_reports_creation, schedule_journal_entry_creation, schedule_netsuite_objects_status_sync, schedule_reimbursements_sync, schedule_vendor_payment_creation, \
-        __validate_tax_group_mapping, check_expenses_reimbursement_status, __validate_expense_group
+        __validate_tax_group_mapping, check_expenses_reimbursement_status, __validate_expense_group, upload_attachments_and_update_export
 from apps.mappings.models import GeneralMapping, SubsidiaryMapping
 from fyle_accounting_mappings.models import DestinationAttribute, EmployeeMapping, CategoryMapping, ExpenseAttribute, Mapping
 from .fixtures import data
@@ -1446,3 +1446,143 @@ def test_schedule_journal_entry_creation(db, mocker):
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
     assert task_log.type == 'CREATING_JOURNAL_ENTRY'
+
+@pytest.mark.django_db()
+def test_upload_attachments_and_update_export(mocker, db):
+    # adding file id to expense
+    expense = Expense.objects.filter(id=1).first()
+    expense.file_ids = ['fiJjDdr67nl3']
+    expense.save()
+
+    expense_group = ExpenseGroup.objects.filter(id=1).first()
+    expenses = Expense.objects.filter(id=1)
+
+    task_log = TaskLog.objects.filter(workspace_id=1).first()
+    task_log.type = 'CREATING_BILL'
+    task_log.status = 'COMPLETE'
+    task_log.expense_group = expense_group
+    task_log.save()
+    fyle_credentials = FyleCredential.objects.get(workspace_id=1)
+
+    configuration = Configuration.objects.filter(workspace_id=1).first()
+
+    bill_object = Bill.create_bill(expense_group)
+
+    BillLineitem.create_bill_lineitems(expense_group,configuration)
+
+    task_log.bill_id = bill_object.id
+    task_log.save()
+
+    # mocking file upload
+    mocker.patch(
+        'netsuitesdk.api.files.Files.post',
+        return_value={'url': 'https://aaa.bbb.cc/x232sds'}
+    )
+    mocker.patch(
+        'netsuitesdk.api.files.Files.get',
+        return_value={'url': 'https://aaa.bbb.cc/x232sds'}
+    )
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.Files.bulk_generate_file_urls',
+        return_value=[{
+            "id": "sdfd2391",
+            "name": "uber_expenses_vmrpw.pdf",
+            "content_type": "application/pdf",
+            "download_url": base64.b64encode("https://aaa.bbb.cc/x232sds".encode("utf-8")),
+            "upload_url": "https://aaa.bbb.cc/x232sds"
+        }],
+    )
+
+    # mocking bill creation with the file being present
+    mocker.patch(
+        'netsuitesdk.api.vendor_bills.VendorBills.post',
+        return_value=data['creation_response']
+    )
+    mocker.patch(
+        'netsuitesdk.api.vendors.Vendors.search',
+        return_value={}
+    )
+
+    # asserting if the file is not present
+    lineitem = BillLineitem.objects.get(expense_id=1)
+    assert lineitem.netsuite_receipt_url == None
+
+
+
+    upload_attachments_and_update_export(expenses, task_log, fyle_credentials, 1)
+
+    # asserting if the file is present
+    lineitem = BillLineitem.objects.get(expense_id=1)
+    assert lineitem.netsuite_receipt_url == 'https://aaa.bbb.cc/x232sds'
+
+
+    # mocking journal entry creation with the file being present
+    mocker.patch(
+        'netsuitesdk.api.journal_entries.JournalEntries.post',
+        return_value=data['creation_response']
+    )
+    mocker.patch(
+        'apps.netsuite.tasks.load_attachments',
+        return_value='https://aaa.bbb.cc/x232sds'
+    )
+
+
+    task_log.type = 'CREATING_JOURNAL_ENTRY'
+    task_log.save()
+
+    configuration.reimbursable_expenses_object = 'JOURNAL ENTRY'
+    configuration.corporate_credit_card_expenses_object = 'JOURNAL ENTRY'
+    configuration.save()
+
+    je_object = JournalEntry.create_journal_entry(expense_group)
+
+    JournalEntryLineItem.create_journal_entry_lineitems(expense_group,configuration)
+
+    task_log.journal_entry_id = je_object.id
+    task_log.save()
+
+    # asserting if the file is not present
+    lineitem = JournalEntryLineItem.objects.get(expense_id=1)
+    assert lineitem.netsuite_receipt_url == None
+
+    upload_attachments_and_update_export(expenses, task_log, fyle_credentials, 1)
+
+    # asserting if the file is present
+    lineitem = JournalEntryLineItem.objects.get(expense_id=1)
+    assert lineitem.netsuite_receipt_url == 'https://aaa.bbb.cc/x232sds'
+
+
+    #mocking expense report creation with the file being present
+    mocker.patch(
+        'netsuitesdk.api.expense_reports.ExpenseReports.post',
+        return_value=data['creation_response']
+    )
+    mocker.patch(
+        'apps.netsuite.tasks.load_attachments',
+        return_value='https://aaa.bbb.cc/x232sds'
+    )
+
+
+    task_log.type = 'CREATING_EXPENSE_REPORT'
+    task_log.save()
+
+    configuration.reimbursable_expenses_object = 'EXPENSE REPORT'
+    configuration.corporate_credit_card_expenses_object = 'EXPENSE REPORT'
+    configuration.save()
+
+    expense_report_object = ExpenseReport.create_expense_report(expense_group)
+
+    ExpenseReportLineItem.create_expense_report_lineitems(expense_group,configuration)
+
+    task_log.expense_report_id = expense_report_object.id
+    task_log.save()
+
+    # asserting if the file is not present
+    lineitem = ExpenseReportLineItem.objects.get(expense_id=1)
+    assert lineitem.netsuite_receipt_url == None
+
+    upload_attachments_and_update_export(expenses, task_log, fyle_credentials, 1)
+
+    # asserting if the file is present
+    lineitem = ExpenseReportLineItem.objects.get(expense_id=1)
+    assert lineitem.netsuite_receipt_url == 'https://aaa.bbb.cc/x232sds'
