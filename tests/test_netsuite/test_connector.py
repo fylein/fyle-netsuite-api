@@ -27,17 +27,38 @@ def test_construct_expense_report(create_expense_report):
     assert expense_report == data['expense_report_payload'][0]
 
 
-def test_construct_bill(create_bill):
+def test_construct_bill_account_based(create_bill_account_based):
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
-    bill, bill_lineitem = create_bill
+    bill, bill_lineitem = create_bill_account_based
     bill_object = netsuite_connection._NetSuiteConnector__construct_bill(bill, bill_lineitem)
 
-    data['bill_payload'][0]['tranDate'] = bill_object['tranDate']
-    data['bill_payload'][0]['tranId'] = bill_object['tranId']
+    data['bill_payload_account_based'][0]['tranDate'] = bill_object['tranDate']
+    data['bill_payload_account_based'][0]['tranId'] = bill_object['tranId']
 
-    assert bill_object == data['bill_payload'][0]
+    assert data['bill_payload_account_based'][0]['itemList'] == None
+    assert dict_compare_keys(bill_object, data['bill_payload_account_based'][0]) == [], 'construct bill_payload entry api return diffs in keys'
+
+def test_construct_bill_item_based(create_bill_item_based):
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
+
+    bill, bill_lineitem = create_bill_item_based
+    bill_object = netsuite_connection._NetSuiteConnector__construct_bill(bill, bill_lineitem)
+
+    assert data['bill_payload_item_based']['expenseList'] == None
+    assert dict_compare_keys(bill_object, data['bill_payload_item_based']) == [], 'construct bill_payload entry api return diffs in keys'
+
+
+def test_construct_bill_item_and_account_based(create_bill_item_and_account_based):
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
+
+    bill, bill_lineitem = create_bill_item_and_account_based
+    bill_object = netsuite_connection._NetSuiteConnector__construct_bill(bill, bill_lineitem)
+
+    assert dict_compare_keys(bill_object, data['bill_payload_item_and_account_based']) == [], 'construct bill_payload entry api return diffs in keys'
 
 
 def test_construct_journal_entry(create_journal_entry):
@@ -187,6 +208,49 @@ def test_sync_accounts(mocker, db):
 
     new_account_counts = DestinationAttribute.objects.filter(attribute_type='ACCOUNT', workspace_id=1).count()
     assert new_account_counts == 124
+
+@pytest.mark.django_db()
+def test_sync_items(mocker, db):
+    with mock.patch('netsuitesdk.api.items.Items.get_all_generator') as mock_call:
+        # here we have the import_items set to false , So none of the destination attributes should be active
+        configuration = Configuration.objects.get(workspace_id=1)
+        configuration.import_items = False
+        configuration.save()
+
+        mock_call.return_value = data['get_all_items']
+
+        netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+        netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
+
+        items_count = DestinationAttribute.objects.filter(attribute_type='ACCOUNT',display_name='Item', workspace_id=1).count()
+        assert items_count == 0
+
+        netsuite_connection.sync_items()
+
+        new_items_count = DestinationAttribute.objects.filter(attribute_type='ACCOUNT',display_name='Item', workspace_id=1, active= True).count()
+        assert new_items_count == 0
+
+        # here we have the import_items set to true, So all the destination attributes will be set to state present in netsuite
+        configuration = Configuration.objects.get(workspace_id=1)
+        configuration.import_items = True
+        configuration.save()
+        mock_call.return_value = data['get_all_items']
+
+        netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+        netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
+
+        netsuite_connection.sync_items()
+
+        new_items_count = DestinationAttribute.objects.filter(attribute_type='ACCOUNT',display_name='Item', workspace_id=1, active= True).count()
+        assert new_items_count == 3
+
+        mock_call.return_value = data['get_all_items_with_inactive_values']
+
+        netsuite_connection.sync_items()
+
+        new_items_count = DestinationAttribute.objects.filter(attribute_type='ACCOUNT',display_name='Item', workspace_id=1, active= True).count()
+        assert new_items_count == 2
+
 
 @pytest.mark.django_db()
 def test_sync_expense_categories(mocker, db):
@@ -509,13 +573,13 @@ def test_post_credit_card_charge_bad_ns_response(db, mocker, create_credit_card_
         logger.info('accounting period error')
 
 
-def test_post_bill_exception(db, mocker, create_bill):
+def test_post_bill_exception(db, mocker, create_bill_account_based):
     workspace_id = 1
 
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
 
-    bill_transaction, bill_transaction_lineitems = create_bill
+    bill_transaction, bill_transaction_lineitems = create_bill_account_based
 
     workspace_general_setting = Configuration.objects.get(workspace_id=workspace_id)
     workspace_general_setting.change_accounting_period = True

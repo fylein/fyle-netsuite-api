@@ -76,7 +76,8 @@ class ConfigurationSerializer(serializers.ModelSerializer):
                 'auto_create_destination_entity': validated_data['auto_create_destination_entity'],
                 'map_fyle_cards_netsuite_account': validated_data['map_fyle_cards_netsuite_account'],
                 'import_vendors_as_merchants': validated_data['import_vendors_as_merchants'],
-                'import_netsuite_employees': validated_data['import_netsuite_employees']
+                'import_netsuite_employees': validated_data['import_netsuite_employees'],
+                'import_items': validated_data['import_items'],
             }
         )
 
@@ -125,7 +126,6 @@ class ConfigurationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Cannot enable sync fyle to netsuite if reimbursable expense object is journal entry'
             )
-
         return attrs
 
     class Meta:

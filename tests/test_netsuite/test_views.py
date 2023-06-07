@@ -3,6 +3,7 @@ import pytest
 from unittest import mock
 from django.urls import reverse
 from apps.workspaces.models import NetSuiteCredentials, Configuration
+from fyle_accounting_mappings.models import MappingSetting
 from .fixtures import data
 
 
@@ -194,6 +195,31 @@ def test_refresh_netsuite_dimensions(api_client, access_token, add_netsuite_cred
          'workspace_id': 2
       }
    )
+
+   MappingSetting.objects.create(
+      source_field = 'PROJECT',
+      destination_field='PROJECT',
+      import_to_fyle = True,
+      workspace_id=2,
+      is_custom= False
+   )
+
+   MappingSetting.objects.create(
+      source_field = 'COST_CENTER',
+      destination_field='CLASS',
+      import_to_fyle = True,
+      workspace_id=2,
+      is_custom= False
+   )
+
+   MappingSetting.objects.create(
+      source_field = 'KLASS',
+      destination_field='DEPARTMENT',
+      import_to_fyle = False,
+      workspace_id=2,
+      is_custom= True
+   )
+
 
    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
    

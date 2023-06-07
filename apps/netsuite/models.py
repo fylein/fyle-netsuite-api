@@ -284,6 +284,26 @@ def get_report_or_expense_number(expense_group: ExpenseGroup) -> str:
                 return expense.expense_number 
             else:
                 return expense.claim_number
+            
+def get_category_mapping_and_detail_type(configuration: Configuration, category: str, workspace_id: int):
+    # get the item-mapping if import_items is true
+    if configuration.import_items:
+        netsuite_item = CategoryMapping.objects.filter(
+            destination_account__display_name = 'Item',
+            source_category__value=category,
+            workspace_id=workspace_id
+        ).first()
+        if netsuite_item:
+            return netsuite_item, 'ItemBasedExpenseLineDetail'
+
+    # else get the account-mapping
+    netsuite_account = CategoryMapping.objects.filter(
+        destination_account__display_name = 'Account',
+        source_category__value=category,
+        workspace_id=workspace_id
+    ).first()
+
+    return netsuite_account, 'AccountBasedExpenseLineDetail'
 
 class CustomSegment(models.Model):
     """
@@ -379,7 +399,7 @@ class BillLineitem(models.Model):
     id = models.AutoField(primary_key=True)
     bill = models.ForeignKey(Bill, on_delete=models.PROTECT, help_text='Reference to bill')
     expense = models.OneToOneField(Expense, on_delete=models.PROTECT, help_text='Reference to Expense')
-    account_id = models.CharField(max_length=255, help_text='NetSuite account id')
+    account_id = models.CharField(max_length=255, help_text='NetSuite account id', null=True)
     location_id = models.CharField(max_length=255, help_text='NetSuite location id', null=True)
     department_id = models.CharField(max_length=255, help_text='NetSuite department id', null=True)
     class_id = models.CharField(max_length=255, help_text='NetSuite Class id', null=True)
@@ -391,6 +411,8 @@ class BillLineitem(models.Model):
     memo = models.TextField(help_text='NetSuite bill lineitem memo', null=True)
     netsuite_custom_segments = JSONField(null=True, help_text='NetSuite Custom Segments')
     netsuite_receipt_url = models.TextField(null=True, help_text='NetSuite Receipt URL')
+    item_id = models.CharField(max_length=255, help_text='Netsuite item id', null=True)
+    detail_type = models.CharField(max_length=255, help_text='Detail type for the lineitem', default='AccountBasedExpenseLineDetail')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
@@ -415,10 +437,7 @@ class BillLineitem(models.Model):
             category = lineitem.category if (lineitem.category == lineitem.sub_category or lineitem.sub_category == None) else '{0} / {1}'.format(
                 lineitem.category, lineitem.sub_category)
 
-            account = CategoryMapping.objects.filter(
-                source_category__value=category,
-                workspace_id=expense_group.workspace_id
-            ).first()
+            account, detail_type = get_category_mapping_and_detail_type(configuration, category, configuration.workspace_id)
 
             class_id = None
             if expense_group.fund_source == 'CCC' and general_mappings.use_employee_class:
@@ -475,7 +494,10 @@ class BillLineitem(models.Model):
                 expense_id=lineitem.id,
                 defaults={
                     'account_id': account.destination_account.destination_id \
-                        if account and account.destination_account else None,
+                        if account and detail_type == 'AccountBasedExpenseLineDetail' else None,
+                    'item_id': account.destination_account.destination_id \
+                        if account and detail_type == 'ItemBasedExpenseLineDetail' else None,
+                    'detail_type': detail_type,
                     'location_id': location_id,
                     'class_id': class_id,
                     'department_id': department_id,

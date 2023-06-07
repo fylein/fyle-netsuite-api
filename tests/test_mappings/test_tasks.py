@@ -17,6 +17,66 @@ from fyle.platform.exceptions import WrongParamsError
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
+def test_disable_category_for_items_mapping(db ,mocker):
+    workspace_id = 49
+    configuration = Configuration.objects.filter(workspace_id=workspace_id).first()
+    configuration.import_items = False
+    configuration.save()
+
+    # mocking all the sdk calls
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.Categories.sync',
+        return_value=[]
+    )
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.Categories.post_bulk',
+        return_value=[]
+    )
+    mocker.patch(
+        'netsuitesdk.api.expense_categories.ExpenseCategory.get_all_generator',
+        return_value=[]
+    )
+
+    mocker.patch(
+        'netsuitesdk.api.accounts.Accounts.get_all_generator',
+        return_value=[] 
+    )
+
+    mocker.patch(
+        'netsuitesdk.api.items.Items.get_all_generator',
+        return_value=[]
+    )
+
+    # adding test data to the database
+    destination_attribute = DestinationAttribute.objects.create(
+        attribute_type='ACCOUNT',
+        display_name='Item',
+        value='Concrete',
+        destination_id=3,
+        workspace_id=workspace_id,
+        active=False
+    )
+    expense_attribute = ExpenseAttribute.objects.create(
+        attribute_type='CATEGORY',
+        display_name='Category',
+        value='Concrete',
+        source_id='253737253737',
+        workspace_id=workspace_id,
+        active=True
+    )
+    CategoryMapping.objects.create(
+        destination_account_id = destination_attribute.id,
+        source_category_id = expense_attribute.id,
+        workspace_id=workspace_id
+    )
+
+    disable_category_for_items_mapping(configuration)
+
+    # Querying the database to check if the mapping is disabled
+    expense_attribute = ExpenseAttribute.objects.get(id=expense_attribute.id)
+
+    assert expense_attribute.active == False
+
 
 def test_remove_duplicates(db):
 
@@ -169,17 +229,27 @@ def test_sync_expense_categories_and_accounts(mocker, db):
     
     existing_accounts = DestinationAttribute.objects.filter(
         attribute_type='ACCOUNT', workspace_id=1).count()
+    
+    configuration = Configuration.objects.get(workspace_id=1)
+    configuration.expense_report_expense_category = 'EXPENSE REPORT'
+    configuration.corporate_credit_card_expenses_object = 'EXPENSE REPORT'
+    configuration.import_categories = True
+    configuration.save()
 
     assert existing_expense_category == 33
     assert existing_accounts == 123
 
-    sync_expense_categories_and_accounts('EXPENSE REPORT', 'EXPENSE REPORT', netsuite_connection)
+    sync_expense_categories_and_accounts(configuration, netsuite_connection)
 
     expense_category_count = DestinationAttribute.objects.filter(
         attribute_type='EXPENSE_CATEGORY', workspace_id=1).count()
     assert expense_category_count == 34
 
-    sync_expense_categories_and_accounts('BILL', 'JOURNAL ENTRY', netsuite_connection)
+    configuration.expense_report_expense_category = 'BILL'
+    configuration.corporate_credit_card_expenses_object = 'JOURNAL ENTRY'
+    configuration.save()
+
+    sync_expense_categories_and_accounts(configuration, netsuite_connection)
 
     count_of_accounts = DestinationAttribute.objects.filter(
         attribute_type='ACCOUNT', workspace_id=1).count()
@@ -204,7 +274,16 @@ def test_upload_categories_to_fyle(mocker, db):
         return_value=netsuite_data['get_all_accounts']    
     )
 
-    netsuite_attributes = upload_categories_to_fyle(49, 'EXPENSE REPORT', 'BILL')
+    fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=49)
+    platform = PlatformConnector(fyle_credentials=fyle_credentials)
+
+    configuration = Configuration.objects.filter(workspace_id=49).first()
+    configuration.reimbursable_expenses_object = 'EXPENSE REPORT'
+    configuration.corporate_credit_card_expenses_object = 'BILL'
+    configuration.import_categories = True
+    configuration.save()
+
+    netsuite_attributes = upload_categories_to_fyle(49, configuration, platform)
 
     expense_category_count = DestinationAttribute.objects.filter(
         attribute_type='EXPENSE_CATEGORY', workspace_id=49).count()
@@ -218,7 +297,11 @@ def test_upload_categories_to_fyle(mocker, db):
     
     assert count_of_accounts == 137
 
-    netsuite_attributes = upload_categories_to_fyle(49, 'BILL', 'BILL')
+    configuration.reimbursable_expenses_object = 'BILL'
+    configuration.corporate_credit_card_expenses_object = 'BILL'
+    configuration.save()
+
+    netsuite_attributes = upload_categories_to_fyle(49, configuration, platform)
     
     assert len(netsuite_attributes) == 137
 
@@ -241,7 +324,16 @@ def test_filter_unmapped_destinations(db, mocker):
         return_value=netsuite_data['get_all_accounts']    
     )
 
-    netsuite_attributes = upload_categories_to_fyle(workspace_id=1, reimbursable_expenses_object='EXPENSE REPORT', corporate_credit_card_expenses_object='BILL')
+    fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=1)
+    platform = PlatformConnector(fyle_credentials=fyle_credentials)
+
+    configuration = Configuration.objects.filter(workspace_id=1).first()
+    configuration.reimbursable_expenses_object = 'EXPENSE REPORT'
+    configuration.corporate_credit_card_expenses_object = 'BILL'
+    configuration.import_categories = True
+    configuration.save()
+
+    netsuite_attributes = upload_categories_to_fyle(workspace_id=1,configuration=configuration, platform=platform)
 
     destination_attributes = filter_unmapped_destinations('EXPENSE_CATEGORY', netsuite_attributes)
     assert len(destination_attributes) == 33
@@ -277,9 +369,19 @@ def test_auto_create_category_mappings(db, mocker):
     )
 
     mocker.patch(
+        'netsuitesdk.api.items.Items.get_all_generator',
+        return_value=netsuite_data['get_all_items']  
+    )
+
+    mocker.patch(
         'fyle.platform.apis.v1beta.admin.Categories.list_all',
         return_value=fyle_data['get_all_categories']
     )
+
+    configuration = Configuration.objects.filter(workspace_id=1).first()
+    configuration.import_categories = True
+    configuration.import_items = True
+    configuration.save()
 
     response = auto_create_category_mappings(workspace_id=1)
     assert response == None
@@ -299,6 +401,10 @@ def test_auto_create_category_mappings(db, mocker):
 
     destination_attribute.active = False
     destination_attribute.save()
+
+    configuration = Configuration.objects.filter(workspace_id=49).first()
+    configuration.import_categories = True
+    configuration.save()
 
     response = auto_create_category_mappings(workspace_id=49)
 
