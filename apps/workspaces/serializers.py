@@ -78,6 +78,7 @@ class ConfigurationSerializer(serializers.ModelSerializer):
                 'import_vendors_as_merchants': validated_data['import_vendors_as_merchants'],
                 'import_netsuite_employees': validated_data['import_netsuite_employees'],
                 'import_items': validated_data['import_items'],
+                'name_in_journal_entry' : validated_data.get('name_in_journal_entry')
             }
         )
 
