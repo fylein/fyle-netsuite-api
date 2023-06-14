@@ -159,6 +159,7 @@ class Configuration(models.Model):
     is_simplify_report_closure_enabled = models.BooleanField(default=True, help_text='Simplify report closure is enbaled')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
+    name_in_journal_entry = models.CharField(max_length=100,help_text='Name in jounral entry for ccc expense only', default="MERCHANT")
 
     class Meta:
         db_table = 'configurations'
