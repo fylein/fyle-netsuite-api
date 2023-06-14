@@ -1078,13 +1078,16 @@ class JournalEntryLineItem(models.Model):
                 elif employee_field_mapping == 'EMPLOYEE':
                     debit_account_id = general_mappings.reimbursable_account_id
             elif expense_group.fund_source == 'CCC':
-                vendor = None
-                merchant = lineitem.vendor if lineitem.vendor else ''
-                if merchant:
-                    vendor = DestinationAttribute.objects.filter(
-                        value__iexact=merchant, attribute_type='VENDOR', workspace_id=expense_group.workspace_id
-                    ).first()
-                entity_id = vendor.destination_id if vendor else general_mappings.default_ccc_vendor_id
+                if configuration.name_in_journal_entry == 'MERCHANT':
+                    vendor = None
+                    merchant = lineitem.vendor if lineitem.vendor else ''
+                    if merchant:
+                        vendor = DestinationAttribute.objects.filter(
+                            value__iexact=merchant, attribute_type='VENDOR', workspace_id=expense_group.workspace_id
+                        ).first()
+                    entity_id = vendor.destination_id if vendor else general_mappings.default_ccc_vendor_id
+                else:
+                    entity_id = employee_mapping.destination_employee.destination_id
                 debit_account_id = get_ccc_account_id(configuration, general_mappings, lineitem, description)
 
             account = CategoryMapping.objects.filter(
