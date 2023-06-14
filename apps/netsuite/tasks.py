@@ -982,7 +982,7 @@ def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Conf
         employee = sync_inactive_employee(expense_group)
 
     bulk_errors = []
-    if expense_group.fund_source == 'PERSONAL' or \
+    if expense_group.fund_source == 'PERSONAL' or configuration.name_in_journal_entry == 'EMPLOYEE' or \
             (expense_group.fund_source == 'CCC' and configuration.corporate_credit_card_expenses_object == 'EXPENSE REPORT'):
         try:
             entity = EmployeeMapping.objects.get(
@@ -990,7 +990,8 @@ def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Conf
                 workspace_id=expense_group.workspace_id
             )
 
-            if configuration.employee_field_mapping == 'EMPLOYEE':
+
+            if configuration.employee_field_mapping == 'EMPLOYEE' or configuration.name_in_journal_entry == 'EMPLOYEE':
                 entity = entity.destination_employee
             else:
                 entity = entity.destination_vendor
