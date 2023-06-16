@@ -109,6 +109,10 @@ AUTO_MAP_EMPLOYEE_CHOICES = (
     ('EMPLOYEE_CODE', 'EMPLOYEE_CODE'),
 )
 
+NAME_IN_JOURNAL_ENTRY = (
+    ('MERCHANT', 'MERCHANT'),
+    ('EMPLOYEE', 'EMPLOYEE')
+)
 
 def get_default_memo_fields():
     return ['employee_email', 'category', 'merchant', 'spent_on', 'report_number', 'purpose']
@@ -159,7 +163,7 @@ class Configuration(models.Model):
     is_simplify_report_closure_enabled = models.BooleanField(default=True, help_text='Simplify report closure is enbaled')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
-    name_in_journal_entry = models.CharField(max_length=100,help_text='Name in jounral entry for ccc expense only', default="MERCHANT")
+    name_in_journal_entry = models.CharField(max_length=100, help_text='Name in jounral entry for ccc expense only', default='MERCHANT',choices=NAME_IN_JOURNAL_ENTRY)
 
     class Meta:
         db_table = 'configurations'

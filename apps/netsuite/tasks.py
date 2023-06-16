@@ -991,7 +991,7 @@ def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Conf
             )
 
 
-            if configuration.employee_field_mapping == 'EMPLOYEE' or configuration.name_in_journal_entry == 'EMPLOYEE':
+            if configuration.employee_field_mapping == 'EMPLOYEE':
                 entity = entity.destination_employee
             else:
                 entity = entity.destination_vendor

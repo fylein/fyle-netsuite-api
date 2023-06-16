@@ -1087,7 +1087,8 @@ class JournalEntryLineItem(models.Model):
                         ).first()
                     entity_id = vendor.destination_id if vendor else general_mappings.default_ccc_vendor_id
                 else:
-                    entity_id = employee_mapping.destination_employee.destination_id
+                    entity_id = employee_mapping.destination_employee.destination_id if employee_field_mapping == 'EMPLOYEE' \
+                    else employee_mapping.destination_vendor.destination_id
                 debit_account_id = get_ccc_account_id(configuration, general_mappings, lineitem, description)
 
             account = CategoryMapping.objects.filter(
