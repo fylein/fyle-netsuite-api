@@ -874,7 +874,7 @@ def __validate_general_mapping(expense_group: ExpenseGroup, configuration: Confi
         
         if not (general_mapping.default_ccc_vendor_id or general_mapping.default_ccc_vendor_name) and \
             expense_group.fund_source == 'CCC' and \
-                configuration.corporate_credit_card_expenses_object == 'JOURNAL ENTRY':
+                configuration.corporate_credit_card_expenses_object == 'JOURNAL ENTRY' and configuration.name_in_journal_entry == 'MERCHANT' :
             bulk_errors.append({
                 'row': None,
                 'expense_group_id': expense_group.id,
