@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.3 (Debian 15.3-1.pgdg120+1)
+-- Dumped from database version 15.3 (Debian 15.3-1.pgdg110+1)
 -- Dumped by pg_dump version 15.3 (Debian 15.3-1.pgdg100+1)
 
 SET statement_timeout = 0;
@@ -315,8 +315,7 @@ CREATE TABLE public.configurations (
     import_vendors_as_merchants boolean NOT NULL,
     import_netsuite_employees boolean NOT NULL,
     is_simplify_report_closure_enabled boolean NOT NULL,
-    import_items boolean NOT NULL,
-    name_in_journal_entry character varying(100) NOT NULL
+    import_items boolean NOT NULL
 );
 
 
@@ -2449,10 +2448,10 @@ COPY public.category_mappings (id, created_at, updated_at, destination_account_i
 -- Data for Name: configurations; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.configurations (id, reimbursable_expenses_object, corporate_credit_card_expenses_object, created_at, updated_at, workspace_id, sync_fyle_to_netsuite_payments, sync_netsuite_to_fyle_payments, import_projects, auto_map_employees, import_categories, auto_create_destination_entity, auto_create_merchants, employee_field_mapping, import_tax_items, change_accounting_period, memo_structure, map_fyle_cards_netsuite_account, skip_cards_mapping, import_vendors_as_merchants, import_netsuite_employees, is_simplify_report_closure_enabled, import_items, name_in_journal_entry) FROM stdin;
-1	EXPENSE REPORT	BILL	2021-11-15 08:56:07.193743+00	2021-11-15 08:56:07.193795+00	1	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f	MERCHANT
-2	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-11-16 04:18:15.836271+00	2021-11-16 04:20:09.969589+00	2	f	f	f	\N	f	f	f	EMPLOYEE	t	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f	MERCHANT
-3	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-12-03 11:04:00.194287+00	2021-12-03 11:04:00.1943+00	49	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f	MERCHANT
+COPY public.configurations (id, reimbursable_expenses_object, corporate_credit_card_expenses_object, created_at, updated_at, workspace_id, sync_fyle_to_netsuite_payments, sync_netsuite_to_fyle_payments, import_projects, auto_map_employees, import_categories, auto_create_destination_entity, auto_create_merchants, employee_field_mapping, import_tax_items, change_accounting_period, memo_structure, map_fyle_cards_netsuite_account, skip_cards_mapping, import_vendors_as_merchants, import_netsuite_employees, is_simplify_report_closure_enabled, import_items) FROM stdin;
+1	EXPENSE REPORT	BILL	2021-11-15 08:56:07.193743+00	2021-11-15 08:56:07.193795+00	1	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f
+2	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-11-16 04:18:15.836271+00	2021-11-16 04:20:09.969589+00	2	f	f	f	\N	f	f	f	EMPLOYEE	t	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f
+3	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-12-03 11:04:00.194287+00	2021-12-03 11:04:00.1943+00	49	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f
 \.
 
 
@@ -7699,8 +7698,6 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 157	fyle_accounting_mappings	0023_auto_20230523_1047	2023-05-29 07:05:46.20766+00
 158	netsuite	0021_auto_20230523_1047	2023-05-29 07:05:46.232192+00
 159	workspaces	0031_configuration_import_items	2023-05-29 07:05:46.247343+00
-160	fyle	0025_auto_20230608_0837	2023-06-15 13:20:07.816654+00
-161	workspaces	0032_configuration_name_in_journal_entry	2023-06-15 13:20:08.00105+00
 \.
 
 
@@ -11580,7 +11577,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 43, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 161, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 159, true);
 
 
 --

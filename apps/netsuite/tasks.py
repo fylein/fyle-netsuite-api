@@ -874,7 +874,7 @@ def __validate_general_mapping(expense_group: ExpenseGroup, configuration: Confi
         
         if not (general_mapping.default_ccc_vendor_id or general_mapping.default_ccc_vendor_name) and \
             expense_group.fund_source == 'CCC' and \
-                configuration.corporate_credit_card_expenses_object == 'JOURNAL ENTRY' and configuration.name_in_journal_entry == 'MERCHANT' :
+                configuration.corporate_credit_card_expenses_object == 'JOURNAL ENTRY':
             bulk_errors.append({
                 'row': None,
                 'expense_group_id': expense_group.id,
@@ -982,14 +982,13 @@ def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Conf
         employee = sync_inactive_employee(expense_group)
 
     bulk_errors = []
-    if expense_group.fund_source == 'PERSONAL' or configuration.name_in_journal_entry == 'EMPLOYEE' or \
+    if expense_group.fund_source == 'PERSONAL' or \
             (expense_group.fund_source == 'CCC' and configuration.corporate_credit_card_expenses_object == 'EXPENSE REPORT'):
         try:
             entity = EmployeeMapping.objects.get(
                 source_employee=employee,
                 workspace_id=expense_group.workspace_id
             )
-
 
             if configuration.employee_field_mapping == 'EMPLOYEE':
                 entity = entity.destination_employee
