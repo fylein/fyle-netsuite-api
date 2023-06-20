@@ -16,7 +16,14 @@ jobs:
       - uses: actions/checkout@v2
       - uses: satackey/action-docker-layer-caching@v0.0.11
         continue-on-error: true
-      - name: Install kustomize
+      - name: push to dockerhub
+        uses: fylein/docker-release-action@master
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_TOKEN }}
+          IMAGE_NAME: fyle_netsuite-api
+
+     - name: Install kustomize
         run: |
           curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
           sudo mv kustomize /usr/local/bin/
@@ -34,7 +41,7 @@ jobs:
         run: |
           NEW_TAG="v$(git rev-parse --short HEAD)"
           cd ${{ secrets.STAGING_DEPLOY_REPO }}/${{ secrets.EKS_CLUSTER_NAME }}/integrations
-          kustomize edit set image docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_integration_settings-app=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_integration_settings-app:$NEW_TAG
+          kustomize edit set image docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api:$NEW_TAG
 
       - name: Commit and push changes
         run: |
