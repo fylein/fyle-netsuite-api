@@ -221,14 +221,13 @@ class NetSuiteConnector:
             attributes = []
 
             destination_attributes = DestinationAttribute.objects.filter(workspace_id=self.workspace_id,
-                attribute_type='ACCOUNT', display_name='Item').values('destination_id', 'value', 'detail')
+                attribute_type='ACCOUNT', display_name='Item').values('destination_id', 'value')
             configuration = Configuration.objects.filter(workspace_id=self.workspace_id).first()
 
             disabled_fields_map = {}
             for destination_attribute in destination_attributes:
                 disabled_fields_map[destination_attribute['destination_id']] = {
-                    'value': destination_attribute['value'],
-                    'detail': destination_attribute['detail']
+                    'value': destination_attribute['value']
                 }
 
             for item in items:
@@ -238,7 +237,6 @@ class NetSuiteConnector:
                             'display_name': 'Item',
                             'value': item['itemId'],
                             'destination_id': item['internalId'],
-                            'detail': item['displayName'],
                             'active': configuration.import_items if configuration else False
                         })
                     # the category is active so remove it from the map
@@ -251,7 +249,6 @@ class NetSuiteConnector:
                         'display_name': 'Item',
                         'value': disabled_fields_map[destination_id]['value'],
                         'destination_id': destination_id,
-                        'detail': disabled_fields_map[destination_id]['detail'],
                         'active': False
                     })
 
