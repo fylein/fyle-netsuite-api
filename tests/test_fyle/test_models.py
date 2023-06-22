@@ -1,9 +1,13 @@
 import json
 from urllib import response
+from unittest import mock
+from django.urls import reverse
 import pytest
 from apps.fyle.models import Expense, ExpenseGroup, Reimbursement, get_default_expense_group_fields, get_default_expense_state, \
     ExpenseGroupSettings, _group_expenses, get_default_ccc_expense_state
 from apps.workspaces.models import Configuration, Workspace
+from apps.tasks.models import TaskLog
+from apps.fyle.tasks import create_expense_groups
 from .fixtures import data
 
 
@@ -104,7 +108,7 @@ def test_get_last_synced_at(db):
     assert reimbursement.settlement_id == 'setqi0eM6HUgZ'
     assert reimbursement.state == 'COMPLETE'
 
-def test_support_post_date_integrations(mocker, db, api_client, test_connection):
+def test_support_post_date_integrations(mocker, add_fyle_credentials, api_client, access_token):
     
     #Import assert
     task_log, _ = TaskLog.objects.update_or_create(
@@ -145,15 +149,15 @@ def test_support_post_date_integrations(mocker, db, api_client, test_connection)
       }
     )
 
-   api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
 
-   export_types = ['BILL', 'EXPENSE REPORT', 'JOURNAL ENTRY', 'CREDIT CARD CHARGE']
+    export_types = ['BILL', 'EXPENSE REPORT', 'JOURNAL ENTRY', 'CREDIT CARD CHARGE']
 
-   for export_type in export_types:
-      response = api_client.post(url, 
-            data={
-               'export_type': export_type
-            }
-      )
+    for export_type in export_types:
+        response = api_client.post(url, 
+                data={
+                'export_type': export_type
+                }
+        )
 
-      assert response.status_code == 200
+        assert response.status_code == 200
