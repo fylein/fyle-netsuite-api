@@ -1108,8 +1108,8 @@ def create_fyle_employee_payload(platform_connection: PlatformConnector, employe
                 })
                 approver_emails.extend(employee.detail['approver_emails'])
 
-    existing_employees = ExpenseAttribute.objects.filter(
-        workspace_id=employee.workspace_id, attribute_type='EMPLOYEE', value__in=employee_emails
+    existing_approver_emails = ExpenseAttribute.objects.filter(
+        workspace_id=employee.workspace_id, attribute_type='EMPLOYEE', value__in=approver_emails
     ).values_list('value', flat=True)
 
     # Remove from approvers who are not a part of the employee create list or already existing employees
@@ -1118,7 +1118,7 @@ def create_fyle_employee_payload(platform_connection: PlatformConnector, employe
             employee_approver['approver_emails']
         ).issubset(employee_emails) or set(
             employee_approver['approver_emails']
-        ).issubset(existing_employees),
+        ).issubset(existing_approver_emails),
         employee_approver_payload
     ))
 
