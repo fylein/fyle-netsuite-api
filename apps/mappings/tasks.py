@@ -1053,6 +1053,8 @@ def create_fyle_employee_payload(platform_connection: PlatformConnector, employe
     :return: Fyle Employee, Approver, Departments Payload
     """
     employee_payload: List[Dict] = []
+    employee_emails: List[str] = []
+    approver_emails: List[str] = []
     employee_approver_payload: List[Dict] = []
     department_payload: List[Dict] = []
 
@@ -1097,12 +1099,28 @@ def create_fyle_employee_payload(platform_connection: PlatformConnector, employe
                 update_create_employee['sub_department'] = employee.detail['department_name'] if employee.detail['department_name'] else ''
 
             employee_payload.append(update_create_employee)
+            employee_emails.append(employee.detail['email'])
 
             if employee.detail['approver_emails']:
                 employee_approver_payload.append({
                     'user_email': employee.detail['email'],
                     'approver_emails': employee.detail['approver_emails']
                 })
+                approver_emails.extend(employee.detail['approver_emails'])
+
+    existing_employees = ExpenseAttribute.objects.filter(
+        workspace_id=employee.workspace_id, attribute_type='EMPLOYEE', value__in=employee_emails
+    ).values_list('value', flat=True)
+
+    # Remove from approvers who are not a part of the employee create list or already existing employees
+    employee_approver_payload = list(filter(
+        lambda employee_approver: set(
+            employee_approver['approver_emails']
+        ).issubset(employee_emails) or set(
+            employee_approver['approver_emails']
+        ).issubset(existing_employees),
+        employee_approver_payload
+    ))
 
     return employee_payload, employee_approver_payload, department_payload
 
