@@ -1045,7 +1045,7 @@ def create_fyle_department_payload(department_name: str, parent_department: str,
     return departments_payload
 
 
-def create_fyle_employee_payload(platform_connection: PlatformConnector, employees: List[DestinationAttribute]):
+def create_fyle_employee_payload(platform_connection: PlatformConnector, employees: List[DestinationAttribute], workspace_id: int):
     """
     Create Fyle Employee, Approver, Departments Payload from NetSuite Objects
     :param platform_connection: Platform Connector
@@ -1109,7 +1109,7 @@ def create_fyle_employee_payload(platform_connection: PlatformConnector, employe
                 approver_emails.extend(employee.detail['approver_emails'])
 
     existing_approver_emails = ExpenseAttribute.objects.filter(
-        workspace_id=employee.workspace_id, attribute_type='EMPLOYEE', value__in=approver_emails
+        workspace_id=workspace_id, attribute_type='EMPLOYEE', value__in=approver_emails
     ).values_list('value', flat=True)
 
     # Remove from approvers who are not a part of the employee create list or already existing employees
@@ -1144,7 +1144,7 @@ def post_employees(platform_connection: PlatformConnector, workspace_id: int):
     netsuite_attributes = remove_duplicates(netsuite_attributes)
 
     fyle_employee_payload, employee_approver_payload, fyle_department_payload = create_fyle_employee_payload(
-        platform_connection, netsuite_attributes
+        platform_connection, netsuite_attributes, workspace_id
     )
 
     if fyle_department_payload:
