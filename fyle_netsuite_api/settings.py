@@ -207,10 +207,10 @@ Q_CLUSTER = {
     'catch_up': False,
     # The number of tasks a worker will process before recycling.
     # Useful to release memory resources on a regular basis.
-    'recycle': 50,
+    'recycle': 20,
     # The maximum resident set size in kilobytes before a worker will recycle and release resources.
     # Useful for limiting memory usage.
-    'max_rss': 100000 # 100mb
+    'max_rss': 50000 # 50mb
 }
 
 # Database
