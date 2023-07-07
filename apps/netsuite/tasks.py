@@ -117,6 +117,7 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense: Expense, e
                             "type": "folder"
                         }
                     })
+                    break
 
                 file = netsuite_connection.connection.files.get(externalId=expense.expense_id)
                 receipt_url = file['url']
