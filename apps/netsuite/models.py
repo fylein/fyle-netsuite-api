@@ -212,6 +212,7 @@ def get_custom_segments(expense_group: ExpenseGroup, lineitem: Expense):
 
 
 def get_transaction_date(expense_group: ExpenseGroup) -> str:
+    print('expenses tranction date',expense_group.description)
     if 'spent_at' in expense_group.description and expense_group.description['spent_at']:
         return expense_group.description['spent_at']
     elif 'approved_at' in expense_group.description and expense_group.description['approved_at']:
@@ -391,6 +392,7 @@ class Bill(models.Model):
                 'external_id': 'bill {} - {}'.format(expense_group.id, description.get('employee_email'))
             }
         )
+        print('Journal Entry created with transaction date: {}'.format(bill_object.transaction_date))
         return bill_object
 
 
@@ -566,7 +568,10 @@ class CreditCardCharge(models.Model):
             value__iexact=merchant, attribute_type='VENDOR', workspace_id=expense_group.workspace_id
         ).order_by('-updated_at').first()
 
-        expense_group.description['spent_at'] = expense.spent_at.strftime("%Y-%m-%d")
+        if 'posted_at' in expense_group.description.keys():
+            expense_group.description['posted_at'] = expense.posted_at.strftime("%Y-%m-%d")
+        else:
+            expense_group.description['spent_at'] = expense.spent_at.strftime("%Y-%m-%d")
         expense_group.save()
 
         if not vendor:
@@ -589,6 +594,7 @@ class CreditCardCharge(models.Model):
                 'external_id': 'cc-charge {} - {}'.format(expense_group.id, description.get('employee_email'))
             }
         )
+        print('Credit Card Charge Object', credit_charge_object.transaction_date)
         return credit_charge_object
 
 
@@ -807,6 +813,7 @@ class ExpenseReport(models.Model):
                 'external_id': 'report {} - {}'.format(expense_group.id, description.get('employee_email'))
             }
         )
+        print('Expense Report Created: ', expense_report_object.transaction_date)
         return expense_report_object
 
 
@@ -1010,6 +1017,7 @@ class JournalEntry(models.Model):
                 'external_id': 'journal {} - {}'.format(expense_group.id, description.get('employee_email'))
             }
         )
+        print('Journal Entry created with transaction date: {}'.format(journal_entry_object.transaction_date))
         return journal_entry_object
 
 
