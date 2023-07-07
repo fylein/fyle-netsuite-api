@@ -3,17 +3,17 @@ import pytest
 
 from apps.fyle.models import Expense, ExpenseGroup
 from apps.netsuite.models import *
+from apps.netsuite.tasks import *
 from apps.workspaces.models import Configuration
 from fyle_accounting_mappings.models import Mapping, MappingSetting, DestinationAttribute, ExpenseAttribute
-from apps.quickbooks_online.utils import Bill,BillLineitem,QBOExpense,QBOExpenseLineitem
-from apps.quickbooks_online.tasks import create_bill
 from apps.fyle.models import Expense, ExpenseGroup, Reimbursement, get_default_expense_group_fields, get_default_expense_state, \
     ExpenseGroupSettings, _group_expenses, get_default_ccc_expense_state
 from apps.workspaces.models import Configuration, Workspace
 from apps.tasks.models import TaskLog
 from apps.fyle.tasks import create_expense_groups
 from apps.mappings.models import GeneralMapping
-from tests.test_fyle.fixtures import data
+from tests.test_fyle.fixtures import data as fyle_expense_data
+from .fixtures import data
 
 @pytest.mark.django_db(databases=['default'])
 def test_get_department_id_or_none(access_token, mocker):
@@ -378,9 +378,9 @@ def test_support_post_date_integrations(mocker, db):
 
     #Import assert
 
-    payload = data['expenses']
-    expense_id = data['expenses'][0]['id']
-    Expense.create_expense_objects(payload, workspace_id)
+    payload = fyle_expense_data['expenses']
+    expense_id = fyle_expense_data['expenses'][0]['id']
+    Expense.create_expense_objects(payload)
     expense_objects = Expense.objects.get(expense_id=expense_id)
     expense_objects.reimbursable = False
     expense_objects.fund_source = 'CCC'
@@ -397,8 +397,13 @@ def test_support_post_date_integrations(mocker, db):
     field.attribute_type = 'KILLUA'
     field.save()
 
-    expense_groups = ExpenseGroup.create_expense_groups_by_report_id_fund_source([expense_objects], workspace_id)
-    assert expense_groups[0].description['posted_at'] == '2021-12-22'
+    configuration = Configuration.objects.get(workspace_id=1)
+
+    ExpenseGroup.create_expense_groups_by_report_id_fund_source([expense_objects], configuration, 1)
+
+    expense_groups = ExpenseGroup.objects.filter(workspace=1)
+    print(expense_groups[2].__dict__)
+    assert expense_groups[2].description['posted_at'] == '2021-12-22T07:30:26'
     
     mapping_setting = MappingSetting(
         source_field='CATEGORY',
@@ -421,8 +426,8 @@ def test_support_post_date_integrations(mocker, db):
     expense_attribute = ExpenseAttribute.objects.create(
         attribute_type='CATEGORY',
         display_name='Category',
-        value='Accounts Payable',
-        source_id='253737253737',
+        value='Accounts Payablee',
+        source_id='253737',
         workspace_id=workspace_id,
         active=True
     )
@@ -462,15 +467,18 @@ def test_support_post_date_integrations(mocker, db):
     configuration.auto_create_destination_entity = True
     configuration.save()
     
-    create_bill(expense_groups[0], task_log.id, False)
-
+    expense_group = ExpenseGroup.objects.filter(workspace_id=workspace_id, fund_source='CCC').first()
+    expense_group.description['posted_at'] = '2021-12-22T07:30:26'
+    create_bill(expense_group, task_log.id)
+    
     task_log = TaskLog.objects.get(pk=task_log.id)
-    bill = Bill.objects.get(expense_group_id=expense_groups[0].id)
+    bill = Bill.objects.get(expense_group_id=expense_group.id)
+    print(bill.__dict__)
 
     assert task_log.status=='COMPLETE'
     assert bill.currency == '1'
     assert bill.accounts_payable_id == '25'
-    assert bill.entity_id == '11104'
+    assert bill.entity_id == '1674'
     assert bill.transaction_date.strftime("%m/%d/%Y") == expense_objects.posted_at.strftime("%m/%d/%Y")
 
     

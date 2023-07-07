@@ -367,7 +367,6 @@ class ExpenseGroup(models.Model):
             corporate_credit_card_expenses, corporate_credit_card_expense_group_field, workspace_id)
 
         expense_groups.extend(corporate_credit_card_expense_groups)
-
         for expense_group in expense_groups:
             if expense_group_settings.reimbursable_export_date_type == 'last_spent_at':
                 expense_group['last_spent_at'] = Expense.objects.filter(
@@ -395,7 +394,6 @@ class ExpenseGroup(models.Model):
             )
 
             expense_group_object.expenses.add(*expense_ids)
-
 
 class Reimbursement(models.Model):
     """
