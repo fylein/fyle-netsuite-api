@@ -95,8 +95,14 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense: Expense, e
                 "externalId": workspace.fyle_org_id,
                 "name": 'Fyle Attachments - {0}'.format(workspace.name)
             })
-            files_list = [{'id': file_ids[0]}]
+            
+            for file_id in file_ids:
+                files_list.append({'id': file_id})
+
             attachments = platform.files.bulk_generate_file_urls(files_list)
+
+            # Filter HTML attachments
+            attachments = list(filter(lambda attachment: attachment['content_type'] != 'text/html', attachments))
 
             if attachments:
                 for attachment in attachments:
@@ -111,6 +117,7 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense: Expense, e
                             "type": "folder"
                         }
                     })
+                    break
 
                 file = netsuite_connection.connection.files.get(externalId=expense.expense_id)
                 receipt_url = file['url']
