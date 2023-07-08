@@ -402,7 +402,6 @@ def test_support_post_date_integrations(mocker, db):
     ExpenseGroup.create_expense_groups_by_report_id_fund_source([expense_objects], configuration, 1)
 
     expense_groups = ExpenseGroup.objects.filter(workspace=1)
-    print(expense_groups[2].__dict__)
     assert expense_groups[2].description['posted_at'] == '2021-12-22T07:30:26'
     
     mapping_setting = MappingSetting(
@@ -473,7 +472,6 @@ def test_support_post_date_integrations(mocker, db):
     
     task_log = TaskLog.objects.get(pk=task_log.id)
     bill = Bill.objects.get(expense_group_id=expense_group.id)
-    print(bill.__dict__)
 
     assert task_log.status=='COMPLETE'
     assert bill.currency == '1'
