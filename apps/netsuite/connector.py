@@ -1577,7 +1577,7 @@ class NetSuiteConnector:
             'tax2Amt': None,
             'department': {
                 'name': None,
-                'internalId': expense_report.department_id,
+                'internalId': expense_report.department_id if expense_report.department_id else None,
                 'externalId': None,
                 'type': 'department'
             },
