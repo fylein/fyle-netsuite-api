@@ -3,9 +3,17 @@ import pytest
 
 from apps.fyle.models import Expense, ExpenseGroup
 from apps.netsuite.models import *
+from apps.netsuite.tasks import *
 from apps.workspaces.models import Configuration
-from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttribute
+from fyle_accounting_mappings.models import Mapping, MappingSetting, DestinationAttribute, ExpenseAttribute
+from apps.fyle.models import Expense, ExpenseGroup, Reimbursement, get_default_expense_group_fields, get_default_expense_state, \
+    ExpenseGroupSettings, _group_expenses, get_default_ccc_expense_state
+from apps.workspaces.models import Configuration, Workspace
+from apps.tasks.models import TaskLog
+from apps.fyle.tasks import create_expense_groups
 from apps.mappings.models import GeneralMapping
+from tests.test_fyle.fixtures import data as fyle_expense_data
+from .fixtures import data
 
 @pytest.mark.django_db(databases=['default'])
 def test_get_department_id_or_none(access_token, mocker):
@@ -364,4 +372,111 @@ def test_create_credit_card_charge(db):
     assert credit_card.currency == '1'
     assert credit_card.transaction_date <= datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
     assert credit_card.subsidiary_id == '1'
+
+def test_support_post_date_integrations(mocker, db):
+    workspace_id = 1
+
+    #Import assert
+
+    payload = fyle_expense_data['expenses']
+    expense_id = fyle_expense_data['expenses'][0]['id']
+    Expense.create_expense_objects(payload)
+    expense_objects = Expense.objects.get(expense_id=expense_id)
+    expense_objects.reimbursable = False
+    expense_objects.fund_source = 'CCC'
+    expense_objects.source_account_type = 'PERSONAL_CORPORATE_CREDIT_CARD_ACCOUNT'
+    expense_objects.save()
+    assert expense_objects.posted_at.strftime("%m/%d/%Y") == '12/22/2021'
+
+    expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=workspace_id)
+    expense_group_settings.corporate_credit_card_expense_group_fields = ['expense_id', 'employee_email', 'project', 'fund_source', 'posted_at']
+    expense_group_settings.ccc_export_date_type = 'posted_at'
+    expense_group_settings.save()
+    
+    field = ExpenseAttribute.objects.filter(workspace_id=workspace_id, attribute_type='PROJECT').last()
+    field.attribute_type = 'KILLUA'
+    field.save()
+
+    configuration = Configuration.objects.get(workspace_id=1)
+
+    ExpenseGroup.create_expense_groups_by_report_id_fund_source([expense_objects], configuration, 1)
+
+    expense_groups = ExpenseGroup.objects.filter(workspace=1)
+    assert expense_groups[2].description['posted_at'] == '2021-12-22T07:30:26'
+    
+    mapping_setting = MappingSetting(
+        source_field='CATEGORY',
+        destination_field='ACCOUNT',
+        workspace_id=workspace_id,
+        import_to_fyle=False,
+        is_custom=False
+    )
+    mapping_setting.save()
+
+    destination_attribute = DestinationAttribute.objects.create(
+        attribute_type='ACCOUNT',
+        display_name='Account',
+        value='Concreteworks Studio',
+        destination_id=321,
+        workspace_id=workspace_id,
+        active=True,
+    )
+    destination_attribute.save()
+    expense_attribute = ExpenseAttribute.objects.create(
+        attribute_type='CATEGORY',
+        display_name='Category',
+        value='Accounts Payablee',
+        source_id='253737',
+        workspace_id=workspace_id,
+        active=True
+    )
+    expense_attribute.save()
+    mapping = Mapping.objects.create(
+        source_type='CATEGORY',
+        destination_type='ACCOUNT',
+        destination_id=destination_attribute.id,
+        source_id=expense_attribute.id,
+        workspace_id=workspace_id
+    )
+    mapping.save()
+
+    mocker.patch(
+        'netsuitesdk.api.vendor_bills.VendorBills.post',
+        return_value=data['creation_response']
+    )
+    mocker.patch(
+        'netsuitesdk.api.vendors.Vendors.search',
+        return_value={}
+    )
+    mocker.patch(
+        'apps.netsuite.connector.NetSuiteConnector.get_or_create_employee',
+        return_value=DestinationAttribute.objects.get(value='James Bond')
+    )
+    mocker.patch(
+        'apps.netsuite.tasks.load_attachments',
+        return_value='https://aaa.bbb.cc/x232sds'
+    )
+    task_log = TaskLog.objects.first()
+    task_log.workspace_id = 1
+    task_log.status = 'READY'
+    task_log.save()
+
+    configuration = Configuration.objects.get(workspace_id=workspace_id)
+    configuration.auto_map_employees = 'EMAIL'
+    configuration.auto_create_destination_entity = True
+    configuration.save()
+    
+    expense_group = ExpenseGroup.objects.filter(workspace_id=workspace_id, fund_source='CCC').first()
+    expense_group.description['posted_at'] = '2021-12-22T07:30:26'
+    create_bill(expense_group, task_log.id)
+    
+    task_log = TaskLog.objects.get(pk=task_log.id)
+    bill = Bill.objects.get(expense_group_id=expense_group.id)
+
+    assert task_log.status=='COMPLETE'
+    assert bill.currency == '1'
+    assert bill.accounts_payable_id == '25'
+    assert bill.entity_id == '1674'
+    assert bill.transaction_date.strftime("%m/%d/%Y") == expense_objects.posted_at.strftime("%m/%d/%Y")
+
     
