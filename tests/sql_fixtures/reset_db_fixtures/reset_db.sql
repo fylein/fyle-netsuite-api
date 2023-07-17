@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.3 (Debian 15.3-1.pgdg120+1)
--- Dumped by pg_dump version 15.3 (Debian 15.3-1.pgdg100+1)
+-- Dumped from database version 15.2 (Debian 15.2-1.pgdg110+1)
+-- Dumped by pg_dump version 15.2 (Debian 15.2-1.pgdg100+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -641,6 +641,7 @@ CREATE TABLE public.django_q_schedule (
     name character varying(100),
     minutes smallint,
     cron character varying(100),
+    cluster character varying(100),
     CONSTRAINT django_q_schedule_minutes_check CHECK ((minutes >= 0))
 );
 
@@ -7691,7 +7692,6 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 148	netsuite	0019_auto_20230209_0950	2023-02-09 11:44:42.42825+00
 149	fyle	0025_auto_20230216_0455	2023-02-17 10:32:23.653833+00
 150	netsuite	0020_auto_20230216_0455	2023-02-17 10:32:23.708715+00
-151	fyle	0025_auto_20230209_0950	2023-05-09 10:35:00.678943+00
 152	fyle_accounting_mappings	0020_auto_20230302_0519	2023-05-09 10:35:00.71405+00
 153	fyle_accounting_mappings	0021_auto_20230323_0557	2023-05-09 10:35:00.728728+00
 154	workspaces	0030_auto_20230321_0734	2023-05-09 10:35:00.738776+00
@@ -7703,6 +7703,7 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 160	fyle	0025_auto_20230608_0837	2023-06-15 13:20:07.816654+00
 161	workspaces	0032_configuration_name_in_journal_entry	2023-06-15 13:20:08.00105+00
 162	fyle	0025_auto_20230622_0516	2023-06-22 10:17:05.677561+00
+163	django_q	0014_schedule_cluster	2023-07-17 14:43:54.845689+00
 \.
 
 
@@ -7718,8 +7719,8 @@ COPY public.django_q_ormq (id, key, payload, lock) FROM stdin;
 -- Data for Name: django_q_schedule; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.django_q_schedule (id, func, hook, args, kwargs, schedule_type, repeats, next_run, task, name, minutes, cron) FROM stdin;
-1	apps.mappings.tasks.auto_create_tax_group_mappings	\N	2	\N	I	-3	2021-12-04 04:20:09.992371+00	aa5388fcba0e4b91ac88020c22f3e30f	\N	1440	\N
+COPY public.django_q_schedule (id, func, hook, args, kwargs, schedule_type, repeats, next_run, task, name, minutes, cron, cluster) FROM stdin;
+1	apps.mappings.tasks.auto_create_tax_group_mappings	\N	2	\N	I	-3	2021-12-04 04:20:09.992371+00	aa5388fcba0e4b91ac88020c22f3e30f	\N	1440	\N	\N
 \.
 
 
@@ -11582,7 +11583,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 43, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 162, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 163, true);
 
 
 --
