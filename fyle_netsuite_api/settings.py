@@ -203,7 +203,7 @@ Q_CLUSTER = {
     'max_attempts': 1,
     'attempt_count': 1,
     'retry': 14400,
-    'timeout': 3600,
+    'timeout': 900, # 15 mins
     'catch_up': False,
     # The number of tasks a worker will process before recycling.
     # Useful to release memory resources on a regular basis.
