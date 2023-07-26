@@ -387,7 +387,8 @@ CREATE TABLE public.credit_card_charges (
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
     expense_group_id integer NOT NULL,
-    reference_number character varying(255)
+    reference_number character varying(255),
+    department_id character varying(255)
 );
 
 
@@ -2470,7 +2471,7 @@ COPY public.credit_card_charge_lineitems (id, account_id, location_id, departmen
 -- Data for Name: credit_card_charges; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.credit_card_charges (id, credit_card_account_id, entity_id, subsidiary_id, location_id, currency, memo, external_id, transaction_date, created_at, updated_at, expense_group_id, reference_number) FROM stdin;
+COPY public.credit_card_charges (id, credit_card_account_id, entity_id, subsidiary_id, location_id, currency, memo, external_id, transaction_date, created_at, updated_at, expense_group_id, reference_number, department_id) FROM stdin;
 \.
 
 
@@ -7704,6 +7705,7 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 161	workspaces	0032_configuration_name_in_journal_entry	2023-06-15 13:20:08.00105+00
 162	fyle	0025_auto_20230622_0516	2023-06-22 10:17:05.677561+00
 163	django_q	0014_schedule_cluster	2023-07-17 14:43:54.845689+00
+164	netsuite	0022_creditcardcharge_department_id	2023-07-26 10:31:38.187076+00
 \.
 
 
@@ -11583,7 +11585,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 43, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 163, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 164, true);
 
 
 --
