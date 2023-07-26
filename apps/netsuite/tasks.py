@@ -95,8 +95,14 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense: Expense, e
                 "externalId": workspace.fyle_org_id,
                 "name": 'Fyle Attachments - {0}'.format(workspace.name)
             })
-            files_list = [{'id': file_ids[0]}]
+            
+            for file_id in file_ids:
+                files_list.append({'id': file_id})
+
             attachments = platform.files.bulk_generate_file_urls(files_list)
+
+            # Filter HTML attachments
+            attachments = list(filter(lambda attachment: attachment['content_type'] != 'text/html', attachments))
 
             if attachments:
                 for attachment in attachments:
@@ -111,6 +117,7 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense: Expense, e
                             "type": "folder"
                         }
                     })
+                    break
 
                 file = netsuite_connection.connection.files.get(externalId=expense.expense_id)
                 receipt_url = file['url']
@@ -874,7 +881,7 @@ def __validate_general_mapping(expense_group: ExpenseGroup, configuration: Confi
         
         if not (general_mapping.default_ccc_vendor_id or general_mapping.default_ccc_vendor_name) and \
             expense_group.fund_source == 'CCC' and \
-                configuration.corporate_credit_card_expenses_object == 'JOURNAL ENTRY':
+                configuration.corporate_credit_card_expenses_object == 'JOURNAL ENTRY' and configuration.name_in_journal_entry == 'MERCHANT' :
             bulk_errors.append({
                 'row': None,
                 'expense_group_id': expense_group.id,
@@ -982,13 +989,14 @@ def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Conf
         employee = sync_inactive_employee(expense_group)
 
     bulk_errors = []
-    if expense_group.fund_source == 'PERSONAL' or \
+    if expense_group.fund_source == 'PERSONAL' or configuration.name_in_journal_entry == 'EMPLOYEE' or \
             (expense_group.fund_source == 'CCC' and configuration.corporate_credit_card_expenses_object == 'EXPENSE REPORT'):
         try:
             entity = EmployeeMapping.objects.get(
                 source_employee=employee,
                 workspace_id=expense_group.workspace_id
             )
+
 
             if configuration.employee_field_mapping == 'EMPLOYEE':
                 entity = entity.destination_employee

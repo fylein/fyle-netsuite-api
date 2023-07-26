@@ -220,6 +220,8 @@ def get_transaction_date(expense_group: ExpenseGroup) -> str:
         return expense_group.description['verified_at']
     elif 'last_spent_at' in expense_group.description and expense_group.description['last_spent_at']:
         return expense_group.description['last_spent_at']
+    elif 'posted_at' in expense_group.description and expense_group.description['posted_at']:
+        return expense_group.description['posted_at']
 
     return datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
 
@@ -564,9 +566,6 @@ class CreditCardCharge(models.Model):
             value__iexact=merchant, attribute_type='VENDOR', workspace_id=expense_group.workspace_id
         ).order_by('-updated_at').first()
 
-        expense_group.description['spent_at'] = expense.spent_at.strftime("%Y-%m-%d")
-        expense_group.save()
-
         if not vendor:
             vendor_id = general_mappings.default_ccc_vendor_id
         else:
@@ -583,7 +582,7 @@ class CreditCardCharge(models.Model):
                 'memo': 'Credit card expenses by {0}'.format(description.get('employee_email')),
                 'reference_number': get_report_or_expense_number(expense_group),
                 'currency': currency.destination_id if currency else '1',
-                'transaction_date': get_transaction_date(expense_group),
+                'transaction_date': get_transaction_date(expense_group).partition('T')[0],
                 'external_id': 'cc-charge {} - {}'.format(expense_group.id, description.get('employee_email'))
             }
         )
@@ -1078,13 +1077,17 @@ class JournalEntryLineItem(models.Model):
                 elif employee_field_mapping == 'EMPLOYEE':
                     debit_account_id = general_mappings.reimbursable_account_id
             elif expense_group.fund_source == 'CCC':
-                vendor = None
-                merchant = lineitem.vendor if lineitem.vendor else ''
-                if merchant:
-                    vendor = DestinationAttribute.objects.filter(
-                        value__iexact=merchant, attribute_type='VENDOR', workspace_id=expense_group.workspace_id
-                    ).first()
-                entity_id = vendor.destination_id if vendor else general_mappings.default_ccc_vendor_id
+                if configuration.name_in_journal_entry == 'MERCHANT':
+                    vendor = None
+                    merchant = lineitem.vendor if lineitem.vendor else ''
+                    if merchant:
+                        vendor = DestinationAttribute.objects.filter(
+                            value__iexact=merchant, attribute_type='VENDOR', workspace_id=expense_group.workspace_id
+                        ).first()
+                    entity_id = vendor.destination_id if vendor else general_mappings.default_ccc_vendor_id
+                else:
+                    entity_id = employee_mapping.destination_employee.destination_id if employee_field_mapping == 'EMPLOYEE' \
+                    else employee_mapping.destination_vendor.destination_id
                 debit_account_id = get_ccc_account_id(configuration, general_mappings, lineitem, description)
 
             account = CategoryMapping.objects.filter(

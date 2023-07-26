@@ -203,14 +203,14 @@ Q_CLUSTER = {
     'max_attempts': 1,
     'attempt_count': 1,
     'retry': 14400,
-    'timeout': 3600,
+    'timeout': 900, # 15 mins
     'catch_up': False,
     # The number of tasks a worker will process before recycling.
     # Useful to release memory resources on a regular basis.
-    'recycle': 50,
+    'recycle': 20,
     # The maximum resident set size in kilobytes before a worker will recycle and release resources.
     # Useful for limiting memory usage.
-    'max_rss': 100000 # 100mb
+    'max_rss': 50000 # 50mb
 }
 
 # Database

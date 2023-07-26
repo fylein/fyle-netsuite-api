@@ -778,14 +778,21 @@ def test_load_attachments(db, add_netsuite_credentials, add_fyle_credentials, mo
     mocker.patch(
         'fyle_integrations_platform_connector.apis.Files.bulk_generate_file_urls',
         return_value=[{
+            "id": "sdfghjk",
+            "name": "receipt.html",
+            "content_type": "text/html",
+            "download_url": base64.b64encode("https://aaa.bbb.cc/x232sds".encode("utf-8")),
+            "upload_url": "https://john.cena/you_cant_see_me"
+        },
+        {
             "id": "sdfd2391",
             "name": "uber_expenses_vmrpw.pdf",
             "content_type": "application/pdf",
             "download_url": base64.b64encode("https://aaa.bbb.cc/x232sds".encode("utf-8")),
             "upload_url": "https://aaa.bbb.cc/x232sds"
-        }],
+        }]
     )
-    
+
     expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
     expense = expense_group.expenses.first()
     expense.file_ids = ['sdfghjk']
@@ -796,6 +803,20 @@ def test_load_attachments(db, add_netsuite_credentials, add_fyle_credentials, mo
 
     attachment = load_attachments(netsuite_connection, expense_group.expenses.first(), expense_group)
     assert attachment == 'https://aaa.bbb.cc/x232sds'
+
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.Files.bulk_generate_file_urls',
+        return_value=[{
+            "id": "sdfghjk",
+            "name": "receipt.html",
+            "content_type": "text/html",
+            "download_url": base64.b64encode("https://aaa.bbb.cc/x232sds".encode("utf-8")),
+            "upload_url": "https://john.cena/you_cant_see_me"
+        }]
+    )
+
+    attachment = load_attachments(netsuite_connection, expense_group.expenses.first(), expense_group)
+    assert attachment == None
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=1)
     fyle_credentials.delete()
