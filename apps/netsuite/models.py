@@ -526,6 +526,7 @@ class CreditCardCharge(models.Model):
     expense_group = models.OneToOneField(ExpenseGroup, on_delete=models.PROTECT, help_text='Expense group reference')
     credit_card_account_id = models.CharField(max_length=255, help_text='NetSuite Accounts Payable Account id')
     entity_id = models.CharField(max_length=255, help_text='NetSuite vendor id')
+    department_id = models.CharField(max_length=255, help_text='NetSuite department id', null=True)
     subsidiary_id = models.CharField(max_length=255, help_text='NetSuite subsidiary id')
     location_id = models.CharField(max_length=255, help_text='NetSuite Location id', null=True)
     currency = models.CharField(max_length=255, help_text='CC Charge Currency')
@@ -553,6 +554,7 @@ class CreditCardCharge(models.Model):
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
         subsidiary_mappings = SubsidiaryMapping.objects.get(workspace_id=expense_group.workspace_id)
         configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
+        employee_field_mapping = configuration.employee_field_mapping
 
         ccc_account_id = get_ccc_account_id(configuration, general_mappings, expense, description)
 
@@ -570,12 +572,23 @@ class CreditCardCharge(models.Model):
             vendor_id = general_mappings.default_ccc_vendor_id
         else:
             vendor_id = vendor.destination_id
+            
+        department_id = None
+        employee_mapping = EmployeeMapping.objects.filter(
+            source_employee__value=description.get('employee_email'),
+            workspace_id=expense_group.workspace_id
+        ).first()
+
+        if general_mappings.use_employee_department and general_mappings.department_level in (
+            'ALL', 'TRANSACTION_BODY') and employee_field_mapping == 'EMPLOYEE':
+            department_id = employee_mapping.destination_employee.detail.get('department_id')
 
         credit_charge_object, _ = CreditCardCharge.objects.update_or_create(
             expense_group=expense_group,
             defaults={
                 'subsidiary_id': subsidiary_mappings.internal_id,
                 'credit_card_account_id': ccc_account_id,
+                'department_id': department_id,
                 'entity_id': vendor_id,
                 'location_id': general_mappings.location_id if general_mappings.location_level in [
                     'TRANSACTION_BODY', 'ALL'] else None,
