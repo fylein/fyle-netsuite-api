@@ -1319,6 +1319,9 @@ class NetSuiteConnector:
             'currency': {
                 'internalId': credit_card_charge.currency
             },
+            'department': {
+                'internalId': credit_card_charge.department_id
+            },
             'tranDate': transaction_date,
             'memo': credit_card_charge.memo,
             'tranid': credit_card_charge.reference_number,
