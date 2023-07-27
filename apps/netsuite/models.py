@@ -581,7 +581,8 @@ class CreditCardCharge(models.Model):
 
         if general_mappings.use_employee_department and general_mappings.department_level in (
             'ALL', 'TRANSACTION_BODY') and employee_field_mapping == 'EMPLOYEE':
-            department_id = employee_mapping.destination_employee.detail.get('department_id')
+            if employee_mapping.destination_employee.detail.get('department_id'):
+                department_id = employee_mapping.destination_employee.detail.get('department_id')
 
         credit_charge_object, _ = CreditCardCharge.objects.update_or_create(
             expense_group=expense_group,
