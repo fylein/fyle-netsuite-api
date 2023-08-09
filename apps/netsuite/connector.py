@@ -1895,7 +1895,7 @@ class NetSuiteConnector:
 
     def __construct_vendor_payment(self, vendor_payment: VendorPayment,
                                    vendor_payment_lineitems: List[VendorPaymentLineitem],
-                                   department) -> Dict:
+                                   department, netsuite_class) -> Dict:
         """
         Create a vendor payment
         :return: constructed vendor payment
@@ -1956,7 +1956,7 @@ class NetSuiteConnector:
             },
             'class': {
                 'name': None,
-                'internalId': vendor_payment.class_id,
+                'internalId': netsuite_class['internalId'] if (netsuite_class and 'internalId' in netsuite_class) else None,
                 'externalId': None,
                 'type': 'classification'
             },
@@ -1994,9 +1994,10 @@ class NetSuiteConnector:
         Post vendor payments to NetSuite
         """
         department = first_object['department']
+        netsuite_class = first_object['class']
 
         vendor_payment_payload = self.__construct_vendor_payment(
-            vendor_payment, vendor_payment_lineitems, department
+            vendor_payment, vendor_payment_lineitems, department, netsuite_class
         )
         created_vendor_payment = self.connection.vendor_payments.post(vendor_payment_payload)
         return created_vendor_payment
