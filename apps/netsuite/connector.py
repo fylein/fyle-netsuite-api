@@ -649,7 +649,8 @@ class NetSuiteConnector:
         subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
 
         max_updated_at = DestinationAttribute.objects.filter(
-            workspace_id=self.workspace_id).all().aggregate(
+            workspace_id=self.workspace_id,
+            attribute_type='EMPLOYEE').all().aggregate(
             max_updated_at=Max('updated_at')
         )['max_updated_at']
 
