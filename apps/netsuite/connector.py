@@ -654,13 +654,13 @@ class NetSuiteConnector:
             max_updated_at=Max('updated_at')
         )['max_updated_at']
 
+        last_modified_date_query = {}
+
         if max_updated_at:
             search_value = (max_updated_at - timedelta(days=30)).isoformat()
 
-            last_modified_date_query = {
-                'search_value': search_value,
-                'operator': 'onOrAfter'
-            }
+            last_modified_date_query['search_value'] = search_value
+            last_modified_date_query['operator'] ='onOrAfter'
 
         employees_generator = self.connection.employees.get_all_generator(
             last_modified_date_query=last_modified_date_query
