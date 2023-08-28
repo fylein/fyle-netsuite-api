@@ -1,10 +1,11 @@
 import re
-import pytz
 import json
-from datetime import datetime,timezone
+from datetime import datetime, timedelta
 from typing import List, Dict
 import logging
+
 from django.conf import settings
+from django.db.models import Max
 
 
 from requests_oauthlib import OAuth1Session
@@ -647,7 +648,22 @@ class NetSuiteConnector:
         """
         subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
 
-        employees_generator = self.connection.employees.get_all_generator()
+        max_updated_at = DestinationAttribute.objects.filter(
+            workspace_id=self.workspace_id).all().aggregate(
+            max_updated_at=Max('updated_at')
+        )['max_updated_at']
+
+        if max_updated_at:
+            search_value = (max_updated_at - timedelta(days=30)).isoformat()
+
+            last_modified_date_query = {
+                'search_value': search_value,
+                'operator': 'onOrAfter'
+            }
+
+        employees_generator = self.connection.employees.get_all_generator(
+            last_modified_date_query=last_modified_date_query
+        )
 
         for employees in employees_generator:
             attributes = []
