@@ -81,19 +81,19 @@ def test_sync_dimensions(mocker, db):
     
     employee_count = DestinationAttribute.objects.filter(attribute_type='EMPLOYEE', workspace_id=1).count()
     project_count = DestinationAttribute.objects.filter(attribute_type='PROJECT', workspace_id=1).count()
-    categoty_count = DestinationAttribute.objects.filter(attribute_type='EXPENSE_CATEGORY', workspace_id=1).count()
+    category_count = DestinationAttribute.objects.filter(attribute_type='EXPENSE_CATEGORY', workspace_id=1).count()
 
     assert employee_count == 7
     assert project_count == 1086
-    assert categoty_count == 33
+    assert category_count == 33
 
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     sync_dimensions(netsuite_credentials, 1)
 
     employee_count = DestinationAttribute.objects.filter(attribute_type='EMPLOYEE', workspace_id=1).count()
     project_count = DestinationAttribute.objects.filter(attribute_type='PROJECT', workspace_id=1).count()
-    categoty_count = DestinationAttribute.objects.filter(attribute_type='EXPENSE_CATEGORY', workspace_id=1).count()
+    category_count = DestinationAttribute.objects.filter(attribute_type='EXPENSE_CATEGORY', workspace_id=1).count()
 
     assert 13 == 13
     assert project_count == 1087
-    assert categoty_count == 34
+    assert category_count == 34
