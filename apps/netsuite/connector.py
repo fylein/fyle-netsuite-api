@@ -646,6 +646,8 @@ class NetSuiteConnector:
         """
         Sync employees
         """
+        configuration = Configuration.objects.filter(workspace_id=self.workspace_id).first()
+
         subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
 
         max_updated_at = DestinationAttribute.objects.filter(
@@ -663,7 +665,8 @@ class NetSuiteConnector:
             last_modified_date_query['operator'] ='onOrAfter'
 
         employees_generator = self.connection.employees.get_all_generator(
-            last_modified_date_query=last_modified_date_query
+            last_modified_date_query=last_modified_date_query,
+            page_size=200
         )
 
         for employees in employees_generator:
@@ -675,9 +678,10 @@ class NetSuiteConnector:
                         allow_access_to_fyle = True
 
                 supervisor = []
-                if employee['supervisor']:
-                    supervisor.append(self.connection.employees.get(
-                        employee['supervisor']['internalId'], employee['supervisor']['externalId'])['email'])
+                if configuration and configuration.import_netsuite_employees:
+                    if employee['supervisor']:
+                        supervisor.append(self.connection.employees.get(
+                            employee['supervisor']['internalId'], employee['supervisor']['externalId'])['email'])
 
                 parent_department = None
                 if employee['department']:
