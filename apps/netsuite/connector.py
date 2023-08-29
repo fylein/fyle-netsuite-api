@@ -665,7 +665,8 @@ class NetSuiteConnector:
             last_modified_date_query['operator'] ='onOrAfter'
 
         employees_generator = self.connection.employees.get_all_generator(
-            last_modified_date_query=last_modified_date_query
+            last_modified_date_query=last_modified_date_query,
+            page_size=200
         )
 
         for employees in employees_generator:
