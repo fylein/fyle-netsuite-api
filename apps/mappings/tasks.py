@@ -987,13 +987,13 @@ def post_merchants(platform_connection: PlatformConnector, workspace_id: int):
     if fyle_payload:
         platform_connection.merchants.post(fyle_payload)
 
-    platform_connection.merchants.sync(workspace_id)
+    platform_connection.merchants.sync()
 
 @handle_exceptions(task_name='Import Merchant to Fyle from NetSuite')
 def auto_create_vendors_as_merchants(workspace_id):
     fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
     fyle_connection = PlatformConnector(fyle_credentials)
-    fyle_connection.merchants.sync(workspace_id)
+    fyle_connection.merchants.sync()
 
     sync_netsuite_attribute('VENDOR', workspace_id)
     post_merchants(fyle_connection, workspace_id)
