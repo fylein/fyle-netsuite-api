@@ -403,6 +403,7 @@ def test_auto_create_category_mappings(db, mocker):
     destination_attribute.save()
 
     configuration = Configuration.objects.filter(workspace_id=49).first()
+
     configuration.import_categories = True
     configuration.save()
 
@@ -410,6 +411,16 @@ def test_auto_create_category_mappings(db, mocker):
 
     mappings_count = CategoryMapping.objects.filter(workspace_id=49).count()
     assert mappings_count == 53
+
+    # Patents & Licenses - Exempted
+    category = ExpenseAttribute.objects.filter(value='Patents & Licenses - Exempted', workspace_id = 49).first()
+
+    assert category == None
+
+    category = ExpenseAttribute.objects.filter(value='COGS - Sales - Included', workspace_id = 49).first()
+
+    assert category != None
+    assert category.value == 'COGS - Sales - Included'
 
     with mock.patch('apps.workspaces.models.FyleCredential.objects.get') as mock_call:
         mock_call.side_effect = WrongParamsError(msg='wrong parameter error', response="wrong parameter error")
@@ -505,6 +516,16 @@ def test_auto_create_cost_center_mappings(db, mocker):
 
     assert cost_center == 13
     assert mappings == 3
+
+    # Sales and Cross - Included
+    category = ExpenseAttribute.objects.filter(value='Sales and Cross - Exempted', workspace_id = 1).first()
+
+    assert category == None
+
+    category = ExpenseAttribute.objects.filter(value='Sales and Cross - Included', workspace_id = 1).first()
+
+    assert category != None
+    assert category.value == 'Sales and Cross - Included'
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=1)
     fyle_credentials.delete()
@@ -723,7 +744,16 @@ def test_schedule_auto_map_ccc_employees(db, mocker):
 
     async_auto_map_ccc_account(workspace_id=1)
     employee_mappings = EmployeeMapping.objects.filter(workspace_id=1).count()
-    assert employee_mappings == 43
+    assert employee_mappings == 42
+
+    employee = ExpenseAttribute.objects.filter(value='included@fyleforqvd.com', workspace_id=1).first()
+
+    assert employee != None
+    assert employee.value == 'included@fyleforqvd.com'
+
+    employee = ExpenseAttribute.objects.filter(value='excluded@fyleforqvd.com', workspace_id=1).first()
+
+    assert employee == None
 
     configuration = Configuration.objects.get(workspace_id=2)
     configuration.auto_map_employees = ''
@@ -754,7 +784,7 @@ def test_async_auto_map_ccc_account(db, mocker):
 
     async_auto_map_ccc_account(workspace_id=1)
     employee_mappings = EmployeeMapping.objects.filter(workspace_id=1).count()
-    assert employee_mappings == 43
+    assert employee_mappings == 42
 
 
 def test_auto_create_vendors_as_merchants(db, mocker):
