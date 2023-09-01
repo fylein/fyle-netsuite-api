@@ -746,12 +746,12 @@ def test_schedule_auto_map_ccc_employees(db, mocker):
     employee_mappings = EmployeeMapping.objects.filter(workspace_id=1).count()
     assert employee_mappings == 42
 
-    employee = ExpenseAttribute.objects.filter(velue='included@fyleforqvd.com', workspace_id=1).first()
+    employee = ExpenseAttribute.objects.filter(value='included@fyleforqvd.com', workspace_id=1).first()
 
     assert employee != None
     assert employee.value == 'included@fyleforqvd.com'
 
-    employee = ExpenseAttribute.objects.filter(velue='excluded@fyleforqvd.com', workspace_id=1).first()
+    employee = ExpenseAttribute.objects.filter(value='excluded@fyleforqvd.com', workspace_id=1).first()
 
     assert employee == None
 
