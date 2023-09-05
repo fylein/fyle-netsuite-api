@@ -58,6 +58,9 @@ def test_create_expense_groups_by_report_id_fund_source_spent_at(db):
     expense_objects = Expense.create_expense_objects(expenses)
 
     configuration = Configuration.objects.get(workspace_id=49)
+    configuration.reimbursable_expenses_object = 'EXPENSE REPORT'
+    configuration.save()
+
     workspace = Workspace.objects.get(id=1)
 
     expense_group_setting = ExpenseGroupSettings.objects.get(workspace_id=49)
