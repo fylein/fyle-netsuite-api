@@ -52,6 +52,26 @@ def test_expense_group_settings(create_temp_workspace):
     assert settings.ccc_expense_state == 'PAID'
     assert settings.ccc_export_date_type == 'spent_at'
 
+def test_create_expense_groups_by_report_id_fund_source_spent_at(db):
+    expenses = data['expenses_spent_at']
+
+    expense_objects = Expense.create_expense_objects(expenses)
+
+    configuration = Configuration.objects.get(workspace_id=49)
+    workspace = Workspace.objects.get(id=1)
+
+    expense_group_setting = ExpenseGroupSettings.objects.get(workspace_id=49)
+    reimbursable_expense_group_fields = expense_group_setting.reimbursable_expense_group_fields
+    print(reimbursable_expense_group_fields)
+    reimbursable_expense_group_fields.append('spent_at')
+    expense_group_setting.reimbursable_expense_group_fields = reimbursable_expense_group_fields
+    expense_group_setting.save()
+
+    ExpenseGroup.create_expense_groups_by_report_id_fund_source(expense_objects, configuration, 49)
+
+    expense_groups = ExpenseGroup.objects.filter(workspace=workspace)
+
+    assert len(expense_groups) == 1
 
 def test_create_expense_groups_by_report_id_fund_source(db):
     expenses = data['expenses']
@@ -78,28 +98,6 @@ def test_create_expense_groups_by_report_id_fund_source(db):
     expense_groups = ExpenseGroup.objects.filter(workspace=workspace)
 
     assert len(expense_groups) == 2
-
-
-def test_create_expense_groups_by_report_id_fund_source_spent_at(db):
-    expenses = data['expenses_spent_at']
-
-    expense_objects = Expense.create_expense_objects(expenses)
-
-    configuration = Configuration.objects.get(workspace_id=49)
-    workspace = Workspace.objects.get(id=1)
-
-    expense_group_setting = ExpenseGroupSettings.objects.get(workspace_id=49)
-    reimbursable_expense_group_fields = expense_group_setting.reimbursable_expense_group_fields
-    print(reimbursable_expense_group_fields)
-    reimbursable_expense_group_fields.append('spent_at')
-    expense_group_setting.reimbursable_expense_group_fields = reimbursable_expense_group_fields
-    expense_group_setting.save()
-
-    ExpenseGroup.create_expense_groups_by_report_id_fund_source(expense_objects, configuration, 49)
-
-    expense_groups = ExpenseGroup.objects.filter(workspace=workspace)
-
-    assert len(expense_groups) == 1
 
 
 def test_create_reimbursement(db):
