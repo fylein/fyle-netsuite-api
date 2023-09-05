@@ -57,7 +57,7 @@ def test_create_expense_groups_by_report_id_fund_source_spent_at(db):
 
     expense_objects = Expense.create_expense_objects(expenses)
 
-    print(expense_object for expense_object in expense_objects)
+    print(expense_object.__dict__ for expense_object in expense_objects)
 
     configuration = Configuration.objects.get(workspace_id=49)
     configuration.reimbursable_expenses_object = 'EXPENSE REPORT'
@@ -76,7 +76,7 @@ def test_create_expense_groups_by_report_id_fund_source_spent_at(db):
     ExpenseGroup.create_expense_groups_by_report_id_fund_source(expense_objects, configuration, 49)
 
     expense_groups = ExpenseGroup.objects.filter(workspace=workspace)
-    print(expense_group for expense_group in expense_groups)
+    print(expense_group.__dict__ for expense_group in expense_groups)
     assert len(expense_groups) == 1
 
 def test_create_expense_groups_by_report_id_fund_source(db):
