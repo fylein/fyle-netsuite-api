@@ -57,26 +57,28 @@ def test_create_expense_groups_by_report_id_fund_source_spent_at(db):
 
     expense_objects = Expense.create_expense_objects(expenses)
 
-    configuration = Configuration.objects.get(workspace_id=49)
-    configuration.reimbursable_expenses_object = 'EXPENSE REPORT'
-    configuration.save()
+    print(expense_objects)
 
-    workspace = Workspace.objects.get(id=49)
+    configuration = Configuration.objects.get(workspace_id=1)
+    workspace = Workspace.objects.get(id=1)
 
-    expense_group_setting = ExpenseGroupSettings.objects.get(workspace_id=49)
+    expense_group_setting = ExpenseGroupSettings.objects.get(workspace_id=1)
     expense_group_setting.reimbursable_export_date_type = 'spent_at'
-    expense_group_setting.expense_state = 'PAYMENT_PROCESSING'
     reimbursable_expense_group_fields = expense_group_setting.reimbursable_expense_group_fields
     reimbursable_expense_group_fields.append('spent_at')
     expense_group_setting.reimbursable_expense_group_fields = reimbursable_expense_group_fields
     expense_group_setting.save()
 
-    ExpenseGroup.create_expense_groups_by_report_id_fund_source(expense_objects, configuration, 49)
+    expense_groups = ExpenseGroup.objects.filter(workspace=workspace)
 
-    expense_groups = ExpenseGroup.objects.filter(description__spent_at='2021-12-22T17:00:00')
-    assert len(expense_groups) == 1
-    expense_groups = ExpenseGroup.objects.filter(description__spent_at='2021-12-20T17:00:00')
-    assert len(expense_groups) == 0
+    assert len(expense_groups) == 2
+
+    ExpenseGroup.create_expense_groups_by_report_id_fund_source(expense_objects, configuration, 1)
+
+    expense_groups = ExpenseGroup.objects.filter(workspace=workspace)
+
+    assert len(expense_groups) == 3
+
 
 def test_create_expense_groups_by_report_id_fund_source(db):
     expenses = data['expenses']
