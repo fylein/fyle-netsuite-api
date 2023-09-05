@@ -5,6 +5,8 @@ import logging
 from dateutil import parser
 from typing import List, Dict
 from datetime import datetime
+from collections import defaultdict
+
 
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.contrib.postgres.fields import ArrayField
@@ -344,16 +346,32 @@ class ExpenseGroup(models.Model):
 
         if configuration.reimbursable_expenses_object == 'EXPENSE REPORT' and 'expense_id' not in reimbursable_expense_group_fields:
             total_amount = 0
-            for expense in reimbursable_expenses:
-                total_amount += expense.amount
+            if 'spent_at' in reimbursable_expense_group_fields:
+                grouped_data = defaultdict(list)
 
-            if total_amount < 0:
-                reimbursable_expenses = list(filter(lambda expense: expense.amount > 0, reimbursable_expenses))
+                for expense in reimbursable_expenses:
+                    spent_at = expense.spent_at
+                    grouped_data[spent_at].append(expense)
+
+                reimbursable_expenses = [
+                    expense
+                    for expense_group in grouped_data.values()
+                    for expense in (
+                        expense_group
+                        if sum(expense.amount for expense in expense_group) >= 0
+                        else filter(lambda expense: expense.amount > 0, expense_group)
+                    )
+                ]
+            else:
+                for expense in reimbursable_expenses:
+                    total_amount += expense.amount
+                
+                if total_amount < 0:
+                    reimbursable_expenses = list(filter(lambda expense: expense.amount > 0, reimbursable_expenses))
         elif  configuration.reimbursable_expenses_object  != 'JOURNAL ENTRY':
             reimbursable_expenses = list(filter(lambda expense: expense.amount > 0, reimbursable_expenses))
 
         expense_groups = _group_expenses(reimbursable_expenses, reimbursable_expense_group_fields, workspace_id)
-
         corporate_credit_card_expense_group_field = expense_group_settings.corporate_credit_card_expense_group_fields
 
         corporate_credit_card_expenses = list(filter(lambda expense: expense.fund_source == 'CCC', expense_objects))
