@@ -348,20 +348,18 @@ class ExpenseGroup(models.Model):
             total_amount = 0
             if 'spent_at' in reimbursable_expense_group_fields:
                 grouped_data = defaultdict(list)
-
                 for expense in reimbursable_expenses:
                     spent_at = expense.spent_at
                     grouped_data[spent_at].append(expense)
-
-                reimbursable_expenses = [
-                    expense
-                    for expense_group in grouped_data.values()
-                    for expense in (
-                        expense_group
-                        if sum(expense.amount for expense in expense_group) >= 0
-                        else filter(lambda expense: expense.amount > 0, expense_group)
-                    )
-                ]
+                grouped_expenses = list(grouped_data.values())
+                reimbursable_expenses = []
+                for expense_group in grouped_expenses:
+                    total_amount=0
+                    for expense in expense_group:
+                        total_amount += expense.amount
+                    if total_amount < 0:
+                        expense_group = list(filter(lambda expense: expense.amount > 0, expense_group))
+                    reimbursable_expenses.extend(expense_group)
             else:
                 for expense in reimbursable_expenses:
                     total_amount += expense.amount
