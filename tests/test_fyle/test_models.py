@@ -61,10 +61,11 @@ def test_create_expense_groups_by_report_id_fund_source_spent_at(db):
     configuration.reimbursable_expenses_object = 'EXPENSE REPORT'
     configuration.save()
 
-    workspace = Workspace.objects.get(id=1)
+    workspace = Workspace.objects.get(id=49)
 
     expense_group_setting = ExpenseGroupSettings.objects.get(workspace_id=49)
     expense_group_setting.reimbursable_export_date_type = 'spent_at'
+    expense_group_setting.expense_state = 'PAYMENT_PROCESSING'
     reimbursable_expense_group_fields = expense_group_setting.reimbursable_expense_group_fields
     reimbursable_expense_group_fields.append('spent_at')
     expense_group_setting.reimbursable_expense_group_fields = reimbursable_expense_group_fields
