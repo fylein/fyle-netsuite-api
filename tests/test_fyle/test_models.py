@@ -57,8 +57,6 @@ def test_create_expense_groups_by_report_id_fund_source_spent_at(db):
 
     expense_objects = Expense.create_expense_objects(expenses)
 
-    print(expense_objects)
-
     configuration = Configuration.objects.get(workspace_id=1)
     workspace = Workspace.objects.get(id=1)
 
