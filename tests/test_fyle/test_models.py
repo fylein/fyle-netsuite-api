@@ -67,15 +67,11 @@ def test_create_expense_groups_by_report_id_fund_source_spent_at(db):
     expense_group_setting.reimbursable_expense_group_fields = reimbursable_expense_group_fields
     expense_group_setting.save()
 
-    expense_groups = ExpenseGroup.objects.filter(workspace=workspace)
-
-    assert len(expense_groups) == 2
-
     ExpenseGroup.create_expense_groups_by_report_id_fund_source(expense_objects, configuration, 1)
 
-    expense_groups = ExpenseGroup.objects.filter(workspace=workspace)
+    expense_group = ExpenseGroup.objects.filter(workspace=workspace).order_by('-created_at').first()
 
-    assert len(expense_groups) == 3
+    assert expense_group.expenses.count() == 2
 
 
 def test_create_expense_groups_by_report_id_fund_source(db):
