@@ -67,6 +67,8 @@ def test_create_expense_groups_by_report_id_fund_source_spent_at(db):
     expense_group_setting.reimbursable_expense_group_fields = reimbursable_expense_group_fields
     expense_group_setting.save()
 
+    assert len(expense_objects) == 3
+    
     ExpenseGroup.create_expense_groups_by_report_id_fund_source(expense_objects, configuration, 1)
 
     expense_group = ExpenseGroup.objects.filter(workspace=workspace).order_by('-created_at').first()
