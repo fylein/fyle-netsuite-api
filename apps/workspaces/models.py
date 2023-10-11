@@ -12,6 +12,19 @@ from django.db.models import JSONField
 User = get_user_model()
 
 
+ONBOARDING_STATE_CHOICES = (
+    ('CONNECTION', 'CONNECTION'),
+    ('MAP_EMPLOYEES', 'MAP_EMPLOYEES'),
+    ('EXPORT_SETTINGS', 'EXPORT_SETTINGS'),
+    ('IMPORT_SETTINGS', 'IMPORT_SETTINGS'),
+    ('ADVANCED_CONFIGURATION', 'ADVANCED_CONFIGURATION'),
+    ('COMPLETE', 'COMPLETE'),
+)
+
+
+def get_default_onboarding_state():
+    return 'CONNECTION'
+
 class Workspace(models.Model):
     """
     Workspace model
@@ -29,6 +42,7 @@ class Workspace(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime')
     employee_exported_at = models.DateTimeField(auto_now_add=True, help_text='Employee exported to Fyle at datetime')
+    onboarding_state = models.CharField(max_length=50, choices=ONBOARDING_STATE_CHOICES, default=get_default_onboarding_state, help_text='Onboarding status of the workspace', null=True)
 
     class Meta:
         db_table = 'workspaces'
