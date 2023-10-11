@@ -1,10 +1,11 @@
 import re
-import pytz
 import json
-from datetime import datetime,timezone
+from datetime import datetime, timedelta
 from typing import List, Dict
 import logging
+
 from django.conf import settings
+from django.db.models import Max
 
 
 from requests_oauthlib import OAuth1Session
@@ -645,9 +646,28 @@ class NetSuiteConnector:
         """
         Sync employees
         """
+        configuration = Configuration.objects.filter(workspace_id=self.workspace_id).first()
+
         subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
 
-        employees_generator = self.connection.employees.get_all_generator()
+        max_updated_at = DestinationAttribute.objects.filter(
+            workspace_id=self.workspace_id,
+            attribute_type='EMPLOYEE').all().aggregate(
+            max_updated_at=Max('updated_at')
+        )['max_updated_at']
+
+        last_modified_date_query = {}
+
+        if max_updated_at:
+            search_value = (max_updated_at - timedelta(days=30)).isoformat()
+
+            last_modified_date_query['search_value'] = search_value
+            last_modified_date_query['operator'] ='onOrAfter'
+
+        employees_generator = self.connection.employees.get_all_generator(
+            last_modified_date_query=last_modified_date_query,
+            page_size=200
+        )
 
         for employees in employees_generator:
             attributes = []
@@ -658,9 +678,10 @@ class NetSuiteConnector:
                         allow_access_to_fyle = True
 
                 supervisor = []
-                if employee['supervisor']:
-                    supervisor.append(self.connection.employees.get(
-                        employee['supervisor']['internalId'], employee['supervisor']['externalId'])['email'])
+                if configuration and configuration.import_netsuite_employees:
+                    if employee['supervisor']:
+                        supervisor.append(self.connection.employees.get(
+                            employee['supervisor']['internalId'], employee['supervisor']['externalId'])['email'])
 
                 parent_department = None
                 if employee['department']:
@@ -1895,7 +1916,7 @@ class NetSuiteConnector:
 
     def __construct_vendor_payment(self, vendor_payment: VendorPayment,
                                    vendor_payment_lineitems: List[VendorPaymentLineitem],
-                                   department) -> Dict:
+                                   department, netsuite_class) -> Dict:
         """
         Create a vendor payment
         :return: constructed vendor payment
@@ -1956,7 +1977,7 @@ class NetSuiteConnector:
             },
             'class': {
                 'name': None,
-                'internalId': vendor_payment.class_id,
+                'internalId': netsuite_class['internalId'] if (netsuite_class and 'internalId' in netsuite_class) else None,
                 'externalId': None,
                 'type': 'classification'
             },
@@ -1994,9 +2015,10 @@ class NetSuiteConnector:
         Post vendor payments to NetSuite
         """
         department = first_object['department']
+        netsuite_class = first_object['class']
 
         vendor_payment_payload = self.__construct_vendor_payment(
-            vendor_payment, vendor_payment_lineitems, department
+            vendor_payment, vendor_payment_lineitems, department, netsuite_class
         )
         created_vendor_payment = self.connection.vendor_payments.post(vendor_payment_payload)
         return created_vendor_payment
