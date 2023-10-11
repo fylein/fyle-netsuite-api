@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.4 (Debian 15.4-1.pgdg120+1)
--- Dumped by pg_dump version 15.4 (Debian 15.4-1.pgdg100+1)
+-- Dumped from database version 15.2 (Debian 15.2-1.pgdg110+1)
+-- Dumped by pg_dump version 15.4 (Debian 15.4-2.pgdg100+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -1753,7 +1753,8 @@ CREATE TABLE public.workspaces (
     source_synced_at timestamp with time zone,
     cluster_domain character varying(255),
     employee_exported_at timestamp with time zone NOT NULL,
-    ccc_last_synced_at timestamp with time zone
+    ccc_last_synced_at timestamp with time zone,
+    onboarding_state character varying(50)
 );
 
 
@@ -7706,6 +7707,7 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 162	fyle	0025_auto_20230622_0516	2023-06-22 10:17:05.677561+00
 163	django_q	0014_schedule_cluster	2023-07-17 14:43:54.845689+00
 164	netsuite	0022_creditcardcharge_department_id	2023-07-26 10:31:38.187076+00
+165	workspaces	0033_workspace_onboarding_state	2023-10-11 09:59:47.359324+00
 \.
 
 
@@ -11486,10 +11488,10 @@ COPY public.workspace_schedules (id, enabled, start_datetime, interval_hours, wo
 -- Data for Name: workspaces; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.workspaces (id, name, fyle_org_id, ns_account_id, last_synced_at, created_at, updated_at, destination_synced_at, source_synced_at, cluster_domain, employee_exported_at, ccc_last_synced_at) FROM stdin;
-1	Fyle For Arkham Asylum	or79Cob97KSh	TSTDRV2089588	2021-11-15 13:12:12.210053+00	2021-11-15 08:46:16.062858+00	2021-11-15 13:12:12.210769+00	2021-11-15 08:56:43.737724+00	2021-11-15 08:55:57.620811+00	https://staging.fyle.tech	2021-09-17 14:32:05.585557+00	\N
-2	Fyle For IntacctNew Technologies	oraWFQlEpjbb	TSTDRV2089588	2021-11-16 04:25:49.067507+00	2021-11-16 04:16:57.840307+00	2021-11-16 04:25:49.067805+00	2021-11-16 04:18:28.233322+00	2021-11-16 04:17:43.950915+00	https://staging.fyle.tech	2021-11-17 14:32:05.585557+00	\N
-49	Fyle For intacct-test	orHe8CpW2hyN	TSTDRV2089588	2021-12-03 11:26:58.663241+00	2021-12-03 11:00:33.634494+00	2021-12-03 11:26:58.664557+00	2021-12-03 11:04:27.847159+00	2021-12-03 11:03:52.560696+00	https://staging.fyle.tech	2021-11-17 14:32:05.585557+00	\N
+COPY public.workspaces (id, name, fyle_org_id, ns_account_id, last_synced_at, created_at, updated_at, destination_synced_at, source_synced_at, cluster_domain, employee_exported_at, ccc_last_synced_at, onboarding_state) FROM stdin;
+1	Fyle For Arkham Asylum	or79Cob97KSh	TSTDRV2089588	2021-11-15 13:12:12.210053+00	2021-11-15 08:46:16.062858+00	2021-11-15 13:12:12.210769+00	2021-11-15 08:56:43.737724+00	2021-11-15 08:55:57.620811+00	https://staging.fyle.tech	2021-09-17 14:32:05.585557+00	\N	CONNECTION
+2	Fyle For IntacctNew Technologies	oraWFQlEpjbb	TSTDRV2089588	2021-11-16 04:25:49.067507+00	2021-11-16 04:16:57.840307+00	2021-11-16 04:25:49.067805+00	2021-11-16 04:18:28.233322+00	2021-11-16 04:17:43.950915+00	https://staging.fyle.tech	2021-11-17 14:32:05.585557+00	\N	CONNECTION
+49	Fyle For intacct-test	orHe8CpW2hyN	TSTDRV2089588	2021-12-03 11:26:58.663241+00	2021-12-03 11:00:33.634494+00	2021-12-03 11:26:58.664557+00	2021-12-03 11:04:27.847159+00	2021-12-03 11:03:52.560696+00	https://staging.fyle.tech	2021-11-17 14:32:05.585557+00	\N	CONNECTION
 \.
 
 
@@ -11585,7 +11587,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 43, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 164, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 165, true);
 
 
 --
