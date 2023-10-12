@@ -16,7 +16,7 @@ where w.onboarding_state = 'CONNECTION';
 
 begin; -- Start Transaction Block
 
--- Count of all workspaces where qbo creds are present, configuration is present and general mappings are present
+-- Count of all workspaces where netsuite are present, configuration is present and general mappings are present
 select 
     'QC=TRUE, C=TRUE, GM=TRUE' as setting, count(*) 
 from all_settings_view 
@@ -35,7 +35,7 @@ where id in (
         configuration_id is not null and general_mappings_id is not null and netsuite_creds_id is not null
 );
 
--- Count of all workspaces where qbo creds are present, configuration is present and general mappings are not present
+-- Count of all workspaces where netsuite are present, configuration is present and general mappings are not present
 select 
     'QC=TRUE, C=TRUE, GM=FALSE' as settings, count(*) 
 from all_settings_view 
@@ -55,7 +55,7 @@ where id in (
 );
 
 
--- Count of all workspaces where qbo creds are present, configuration is not present and general mappings are not present
+-- Count of all workspaces where netsuite are present, configuration is not present and general mappings are not present
 select 
     'QC=TRUE, C=FALSE, GM=FALSE' as settings, count(*) 
 from all_settings_view 
@@ -75,7 +75,7 @@ where id in (
 );
 
 
--- Count of all workspaces where qbo creds is not present, configuration is present and general mappings is present
+-- Count of all workspaces where netsuite is not present, configuration is present and general mappings is present
 select 
     'QC=FALSE, C=TRUE, GM=TRUE' as settings, count(*) 
 from all_settings_view 
@@ -95,7 +95,7 @@ where id in (
 );
 
 
--- Count of all workspaces where qbo creds are not present, configuration is present and general mappings are not present
+-- Count of all workspaces where netsuite are not present, configuration is present and general mappings are not present
 select 
     'QC=FALSE, C=TRUE, GM=FALSE' as settings, count(*) 
 from all_settings_view 
