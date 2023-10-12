@@ -51,6 +51,7 @@ jobs:
           git add .
           git commit -m "Update netsuite-api image tag"
           git remote set-url origin https://x-access-token:${{ secrets.DEPLOY_GIT_ACCESS_TOKEN }}@github.com/${{ secrets.STAGING_DEPLOY_REPO }}
+          git pull origin master
           git push origin master
 
       - name: Create new Sentry release
