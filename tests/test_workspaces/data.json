@@ -38,6 +38,7 @@
         "updated_at":"2021-11-10T20:41:37.151696Z",
         "employee_exported_at":"2021-11-10T20:41:37.151696Z",
         "ccc_last_synced_at": "2021-11-10T20:41:37.151680Z",
+        "onboarding_state": "COMPLETE",
         "user":[
            1
         ]
