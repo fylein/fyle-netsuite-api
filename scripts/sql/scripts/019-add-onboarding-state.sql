@@ -4,13 +4,13 @@ select
     w.id as workspace_id,
     wgs.id as configuration_id,
     gm.id as general_mappings_id,
-    qc.id as netsuite_creds_id,
+    nc.id as netsuite_creds_id,
     sm.id as subsidiary_id
 from workspaces w 
 left join 
     configurations wgs on w.id = wgs.workspace_id 
 left join 
-    netsuite_credentials nc on qc.workspace_id = w.id 
+    netsuite_credentials nc on nc.workspace_id = w.id 
 left join 
     general_mappings gm on gm.workspace_id = w.id
 left join 
