@@ -14,8 +14,16 @@ from apps.netsuite.helpers import schedule_payment_sync
 from apps.workspaces.models import Configuration
 from apps.workspaces.tasks import delete_cards_mapping_settings
 
-from .models import GeneralMapping
+from .models import GeneralMapping, SubsidiaryMapping
 from .tasks import schedule_auto_map_ccc_employees
+
+
+@receiver(post_save, sender=SubsidiaryMapping)
+def run_post_subsidiary_mappings(sender, instance: SubsidiaryMapping, **kwargs):
+
+    workspace = instance.workspace
+    workspace.onboarding_state = 'MAP_EMPLOYEES'
+    workspace.save()
 
 @receiver(post_save, sender=MappingSetting)
 def run_post_mapping_settings_triggers(sender, instance: MappingSetting, **kwargs):
