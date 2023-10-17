@@ -175,6 +175,7 @@ class ConnectNetSuiteView(viewsets.ViewSet):
                     workspace=workspace
                 )
                 workspace.ns_account_id = ns_account_id
+                workspace.onboarding_state = 'SUBSIDIARY'
                 workspace.save()
 
             else:
