@@ -144,7 +144,7 @@ class Configuration(models.Model):
         max_length=50, choices=EMPLOYEE_FIELD_MAPPING_CHOICES, help_text='Employee field mapping', null=True
     )
     reimbursable_expenses_object = models.CharField(
-        max_length=50, choices=REIMBURSABLE_EXPENSES_OBJECT_CHOICES, help_text='Reimbursable Expenses type'
+        max_length=50, choices=REIMBURSABLE_EXPENSES_OBJECT_CHOICES, help_text='Reimbursable Expenses type', null=True
     )
     corporate_credit_card_expenses_object = models.CharField(
         max_length=50, choices=COPORATE_CARD_EXPENSES_OBJECT_CHOICES,
