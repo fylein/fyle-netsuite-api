@@ -29,7 +29,7 @@ class MapEmployeesSerializer(serializers.ModelSerializer):
 
         configuration_instance = Configuration.objects.filter(workspace_id=workspace_id).first()
 
-        if configuration and (configuration_instance.employee_field_mapping != configuration['employee_field_mapping']):
+        if configuration_instance and (configuration_instance.employee_field_mapping != configuration['employee_field_mapping']):
             configuration_instance.reimbursable_expenses_object = None
             configuration_instance.save()
         
