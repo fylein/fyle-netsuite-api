@@ -21,14 +21,14 @@ from apps.tasks.models import TaskLog
 from apps.workspaces.models import User, Workspace, WorkspaceSchedule, Configuration, FyleCredential
 
 
-def schedule_email_notification(workspace_id: int, schedule_enabled: bool, hours: int):
+def schedule_email_notification(workspace_id: int, schedule_enabled: bool):
     if schedule_enabled:
         schedule, _ = Schedule.objects.update_or_create(
             func='apps.workspaces.tasks.run_email_notification',
             args='{}'.format(workspace_id),
             defaults={
                 'schedule_type': Schedule.MINUTES,
-                'minutes': hours * 60,
+                'minutes': 24 * 60,
                 'next_run': datetime.now() + timedelta(minutes=10)
             }
         )
@@ -46,7 +46,7 @@ def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int, email_a
         workspace_id=workspace_id
     )
 
-    schedule_email_notification(workspace_id=workspace_id, schedule_enabled=schedule_enabled, hours=hours)
+    schedule_email_notification(workspace_id=workspace_id, schedule_enabled=schedule_enabled)
 
     if schedule_enabled:
         ws_schedule.enabled = schedule_enabled
