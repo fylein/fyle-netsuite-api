@@ -126,8 +126,3 @@ def default_session_fixture(request):
         return_value=None
     )
     patched_7.__enter__()
-
-    def unpatch():
-        patched_1.__exit__()
-
-    request.addfinalizer(unpatch)
