@@ -1,4 +1,4 @@
-from apps.workspaces.apis.map_employees.triggers import MapEmplyeesTriggers
+from apps.workspaces.apis.map_employees.triggers import MapEmployeesTriggers
 from apps.workspaces.models import Configuration, Workspace
 from rest_framework import serializers
 
@@ -37,7 +37,7 @@ class MapEmployeesSerializer(serializers.ModelSerializer):
             workspace_id=workspace_id, defaults={'employee_field_mapping': configuration['employee_field_mapping'], 'auto_map_employees': configuration['auto_map_employees']}
         )
 
-        MapEmplyeesTriggers.run_workspace_general_settings_triggers(configuration=configuration_instance)
+        MapEmployeesTriggers.run_configurations_triggers(configuration=configuration_instance)
 
         if instance.onboarding_state == 'MAP_EMPLOYEES':
             instance.onboarding_state = 'EXPORT_SETTINGS'
