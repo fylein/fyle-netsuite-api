@@ -62,4 +62,3 @@ urllib3==1.26.11
 wcwidth==0.1.8
 wrapt==1.12.1
 zeep==4.1.0
-gevent==22.10.2
