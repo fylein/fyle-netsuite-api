@@ -5,6 +5,6 @@ from apps.workspaces.apis.export_settings.views import ExportSettingsView
 
 
 urlpatterns = [
-    path('<int:workspace_id>/map_employees/', MapEmployeesView.as_view()),
-    path('<int:workspace_id>/export_settings/', ExportSettingsView.as_view()),
+    path('<int:workspace_id>/map_employees/', MapEmployeesView.as_view(), name='map-employees'),
+    path('<int:workspace_id>/export_settings/', ExportSettingsView.as_view(), name='export-settings'),
 ]
