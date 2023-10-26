@@ -27,8 +27,6 @@ class ConfigurationSerializer(serializers.ModelSerializer):
             'reimbursable_expenses_object',
             'corporate_credit_card_expenses_object',
             'is_simplify_report_closure_enabled',
-            'auto_map_employees',
-            'employee_field_mapping'
         ]
 
         read_only_fields = ['is_simplify_report_closure_enabled']   
@@ -53,16 +51,19 @@ class GeneralMappingsSerializer(serializers.ModelSerializer):
             'id': instance.reimbursable_account_id,
             'name': instance.reimbursable_account_name 
         }
+    
     def get_default_ccc_account(self, instance: GeneralMapping):
         return {
             'id': instance.default_ccc_account_id,
             'name': instance.default_ccc_account_name
         }
+    
     def get_accounts_payable(self, instance: GeneralMapping):
         return {
             'id': instance.accounts_payable_id,
             'name': instance.accounts_payable_name
         }
+    
     def get_default_ccc_vendor(self, instance: GeneralMapping):
         return {
             'id': instance.default_ccc_vendor_id,
@@ -121,8 +122,6 @@ class ExportSettingsSerializer(serializers.ModelSerializer):
             defaults={
                 'reimbursable_expenses_object': configurations['reimbursable_expenses_object'], 
                 'corporate_credit_card_expenses_object': configurations['corporate_credit_card_expenses_object'],
-                'employee_field_mapping': configurations['employee_field_mapping'],
-                'auto_map_employees': configurations['auto_map_employees']
             }
         )
 
