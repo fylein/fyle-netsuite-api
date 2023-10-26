@@ -98,7 +98,7 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
             defaults={
                 'import_categories': configurations.get('import_categories'),
                 'import_items': configurations.get('import_items'),
-                'charts_of_accounts': configurations.get('charts_of_accounts'),
+                'auto_create_merchants': configurations.get('auto_create_merchants'),
                 'import_tax_items': configurations.get('import_tax_items'),
                 'import_vendors_as_merchants': configurations.get('import_vendors_as_merchants'),
             },
