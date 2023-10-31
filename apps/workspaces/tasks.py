@@ -227,10 +227,9 @@ def async_update_fyle_credentials(fyle_org_id: str, refresh_token: str):
         fyle_credentials.save()
 
 
-def async_update_workspace_name(workspace_id: int, access_token: str):
+def async_update_workspace_name(workspace: Workspace, access_token: str):
     fyle_user = get_fyle_admin(access_token.split(' ')[1], None)
     org_name = fyle_user['data']['org']['name']
 
-    workspace = Workspace.objects.get(id=workspace_id)
     workspace.name = org_name
     workspace.save()

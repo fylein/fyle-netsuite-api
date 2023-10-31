@@ -120,7 +120,7 @@ class WorkspaceView(viewsets.ViewSet):
         if workspaces:
             async_task(
                 'apps.workspaces.tasks.async_update_workspace_name',
-                workspaces[0].id,
+                workspaces[0],
                 request.META.get('HTTP_AUTHORIZATION')
             )
         return Response(
