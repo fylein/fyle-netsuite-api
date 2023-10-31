@@ -1,36 +1,26 @@
 import logging
 
 from django.contrib.auth import get_user_model
-from django.conf import settings
 from django.core.cache import cache
-from django.db import transaction, connection
+
+from django_q.tasks import async_task
 
 from rest_framework.response import Response
 from rest_framework.views import status
-from rest_framework import generics
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-
-from fyle.platform import exceptions as fyle_exc
 
 from fyle_rest_auth.utils import AuthUtils
 from fyle_rest_auth.models import AuthToken
 from fyle_rest_auth.helpers import get_fyle_admin
-from fyle_accounting_mappings.models import ExpenseAttribute
 
-from fyle_netsuite_api.utils import assert_valid
-
-from apps.netsuite.connector import NetSuiteConnection
 from apps.fyle.models import ExpenseGroupSettings
 from apps.fyle.helpers import get_cluster_domain
 from apps.users.models import User
 
-from .models import Workspace, FyleCredential, NetSuiteCredentials, Configuration, \
-    WorkspaceSchedule
-from .tasks import schedule_sync
-from .serializers import WorkspaceSerializer, FyleCredentialSerializer, NetSuiteCredentialSerializer, \
-    ConfigurationSerializer, WorkspaceScheduleSerializer
-from .permissions import IsAuthenticatedForTest
+from .models import Workspace, FyleCredential
+from .serializers import WorkspaceSerializer
+
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -82,6 +72,9 @@ class WorkspaceView(viewsets.ViewSet):
 
         if workspace:
             workspace.user.add(User.objects.get(user_id=request.user))
+            workspace.name = org_name
+            workspace.save()
+
             cache.delete(str(workspace.id))
         else:
             workspace = Workspace.objects.create(name=org_name, fyle_org_id=org_id)
@@ -112,6 +105,7 @@ class WorkspaceView(viewsets.ViewSet):
         org_id = request.query_params.get('org_id')
         workspace = Workspace.objects.filter(user__in=[user], fyle_org_id=org_id).all()
 
+        async_task('apps.workspaces.tasks.async_update_workspace_name', workspace[0].id, request.META.get('HTTP_AUTHORIZATION'))
         return Response(
             data=WorkspaceSerializer(workspace, many=True).data,
             status=status.HTTP_200_OK

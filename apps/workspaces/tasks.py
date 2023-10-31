@@ -6,11 +6,10 @@ from typing import List
 from django.conf import settings
 from django.db.models import Q
 from django.core.mail import EmailMessage
-from django.template.loader import get_template
-from django.contrib.auth import get_user_model
 from django.template.loader import render_to_string
 from django_q.models import Schedule
 from fyle_accounting_mappings.models import MappingSetting, ExpenseAttribute
+from fyle_rest_auth.helpers import get_fyle_admin
 
 from apps.fyle.models import ExpenseGroup
 from apps.mappings.models import SubsidiaryMapping
@@ -226,4 +225,12 @@ def async_update_fyle_credentials(fyle_org_id: str, refresh_token: str):
     if fyle_credentials:
         fyle_credentials.refresh_token = refresh_token
         fyle_credentials.save()
-        
+
+
+def async_update_workspace_name(workspace_id: int, access_token: str):
+    fyle_user = get_fyle_admin(access_token.split(' ')[1], None)
+    org_name = fyle_user['data']['org']['name']
+
+    workspace = Workspace.objects.get(id=workspace_id)
+    workspace.name = org_name
+    workspace.save()
