@@ -93,3 +93,15 @@ def test_run_email_notification(db, mocker, create_task_logs):
         workspace_id=49
     )
     assert ws_schedule.enabled == True
+
+
+@pytest.mark.django_db()
+def test_async_update_workspace_name(mocker):
+    mocker.patch(
+        'apps.workspaces.tasks.get_fyle_admin',
+        return_value={'data': {'org': {'name': 'Test Org'}}}
+    )
+    async_update_workspace_name(1, 'access_token')
+
+    workspace = Workspace.objects.get(id=1)
+    assert workspace.name == 'Test Org'
