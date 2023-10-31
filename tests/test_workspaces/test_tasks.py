@@ -101,7 +101,8 @@ def test_async_update_workspace_name(mocker):
         'apps.workspaces.tasks.get_fyle_admin',
         return_value={'data': {'org': {'name': 'Test Org'}}}
     )
-    async_update_workspace_name(1, 'Bearer access_token')
+    workspace = Workspace.objects.get(id=1)
+    async_update_workspace_name(workspace, 'Bearer access_token')
 
     workspace = Workspace.objects.get(id=1)
     assert workspace.name == 'Test Org'
