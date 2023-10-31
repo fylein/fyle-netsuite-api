@@ -118,7 +118,11 @@ class WorkspaceView(viewsets.ViewSet):
         org_id = request.query_params.get('org_id')
         workspace = Workspace.objects.filter(user__in=[user], fyle_org_id=org_id).all()
 
-        async_task('apps.workspaces.tasks.async_update_workspace_name', workspace[0].id, request.META.get('HTTP_AUTHORIZATION'))
+        async_task(
+            'apps.workspaces.tasks.async_update_workspace_name',
+            workspace[0].id,
+            request.META.get('HTTP_AUTHORIZATION')
+        )
         return Response(
             data=WorkspaceSerializer(workspace, many=True).data,
             status=status.HTTP_200_OK
