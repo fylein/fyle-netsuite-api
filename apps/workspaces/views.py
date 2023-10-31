@@ -30,7 +30,9 @@ from apps.users.models import User
 from .models import Workspace, FyleCredential, NetSuiteCredentials, Configuration, \
     WorkspaceSchedule
 from .tasks import schedule_sync
-from .serializers import WorkspaceSerializer
+from .serializers import WorkspaceSerializer, FyleCredentialSerializer, NetSuiteCredentialSerializer, \
+    ConfigurationSerializer, WorkspaceScheduleSerializer
+from .permissions import IsAuthenticatedForTest
 
 
 logger = logging.getLogger(__name__)
