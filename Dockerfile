@@ -1,5 +1,5 @@
 # Pull python base image
-FROM python:3.7.4-slim
+FROM python:3.10-slim
 
 # install the requirements from the requirements.txt file via git
 RUN apt-get update && apt-get -y install libpq-dev gcc && apt-get install git -y --no-install-recommends

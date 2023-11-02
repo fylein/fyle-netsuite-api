@@ -6,11 +6,10 @@ from typing import List
 from django.conf import settings
 from django.db.models import Q
 from django.core.mail import EmailMessage
-from django.template.loader import get_template
-from django.contrib.auth import get_user_model
 from django.template.loader import render_to_string
 from django_q.models import Schedule
 from fyle_accounting_mappings.models import MappingSetting, ExpenseAttribute
+from fyle_rest_auth.helpers import get_fyle_admin
 
 from apps.fyle.models import ExpenseGroup
 from apps.mappings.models import SubsidiaryMapping
@@ -21,14 +20,14 @@ from apps.tasks.models import TaskLog
 from apps.workspaces.models import User, Workspace, WorkspaceSchedule, Configuration, FyleCredential
 
 
-def schedule_email_notification(workspace_id: int, schedule_enabled: bool, hours: int):
+def schedule_email_notification(workspace_id: int, schedule_enabled: bool):
     if schedule_enabled:
         schedule, _ = Schedule.objects.update_or_create(
             func='apps.workspaces.tasks.run_email_notification',
             args='{}'.format(workspace_id),
             defaults={
                 'schedule_type': Schedule.MINUTES,
-                'minutes': hours * 60,
+                'minutes': 24 * 60,
                 'next_run': datetime.now() + timedelta(minutes=10)
             }
         )
@@ -46,7 +45,7 @@ def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int, email_a
         workspace_id=workspace_id
     )
 
-    schedule_email_notification(workspace_id=workspace_id, schedule_enabled=schedule_enabled, hours=hours)
+    schedule_email_notification(workspace_id=workspace_id, schedule_enabled=schedule_enabled)
 
     if schedule_enabled:
         ws_schedule.enabled = schedule_enabled
@@ -226,4 +225,11 @@ def async_update_fyle_credentials(fyle_org_id: str, refresh_token: str):
     if fyle_credentials:
         fyle_credentials.refresh_token = refresh_token
         fyle_credentials.save()
-        
+
+
+def async_update_workspace_name(workspace: Workspace, access_token: str):
+    fyle_user = get_fyle_admin(access_token.split(' ')[1], None)
+    org_name = fyle_user['data']['org']['name']
+
+    workspace.name = org_name
+    workspace.save()

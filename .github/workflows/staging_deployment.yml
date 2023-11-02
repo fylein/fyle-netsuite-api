@@ -14,8 +14,6 @@ jobs:
     environment: Staging
     steps:
       - uses: actions/checkout@v2
-      - uses: satackey/action-docker-layer-caching@v0.0.11
-        continue-on-error: true
       - name: push to dockerhub
         uses: fylein/docker-release-action@master
         env:
@@ -51,6 +49,7 @@ jobs:
           git add .
           git commit -m "Update netsuite-api image tag"
           git remote set-url origin https://x-access-token:${{ secrets.DEPLOY_GIT_ACCESS_TOKEN }}@github.com/${{ secrets.STAGING_DEPLOY_REPO }}
+          git pull origin master
           git push origin master
 
       - name: Create new Sentry release

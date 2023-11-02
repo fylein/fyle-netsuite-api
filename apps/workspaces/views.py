@@ -5,6 +5,8 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction, connection
 
+from django_q.tasks import async_task
+
 from rest_framework.response import Response
 from rest_framework.views import status
 from rest_framework import generics
@@ -31,6 +33,7 @@ from .tasks import schedule_sync
 from .serializers import WorkspaceSerializer, FyleCredentialSerializer, NetSuiteCredentialSerializer, \
     ConfigurationSerializer, WorkspaceScheduleSerializer
 from .permissions import IsAuthenticatedForTest
+
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -82,6 +85,9 @@ class WorkspaceView(viewsets.ViewSet):
 
         if workspace:
             workspace.user.add(User.objects.get(user_id=request.user))
+            workspace.name = org_name
+            workspace.save()
+
             cache.delete(str(workspace.id))
         else:
             workspace = Workspace.objects.create(name=org_name, fyle_org_id=org_id)
@@ -110,10 +116,16 @@ class WorkspaceView(viewsets.ViewSet):
         """
         user = User.objects.get(user_id=request.user)
         org_id = request.query_params.get('org_id')
-        workspace = Workspace.objects.filter(user__in=[user], fyle_org_id=org_id).all()
+        workspaces = Workspace.objects.filter(user__in=[user], fyle_org_id=org_id).all()
 
+        if workspaces:
+            async_task(
+                'apps.workspaces.tasks.async_update_workspace_name',
+                workspaces[0],
+                request.META.get('HTTP_AUTHORIZATION')
+            )
         return Response(
-            data=WorkspaceSerializer(workspace, many=True).data,
+            data=WorkspaceSerializer(workspaces, many=True).data,
             status=status.HTTP_200_OK
         )
 
@@ -175,6 +187,7 @@ class ConnectNetSuiteView(viewsets.ViewSet):
                     workspace=workspace
                 )
                 workspace.ns_account_id = ns_account_id
+                workspace.onboarding_state = 'SUBSIDIARY'
                 workspace.save()
 
             else:

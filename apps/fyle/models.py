@@ -214,7 +214,8 @@ class ExpenseGroupSettings(models.Model):
     ccc_export_date_type = models.CharField(max_length=100, default='current_date', help_text='CCC Export Date')
     import_card_credits = models.BooleanField(help_text='Import Card Credits', default=False)
     workspace = models.OneToOneField(
-        Workspace, on_delete=models.PROTECT, help_text='To which workspace this expense group setting belongs to'
+        Workspace, on_delete=models.PROTECT, help_text='To which workspace this expense group setting belongs to', 
+        related_name = 'expense_group_settings'
     )
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
