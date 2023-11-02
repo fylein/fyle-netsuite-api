@@ -345,7 +345,7 @@ class ExpenseGroup(models.Model):
 
         reimbursable_expenses = list(filter(lambda expense: expense.fund_source == 'PERSONAL', expense_objects))
 
-        if configuration.reimbursable_expenses_object == 'EXPENSE REPORT' and 'expense_id' not in reimbursable_expense_group_fields:
+        if (configuration.reimbursable_expenses_object and configuration.reimbursable_expenses_object) == 'EXPENSE REPORT' and 'expense_id' not in reimbursable_expense_group_fields:
             total_amount = 0
             if 'spent_at' in reimbursable_expense_group_fields:
                 grouped_data = defaultdict(list)
@@ -367,7 +367,7 @@ class ExpenseGroup(models.Model):
                 
                 if total_amount < 0:
                     reimbursable_expenses = list(filter(lambda expense: expense.amount > 0, reimbursable_expenses))
-        elif  configuration.reimbursable_expenses_object  != 'JOURNAL ENTRY':
+        elif  configuration.reimbursable_expenses_object and configuration.reimbursable_expenses_object  != 'JOURNAL ENTRY':
             reimbursable_expenses = list(filter(lambda expense: expense.amount > 0, reimbursable_expenses))
 
         expense_groups = _group_expenses(reimbursable_expenses, reimbursable_expense_group_fields, workspace_id)

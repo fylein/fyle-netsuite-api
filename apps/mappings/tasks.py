@@ -188,10 +188,10 @@ def sync_expense_categories_and_accounts(configuration: Configuration, netsuite_
     :netsuite_connection: NetSuite Connection Object
     :return: None
     """
-    if configuration.reimbursable_expenses_object == 'EXPENSE REPORT' or configuration.corporate_credit_card_expenses_object == 'EXPENSE REPORT':
+    if (configuration.reimbursable_expenses_object and configuration.reimbursable_expenses_object == 'EXPENSE REPORT') or configuration.corporate_credit_card_expenses_object == 'EXPENSE REPORT':
         netsuite_connection.sync_expense_categories()
 
-    if configuration.reimbursable_expenses_object in ('BILL', 'JOURNAL ENTRY') or \
+    if (configuration.reimbursable_expenses_object and configuration.reimbursable_expenses_object  in ('BILL', 'JOURNAL ENTRY')) or \
         configuration.corporate_credit_card_expenses_object in ('BILL', 'JOURNAL ENTRY', 'CREDIT CARD CHARGE'):
         netsuite_connection.sync_accounts()
 
@@ -479,7 +479,7 @@ def auto_create_category_mappings(workspace_id):
     reimbursable_expenses_object = configuration.reimbursable_expenses_object
     corporate_credit_card_expenses_object = configuration.corporate_credit_card_expenses_object
 
-    if reimbursable_expenses_object == 'EXPENSE REPORT':
+    if reimbursable_expenses_object and reimbursable_expenses_object == 'EXPENSE REPORT':
         reimbursable_destination_type = 'EXPENSE_CATEGORY'
     else:
         reimbursable_destination_type = 'ACCOUNT'
@@ -501,7 +501,7 @@ def auto_create_category_mappings(workspace_id):
         platform.categories.post_bulk(fyle_payload)
         platform.categories.sync()
 
-    if reimbursable_expenses_object == 'EXPENSE REPORT' and \
+    if (reimbursable_expenses_object and reimbursable_expenses_object == 'EXPENSE REPORT') and \
         corporate_credit_card_expenses_object in ('BILL', 'JOURNAL ENTRY', 'CREDIT CARD CHARGE'):
         bulk_create_ccc_category_mappings(workspace_id)
 
