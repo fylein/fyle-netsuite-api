@@ -254,7 +254,7 @@ BEGIN
     -- RAISE NOTICE 'Deleted % workspaces', rcount;
 
     UPDATE workspaces
-    SET last_synced_at = null
+    SET last_synced_at = null, ns_account_id = ''
     WHERE id = _workspace_id;
 
 RETURN;
