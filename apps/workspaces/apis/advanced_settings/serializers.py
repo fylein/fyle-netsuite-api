@@ -118,8 +118,8 @@ class AdvancedSettingsSerializer(serializers.ModelSerializer):
         configuration_instance, _  = Configuration.objects.update_or_create(
             workspace=instance,
             defaults={
-                'sync_fyle_to_sage_intacct_payments': configurations.get('sync_fyle_to_sage_intacct_payments'),
-                'sync_sage_intacct_to_fyle_payments': configurations.get('sync_sage_intacct_to_fyle_payments'),
+                'sync_fyle_to_netsuite_payments': configurations.get('sync_netsuite_to_fyle_payments'),
+                'sync_netsuite_to_fyle_payments': configurations.get('sync_netsuite_to_fyle_payments'),
                 'auto_create_destination_entity': configurations.get('auto_create_destination_entity'),
                 'change_accounting_period': configurations.get('change_accounting_period'),
                 'memo_structure': configurations.get('memo_structure')
