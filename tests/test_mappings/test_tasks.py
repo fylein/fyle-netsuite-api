@@ -298,6 +298,7 @@ def test_upload_categories_to_fyle(mocker, db):
     
     assert count_of_accounts == 137
 
+    configuration.employee_field_mapping = 'EMPLOYEE'
     configuration.reimbursable_expenses_object = 'BILL'
     configuration.corporate_credit_card_expenses_object = 'BILL'
     configuration.save()
