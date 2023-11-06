@@ -303,7 +303,7 @@ def test_upload_categories_to_fyle(mocker, db):
 
     netsuite_attributes = upload_categories_to_fyle(49, configuration, platform)
     
-    assert len(netsuite_attributes) == 137
+    assert len(netsuite_attributes) == 36
 
 
 def test_filter_unmapped_destinations(db, mocker):
@@ -410,7 +410,7 @@ def test_auto_create_category_mappings(db, mocker):
     response = auto_create_category_mappings(workspace_id=49)
 
     mappings_count = CategoryMapping.objects.filter(workspace_id=49).count()
-    assert mappings_count == 53
+    assert mappings_count == 36
 
     # Patents & Licenses - Exempted
     category = ExpenseAttribute.objects.filter(value='Patents & Licenses - Exempted', workspace_id = 49).first()
