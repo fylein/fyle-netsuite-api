@@ -279,6 +279,7 @@ def test_upload_categories_to_fyle(mocker, db):
 
     configuration = Configuration.objects.filter(workspace_id=49).first()
     configuration.reimbursable_expenses_object = 'EXPENSE REPORT'
+    configuration.employee_field_mapping = 'VENDOR'
     configuration.corporate_credit_card_expenses_object = 'BILL'
     configuration.import_categories = True
     configuration.save()
@@ -290,7 +291,7 @@ def test_upload_categories_to_fyle(mocker, db):
 
     assert expense_category_count == 36
 
-    assert len(netsuite_attributes) == 36
+    assert len(netsuite_attributes) == 137
 
     count_of_accounts = DestinationAttribute.objects.filter(
         attribute_type='ACCOUNT', workspace_id=49).count()
@@ -403,14 +404,14 @@ def test_auto_create_category_mappings(db, mocker):
     destination_attribute.save()
 
     configuration = Configuration.objects.filter(workspace_id=49).first()
-
+    configuration.employee_field_mapping = 'VENDOR'
     configuration.import_categories = True
     configuration.save()
 
     response = auto_create_category_mappings(workspace_id=49)
 
     mappings_count = CategoryMapping.objects.filter(workspace_id=49).count()
-    assert mappings_count == 36
+    assert mappings_count == 53
 
     # Patents & Licenses - Exempted
     category = ExpenseAttribute.objects.filter(value='Patents & Licenses - Exempted', workspace_id = 49).first()
