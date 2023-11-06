@@ -132,7 +132,7 @@ def update_import_card_credits_flag(corporate_credit_card_expenses_object: str, 
 
     if (corporate_credit_card_expenses_object == 'EXPENSE REPORT' or (reimbursable_expenses_object and reimbursable_expenses_object in ['EXPENSE REPORT', 'JOURNAL ENTRY'])) and not expense_group_settings.import_card_credits:
         import_card_credits = True
-    elif (corporate_credit_card_expenses_object != 'EXPENSE REPORT' and (reimbursable_expenses_object and reimbursable_expenses_object in ['EXPENSE REPORT', 'JOURNAL ENTRY'])) and expense_group_settings.import_card_credits:
+    elif (corporate_credit_card_expenses_object != 'EXPENSE REPORT' and (reimbursable_expenses_object and reimbursable_expenses_object not in ['EXPENSE REPORT', 'JOURNAL ENTRY'])) and expense_group_settings.import_card_credits:
         import_card_credits = False
 
     if corporate_credit_card_expenses_object == 'CREDIT CARD CHARGE':
