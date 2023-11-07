@@ -79,6 +79,8 @@ def resolve_expense_attribute_errors(
         type='{}_MAPPING'.format(source_attribute_type)
     ).values_list('expense_attribute_id', flat=True)
 
+    print('errored_attribute_ids', errored_attribute_ids)
+
     if errored_attribute_ids:
         mapped_attribute_ids = get_mapped_attributes_ids(source_attribute_type, destination_attribute_type, errored_attribute_ids)
 

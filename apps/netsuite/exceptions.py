@@ -59,7 +59,20 @@ def handle_netsuite_exceptions(payment=False):
                 func(*args)
             
             except NetSuiteCredentials.DoesNotExist:
-                __handle_netsuite_connection_error(expense_group, task_log)
+                if payment:
+                    logger.info(
+                        'NetSuite Credentials not found for workspace_id %s',
+                        workspace_id
+                    )
+                    detail = {
+                        'message': 'NetSuite Account not connected'
+                    }
+                    task_log.status = 'FAILED'
+                    task_log.detail = detail
+
+                    task_log.save()
+                else:
+                    __handle_netsuite_connection_error(expense_group, task_log)
 
             except (NetSuiteRequestError, NetSuiteLoginError) as exception:
                 all_details = []
@@ -69,11 +82,12 @@ def handle_netsuite_exceptions(payment=False):
                 task_log.status = 'FAILED'
 
                 all_details.append({
-                    'expense_group_id': expense_group.id,
                     'value': netsuite_error_message,
                     'type': detail['code'],
                     'message': detail['message']
                 })
+                if not payment:
+                    all_details[0]['expense_group_id'] = expense_group.id
                 task_log.detail = all_details
 
                 task_log.save()
@@ -87,7 +101,7 @@ def handle_netsuite_exceptions(payment=False):
                 task_log.save()
 
             except NetSuiteRateLimitError:
-                logger.info('Rate limit error, workspace_id - %s', expense_group.workspace_id)
+                logger.info('Rate limit error, workspace_id - %s', workspace_id if payment else expense_group.workspace_id)
                 task_log.status = 'FAILED'
                 task_log.detail = {
                     'error': 'Rate limit error'
