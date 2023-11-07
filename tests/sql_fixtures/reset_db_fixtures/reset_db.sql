@@ -1331,7 +1331,7 @@ CREATE TABLE public.general_mappings (
     use_employee_department boolean NOT NULL,
     use_employee_class boolean NOT NULL,
     use_employee_location boolean NOT NULL,
-    department_level_id character varying(255),
+    department_id character varying(255),
     department_name character varying(255)
 );
 
@@ -7711,12 +7711,12 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 163	django_q	0014_schedule_cluster	2023-07-17 14:43:54.845689+00
 164	netsuite	0022_creditcardcharge_department_id	2023-07-26 10:31:38.187076+00
 165	workspaces	0033_workspace_onboarding_state	2023-10-11 09:59:47.359324+00
-166	workspaces	0034_auto_20231012_0750	2023-11-07 07:15:40.724388+00
-167	workspaces	0035_auto_20231019_1025	2023-11-07 07:15:40.733469+00
-168	fyle	0026_auto_20231025_0913	2023-11-07 07:15:40.75153+00
-169	mappings	0010_auto_20231025_0915	2023-11-07 07:15:40.768589+00
-170	mappings	0011_auto_20231107_0709	2023-11-07 07:15:40.785537+00
-171	netsuite	0023_bill_department_id	2023-11-07 07:15:40.792333+00
+166	workspaces	0034_auto_20231012_0750	2023-11-07 07:21:37.223551+00
+167	workspaces	0035_auto_20231019_1025	2023-11-07 07:21:37.232972+00
+168	fyle	0026_auto_20231025_0913	2023-11-07 07:21:37.250979+00
+169	mappings	0010_auto_20231025_0915	2023-11-07 07:21:37.268291+00
+170	mappings	0011_auto_20231107_0720	2023-11-07 07:21:37.285191+00
+171	netsuite	0023_bill_department_id	2023-11-07 07:21:37.291269+00
 \.
 
 
@@ -11366,7 +11366,7 @@ COPY public.fyle_credentials (id, refresh_token, created_at, updated_at, workspa
 -- Data for Name: general_mappings; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.general_mappings (id, location_name, location_id, accounts_payable_name, accounts_payable_id, created_at, updated_at, workspace_id, default_ccc_account_id, default_ccc_account_name, reimbursable_account_id, reimbursable_account_name, default_ccc_vendor_id, default_ccc_vendor_name, vendor_payment_account_id, vendor_payment_account_name, location_level, department_level, use_employee_department, use_employee_class, use_employee_location, department_level_id, department_name) FROM stdin;
+COPY public.general_mappings (id, location_name, location_id, accounts_payable_name, accounts_payable_id, created_at, updated_at, workspace_id, default_ccc_account_id, default_ccc_account_name, reimbursable_account_id, reimbursable_account_name, default_ccc_vendor_id, default_ccc_vendor_name, vendor_payment_account_id, vendor_payment_account_name, location_level, department_level, use_employee_department, use_employee_class, use_employee_location, department_id, department_name) FROM stdin;
 1	hubajuba	8	Accounts Payable	25	2021-11-15 08:56:31.432106+00	2021-11-15 13:21:26.113427+00	1	\N	\N	118	Unapproved Expense Reports	1674	Ashwin Vendor	\N	\N	TRANSACTION_BODY	\N	f	f	f	\N	\N
 2	\N	\N	Accounts Payable	25	2021-11-16 04:18:39.195287+00	2021-11-16 04:18:39.195312+00	2	228	Aus Account	118	Unapproved Expense Reports	12104	Nilesh Aus Vendor	\N	\N	\N	\N	f	f	f	\N	\N
 3	hukiju	10	\N	\N	2021-12-03 11:24:17.962764+00	2021-12-03 11:24:17.962809+00	49	228	Aus Account	228	Aus Account	12104	Nilesh Aus Vendor	\N	\N	TRANSACTION_BODY	\N	f	f	f	\N	\N

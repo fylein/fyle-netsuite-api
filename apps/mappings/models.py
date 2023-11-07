@@ -46,7 +46,7 @@ class GeneralMapping(models.Model):
     use_employee_location = models.BooleanField(default=False, help_text='use employee location in netsuite')
 
     department_name = models.CharField(max_length=255, help_text='NetSuite Department name', null=True)
-    department_level_id = models.CharField(max_length=255, help_text='NetSuite Department id', null=True)
+    department_id = models.CharField(max_length=255, help_text='NetSuite Department id', null=True)
     department_level = models.CharField(max_length=255, help_text='Transaction Body, Line, Both', null=True)
 
     vendor_payment_account_id = models.CharField(
