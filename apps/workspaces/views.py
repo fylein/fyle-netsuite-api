@@ -458,16 +458,17 @@ class WorkspaceAdminsView(viewsets.ViewSet):
         users = workspace.user.all()
         for user in users:
             admin = User.objects.get(user_id=user)
-            name = ExpenseAttribute.objects.get(
+            employee = ExpenseAttribute.objects.filter(
                 value=admin.email, 
                 workspace_id=kwargs['workspace_id'],
                 attribute_type='EMPLOYEE'
-            ).detail['full_name']
+            ).first()
 
-            admin_email.append({
-                'name': name,
-                'email': admin.email
-            })
+            if employee:
+                admin_email.append({
+                    'name': employee.detail['full_name'],
+                    'email': admin.email
+                })
 
         return Response(
                 data=admin_email,

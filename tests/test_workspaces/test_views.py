@@ -317,9 +317,13 @@ def test_post_workspace_schedule(api_client, access_token):
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
 
     response = api_client.post(url, {
-        'schedule_enabled': False,
-        'hours': 0
-    })
+        "hours": 2,
+        "schedule_enabled": True,
+        "added_email": None,
+        "selected_email": [
+            "admin1@fyleforbadassashu.in"
+            ]
+        }, format='json')
     assert response.status_code == 200
 
 def test_get_workspace_schedule(api_client, access_token):
