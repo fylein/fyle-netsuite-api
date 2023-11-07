@@ -205,7 +205,8 @@ class ConnectNetSuiteView(viewsets.ViewSet):
                 data=NetSuiteCredentialSerializer(netsuite_credentials).data,
                 status=status.HTTP_200_OK
             )
-        except Exception:
+        except Exception as e:
+            logger.info(e)
             return Response(
                 {
                     'message': 'Invalid Login Attempt'
