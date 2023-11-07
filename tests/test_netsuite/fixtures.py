@@ -160,6 +160,12 @@ data = {
                 "externalId": None,
                 "type": "location",
             },
+            'department': {
+                'name': None,
+                'internalId': None,
+                'externalId': None,
+                'type': 'department'
+            },
             "approvalStatus": None,
             "nextApprover": None,
             "vatRegNum": None,
@@ -300,6 +306,12 @@ data = {
             "internalId": "8",
             "externalId": None,
             "type": "location",
+        },
+        'department': {
+            'name': None,
+            'internalId': None,
+            'externalId': None,
+            'type': 'department'
         },
         "approvalStatus": None,
         "nextApprover": None,
@@ -446,6 +458,12 @@ data = {
             "internalId": "8",
             "externalId": None,
             "type": "location",
+        },
+        'department': {
+            'name': None,
+            'internalId': None,
+            'externalId': None,
+            'type': 'department'
         },
         "approvalStatus": None,
         "nextApprover": None,
