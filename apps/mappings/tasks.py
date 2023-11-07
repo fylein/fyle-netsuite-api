@@ -13,19 +13,77 @@ from netsuitesdk import NetSuiteRateLimitError, NetSuiteLoginError
 from fyle.platform.exceptions import WrongParamsError, InvalidTokenError
 
 from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttribute, DestinationAttribute,\
-    CategoryMapping
+    CategoryMapping, EmployeeMapping
 from fyle_accounting_mappings.helpers import EmployeesAutoMappingHelper
 
 from fyle_integrations_platform_connector import PlatformConnector
 from apps.mappings.models import GeneralMapping
 from apps.netsuite.connector import NetSuiteConnector
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configuration, Workspace
+from apps.tasks.models import Error
 
 from .exceptions import handle_exceptions
 from .constants import FYLE_EXPENSE_SYSTEM_FIELDS, DEFAULT_NETSUITE_IMPORT_TYPES
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
+
+def get_mapped_attributes_ids(source_attribute_type: str, destination_attribute_type: str, errored_attribute_ids: List[int]):
+
+    mapped_attribute_ids = []
+
+    if source_attribute_type == "TAX_GROUP":
+        mapped_attribute_ids: List[int] = Mapping.objects.filter(
+            source_id__in=errored_attribute_ids
+        ).values_list('source_id', flat=True)
+
+    elif source_attribute_type == "EMPLOYEE":
+        params = {
+            'source_employee_id__in': errored_attribute_ids,
+        }
+
+        if destination_attribute_type == "EMPLOYEE":
+            params['destination_employee_id__isnull'] = False
+        else:
+            params['destination_vendor_id__isnull'] = False
+        mapped_attribute_ids: List[int] = EmployeeMapping.objects.filter(
+            **params
+        ).values_list('source_employee_id', flat=True)
+
+    elif source_attribute_type == "CATEGORY":
+        params = {
+            'source_category_id__in': errored_attribute_ids,
+        }
+
+        if destination_attribute_type == 'EXPENSE_TYPE':
+            params['destination_expense_head_id__isnull'] = False
+        else:
+            params['destination_account_id__isnull'] =  False
+
+        mapped_attribute_ids: List[int] = CategoryMapping.objects.filter(
+            **params
+        ).values_list('source_category_id', flat=True)
+
+    return mapped_attribute_ids
+
+
+def resolve_expense_attribute_errors(
+    source_attribute_type: str, workspace_id: int, destination_attribute_type: str = None):
+    """
+    Resolve Expense Attribute Errors
+    :return: None
+    """
+    errored_attribute_ids: List[int] = Error.objects.filter(
+        is_resolved=False,
+        workspace_id=workspace_id,
+        type='{}_MAPPING'.format(source_attribute_type)
+    ).values_list('expense_attribute_id', flat=True)
+
+    if errored_attribute_ids:
+        mapped_attribute_ids = get_mapped_attributes_ids(source_attribute_type, destination_attribute_type, errored_attribute_ids)
+
+        if mapped_attribute_ids:
+            Error.objects.filter(expense_attribute_id__in=mapped_attribute_ids).update(is_resolved=True)
 
 def remove_duplicates(ns_attributes: List[DestinationAttribute]):
     unique_attributes = []
@@ -657,6 +715,11 @@ def async_auto_map_employees(workspace_id: int):
         netsuite_connection.sync_vendors()
 
     EmployeesAutoMappingHelper(workspace_id, destination_type, employee_mapping_preference).reimburse_mapping()
+    resolve_expense_attribute_errors(
+        source_attribute_type="EMPLOYEE",
+        workspace_id=workspace_id,
+        destination_attribute_type=destination_type,
+        )
 
 
 def schedule_auto_map_employees(employee_mapping_preference: str, workspace_id: int):

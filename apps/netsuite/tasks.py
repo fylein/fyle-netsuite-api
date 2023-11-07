@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from django.db import transaction
 from django.db.models import Q
 from django.utils.module_loading import import_string
+from apps.netsuite.exceptions import handle_netsuite_exceptions
 from django_q.models import Schedule
 from django_q.tasks import Chain, async_task
 
@@ -23,7 +24,7 @@ from fyle_netsuite_api.exceptions import BulkError
 
 from apps.fyle.models import ExpenseGroup, Expense, Reimbursement
 from apps.mappings.models import GeneralMapping, SubsidiaryMapping
-from apps.tasks.models import TaskLog
+from apps.tasks.models import TaskLog, Error
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configuration, Workspace
 
 from .models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, JournalEntryLineItem, \
@@ -253,22 +254,7 @@ def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_conn
 
         except NetSuiteRequestError as exception:
             logger.info({'error': exception})
-
-
-def __handle_netsuite_connection_error(expense_group: ExpenseGroup, task_log: TaskLog) -> None:
-    logger.info(
-        'NetSuite Credentials not found for workspace_id %s / expense group %s',
-        expense_group.id,
-        expense_group.workspace_id
-    )
-    detail = {
-        'expense_group_id': expense_group.id,
-        'message': 'NetSuite Account not connected'
-    }
-    task_log.status = 'FAILED'
-    task_log.detail = detail
-
-    task_log.save()
+            
 
 def construct_payload_and_update_export(expense_id_receipt_url_map: dict, task_log: TaskLog, workspace: Workspace,
     cluster_domain: str, netsuite_connection: NetSuiteConnector):
@@ -401,6 +387,7 @@ def upload_attachments_and_update_export(expenses: List[Expense], task_log: Task
         )
 
 
+@handle_netsuite_exceptions(payment=False)
 def create_bill(expense_group, task_log_id):
     task_log = TaskLog.objects.get(id=task_log_id)
 
@@ -413,94 +400,48 @@ def create_bill(expense_group, task_log_id):
     configuration: Configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
     general_mappings: GeneralMapping = GeneralMapping.objects.filter(workspace_id=expense_group.workspace_id).first()
 
-    try:
-        fyle_credentials = FyleCredential.objects.get(workspace_id=expense_group.workspace_id)
-        netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
+    fyle_credentials = FyleCredential.objects.get(workspace_id=expense_group.workspace_id)
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
 
-        netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
-        if expense_group.fund_source == 'PERSONAL' and configuration.auto_map_employees \
-                and configuration.auto_create_destination_entity:
-            create_or_update_employee_mapping(
-                expense_group, netsuite_connection, configuration.auto_map_employees,
-                configuration.employee_field_mapping)
+    if expense_group.fund_source == 'PERSONAL' and configuration.auto_map_employees \
+            and configuration.auto_create_destination_entity:
+        create_or_update_employee_mapping(
+            expense_group, netsuite_connection, configuration.auto_map_employees,
+            configuration.employee_field_mapping)
 
-        if general_mappings and general_mappings.use_employee_department and expense_group.fund_source == 'CCC' \
-                and configuration.auto_map_employees and configuration.auto_create_destination_entity:
-            create_or_update_employee_mapping(
-                expense_group, netsuite_connection, configuration.auto_map_employees,
-                configuration.employee_field_mapping)
+    if general_mappings and general_mappings.use_employee_department and expense_group.fund_source == 'CCC' \
+            and configuration.auto_map_employees and configuration.auto_create_destination_entity:
+        create_or_update_employee_mapping(
+            expense_group, netsuite_connection, configuration.auto_map_employees,
+            configuration.employee_field_mapping)
 
-        __validate_expense_group(expense_group, configuration)
-        with transaction.atomic():
-            bill_object = Bill.create_bill(expense_group)
+    __validate_expense_group(expense_group, configuration)
+    with transaction.atomic():
+        bill_object = Bill.create_bill(expense_group)
 
-            bill_lineitems_objects = BillLineitem.create_bill_lineitems(expense_group, configuration)
+        bill_lineitems_objects = BillLineitem.create_bill_lineitems(expense_group, configuration)
 
-            created_bill = netsuite_connection.post_bill(bill_object, bill_lineitems_objects)
+        created_bill = netsuite_connection.post_bill(bill_object, bill_lineitems_objects)
 
-            task_log.detail = created_bill
-            task_log.bill = bill_object
-            task_log.status = 'COMPLETE'
-
-            task_log.save()
-
-            expense_group.exported_at = datetime.now()
-            expense_group.response_logs = created_bill
-            expense_group.save()
-
-            async_task(
-                'apps.netsuite.tasks.upload_attachments_and_update_export',
-                expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
-            )
-
-    except NetSuiteCredentials.DoesNotExist:
-        __handle_netsuite_connection_error(expense_group, task_log)
-
-    except (NetSuiteRequestError, NetSuiteLoginError) as exception:
-        all_details = []
-        logger.info({'error': exception})
-        detail = json.dumps(exception.__dict__)
-        detail = json.loads(detail)
-        task_log.status = 'FAILED'
-
-        all_details.append({
-            'expense_group_id': expense_group.id,
-            'value': netsuite_error_message,
-            'type': detail['code'],
-            'message': detail['message']
-        })
-        task_log.detail = all_details
+        task_log.detail = created_bill
+        task_log.bill = bill_object
+        task_log.status = 'COMPLETE'
 
         task_log.save()
 
-    except BulkError as exception:
-        logger.info(exception.response)
-        detail = exception.response
-        task_log.status = 'FAILED'
-        task_log.detail = detail
+        expense_group.exported_at = datetime.now()
+        expense_group.response_logs = created_bill
+        expense_group.save()
 
-        task_log.save()
-
-    except NetSuiteRateLimitError:
-        logger.info('Rate limit error, workspace_id - %s', expense_group.workspace_id)
-        task_log.status = 'FAILED'
-        task_log.detail = {
-            'error': 'Rate limit error'
-        }
-
-        task_log.save()
-
-    except Exception:
-        error = traceback.format_exc()
-        task_log.detail = {
-            'error': error
-        }
-        task_log.status = 'FATAL'
-        task_log.save()
-        __log_error(task_log)
+        async_task(
+            'apps.netsuite.tasks.upload_attachments_and_update_export',
+            expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
+        )
 
 
+@handle_netsuite_exceptions(payment=False)
 def create_credit_card_charge(expense_group, task_log_id):
     task_log = TaskLog.objects.get(id=task_log_id)
 
@@ -513,106 +454,60 @@ def create_credit_card_charge(expense_group, task_log_id):
     configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
     general_mappings: GeneralMapping = GeneralMapping.objects.filter(workspace_id=expense_group.workspace_id).first()
 
-    try:
-        netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
 
-        netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
-        if general_mappings and general_mappings.use_employee_department and expense_group.fund_source == 'CCC' \
-                and configuration.auto_map_employees and configuration.auto_create_destination_entity:
-            create_or_update_employee_mapping(
-                expense_group, netsuite_connection, configuration.auto_map_employees,
-                configuration.employee_field_mapping)
+    if general_mappings and general_mappings.use_employee_department and expense_group.fund_source == 'CCC' \
+            and configuration.auto_map_employees and configuration.auto_create_destination_entity:
+        create_or_update_employee_mapping(
+            expense_group, netsuite_connection, configuration.auto_map_employees,
+            configuration.employee_field_mapping)
 
-        merchant = expense_group.expenses.first().vendor
-        auto_create_merchants = configuration.auto_create_merchants
-        get_or_create_credit_card_vendor(expense_group, merchant, auto_create_merchants)
+    merchant = expense_group.expenses.first().vendor
+    auto_create_merchants = configuration.auto_create_merchants
+    get_or_create_credit_card_vendor(expense_group, merchant, auto_create_merchants)
 
-        __validate_expense_group(expense_group, configuration)
-        with transaction.atomic():
-            credit_card_charge_object = CreditCardCharge.create_credit_card_charge(expense_group)
+    __validate_expense_group(expense_group, configuration)
+    with transaction.atomic():
+        credit_card_charge_object = CreditCardCharge.create_credit_card_charge(expense_group)
 
-            credit_card_charge_lineitems_object = CreditCardChargeLineItem.create_credit_card_charge_lineitem(
-                expense_group, configuration
-            )
-            attachment_links = {}
+        credit_card_charge_lineitems_object = CreditCardChargeLineItem.create_credit_card_charge_lineitem(
+            expense_group, configuration
+        )
+        attachment_links = {}
 
-            expense = expense_group.expenses.first()
-            refund = False
-            if expense.amount < 0:
-                refund = True
+        expense = expense_group.expenses.first()
+        refund = False
+        if expense.amount < 0:
+            refund = True
 
-            attachment_link = load_attachments(netsuite_connection, expense, expense_group)
+        attachment_link = load_attachments(netsuite_connection, expense, expense_group)
 
-            if attachment_link:
-                attachment_links[expense.expense_id] = attachment_link
+        if attachment_link:
+            attachment_links[expense.expense_id] = attachment_link
 
-            created_credit_card_charge = netsuite_connection.post_credit_card_charge(
-                credit_card_charge_object, credit_card_charge_lineitems_object, attachment_links, refund
-            )
+        created_credit_card_charge = netsuite_connection.post_credit_card_charge(
+            credit_card_charge_object, credit_card_charge_lineitems_object, attachment_links, refund
+        )
 
-            if refund:
-                created_credit_card_charge['type'] = 'chargeCardRefund'
-            else:
-                created_credit_card_charge['type'] = 'chargeCard'
+        if refund:
+            created_credit_card_charge['type'] = 'chargeCardRefund'
+        else:
+            created_credit_card_charge['type'] = 'chargeCard'
 
-            task_log.detail = created_credit_card_charge
-            task_log.credit_card_charge = credit_card_charge_object
-            task_log.status = 'COMPLETE'
-
-            task_log.save()
-
-            expense_group.exported_at = datetime.now()
-            expense_group.response_logs = created_credit_card_charge
-            expense_group.save()
-
-    except NetSuiteCredentials.DoesNotExist:
-        __handle_netsuite_connection_error(expense_group, task_log)
-
-    except (NetSuiteRequestError, NetSuiteLoginError) as exception:
-        all_details = []
-        logger.info({'error': exception})
-        detail = json.dumps(exception.__dict__)
-        detail = json.loads(detail)
-        task_log.status = 'FAILED'
-
-        all_details.append({
-            'expense_group_id': expense_group.id,
-            'value': netsuite_error_message,
-            'type': detail['code'],
-            'message': detail['message']
-        })
-        task_log.detail = all_details
+        task_log.detail = created_credit_card_charge
+        task_log.credit_card_charge = credit_card_charge_object
+        task_log.status = 'COMPLETE'
 
         task_log.save()
 
-    except BulkError as exception:
-        logger.info(exception.response)
-        detail = exception.response
-        task_log.status = 'FAILED'
-        task_log.detail = detail
-
-        task_log.save()
-
-    except NetSuiteRateLimitError:
-        logger.info('Rate limit error, workspace_id - %s', expense_group.workspace_id)
-        task_log.status = 'FAILED'
-        task_log.detail = {
-            'error': 'Rate limit error'
-        }
-
-        task_log.save()
-
-    except Exception:
-        error = traceback.format_exc()
-        task_log.detail = {
-            'error': error
-        }
-        task_log.status = 'FATAL'
-        task_log.save()
-        __log_error(task_log)
+        expense_group.exported_at = datetime.now()
+        expense_group.response_logs = created_credit_card_charge
+        expense_group.save()
 
 
+@handle_netsuite_exceptions(payment=False)
 def create_expense_report(expense_group, task_log_id):
     task_log = TaskLog.objects.get(id=task_log_id)
 
@@ -624,90 +519,44 @@ def create_expense_report(expense_group, task_log_id):
 
     configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
 
-    try:
-        fyle_credentials = FyleCredential.objects.get(workspace_id=expense_group.workspace_id)
-        netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
-        netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
+    fyle_credentials = FyleCredential.objects.get(workspace_id=expense_group.workspace_id)
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
-        if configuration.auto_map_employees and configuration.auto_create_destination_entity:
-            create_or_update_employee_mapping(
-                expense_group, netsuite_connection, configuration.auto_map_employees,
-                configuration.employee_field_mapping)
+    if configuration.auto_map_employees and configuration.auto_create_destination_entity:
+        create_or_update_employee_mapping(
+            expense_group, netsuite_connection, configuration.auto_map_employees,
+            configuration.employee_field_mapping)
 
-        __validate_expense_group(expense_group, configuration)
-        with transaction.atomic():
-            expense_report_object = ExpenseReport.create_expense_report(expense_group)
+    __validate_expense_group(expense_group, configuration)
+    with transaction.atomic():
+        expense_report_object = ExpenseReport.create_expense_report(expense_group)
 
-            expense_report_lineitems_objects = ExpenseReportLineItem.create_expense_report_lineitems(
-                expense_group, configuration
-            )
+        expense_report_lineitems_objects = ExpenseReportLineItem.create_expense_report_lineitems(
+            expense_group, configuration
+        )
 
-            created_expense_report = netsuite_connection.post_expense_report(
-                expense_report_object, expense_report_lineitems_objects
-            )
+        created_expense_report = netsuite_connection.post_expense_report(
+            expense_report_object, expense_report_lineitems_objects
+        )
 
-            task_log.detail = created_expense_report
-            task_log.expense_report = expense_report_object
-            task_log.status = 'COMPLETE'
-
-            task_log.save()
-
-            expense_group.exported_at = datetime.now()
-            expense_group.response_logs = created_expense_report
-            expense_group.save()
-
-            async_task(
-                'apps.netsuite.tasks.upload_attachments_and_update_export',
-                expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
-            )
-
-    except NetSuiteCredentials.DoesNotExist:
-        __handle_netsuite_connection_error(expense_group, task_log)
-
-    except (NetSuiteRequestError, NetSuiteLoginError) as exception:
-        all_details = []
-        logger.info({'error': exception})
-        detail = json.dumps(exception.__dict__)
-        detail = json.loads(detail)
-        task_log.status = 'FAILED'
-
-        all_details.append({
-            'expense_group_id': expense_group.id,
-            'value': netsuite_error_message,
-            'type': detail['code'],
-            'message': detail['message']
-        })
-        task_log.detail = all_details
+        task_log.detail = created_expense_report
+        task_log.expense_report = expense_report_object
+        task_log.status = 'COMPLETE'
 
         task_log.save()
 
-    except BulkError as exception:
-        logger.info(exception.response)
-        detail = exception.response
-        task_log.status = 'FAILED'
-        task_log.detail = detail
+        expense_group.exported_at = datetime.now()
+        expense_group.response_logs = created_expense_report
+        expense_group.save()
 
-        task_log.save()
-
-    except NetSuiteRateLimitError:
-        logger.info('Rate limit error, workspace_id - %s', expense_group.workspace_id)
-        task_log.status = 'FAILED'
-        task_log.detail = {
-            'error': 'Rate limit error'
-        }
-
-        task_log.save()
-
-    except Exception:
-        error = traceback.format_exc()
-        task_log.detail = {
-            'error': error
-        }
-        task_log.status = 'FATAL'
-        task_log.save()
-        __log_error(task_log)
+        async_task(
+            'apps.netsuite.tasks.upload_attachments_and_update_export',
+            expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
+        )
 
 
+@handle_netsuite_exceptions(payment=False)
 def create_journal_entry(expense_group, task_log_id):
     task_log = TaskLog.objects.get(id=task_log_id)
 
@@ -719,88 +568,42 @@ def create_journal_entry(expense_group, task_log_id):
 
     configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
 
-    try:
-        fyle_credentials = FyleCredential.objects.get(workspace_id=expense_group.workspace_id)
-        netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
 
-        netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
+    fyle_credentials = FyleCredential.objects.get(workspace_id=expense_group.workspace_id)
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
 
-        if configuration.auto_map_employees and configuration.auto_create_destination_entity:
-            create_or_update_employee_mapping(
-                expense_group, netsuite_connection, configuration.auto_map_employees,
-                configuration.employee_field_mapping)
-        __validate_expense_group(expense_group, configuration)
-        with transaction.atomic():
-            journal_entry_object = JournalEntry.create_journal_entry(expense_group)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
-            journal_entry_lineitems_objects = JournalEntryLineItem.create_journal_entry_lineitems(
-                expense_group, configuration
-            )
+    if configuration.auto_map_employees and configuration.auto_create_destination_entity:
+        create_or_update_employee_mapping(
+            expense_group, netsuite_connection, configuration.auto_map_employees,
+            configuration.employee_field_mapping)
+    __validate_expense_group(expense_group, configuration)
+    with transaction.atomic():
+        journal_entry_object = JournalEntry.create_journal_entry(expense_group)
 
-            created_journal_entry = netsuite_connection.post_journal_entry(
-                journal_entry_object, journal_entry_lineitems_objects
-            )
+        journal_entry_lineitems_objects = JournalEntryLineItem.create_journal_entry_lineitems(
+            expense_group, configuration
+        )
 
-            task_log.detail = created_journal_entry
-            task_log.journal_entry = journal_entry_object
-            task_log.status = 'COMPLETE'
+        created_journal_entry = netsuite_connection.post_journal_entry(
+            journal_entry_object, journal_entry_lineitems_objects
+        )
 
-            task_log.save()
-
-            expense_group.exported_at = datetime.now()
-            expense_group.response_logs = created_journal_entry
-            expense_group.save()
-
-            async_task(
-                'apps.netsuite.tasks.upload_attachments_and_update_export',
-                expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
-            )
-
-    except NetSuiteCredentials.DoesNotExist:
-        __handle_netsuite_connection_error(expense_group, task_log)
-
-    except (NetSuiteRequestError, NetSuiteLoginError) as exception:
-        all_details = []
-        logger.info({'error': exception})
-        detail = json.dumps(exception.__dict__)
-        detail = json.loads(detail)
-        task_log.status = 'FAILED'
-
-        all_details.append({
-            'expense_group_id': expense_group.id,
-            'value': netsuite_error_message,
-            'type': detail['code'],
-            'message': detail['message']
-        })
-        task_log.detail = all_details
+        task_log.detail = created_journal_entry
+        task_log.journal_entry = journal_entry_object
+        task_log.status = 'COMPLETE'
 
         task_log.save()
 
-    except BulkError as exception:
-        logger.info(exception.response)
-        detail = exception.response
-        task_log.status = 'FAILED'
-        task_log.detail = detail
+        expense_group.exported_at = datetime.now()
+        expense_group.response_logs = created_journal_entry
+        expense_group.save()
 
-        task_log.save()
-
-    except NetSuiteRateLimitError:
-        logger.info('Rate limit error, workspace_id - %s', expense_group.workspace_id)
-        task_log.status = 'FAILED'
-        task_log.detail = {
-            'error': 'Rate limit error'
-        }
-
-        task_log.save()
-
-    except Exception:
-        error = traceback.format_exc()
-        task_log.detail = {
-            'error': error
-        }
-        task_log.status = 'FATAL'
-        task_log.save()
-        __log_error(task_log)
+        async_task(
+            'apps.netsuite.tasks.upload_attachments_and_update_export',
+            expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
+        )
 
 
 def __validate_general_mapping(expense_group: ExpenseGroup, configuration: Configuration) -> List[BulkError]:
@@ -1013,6 +816,18 @@ def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Conf
                 'type': 'Employee Mapping',
                 'message': 'Employee mapping not found'
             })
+
+            if employee:
+                Error.objects.update_or_create(
+                    workspace_id=expense_group.workspace_id,
+                    expense_attribute=employee,
+                    defaults={
+                        'type': 'EMPLOYEE_MAPPING',
+                        'error_title': employee.value,
+                        'error_detail': 'Employee mapping is missing',
+                        'is_resolved': False
+                    }
+                )
 
     return bulk_errors
 
@@ -1323,7 +1138,7 @@ def create_netsuite_payment_objects(netsuite_objects, object_type, workspace_id)
 
     return netsuite_payment_objects
 
-
+@handle_netsuite_exceptions(payment=True)
 def process_vendor_payment(entity_object, workspace_id, object_type):
     task_log, _ = TaskLog.objects.update_or_create(
         workspace_id=workspace_id,
@@ -1334,91 +1149,45 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
         }
     )
 
-    try:
-        with transaction.atomic():
+    with transaction.atomic():
 
-            vendor_payment_object = VendorPayment.create_vendor_payment(
-                workspace_id, entity_object
-            )
-
-            vendor_payment_lineitems = VendorPaymentLineitem.create_vendor_payment_lineitems(
-                entity_object['line'], vendor_payment_object
-            )
-
-            netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
-            netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
-
-            first_object_id = vendor_payment_lineitems[0].doc_id
-            if object_type == 'BILL':
-                first_object = netsuite_connection.get_bill(first_object_id)
-            else:
-                first_object = netsuite_connection.get_expense_report(first_object_id)
-            created_vendor_payment = netsuite_connection.post_vendor_payment(
-                vendor_payment_object, vendor_payment_lineitems, first_object
-            )
-
-            lines = entity_object['line']
-            expense_group_ids = [line['expense_group'].id for line in lines]
-
-            if object_type == 'BILL':
-                paid_objects = Bill.objects.filter(expense_group_id__in=expense_group_ids).all()
-
-            else:
-                paid_objects = ExpenseReport.objects.filter(expense_group_id__in=expense_group_ids).all()
-
-            for paid_object in paid_objects:
-                paid_object.payment_synced = True
-                paid_object.paid_on_netsuite = True
-                paid_object.save()
-
-            task_log.detail = created_vendor_payment
-            task_log.vendor_payment = vendor_payment_object
-            task_log.status = 'COMPLETE'
-
-            task_log.save()
-    except NetSuiteCredentials.DoesNotExist:
-        logger.info(
-            'NetSuite Credentials not found for workspace_id %s',
-            workspace_id
+        vendor_payment_object = VendorPayment.create_vendor_payment(
+            workspace_id, entity_object
         )
-        detail = {
-            'message': 'NetSuite Account not connected'
-        }
-        task_log.status = 'FAILED'
-        task_log.detail = detail
 
-        task_log.save()
+        vendor_payment_lineitems = VendorPaymentLineitem.create_vendor_payment_lineitems(
+            entity_object['line'], vendor_payment_object
+        )
 
-    except (NetSuiteRequestError, NetSuiteLoginError) as exception:
-        all_details = []
-        logger.info({'error': exception})
-        detail = json.dumps(exception.__dict__)
-        detail = json.loads(detail)
-        task_log.status = 'FAILED'
+        netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+        netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
 
-        all_details.append({
-            'value': netsuite_error_message,
-            'type': detail['code'],
-            'message': detail['message']
-        })
-        task_log.detail = all_details
+        first_object_id = vendor_payment_lineitems[0].doc_id
+        if object_type == 'BILL':
+            first_object = netsuite_connection.get_bill(first_object_id)
+        else:
+            first_object = netsuite_connection.get_expense_report(first_object_id)
+        created_vendor_payment = netsuite_connection.post_vendor_payment(
+            vendor_payment_object, vendor_payment_lineitems, first_object
+        )
 
-        task_log.save()
+        lines = entity_object['line']
+        expense_group_ids = [line['expense_group'].id for line in lines]
 
-    except NetSuiteRateLimitError:
-        logger.info('Rate limit error, workspace_id - %s', workspace_id)
-        task_log.status = 'FAILED'
-        task_log.detail = {
-            'error': 'Rate limit error'
-        }
+        if object_type == 'BILL':
+            paid_objects = Bill.objects.filter(expense_group_id__in=expense_group_ids).all()
 
-        task_log.save()
+        else:
+            paid_objects = ExpenseReport.objects.filter(expense_group_id__in=expense_group_ids).all()
 
-    except BulkError as exception:
-        logger.info(exception.response)
-        detail = exception.response
-        task_log.status = 'FAILED'
-        task_log.detail = detail
+        for paid_object in paid_objects:
+            paid_object.payment_synced = True
+            paid_object.paid_on_netsuite = True
+            paid_object.save()
+
+        task_log.detail = created_vendor_payment
+        task_log.vendor_payment = vendor_payment_object
+        task_log.status = 'COMPLETE'
 
         task_log.save()
 
