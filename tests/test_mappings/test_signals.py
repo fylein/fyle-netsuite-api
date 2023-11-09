@@ -3,8 +3,35 @@ from django_q.models import Schedule
 from apps.workspaces.models import Configuration, Workspace
 from apps.mappings.models import GeneralMapping
 from apps.tasks.models import Error
-from fyle_accounting_mappings.models import MappingSetting, ExpenseAttribute, EmployeeMapping
+from fyle_accounting_mappings.models import MappingSetting, ExpenseAttribute, EmployeeMapping, CategoryMapping
 
+@pytest.mark.django_db()
+def test_resolve_post_category_mapping_errors(access_token):
+    source_category = ExpenseAttribute.objects.filter(
+        id=96,
+        workspace_id=1,
+        attribute_type='CATEGORY'
+    ).first()
+
+    Error.objects.update_or_create(
+        workspace_id=1,
+        expense_attribute=source_category,
+        defaults={
+            'type': 'CATEGORY_MAPPING',
+            'error_title': source_category.value,
+            'error_detail': 'Category mapping is missing',
+            'is_resolved': False
+        }
+    )
+    category_mapping, _ = CategoryMapping.objects.update_or_create(
+       source_category_id=96,
+       destination_account_id=791,
+       destination_expense_head_id=791,
+       workspace_id=1
+    )
+
+    error = Error.objects.filter(expense_attribute_id=category_mapping.source_category_id).first()
+    assert error.is_resolved == True
 
 @pytest.mark.django_db()
 def test_resolve_post_employees_mapping_errors(access_token):

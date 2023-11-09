@@ -563,6 +563,12 @@ def auto_create_category_mappings(workspace_id):
     if reimbursable_expenses_object == 'EXPENSE REPORT' and \
         corporate_credit_card_expenses_object in ('BILL', 'JOURNAL ENTRY', 'CREDIT CARD CHARGE'):
         bulk_create_ccc_category_mappings(workspace_id)
+    
+    resolve_expense_attribute_errors(
+            source_attribute_type="CATEGORY", 
+            destination_attribute_type=reimbursable_destination_type, 
+            workspace_id=workspace_id
+    )
 
 
 def auto_import_and_map_fyle_fields(workspace_id):

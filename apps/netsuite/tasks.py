@@ -846,6 +846,12 @@ def __validate_category_mapping(expense_group: ExpenseGroup, configuration: Conf
             workspace_id=expense_group.workspace_id
         ).first()
 
+        category_attribute = ExpenseAttribute.objects.filter(
+            value=category,
+            workspace_id=expense_group.workspace_id,
+            attribute_type='CATEGORY'
+        ).first()
+
         if category_mapping:
             if expense_group.fund_source == 'PERSONAL':
                 if configuration.reimbursable_expenses_object == 'EXPENSE REPORT':
@@ -866,6 +872,19 @@ def __validate_category_mapping(expense_group: ExpenseGroup, configuration: Conf
                 'type': 'Category Mapping',
                 'message': 'Category Mapping Not Found'
             })
+
+            if category_attribute:
+                Error.objects.update_or_create(
+                    workspace_id=expense_group.workspace_id,
+                    expense_attribute=category_attribute,
+                    defaults={
+                        'type': 'CATEGORY_MAPPING',
+                        'error_title': category_attribute.value,
+                        'error_detail': 'Category mapping is missing',
+                        'is_resolved': False
+                    }
+                )
+
 
         row = row + 1
 

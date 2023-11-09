@@ -57,6 +57,26 @@ def test_resolve_expense_attribute_errors(db):
     resolve_expense_attribute_errors('EMPLOYEE', workspace_id, 'VENDOR')
     assert Error.objects.get(id=error.id).is_resolved == True
 
+    source_category = ExpenseAttribute.objects.filter(
+        id=96,
+        workspace_id=1,
+        attribute_type='CATEGORY'
+    ).first()
+
+    error, _ = Error.objects.update_or_create(
+        workspace_id=1,
+        expense_attribute=source_category,
+        defaults={
+            'type': 'CATEGORY_MAPPING',
+            'error_title': source_category.value,
+            'error_detail': 'Category mapping is missing',
+            'is_resolved': False
+        }
+    )
+
+    resolve_expense_attribute_errors('CATEGORY', workspace_id, 'ACCOUNT')
+    assert Error.objects.get(id=error.id).is_resolved == True
+
 
 def test_disable_category_for_items_mapping(db ,mocker):
     workspace_id = 49
