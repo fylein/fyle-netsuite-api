@@ -58,7 +58,7 @@ def test_resolve_expense_attribute_errors(db):
     assert Error.objects.get(id=error.id).is_resolved == True
 
     source_category = ExpenseAttribute.objects.filter(
-        id=96,
+        id=34,
         workspace_id=1,
         attribute_type='CATEGORY'
     ).first()
