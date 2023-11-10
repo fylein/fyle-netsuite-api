@@ -334,6 +334,7 @@ class Bill(models.Model):
     accounts_payable_id = models.CharField(max_length=255, help_text='NetSuite Accounts Payable Account id')
     entity_id = models.CharField(max_length=255, help_text='NetSuite vendor id')
     subsidiary_id = models.CharField(max_length=255, help_text='NetSuite subsidiary id')
+    department_id = models.CharField(max_length=255, help_text='NetSuite department id', null=True)
     location_id = models.CharField(max_length=255, help_text='NetSuite Location id', null=True)
     currency = models.CharField(max_length=255, help_text='Bill Currency')
     memo = models.TextField(help_text='Bill Description')
@@ -380,6 +381,8 @@ class Bill(models.Model):
                 'subsidiary_id': subsidiary_mappings.internal_id,
                 'accounts_payable_id': general_mappings.accounts_payable_id,
                 'entity_id': vendor_id,
+                'department_id': general_mappings.department_id if general_mappings.department_level in [
+                    'TRANSACTION_BODY', 'ALL'] else None,
                 'location_id': general_mappings.location_id if general_mappings.location_level in [
                     'TRANSACTION_BODY', 'ALL'] else None,
                 'memo': 'Reimbursable expenses by {0}'.format(description.get('employee_email')) if
@@ -464,6 +467,10 @@ class BillLineitem(models.Model):
                 if employee_mapping and employee_mapping.destination_employee:
                     if employee_mapping.destination_employee.detail.get('department_id'):
                         department_id = employee_mapping.destination_employee.detail.get('department_id')
+            
+            if not department_id:
+                if general_mappings.department_id and general_mappings.department_level in ['TRANSACTION_LINE', 'ALL']:
+                    department_id = general_mappings.department_id
 
             location_id = get_location_id_or_none(expense_group, lineitem)
 
@@ -673,6 +680,10 @@ class CreditCardChargeLineItem(models.Model):
                 if employee_mapping.destination_employee.detail.get('department_id'):
                     department_id = employee_mapping.destination_employee.detail.get('department_id')
 
+        if not department_id:
+            if general_mappings.department_id and general_mappings.department_level in ['TRANSACTION_LINE', 'ALL']:
+                department_id = general_mappings.department_id
+
         location_id = get_location_id_or_none(expense_group, lineitem)
 
         if expense_group.fund_source == 'CCC' and general_mappings.use_employee_location and\
@@ -786,6 +797,9 @@ class ExpenseReport(models.Model):
         if general_mappings.use_employee_department and general_mappings.department_level in (
             'ALL', 'TRANSACTION_BODY') and employee_field_mapping == 'EMPLOYEE':
             department_id = employee_mapping.destination_employee.detail.get('department_id')
+        else:
+            department_id = general_mappings.department_id if general_mappings.department_level in [
+                    'TRANSACTION_BODY', 'ALL'] else None
 
         if general_mappings.use_employee_location and general_mappings.location_level in ('ALL', 'TRANSACTION_BODY') \
                 and employee_field_mapping == 'EMPLOYEE':
@@ -900,6 +914,10 @@ class ExpenseReportLineItem(models.Model):
 
             else:
                 department_id = get_department_id_or_none(expense_group, lineitem)
+
+            if not department_id:
+                if general_mappings.department_id and general_mappings.department_level in ['TRANSACTION_LINE', 'ALL']:
+                    department_id = general_mappings.department_id
 
             customer_id = get_customer_id_or_none(expense_group, lineitem)
 
@@ -1128,6 +1146,10 @@ class JournalEntryLineItem(models.Model):
 
             elif expense_group.fund_source == 'PERSONAL':
                 department_id = get_department_id_or_none(expense_group, lineitem)
+            
+            if not department_id:
+                if general_mappings.department_id and general_mappings.department_level in ['TRANSACTION_LINE', 'ALL']:
+                    department_id = general_mappings.department_id
             
             if  general_mappings.use_employee_location and general_mappings.location_level in ('ALL', 'TRANSACTION_LINE')\
                 and employee_field_mapping == 'EMPLOYEE'and employee_mapping and employee_mapping.destination_employee:

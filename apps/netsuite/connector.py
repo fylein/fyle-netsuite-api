@@ -1165,6 +1165,12 @@ class NetSuiteConnector:
                 'externalId': None,
                 'type': 'location'
             },
+            'department': {
+                'name': None,
+                'internalId': bill.department_id,
+                'externalId': None,
+                'type': 'department'
+            },
             'approvalStatus': None,
             'nextApprover': None,
             'vatRegNum': None,
