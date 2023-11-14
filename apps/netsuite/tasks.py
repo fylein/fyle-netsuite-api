@@ -740,6 +740,18 @@ def __validate_tax_group_mapping(expense_group: ExpenseGroup, configuration: Con
                     'message': 'Tax Group Mapping not found'
                 })
 
+                if tax_group:
+                    Error.objects.update_or_create(
+                    workspace_id=tax_group.workspace_id,
+                    expense_attribute=tax_group,
+                    defaults={
+                        'type': 'TAX_MAPPING',
+                        'error_title': tax_group.value,
+                        'error_detail': 'Tax mapping is missing',
+                        'is_resolved': False
+                    }
+                )
+
         row = row + 1
 
     return bulk_errors

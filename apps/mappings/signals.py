@@ -18,6 +18,16 @@ from apps.tasks.models import Error
 from .models import GeneralMapping, SubsidiaryMapping
 from .tasks import schedule_auto_map_ccc_employees
 
+@receiver(post_save, sender=Mapping)
+def resolve_post_mapping_errors(sender, instance: Mapping, **kwargs):
+    """
+    Resolve errors after mapping is created
+    """
+    if instance.source_type == 'TAX_GROUP':
+        Error.objects.filter(expense_attribute_id=instance.source_id).update(
+            is_resolved=True
+        )
+
 @receiver(post_save, sender=CategoryMapping)
 def resolve_post_category_mapping_errors(sender, instance: Mapping, **kwargs):
     """
