@@ -3,7 +3,7 @@ import json
 import traceback
 
 from apps.fyle.models import ExpenseGroup
-from apps.tasks.models import TaskLog
+from apps.tasks.models import TaskLog, Error
 from apps.workspaces.models import NetSuiteCredentials
 
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
@@ -25,6 +25,18 @@ def __handle_netsuite_connection_error(expense_group: ExpenseGroup, task_log: Ta
         'expense_group_id': expense_group.id,
         'message': 'NetSuite Account not connected'
     }
+
+    Error.objects.update_or_create(
+                    workspace_id=expense_group.workspace_id,
+                    expense_group=expense_group,
+                    defaults={
+                        'type': 'NETSUITE_ERROR',
+                        'error_title': netsuite_error_message,
+                        'error_detail': detail['message'],
+                        'is_resolved': False
+                    }
+    )
+
     task_log.status = 'FAILED'
     task_log.detail = detail
 
@@ -88,6 +100,16 @@ def handle_netsuite_exceptions(payment=False):
                 })
                 if not payment:
                     all_details[0]['expense_group_id'] = expense_group.id
+                    Error.objects.update_or_create(
+                    workspace_id=expense_group.workspace_id,
+                    expense_group=expense_group,
+                    defaults={
+                        'type': 'NETSUITE_ERROR',
+                        'error_title': netsuite_error_message,
+                        'error_detail': detail['message'],
+                        'is_resolved': False
+                    }
+                )
                 task_log.detail = all_details
 
                 task_log.save()
@@ -101,6 +123,17 @@ def handle_netsuite_exceptions(payment=False):
                 task_log.save()
 
             except NetSuiteRateLimitError:
+                if not payment:
+                    Error.objects.update_or_create(
+                    workspace_id=expense_group.workspace_id,
+                    expense_group=expense_group,
+                    defaults={
+                        'type': 'NETSUITE_ERROR',
+                        'error_title': netsuite_error_message,
+                        'error_detail': f'Rate limit error, workspace_id - {expense_group.workspace_id}',
+                        'is_resolved': False
+                    }
+                )
                 logger.info('Rate limit error, workspace_id - %s', workspace_id if payment else expense_group.workspace_id)
                 task_log.status = 'FAILED'
                 task_log.detail = {
