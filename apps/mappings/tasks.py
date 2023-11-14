@@ -477,6 +477,7 @@ def auto_create_category_mappings(workspace_id):
     configuration: Configuration = Configuration.objects.get(workspace_id=workspace_id)
 
     reimbursable_expenses_object = configuration.reimbursable_expenses_object
+    employee_field_mapping = configuration.employee_field_mapping
     corporate_credit_card_expenses_object = configuration.corporate_credit_card_expenses_object
 
     if configuration.reimbursable_expenses_object == 'EXPENSE_REPORT' or configuration.corporate_credit_card_expenses_object == 'EXPENSE_REPORT':
