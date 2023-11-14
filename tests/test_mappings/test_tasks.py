@@ -305,7 +305,7 @@ def test_upload_categories_to_fyle(mocker, db):
 
     netsuite_attributes = upload_categories_to_fyle(49, configuration, platform)
     
-    assert len(netsuite_attributes) == 36
+    assert len(netsuite_attributes) == 137
 
 
 def test_filter_unmapped_destinations(db, mocker):
