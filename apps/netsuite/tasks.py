@@ -394,8 +394,8 @@ def resolve_errors_for_exported_expense_group(expense_group, workspace_id=None):
     """
     if isinstance(expense_group, list):
         Error.objects.filter(workspace_id=workspace_id, expense_group_id__in=expense_group, is_resolved=False).update(is_resolved=True)
-
-    Error.objects.filter(workspace_id=expense_group.workspace_id, expense_group=expense_group, is_resolved=False).update(is_resolved=True)
+    else:
+        Error.objects.filter(workspace_id=expense_group.workspace_id, expense_group=expense_group, is_resolved=False).update(is_resolved=True)
 
 
 @handle_netsuite_exceptions(payment=False)
