@@ -27,15 +27,14 @@ def __handle_netsuite_connection_error(expense_group: ExpenseGroup, task_log: Ta
     }
 
     Error.objects.update_or_create(
-                    workspace_id=expense_group.workspace_id,
-                    expense_group=expense_group,
-                    defaults={
-                        'type': 'NETSUITE_ERROR',
-                        'error_title': netsuite_error_message,
-                        'error_detail': detail['message'],
-                        'is_resolved': False
-                    }
-    )
+        workspace_id=expense_group.workspace_id,
+        expense_group=expense_group,
+        defaults={
+            'type': 'NETSUITE_ERROR',
+            'error_title': netsuite_error_message,
+            'error_detail': detail['message'],
+            'is_resolved': False
+        })
 
     task_log.status = 'FAILED'
     task_log.detail = detail
