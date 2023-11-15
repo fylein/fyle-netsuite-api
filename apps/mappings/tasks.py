@@ -526,7 +526,7 @@ def post_tax_groups(platform_connection: PlatformConnector, workspace_id: int):
     platform_connection.tax_groups.sync()
     Mapping.bulk_create_mappings(netsuite_attributes, 'TAX_GROUP', 'TAX_ITEM', workspace_id)
     resolve_expense_attribute_errors(
-        source_attribute_type="TAX_GROUP", workspace_id=workspace_id
+        source_attribute_type='TAX_GROUP', workspace_id=workspace_id
     )
 
 @handle_exceptions(task_name='Import Category to Fyle and Auto Create Mappings')
