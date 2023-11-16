@@ -279,6 +279,7 @@ def test_upload_categories_to_fyle(mocker, db):
 
     configuration = Configuration.objects.filter(workspace_id=49).first()
     configuration.reimbursable_expenses_object = 'EXPENSE REPORT'
+    configuration.employee_field_mapping = 'EMPLOYEE'
     configuration.corporate_credit_card_expenses_object = 'BILL'
     configuration.import_categories = True
     configuration.save()
@@ -290,13 +291,14 @@ def test_upload_categories_to_fyle(mocker, db):
 
     assert expense_category_count == 36
 
-    assert len(netsuite_attributes) == 36
+    assert len(netsuite_attributes) == 137
 
     count_of_accounts = DestinationAttribute.objects.filter(
         attribute_type='ACCOUNT', workspace_id=49).count()
     
     assert count_of_accounts == 137
 
+    configuration.employee_field_mapping = 'EMPLOYEE'
     configuration.reimbursable_expenses_object = 'BILL'
     configuration.corporate_credit_card_expenses_object = 'BILL'
     configuration.save()
@@ -336,7 +338,7 @@ def test_filter_unmapped_destinations(db, mocker):
     netsuite_attributes = upload_categories_to_fyle(workspace_id=1,configuration=configuration, platform=platform)
 
     destination_attributes = filter_unmapped_destinations('EXPENSE_CATEGORY', netsuite_attributes)
-    assert len(destination_attributes) == 33
+    assert len(destination_attributes) == 124
 
 
 def test_schedule_creation(db):
@@ -387,7 +389,7 @@ def test_auto_create_category_mappings(db, mocker):
     assert response == None
 
     mappings_count = CategoryMapping.objects.filter(workspace_id=1).count()
-    assert mappings_count == 34
+    assert mappings_count == 122
 
     configuration = Configuration.objects.get(workspace_id=49)
     configuration.reimbursable_expenses_object = 'BILL'
@@ -403,7 +405,6 @@ def test_auto_create_category_mappings(db, mocker):
     destination_attribute.save()
 
     configuration = Configuration.objects.filter(workspace_id=49).first()
-
     configuration.import_categories = True
     configuration.save()
 

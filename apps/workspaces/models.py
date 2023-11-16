@@ -91,7 +91,7 @@ class WorkspaceSchedule(models.Model):
     Workspace Schedule
     """
     id = models.AutoField(primary_key=True, help_text='Unique Id to identify a schedule')
-    workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
+    workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model', related_name='workspace_schedules')
     enabled = models.BooleanField(default=False)
     start_datetime = models.DateTimeField(help_text='Datetime for start of schedule', null=True)
     interval_hours = models.IntegerField(null=True)
