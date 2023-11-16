@@ -23,6 +23,7 @@ from apps.workspaces.models import LastExportDetail, User, Workspace, WorkspaceS
 def export_to_netsuite(workspace_id, export_mode=None):
     configuration = Configuration.objects.get(workspace_id=workspace_id)
     last_export_detail = LastExportDetail.objects.get(workspace_id=workspace_id)
+    workspace_schedule = WorkspaceSchedule.objects.filter(workspace_id=workspace_id).first()
     last_exported_at = datetime.now()
     is_expenses_exported = False
 
@@ -76,6 +77,8 @@ def export_to_netsuite(workspace_id, export_mode=None):
     if is_expenses_exported:
         last_export_detail.last_exported_at = last_exported_at
         last_export_detail.export_mode = export_mode or 'MANUAL'
+        if workspace_schedule:
+            last_export_detail.next_export = last_exported_at + timedelta(hours=workspace_schedule.interval_hours)
         last_export_detail.save()
 
 def schedule_email_notification(workspace_id: int, schedule_enabled: bool):

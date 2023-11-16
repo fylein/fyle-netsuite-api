@@ -194,6 +194,7 @@ class LastExportDetail(models.Model):
     """
     id = models.AutoField(primary_key=True)
     last_exported_at = models.DateTimeField(help_text='Last exported at datetime', null=True)
+    next_export = models.DateTimeField(help_text='next export datetime', null=True)
     export_mode = models.CharField(
         max_length=50, help_text='Mode of the export Auto / Manual', choices=EXPORT_MODE_CHOICES, null=True
     )
