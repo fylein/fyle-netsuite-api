@@ -197,8 +197,12 @@ def test_post_bill_success(mocker, db):
     configuration.auto_create_destination_entity = True
     configuration.save()
 
+    LastExportDetail.objects.create(workspace_id=1, export_mode='MANUAL', total_expense_groups_count=2, 
+                                successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
+                                created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
+
     expense_group = ExpenseGroup.objects.filter(workspace_id=workspace_id, fund_source='PERSONAL').first()
-    create_bill(expense_group, task_log.id, False)
+    create_bill(expense_group, task_log.id, True)
     
     task_log = TaskLog.objects.get(pk=task_log.id)
     bill = Bill.objects.get(expense_group_id=expense_group.id)
@@ -206,7 +210,7 @@ def test_post_bill_success(mocker, db):
     assert task_log.status=='COMPLETE'
     assert bill.currency == '1'
     assert bill.accounts_payable_id == '25'
-    assert bill.entity_id == '11104'
+    assert bill.entity_id == '12'
 
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
     netsuite_credentials.delete()

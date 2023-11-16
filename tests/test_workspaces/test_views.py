@@ -543,7 +543,6 @@ def test_last_export_detail_view(mocker, db, api_client, access_token):
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
 
     response = api_client.get(url)
-    print(response.json())
 
     assert response.status_code == 200
 

@@ -11448,7 +11448,6 @@ COPY public.journal_entry_lineitems (id, debit_account_id, account_id, departmen
 --
 
 COPY public.last_export_details (id, last_exported_at, export_mode, total_expense_groups_count, successful_expense_groups_count, failed_expense_groups_count, created_at, updated_at, workspace_id) FROM stdin;
-4 2023-07-07 11:57:53.184441+00 MANUAL 2 0 0 2023-07-07 11:57:53.184441+00 2023-07-07 11:57:53.184441+00 1
 \.
 
 
