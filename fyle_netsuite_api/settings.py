@@ -56,7 +56,8 @@ INSTALLED_APPS = [
     'apps.tasks',
     'apps.mappings',
     'apps.netsuite',
-    'django_q'
+    'django_q',
+    'django_filters',
 ]
 
 MIDDLEWARE = [
