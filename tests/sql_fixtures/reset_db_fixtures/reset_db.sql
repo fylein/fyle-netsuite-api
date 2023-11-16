@@ -1467,7 +1467,8 @@ CREATE TABLE public.last_export_details (
     failed_expense_groups_count integer,
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
-    workspace_id integer NOT NULL
+    workspace_id integer NOT NULL,
+    next_export timestamp with time zone
 );
 
 
@@ -7771,6 +7772,7 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 170	mappings	0011_auto_20231107_0720	2023-11-07 07:21:37.285191+00
 171	netsuite	0023_bill_department_id	2023-11-07 07:21:37.291269+00
 172	workspaces	0036_lastexportdetail	2023-11-15 11:26:05.187459+00
+173	workspaces	0037_lastexportdetail_next_export	2023-11-16 10:55:36.00599+00
 \.
 
 
@@ -11447,7 +11449,7 @@ COPY public.journal_entry_lineitems (id, debit_account_id, account_id, departmen
 -- Data for Name: last_export_details; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.last_export_details (id, last_exported_at, export_mode, total_expense_groups_count, successful_expense_groups_count, failed_expense_groups_count, created_at, updated_at, workspace_id) FROM stdin;
+COPY public.last_export_details (id, last_exported_at, export_mode, total_expense_groups_count, successful_expense_groups_count, failed_expense_groups_count, created_at, updated_at, workspace_id, next_export) FROM stdin;
 \.
 
 
@@ -11658,7 +11660,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 44, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 172, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 173, true);
 
 
 --
@@ -11798,7 +11800,7 @@ SELECT pg_catalog.setval('public.journal_entry_lineitems_id_seq', 3, true);
 -- Name: last_export_details_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.last_export_details_id_seq', 12, true);
+SELECT pg_catalog.setval('public.last_export_details_id_seq', 15, true);
 
 
 --
