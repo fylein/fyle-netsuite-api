@@ -28,9 +28,9 @@ from apps.fyle.helpers import get_cluster_domain
 from apps.users.models import User
 
 from .models import Workspace, FyleCredential, NetSuiteCredentials, Configuration, \
-    WorkspaceSchedule
-from .tasks import schedule_sync
-from .serializers import WorkspaceSerializer, FyleCredentialSerializer, NetSuiteCredentialSerializer, \
+    WorkspaceSchedule, LastExportDetail
+from .tasks import export_to_netsuite, schedule_sync
+from .serializers import LastExportDetailSerializer, WorkspaceSerializer, FyleCredentialSerializer, NetSuiteCredentialSerializer, \
     ConfigurationSerializer, WorkspaceScheduleSerializer
 from .permissions import IsAuthenticatedForTest
 
@@ -93,6 +93,7 @@ class WorkspaceView(viewsets.ViewSet):
             workspace = Workspace.objects.create(name=org_name, fyle_org_id=org_id)
 
             ExpenseGroupSettings.objects.create(workspace_id=workspace.id)
+            LastExportDetail.objects.create(workspace_id=workspace.id)
 
             workspace.user.add(User.objects.get(user_id=request.user))
 
@@ -502,3 +503,28 @@ class SetupE2ETestView(viewsets.ViewSet):
         except Exception as error:
             logger.info(error)
             return Response(status=status.HTTP_400_BAD_REQUEST, data={'message': 'Not e2e test workspace'})
+
+
+class LastExportDetailView(generics.RetrieveAPIView):
+    """
+    Last Export Details
+    """
+
+    lookup_field = 'workspace_id'
+    lookup_url_kwarg = 'workspace_id'
+
+    queryset = LastExportDetail.objects.filter(last_exported_at__isnull=False, total_expense_groups_count__gt=0)
+    serializer_class = LastExportDetailSerializer
+
+
+class ExportToNetsuiteView(viewsets.ViewSet):
+    """
+    Export Expenses to Netsuite
+    """
+
+    def post(self, request, *args, **kwargs):
+        export_to_netsuite(workspace_id=kwargs['workspace_id'])
+
+        return Response(
+            status=status.HTTP_200_OK
+        )

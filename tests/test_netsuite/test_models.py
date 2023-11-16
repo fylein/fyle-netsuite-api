@@ -466,9 +466,12 @@ def test_support_post_date_integrations(mocker, db):
     configuration.auto_create_destination_entity = True
     configuration.save()
     
+    LastExportDetail.objects.create(workspace_id=workspace_id, export_mode='MANUAL', total_expense_groups_count=2, 
+                                successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
+                                created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
     expense_group = ExpenseGroup.objects.filter(workspace_id=workspace_id, fund_source='CCC').first()
     expense_group.description['posted_at'] = '2021-12-22T07:30:26'
-    create_bill(expense_group, task_log.id)
+    create_bill(expense_group, task_log.id, True)
     
     task_log = TaskLog.objects.get(pk=task_log.id)
     bill = Bill.objects.get(expense_group_id=expense_group.id)

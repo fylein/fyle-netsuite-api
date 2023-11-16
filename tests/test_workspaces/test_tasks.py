@@ -21,6 +21,10 @@ def test_run_sync_schedule(db, access_token, add_fyle_credentials, add_netsuite_
     expense_group_count = ExpenseGroup.objects.filter(workspace_id=1).count()
     expenses_count = Expense.objects.filter(org_id='or79Cob97KSh').count()
 
+    LastExportDetail.objects.create(workspace_id=1, export_mode='MANUAL', total_expense_groups_count=2, 
+                                successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
+                                created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
+
     mocker.patch(
         'fyle_integrations_platform_connector.apis.Expenses.get',
         return_value=fyle_data['expenses']
@@ -41,6 +45,11 @@ def test_run_sync_schedule(db, access_token, add_fyle_credentials, add_netsuite_
     expenses = Expense.objects.filter(org_id='or79Cob97KSh').count()
     assert expense_group == expense_group_count+2
     assert expenses == expenses_count+2
+
+
+    LastExportDetail.objects.create(workspace_id=2, export_mode='MANUAL', total_expense_groups_count=2, 
+                                successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
+                                created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
 
     run_sync_schedule(2)
 

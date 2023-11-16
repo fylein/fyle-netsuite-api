@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.4 (Debian 15.4-2.pgdg120+1)
--- Dumped by pg_dump version 15.4 (Debian 15.4-2.pgdg120+1)
+-- Dumped from database version 15.2 (Debian 15.2-1.pgdg110+1)
+-- Dumped by pg_dump version 15.5 (Debian 15.5-1.pgdg120+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -1455,6 +1455,47 @@ ALTER SEQUENCE public.journal_entry_lineitems_id_seq OWNED BY public.journal_ent
 
 
 --
+-- Name: last_export_details; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.last_export_details (
+    id integer NOT NULL,
+    last_exported_at timestamp with time zone,
+    export_mode character varying(50),
+    total_expense_groups_count integer,
+    successful_expense_groups_count integer,
+    failed_expense_groups_count integer,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    workspace_id integer NOT NULL
+);
+
+
+ALTER TABLE public.last_export_details OWNER TO postgres;
+
+--
+-- Name: last_export_details_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.last_export_details_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.last_export_details_id_seq OWNER TO postgres;
+
+--
+-- Name: last_export_details_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.last_export_details_id_seq OWNED BY public.last_export_details.id;
+
+
+--
 -- Name: netsuite_credentials; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -2126,6 +2167,13 @@ ALTER TABLE ONLY public.journal_entry_lineitems ALTER COLUMN id SET DEFAULT next
 
 
 --
+-- Name: last_export_details id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.last_export_details ALTER COLUMN id SET DEFAULT nextval('public.last_export_details_id_seq'::regclass);
+
+
+--
 -- Name: mapping_settings id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2410,6 +2458,10 @@ COPY public.auth_permission (id, name, content_type_id, codename) FROM stdin;
 170	Can change expense field	43	change_expensefield
 171	Can delete expense field	43	delete_expensefield
 172	Can view expense field	43	view_expensefield
+173	Can add last export detail	44	add_lastexportdetail
+174	Can change last export detail	44	change_lastexportdetail
+175	Can delete last export detail	44	delete_lastexportdetail
+176	Can view last export detail	44	view_lastexportdetail
 \.
 
 
@@ -7539,6 +7591,7 @@ COPY public.django_content_type (id, app_label, model) FROM stdin;
 41	django_q	ormq
 42	fyle	expensefilter
 43	fyle_accounting_mappings	expensefield
+44	workspaces	lastexportdetail
 \.
 
 
@@ -7717,6 +7770,7 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 169	mappings	0010_auto_20231025_0915	2023-11-07 07:21:37.268291+00
 170	mappings	0011_auto_20231107_0720	2023-11-07 07:21:37.285191+00
 171	netsuite	0023_bill_department_id	2023-11-07 07:21:37.291269+00
+172	workspaces	0036_lastexportdetail	2023-11-15 11:26:05.187459+00
 \.
 
 
@@ -11390,6 +11444,15 @@ COPY public.journal_entry_lineitems (id, debit_account_id, account_id, departmen
 
 
 --
+-- Data for Name: last_export_details; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.last_export_details (id, last_exported_at, export_mode, total_expense_groups_count, successful_expense_groups_count, failed_expense_groups_count, created_at, updated_at, workspace_id) FROM stdin;
+4 2023-07-07 11:57:53.184441+00 MANUAL 2 0 0 2023-07-07 11:57:53.184441+00 2023-07-07 11:57:53.184441+00 1
+\.
+
+
+--
 -- Data for Name: mapping_settings; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -11533,7 +11596,7 @@ SELECT pg_catalog.setval('public.auth_group_permissions_id_seq', 1, false);
 -- Name: auth_permission_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.auth_permission_id_seq', 172, true);
+SELECT pg_catalog.setval('public.auth_permission_id_seq', 176, true);
 
 
 --
@@ -11589,14 +11652,14 @@ SELECT pg_catalog.setval('public.django_admin_log_id_seq', 1, false);
 -- Name: django_content_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_content_type_id_seq', 43, true);
+SELECT pg_catalog.setval('public.django_content_type_id_seq', 44, true);
 
 
 --
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 171, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 172, true);
 
 
 --
@@ -11730,6 +11793,13 @@ SELECT pg_catalog.setval('public.journal_entries_id_seq', 3, true);
 --
 
 SELECT pg_catalog.setval('public.journal_entry_lineitems_id_seq', 3, true);
+
+
+--
+-- Name: last_export_details_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.last_export_details_id_seq', 12, true);
 
 
 --
@@ -12302,6 +12372,22 @@ ALTER TABLE ONLY public.journal_entry_lineitems
 
 ALTER TABLE ONLY public.journal_entry_lineitems
     ADD CONSTRAINT journal_entry_lineitems_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: last_export_details last_export_details_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.last_export_details
+    ADD CONSTRAINT last_export_details_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: last_export_details last_export_details_workspace_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.last_export_details
+    ADD CONSTRAINT last_export_details_workspace_id_key UNIQUE (workspace_id);
 
 
 --
@@ -13184,6 +13270,14 @@ ALTER TABLE ONLY public.journal_entry_lineitems
 
 ALTER TABLE ONLY public.journal_entry_lineitems
     ADD CONSTRAINT journal_entry_lineitems_expense_id_5a5ca4ff_fk_expenses_id FOREIGN KEY (expense_id) REFERENCES public.expenses(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: last_export_details last_export_details_workspace_id_0af72f0e_fk_workspaces_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.last_export_details
+    ADD CONSTRAINT last_export_details_workspace_id_0af72f0e_fk_workspaces_id FOREIGN KEY (workspace_id) REFERENCES public.workspaces(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --

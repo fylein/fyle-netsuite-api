@@ -3,7 +3,7 @@ Workspace Serializers
 """
 from rest_framework import serializers
 
-from .models import Workspace, FyleCredential, NetSuiteCredentials, WorkspaceSchedule, Configuration
+from .models import LastExportDetail, Workspace, FyleCredential, NetSuiteCredentials, WorkspaceSchedule, Configuration
 
 
 class WorkspaceSerializer(serializers.ModelSerializer):
@@ -131,4 +131,13 @@ class ConfigurationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Configuration
+        fields = '__all__'
+
+
+class LastExportDetailSerializer(serializers.ModelSerializer):
+    """
+    Last export detail serializer
+    """
+    class Meta:
+        model = LastExportDetail
         fields = '__all__'
