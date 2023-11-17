@@ -55,8 +55,17 @@ class ExpenseGroupView(generics.ListCreateAPIView):
                 tasklog__status='FAILED', workspace_id=self.kwargs['workspace_id']).order_by('-updated_at')
 
         elif state == 'COMPLETE':
-            return ExpenseGroup.objects.filter(
-                tasklog__status='COMPLETE', workspace_id=self.kwargs['workspace_id']).order_by('-exported_at')
+            filters = {
+                'workspace_id': self.kwargs['workspace_id'],
+                'tasklog__status': 'COMPLETE'
+            }
+
+            if start_date and end_date:
+                filters['exported_at__range'] = [start_date, end_date]
+
+            if exported_at:
+                filters['exported_at__gte'] = exported_at
+            return ExpenseGroup.objects.filter(**filters).order_by('-exported_at')
 
         elif state == 'READY':
             return ExpenseGroup.objects.filter(
