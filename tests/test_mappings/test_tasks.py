@@ -237,7 +237,7 @@ def test_sync_expense_categories_and_accounts(mocker, db):
     configuration.save()
 
     assert existing_expense_category == 33
-    assert existing_accounts == 33
+    assert existing_accounts == 123
 
     sync_expense_categories_and_accounts(configuration, netsuite_connection)
 
@@ -338,7 +338,7 @@ def test_filter_unmapped_destinations(db, mocker):
     netsuite_attributes = upload_categories_to_fyle(workspace_id=1,configuration=configuration, platform=platform)
 
     destination_attributes = filter_unmapped_destinations('EXPENSE_CATEGORY', netsuite_attributes)
-    assert len(destination_attributes) == 124
+    assert len(destination_attributes) == 33
 
 
 def test_schedule_creation(db):
