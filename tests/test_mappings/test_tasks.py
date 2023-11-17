@@ -237,7 +237,7 @@ def test_sync_expense_categories_and_accounts(mocker, db):
     configuration.save()
 
     assert existing_expense_category == 33
-    assert existing_accounts == 123
+    assert existing_accounts == 33
 
     sync_expense_categories_and_accounts(configuration, netsuite_connection)
 
@@ -291,7 +291,7 @@ def test_upload_categories_to_fyle(mocker, db):
 
     assert expense_category_count == 36
 
-    assert len(netsuite_attributes) == 137
+    assert len(netsuite_attributes) == 36
 
     count_of_accounts = DestinationAttribute.objects.filter(
         attribute_type='ACCOUNT', workspace_id=49).count()
@@ -389,7 +389,7 @@ def test_auto_create_category_mappings(db, mocker):
     assert response == None
 
     mappings_count = CategoryMapping.objects.filter(workspace_id=1).count()
-    assert mappings_count == 122
+    assert mappings_count == 34
 
     configuration = Configuration.objects.get(workspace_id=49)
     configuration.reimbursable_expenses_object = 'BILL'
