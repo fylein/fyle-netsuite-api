@@ -1159,7 +1159,7 @@ def test_process_vendor_payment_expense_report(mocker, db):
             code='INVALID_KEY_OR_REF',
             message='An error occured in a upsert request: Invalid apacct reference key 223.'
         )
-        process_vendor_payment(entity_object, 49, 'EXPENSE_REPORT')
+        process_vendor_payment(entity_object, 49, 'EXPENSE REPORT')
 
     task_log = TaskLog.objects.filter(workspace_id=49, type='CREATING_VENDOR_PAYMENT').last()
 
@@ -1170,7 +1170,7 @@ def test_process_vendor_payment_expense_report(mocker, db):
         return_value=data['create_vendor_payment']
     )
 
-    process_vendor_payment(entity_object, 49, 'EXPENSE_REPORT')
+    process_vendor_payment(entity_object, 49, 'EXPENSE REPORT')
 
     task_log = TaskLog.objects.get(workspace_id=49, type='CREATING_VENDOR_PAYMENT')
     assert task_log.status == 'COMPLETE'
