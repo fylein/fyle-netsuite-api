@@ -167,7 +167,7 @@ def create_fyle_categories_payload(categories: List[DestinationAttribute], categ
                 'id': category.source_id,
                 'name': category.value,
                 'code': destination_id_of_category,
-                'is_enabled': category.active
+                'is_enabled': category.active if category.value != 'Unspecified' else True
             })
     else:
         for category in categories:
