@@ -12,7 +12,7 @@ from fyle_integrations_platform_connector import PlatformConnector
 from fyle_accounting_mappings.models import ExpenseAttribute
 from fyle_accounting_mappings.serializers import ExpenseAttributeSerializer
 
-from apps.workspaces.models import FyleCredential, Workspace
+from apps.workspaces.models import Configuration, FyleCredential, Workspace
 
 from .tasks import schedule_expense_group_creation
 from .helpers import check_interval_and_sync_dimension, sync_dimensions
@@ -26,6 +26,8 @@ from fyle_netsuite_api import settings
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
+
+
 class ExpenseGroupView(generics.ListCreateAPIView):
     """
     List Fyle Expenses
@@ -34,6 +36,19 @@ class ExpenseGroupView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         state = self.request.query_params.get('state')
+        start_date = self.request.query_params.get('start_date', None)
+        end_date = self.request.query_params.get('end_date', None)
+        expense_group_ids = self.request.query_params.get('expense_group_ids', None)
+        exported_at = self.request.query_params.get('exported_at', None)
+
+        if expense_group_ids:
+            return ExpenseGroup.objects.filter(
+                workspace_id=self.kwargs['workspace_id'],
+                id__in=expense_group_ids.split(',')
+            )
+
+        if state == 'ALL':
+            return ExpenseGroup.objects.filter(workspace_id=self.kwargs['workspace_id']).order_by('-updated_at')
 
         if state == 'FAILED':
             return ExpenseGroup.objects.filter(
@@ -52,6 +67,31 @@ class ExpenseGroupView(generics.ListCreateAPIView):
                 creditcardcharge__id__isnull=True
             ).order_by('-updated_at')
 
+
+class ExportableExpenseGroupsView(generics.RetrieveAPIView):
+    """
+    List Exportable Expense Groups
+    """
+    def get(self, request, *args, **kwargs):
+        configuration = Configuration.objects.get(workspace_id=kwargs['workspace_id'])
+        fund_source = []
+
+        if configuration.reimbursable_expenses_object:
+            fund_source.append('PERSONAL')
+        if configuration.corporate_credit_card_expenses_object:
+            fund_source.append('CCC')
+
+        expense_group_ids = ExpenseGroup.objects.filter(
+            workspace_id=self.kwargs['workspace_id'],
+            exported_at__isnull=True,
+            fund_source__in=fund_source
+        ).values_list('id', flat=True)
+
+        return Response(
+            data={'exportable_expense_group_ids': expense_group_ids},
+            status=status.HTTP_200_OK
+        )
+    
 
 class ExpenseGroupCountView(generics.ListAPIView):
     """
