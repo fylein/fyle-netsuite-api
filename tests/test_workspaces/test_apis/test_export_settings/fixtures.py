@@ -46,7 +46,7 @@ data = {
     },
     'response': {
         'configuration': {
-            'reimbursable_expenses_object': 'EXPENSE_REPORT',
+            'reimbursable_expenses_object': 'EXPENSE REPORT',
             'corporate_credit_card_expenses_object': 'CHARGE_CARD_TRANSACTION',        
             'is_simplify_report_closure_enabled': False,
         },
@@ -133,7 +133,7 @@ data = {
     },
     'export_settings_missing_values_expense_group_settings': {
         'configurations': {
-            'reimbursable_expenses_object': 'EXPENSE_REPORT',
+            'reimbursable_expenses_object': 'EXPENSE REPORT',
             'corporate_credit_card_expenses_object': 'CHARGE_CARD_TRANSACTION',
             'is_simplify_report_closure_enabled': False,
         },
@@ -159,7 +159,7 @@ data = {
     },
     'export_settings_missing_values_general_mappings': {
         'configurations': {
-            'reimbursable_expenses_object': 'EXPENSE_REPORT',
+            'reimbursable_expenses_object': 'EXPENSE REPORT',
             'corporate_credit_card_expenses_object': 'CHARGE_CARD_TRANSACTION',
             'is_simplify_report_closure_enabled': False,
         },
