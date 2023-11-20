@@ -325,6 +325,7 @@ class ExpenseGroup(models.Model):
                                   help_text='To which workspace this expense group belongs to')
     fund_source = models.CharField(max_length=255, help_text='Expense fund source')
     expenses = models.ManyToManyField(Expense, help_text="Expenses under this Expense Group")
+    employee_name = models.CharField(max_length=100, help_text='Expense Group Employee Name', null=True)
     description = JSONField(max_length=255, help_text='Description', null=True)
     response_logs = JSONField(help_text='Reponse log of the export', null=True)
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
@@ -392,6 +393,10 @@ class ExpenseGroup(models.Model):
             if expense_group_settings.ccc_export_date_type == 'last_spent_at':
                 expense_group['last_spent_at'] = Expense.objects.filter(
                     id__in=expense_group['expense_ids']).order_by('-spent_at').first().spent_at
+            
+            employee_name = Expense.objects.filter(
+                id__in=expense_group['expense_ids']
+            ).first().employee_name
 
             expense_ids = expense_group['expense_ids']
             expense_group.pop('total')
@@ -407,7 +412,8 @@ class ExpenseGroup(models.Model):
             expense_group_object = ExpenseGroup.objects.create(
                 workspace_id=workspace_id,
                 fund_source=expense_group['fund_source'],
-                description=expense_group
+                description=expense_group,
+                employee_name=employee_name
             )
 
             expense_group_object.expenses.add(*expense_ids)
