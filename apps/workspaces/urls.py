@@ -1,6 +1,6 @@
 from django.urls import path, include
 
-from .views import WorkspaceView, WorkspaceAdminsView, ReadyView, ConnectFyleView, ConnectNetSuiteView, ScheduleView, ConfigurationsView, SetupE2ETestView
+from .views import ExportToNetsuiteView, LastExportDetailView, WorkspaceView, WorkspaceAdminsView, ReadyView, ConnectFyleView, ConnectNetSuiteView, ScheduleView, ConfigurationsView, SetupE2ETestView
 
 workspaces_app_paths = [
     path('', WorkspaceView.as_view({'get': 'get', 'post': 'post'}), name='workspace'),
@@ -11,6 +11,8 @@ workspaces_app_paths = [
     path('ready/', ReadyView.as_view({'get': 'get'}), name='ready'),
     path('<int:workspace_id>/admins/', WorkspaceAdminsView.as_view({'get': 'get'}), name='admin'),
     path('<int:workspace_id>/setup_e2e_test/', SetupE2ETestView.as_view({'post': 'post'}), name='setup-e2e-test'),
+    path('<int:workspace_id>/export_detail/', LastExportDetailView.as_view(), name='export-detail'),
+    path('<int:workspace_id>/exports/trigger/', ExportToNetsuiteView.as_view({'post': 'post'}), name='export-to-netsuite'),
 ]
 
 fyle_connection_api_paths = [
