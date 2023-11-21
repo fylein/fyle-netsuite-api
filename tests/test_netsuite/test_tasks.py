@@ -12,7 +12,7 @@ from fyle.platform.exceptions import InternalServerError
 from apps.fyle.models import ExpenseGroup, Reimbursement, Expense
 from apps.netsuite.connector import NetSuiteConnector
 from apps.netsuite.models import CreditCardCharge, ExpenseReport, Bill, JournalEntry, BillLineitem, JournalEntryLineItem, ExpenseReportLineItem
-from apps.workspaces.models import Configuration, NetSuiteCredentials, FyleCredential
+from apps.workspaces.models import Configuration, LastExportDetail, NetSuiteCredentials, FyleCredential
 from apps.tasks.models import TaskLog
 from apps.netsuite.tasks import __validate_general_mapping, __validate_subsidiary_mapping, check_netsuite_object_status, create_credit_card_charge, create_journal_entry, create_or_update_employee_mapping, create_vendor_payment, get_all_internal_ids, \
      get_or_create_credit_card_vendor, create_bill, create_expense_report, load_attachments, process_reimbursements, process_vendor_payment, schedule_bills_creation, schedule_credit_card_charge_creation, schedule_expense_reports_creation, schedule_journal_entry_creation, schedule_netsuite_objects_status_sync, schedule_reimbursements_sync, schedule_vendor_payment_creation, \
@@ -198,8 +198,12 @@ def test_post_bill_success(mocker, db):
     configuration.auto_create_destination_entity = True
     configuration.save()
 
+    LastExportDetail.objects.create(workspace_id=2, export_mode='MANUAL', total_expense_groups_count=2, 
+    successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
+    created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
+
     expense_group = ExpenseGroup.objects.filter(workspace_id=workspace_id, fund_source='PERSONAL').first()
-    create_bill(expense_group, task_log.id)
+    create_bill(expense_group, task_log.id, True)
     
     task_log = TaskLog.objects.get(pk=task_log.id)
     bill = Bill.objects.get(expense_group_id=expense_group.id)
@@ -216,7 +220,7 @@ def test_post_bill_success(mocker, db):
     task_log.save()
 
     expense_group = ExpenseGroup.objects.filter(workspace_id=workspace_id, fund_source='CCC').first()
-    create_bill(expense_group, task_log.id)
+    create_bill(expense_group, task_log.id, True)
 
     task_log = TaskLog.objects.get(id=task_log.id)
     assert task_log.detail['message'] == 'NetSuite Account not connected'
@@ -249,8 +253,12 @@ def test_post_bill_mapping_error(mocker, db):
     general_mappings.use_employee_department = True
     general_mappings.save()
 
+    LastExportDetail.objects.create(workspace_id=1, export_mode='MANUAL', total_expense_groups_count=2, 
+    successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
+    created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
+
     expense_group = ExpenseGroup.objects.filter(workspace_id=workspace_id, fund_source='CCC').first()
-    create_bill(expense_group, task_log.id)
+    create_bill(expense_group, task_log.id, True)
 
     task_log = TaskLog.objects.filter(pk=task_log.id).first()
 
@@ -275,6 +283,10 @@ def test_accounting_period_working_bill(db, mocker):
     expense_group.id = 1
     expense_group.save()
 
+    LastExportDetail.objects.create(workspace_id=1, export_mode='MANUAL', total_expense_groups_count=2, 
+    successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
+    created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
+
     for expense in expenses:
         expense.expense_group_id = expense_group.id
         expense.save()
@@ -283,7 +295,7 @@ def test_accounting_period_working_bill(db, mocker):
 
     with mock.patch('apps.netsuite.connector.NetSuiteConnector.post_bill') as mock_call:
         mock_call.side_effect = NetSuiteRequestError(message='An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.')
-        create_bill(expense_group, task_log.id)
+        create_bill(expense_group, task_log.id, True)
 
         task_log = TaskLog.objects.get(pk=task_log.id)
 
@@ -291,7 +303,7 @@ def test_accounting_period_working_bill(db, mocker):
         assert task_log.status=='FAILED'
 
         mock_call.side_effect = Exception()
-        create_bill(expense_group, task_log.id)
+        create_bill(expense_group, task_log.id, True)
 
         task_log = TaskLog.objects.get(pk=task_log.id)
         assert task_log.status=='FATAL'
@@ -315,8 +327,12 @@ def test_post_expense_report(mocker, db):
     configuration.auto_map_employees = True
     configuration.auto_create_destination_entity = True
     configuration.save()
+
+    LastExportDetail.objects.create(workspace_id=1, export_mode='MANUAL', total_expense_groups_count=2, 
+    successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
+    created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
     
-    create_expense_report(expense_group, task_log.id)
+    create_expense_report(expense_group, task_log.id, True)
     
     task_log = TaskLog.objects.get(pk=task_log.id)
     expense_report = ExpenseReport.objects.get(expense_group_id=expense_group.id)
@@ -332,7 +348,7 @@ def test_post_expense_report(mocker, db):
     task_log.status = 'READY'
     task_log.save()
 
-    create_expense_report(expense_group, task_log.id)
+    create_expense_report(expense_group, task_log.id, True)
 
     task_log = TaskLog.objects.get(id=task_log.id)
     assert task_log.detail['message'] == 'NetSuite Account not connected'
@@ -353,7 +369,12 @@ def test_post_expense_report_mapping_error(mocker, db):
     expense_group = ExpenseGroup.objects.get(id=1)
     expense_group.description.update({'employee_email': 'sam@fyle.in'})
     expense_group.save()
-    create_expense_report(expense_group, task_log.id)
+
+    LastExportDetail.objects.create(workspace_id=1, export_mode='MANUAL', total_expense_groups_count=2, 
+    successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
+    created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
+
+    create_expense_report(expense_group, task_log.id, True)
 
     task_log = TaskLog.objects.filter(pk=task_log.id).first()
 
@@ -374,6 +395,10 @@ def test_accounting_period_working_expense_report(mocker, db):
     expense_group.id = random.randint(100, 1500000)
     expense_group.save()
 
+    LastExportDetail.objects.create(workspace_id=1, export_mode='MANUAL', total_expense_groups_count=2, 
+    successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
+    created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
+
     for expense in expenses:
         expense.expense_group_id = expense_group.id
         expense.save()
@@ -382,7 +407,7 @@ def test_accounting_period_working_expense_report(mocker, db):
 
     with mock.patch('apps.netsuite.connector.NetSuiteConnector.post_expense_report') as mock_call:
         mock_call.side_effect = NetSuiteRequestError(message='An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.')
-        create_expense_report(expense_group, task_log.id)
+        create_expense_report(expense_group, task_log.id, True)
 
         task_log = TaskLog.objects.get(pk=task_log.id)
 
@@ -390,7 +415,7 @@ def test_accounting_period_working_expense_report(mocker, db):
         assert task_log.status=='FAILED'
 
         mock_call.side_effect = Exception()
-        create_expense_report(expense_group, task_log.id)
+        create_expense_report(expense_group, task_log.id, True)
 
         task_log = TaskLog.objects.get(pk=task_log.id)
         assert task_log.status=='FATAL'
@@ -423,8 +448,12 @@ def test_post_journal_entry(mocker, db):
     configuration.auto_map_employees = True
     configuration.auto_create_destination_entity = True
     configuration.save()
+
+    LastExportDetail.objects.create(workspace_id=1, export_mode='MANUAL', total_expense_groups_count=2, 
+    successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
+    created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
     
-    create_journal_entry(expense_group, task_log.id)
+    create_journal_entry(expense_group, task_log.id, True)
 
     task_log = TaskLog.objects.get(pk=task_log.id)
     journal_entry = JournalEntry.objects.get(expense_group_id=expense_group.id)
@@ -445,7 +474,7 @@ def test_post_journal_entry(mocker, db):
     configuration.employee_field_mapping = 'VENDOR'
     configuration.save()
 
-    create_journal_entry(expense_group, task_log.id)
+    create_journal_entry(expense_group, task_log.id, True)
 
     # journal_entry = JournalEntry.objects.get(expense_group__id=expense_group.id)
     # expense_group.id = random.randint(50, 1000)
@@ -458,7 +487,7 @@ def test_post_journal_entry(mocker, db):
     configuration.employee_field_mapping = 'EMPLOYEE'
     configuration.save()
 
-    create_journal_entry(expense_group, task_log.id)
+    create_journal_entry(expense_group, task_log.id, True)
 
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_credentials.delete()
@@ -466,7 +495,7 @@ def test_post_journal_entry(mocker, db):
     task_log.status = 'READY'
     task_log.save()
 
-    create_journal_entry(expense_group, task_log.id)
+    create_journal_entry(expense_group, task_log.id, True)
 
     task_log = TaskLog.objects.get(id=task_log.id)
     assert task_log.detail['message'] == 'NetSuite Account not connected'
@@ -488,7 +517,11 @@ def test_post_journal_entry_mapping_error(mocker, db):
     expense_group.description.update({'employee_email': 'sam@fyle.in'})
     expense_group.save()
 
-    create_journal_entry(expense_group, task_log.id)
+    LastExportDetail.objects.create(workspace_id=1, export_mode='MANUAL', total_expense_groups_count=2, 
+    successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
+    created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
+
+    create_journal_entry(expense_group, task_log.id, True)
 
     task_log = TaskLog.objects.filter(pk=task_log.id).first()
 
@@ -509,13 +542,17 @@ def test_accounting_period_working_create_journal_entry(mocker, db):
     expense_group.id = 1
     expense_group.save()
 
+    LastExportDetail.objects.create(workspace_id=1, export_mode='MANUAL', total_expense_groups_count=2, 
+    successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
+    created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
+
     for expense in expenses:
         expense.expense_group_id = expense_group.id
         expense.save()
     
     with mock.patch('apps.netsuite.connector.NetSuiteConnector.post_journal_entry') as mock_call:
         mock_call.side_effect = NetSuiteRequestError(message='An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.')
-        create_journal_entry(expense_group, task_log.id)
+        create_journal_entry(expense_group, task_log.id, True)
 
         task_log = TaskLog.objects.get(pk=task_log.id)
 
@@ -523,7 +560,7 @@ def test_accounting_period_working_create_journal_entry(mocker, db):
         assert task_log.status=='FAILED'
 
         mock_call.side_effect = Exception()
-        create_journal_entry(expense_group, task_log.id)
+        create_journal_entry(expense_group, task_log.id, True)
 
         task_log = TaskLog.objects.get(pk=task_log.id)
         assert task_log.status=='FATAL'
@@ -573,7 +610,11 @@ def test_create_credit_card_charge(mocker, db):
     general_mappings.use_employee_department = True
     general_mappings.save()
 
-    create_credit_card_charge(expense_group, task_log.id)
+    LastExportDetail.objects.create(workspace_id=1, export_mode='MANUAL', total_expense_groups_count=2, 
+    successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
+    created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
+
+    create_credit_card_charge(expense_group, task_log.id, True)
     
     task_log = TaskLog.objects.get(pk=task_log.id)
     credit_card_charge = CreditCardCharge.objects.get(expense_group_id=expense_group.id)
@@ -592,7 +633,7 @@ def test_create_credit_card_charge(mocker, db):
         expense.amount = -1.00
         expense.save()
 
-    create_credit_card_charge(expense_group, task_log.id)
+    create_credit_card_charge(expense_group, task_log.id, True)
 
     expense_group = ExpenseGroup.objects.filter(id=expense_group.id).first()
     created_credit_card_charge = expense_group.response_logs
@@ -604,7 +645,7 @@ def test_create_credit_card_charge(mocker, db):
     task_log.status = 'READY'
     task_log.save()
 
-    create_credit_card_charge(expense_group, task_log.id)
+    create_credit_card_charge(expense_group, task_log.id, True)
 
     task_log = TaskLog.objects.get(id=task_log.id)
     assert task_log.detail['message'] == 'NetSuite Account not connected'
@@ -637,8 +678,11 @@ def test_post_credit_card_charge_mapping_error(mocker, db):
     expense_group.description.update({'employee_email': 'sam@fyle.in'})
     expense_group.save()
 
+    LastExportDetail.objects.create(workspace_id=49, export_mode='MANUAL', total_expense_groups_count=2, 
+    successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
+    created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
 
-    create_credit_card_charge(expense_group, task_log.id)
+    create_credit_card_charge(expense_group, task_log.id, True)
 
     task_log = TaskLog.objects.filter(pk=task_log.id).first()
 
@@ -672,6 +716,10 @@ def test_accounting_period_working_credit_card_charge(mocker, db):
     expense_group.id = 1
     expense_group.save()
 
+    LastExportDetail.objects.create(workspace_id=1, export_mode='MANUAL', total_expense_groups_count=2, 
+    successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
+    created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
+
     for expense in expenses:
         expense.expense_group_id = expense_group.id
         expense.amount = -1.00
@@ -679,7 +727,7 @@ def test_accounting_period_working_credit_card_charge(mocker, db):
     
     with mock.patch('apps.netsuite.connector.NetSuiteConnector.post_credit_card_charge') as mock_call:
         mock_call.side_effect = NetSuiteRequestError(message='An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.')
-        create_credit_card_charge(expense_group, task_log.id)
+        create_credit_card_charge(expense_group, task_log.id, True)
 
         task_log = TaskLog.objects.get(pk=task_log.id)
 
@@ -687,7 +735,7 @@ def test_accounting_period_working_credit_card_charge(mocker, db):
         assert task_log.status=='FAILED'
 
         mock_call.side_effect = Exception()
-        create_credit_card_charge(expense_group, task_log.id)
+        create_credit_card_charge(expense_group, task_log.id, True)
 
         task_log = TaskLog.objects.get(pk=task_log.id)
         assert task_log.status=='FATAL'
@@ -1160,7 +1208,7 @@ def test_process_vendor_payment_expense_report(mocker, db):
             code='INVALID_KEY_OR_REF',
             message='An error occured in a upsert request: Invalid apacct reference key 223.'
         )
-        process_vendor_payment(entity_object, 49, 'EXPENSE_REPORT')
+        process_vendor_payment(entity_object, 49, 'EXPENSE REPORT')
 
     task_log = TaskLog.objects.filter(workspace_id=49, type='CREATING_VENDOR_PAYMENT').last()
 
@@ -1171,7 +1219,7 @@ def test_process_vendor_payment_expense_report(mocker, db):
         return_value=data['create_vendor_payment']
     )
 
-    process_vendor_payment(entity_object, 49, 'EXPENSE_REPORT')
+    process_vendor_payment(entity_object, 49, 'EXPENSE REPORT')
 
     task_log = TaskLog.objects.get(workspace_id=49, type='CREATING_VENDOR_PAYMENT')
     assert task_log.status == 'COMPLETE'
