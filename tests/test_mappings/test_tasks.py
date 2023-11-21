@@ -320,7 +320,7 @@ def test_upload_categories_to_fyle(mocker, db):
 
     configuration = Configuration.objects.filter(workspace_id=49).first()
     configuration.reimbursable_expenses_object = 'EXPENSE REPORT'
-    configuration.employee_field_mapping = 'VENDOR'
+    configuration.employee_field_mapping = 'EMPLOYEE'
     configuration.corporate_credit_card_expenses_object = 'BILL'
     configuration.import_categories = True
     configuration.save()
@@ -446,7 +446,6 @@ def test_auto_create_category_mappings(db, mocker):
     destination_attribute.save()
 
     configuration = Configuration.objects.filter(workspace_id=49).first()
-    configuration.employee_field_mapping = 'VENDOR'
     configuration.import_categories = True
     configuration.save()
 
