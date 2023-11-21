@@ -4,11 +4,13 @@ import traceback
 
 from apps.fyle.models import ExpenseGroup
 from apps.tasks.models import TaskLog
-from apps.workspaces.models import NetSuiteCredentials
+from apps.workspaces.models import LastExportDetail, NetSuiteCredentials
 
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
 from netsuitesdk import NetSuiteRateLimitError, NetSuiteLoginError
 from fyle_netsuite_api.exceptions import BulkError
+
+from django.db.models import Q
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -35,6 +37,28 @@ def __log_error(task_log: TaskLog) -> None:
     logger.exception('Something unexpected happened workspace_id: %s %s', task_log.workspace_id, task_log.detail)
 
 
+def update_last_export_details(workspace_id):
+    last_export_detail = LastExportDetail.objects.get(workspace_id=workspace_id)
+
+    failed_exports = TaskLog.objects.filter(
+        ~Q(type__in=['CREATING_VENDOR_PAYMENT','FETCHING_EXPENSES']), workspace_id=workspace_id, status__in=['FAILED', 'FATAL']
+    ).count()
+
+    successful_exports = TaskLog.objects.filter(
+        ~Q(type__in=['CREATING_VENDOR_PAYMENT', 'FETCHING_EXPENSES']),
+        workspace_id=workspace_id,
+        status='COMPLETE',
+        updated_at__gt=last_export_detail.last_exported_at
+    ).count()
+
+    last_export_detail.failed_expense_groups_count = failed_exports
+    last_export_detail.successful_expense_groups_count = successful_exports
+    last_export_detail.total_expense_groups_count = failed_exports + successful_exports
+    last_export_detail.save()
+
+    return last_export_detail
+
+
 def handle_netsuite_exceptions(payment=False):
     def decorator(func):
         def wrapper(*args):
@@ -54,6 +78,7 @@ def handle_netsuite_exceptions(payment=False):
                 expense_group = args[0]
                 task_log_id = args[1]
                 task_log = TaskLog.objects.get(id=task_log_id)
+                last_export = args[2]
             
             try:
                 func(*args)
@@ -117,6 +142,9 @@ def handle_netsuite_exceptions(payment=False):
                 task_log.status = 'FATAL'
                 task_log.save()
                 __log_error(task_log)
+            
+            if not payment and last_export is True:
+                update_last_export_details(expense_group.workspace_id)
 
         return wrapper
     return decorator
