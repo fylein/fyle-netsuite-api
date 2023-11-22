@@ -927,7 +927,8 @@ CREATE TABLE public.expense_groups (
     fund_source character varying(255) NOT NULL,
     exported_at timestamp with time zone,
     response_logs jsonb,
-    employee_name character varying(100)
+    employee_name character varying(100),
+    export_url character varying(255)
 );
 
 
@@ -7775,6 +7776,7 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 172	fyle	0027_expensegroup_employee_name	2023-11-20 11:19:47.476133+00
 173	workspaces	0036_auto_20231027_0709	2023-11-20 11:19:47.53547+00
 174	tasks	0009_error	2023-11-20 11:19:47.609035+00
+175	fyle	0028_expensegroup_export_url	2023-11-22 11:49:48.090718+00
 \.
 
 
@@ -11364,13 +11366,13 @@ COPY public.expense_group_settings (id, reimbursable_expense_group_fields, corpo
 -- Data for Name: expense_groups; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.expense_groups (id, description, created_at, updated_at, workspace_id, fund_source, exported_at, response_logs, employee_name) FROM stdin;
-1	{"report_id": "rpuN3bgphxbK", "fund_source": "PERSONAL", "claim_number": "C/2021/11/R/5", "employee_email": "ashwin.t@fyle.in"}	2021-11-15 10:29:07.618062+00	2021-11-15 11:02:55.125634+00	1	PERSONAL	\N	\N	\N
-2	{"report_id": "rpHLA9Dfp9hN", "fund_source": "CCC", "claim_number": "C/2021/11/R/6", "employee_email": "ashwin.t@fyle.in"}	2021-11-15 13:12:12.275539+00	2021-11-15 13:27:27.538211+00	1	CCC	\N	\N	\N
-3	{"report_id": "rpu5W0LYrk6e", "fund_source": "PERSONAL", "claim_number": "C/2021/11/R/2", "employee_email": "ashwin.t@fyle.in"}	2021-11-16 04:25:49.206777+00	2021-11-16 04:25:49.206809+00	2	PERSONAL	\N	\N	\N
-4	{"spent_at": "2021-11-16", "report_id": "rprqDvARHUnv", "expense_id": "txMLGb6Xy8m8", "fund_source": "CCC", "claim_number": "C/2021/11/R/1", "employee_email": "ashwin.t@fyle.in"}	2021-11-16 04:25:49.226855+00	2021-11-16 04:25:49.226855+00	2	CCC	\N	\N	\N
-47	{"report_id": "rpXqCutQj85N", "fund_source": "PERSONAL", "claim_number": "C/2021/12/R/1", "employee_email": "admin1@fyleforintacct.in"}	2021-12-03 11:26:58.731339+00	2021-12-03 11:26:58.731398+00	49	PERSONAL	\N	\N	\N
-48	{"report_id": "rpXqCutQj85N", "expense_id": "txcKVVELn1Vl", "fund_source": "CCC", "claim_number": "C/2021/12/R/1", "employee_email": "admin1@fyleforintacct.in"}	2021-12-03 11:26:58.746214+00	2021-12-03 11:26:58.746248+00	49	CCC	\N	\N	\N
+COPY public.expense_groups (id, description, created_at, updated_at, workspace_id, fund_source, exported_at, response_logs, employee_name, export_url) FROM stdin;
+1	{"report_id": "rpuN3bgphxbK", "fund_source": "PERSONAL", "claim_number": "C/2021/11/R/5", "employee_email": "ashwin.t@fyle.in"}	2021-11-15 10:29:07.618062+00	2021-11-15 11:02:55.125634+00	1	PERSONAL	\N	\N	\N	\N
+2	{"report_id": "rpHLA9Dfp9hN", "fund_source": "CCC", "claim_number": "C/2021/11/R/6", "employee_email": "ashwin.t@fyle.in"}	2021-11-15 13:12:12.275539+00	2021-11-15 13:27:27.538211+00	1	CCC	\N	\N	\N	\N
+3	{"report_id": "rpu5W0LYrk6e", "fund_source": "PERSONAL", "claim_number": "C/2021/11/R/2", "employee_email": "ashwin.t@fyle.in"}	2021-11-16 04:25:49.206777+00	2021-11-16 04:25:49.206809+00	2	PERSONAL	\N	\N	\N	\N
+4	{"spent_at": "2021-11-16", "report_id": "rprqDvARHUnv", "expense_id": "txMLGb6Xy8m8", "fund_source": "CCC", "claim_number": "C/2021/11/R/1", "employee_email": "ashwin.t@fyle.in"}	2021-11-16 04:25:49.226855+00	2021-11-16 04:25:49.226855+00	2	CCC	\N	\N	\N	\N
+47	{"report_id": "rpXqCutQj85N", "fund_source": "PERSONAL", "claim_number": "C/2021/12/R/1", "employee_email": "admin1@fyleforintacct.in"}	2021-12-03 11:26:58.731339+00	2021-12-03 11:26:58.731398+00	49	PERSONAL	\N	\N	\N	\N
+48	{"report_id": "rpXqCutQj85N", "expense_id": "txcKVVELn1Vl", "fund_source": "CCC", "claim_number": "C/2021/12/R/1", "employee_email": "admin1@fyleforintacct.in"}	2021-12-03 11:26:58.746214+00	2021-12-03 11:26:58.746248+00	49	CCC	\N	\N	\N	\N
 \.
 
 
@@ -11662,7 +11664,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 44, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 174, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 175, true);
 
 
 --

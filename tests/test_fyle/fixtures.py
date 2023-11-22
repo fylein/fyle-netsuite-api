@@ -542,6 +542,7 @@ data = {
             "externalId": "03294720937402397402937",
             "internalId": "116142",
         },
+        "export_url": "https://TSTDRV2089588.app.netsuite.com/app/accounting/transactions/$journal.nl?id=725456",
         "created_at": "2021-11-15T10:29:07.618062Z",
         "exported_at": "2021-11-15T11:02:55.125205Z",
         "updated_at": "2021-11-15T11:02:55.125634Z",
