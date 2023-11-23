@@ -35,7 +35,7 @@ def get_task_log_and_fund_source(workspace_id: int):
 
     configuration = Configuration.objects.get(workspace_id=workspace_id)
     fund_source = ['PERSONAL']
-    if configuration.corporate_credit_card_expenses_object:
+    if configuration.corporate_credit_card_expenses_object is not None:
         fund_source.append('CCC')
 
     return task_log, fund_source, configuration
