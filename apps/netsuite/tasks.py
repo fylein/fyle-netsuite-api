@@ -72,13 +72,6 @@ TASK_TYPE_LINES_MAP = {
 }
 
 
-def add_export_url(response_logs, ns_account_id, expense_group):
-    try:
-        url = generate_netsuite_export_url(response_logs, ns_account_id)
-        expense_group.export_url = url
-    except Exception as exception:
-        logger.info({'error': exception})
-
 def load_attachments(netsuite_connection: NetSuiteConnector, expense: Expense, expense_group: ExpenseGroup):
     """
     Get attachments from Fyle
@@ -455,8 +448,7 @@ def create_bill(expense_group, task_log_id):
 
             expense_group.exported_at = datetime.now()
             expense_group.response_logs = created_bill
-
-            add_export_url(response_logs=created_bill, ns_account_id=netsuite_credentials.ns_account_id, expense_group=expense_group)
+            expense_group.url = generate_netsuite_export_url(response_logs=created_bill, ns_account_id=netsuite_credentials)
 
             expense_group.save()
             
@@ -576,7 +568,7 @@ def create_credit_card_charge(expense_group, task_log_id):
 
             expense_group.exported_at = datetime.now()
             expense_group.response_logs = created_credit_card_charge
-            add_export_url(response_logs=created_credit_card_charge, ns_account_id=netsuite_credentials.ns_account_id, expense_group=expense_group)
+            expense_group.export_url = generate_netsuite_export_url(response_logs=created_credit_card_charge, ns_account_id=netsuite_credentials)
             expense_group.save()
 
     except NetSuiteCredentials.DoesNotExist:
@@ -667,7 +659,7 @@ def create_expense_report(expense_group, task_log_id):
 
             expense_group.exported_at = datetime.now()
             expense_group.response_logs = created_expense_report
-            add_export_url(response_logs=created_expense_report, ns_account_id=netsuite_credentials.ns_account_id, expense_group=expense_group)
+            expense_group.export_url = generate_netsuite_export_url(response_logs=created_expense_report, ns_account_id=netsuite_credentials)
             expense_group.save()
 
             async_task(
@@ -763,7 +755,7 @@ def create_journal_entry(expense_group, task_log_id):
 
             expense_group.exported_at = datetime.now()
             expense_group.response_logs = created_journal_entry
-            add_export_url(response_logs=created_journal_entry, ns_account_id=netsuite_credentials.ns_account_id, expense_group=expense_group)      
+            expense_group.export_url = generate_netsuite_export_url(response_logs=created_journal_entry, ns_account_id=netsuite_credentials)      
             expense_group.save()
 
             async_task(
