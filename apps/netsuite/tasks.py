@@ -386,6 +386,18 @@ def upload_attachments_and_update_export(expenses: List[Expense], task_log: Task
             workspace_id, exception, traceback.format_exc()
         )
 
+
+def resolve_errors_for_exported_expense_group(expense_group, workspace_id=None):
+    """
+    Resolve errors for exported expense group
+    :param expense_group: Expense group
+    """
+    if isinstance(expense_group, list):
+        Error.objects.filter(workspace_id=workspace_id, expense_group_id__in=expense_group, is_resolved=False).update(is_resolved=True)
+    else:
+        Error.objects.filter(workspace_id=expense_group.workspace_id, expense_group=expense_group, is_resolved=False).update(is_resolved=True)
+
+
 @handle_netsuite_exceptions(payment=False)
 def create_bill(expense_group, task_log_id, last_export):
     task_log = TaskLog.objects.get(id=task_log_id)
@@ -433,6 +445,7 @@ def create_bill(expense_group, task_log_id, last_export):
         expense_group.exported_at = datetime.now()
         expense_group.response_logs = created_bill
         expense_group.save()
+        resolve_errors_for_exported_expense_group(expense_group)
 
         task_log.save()
 
@@ -501,6 +514,7 @@ def create_credit_card_charge(expense_group, task_log_id, last_export):
         expense_group.exported_at = datetime.now()
         expense_group.response_logs = created_credit_card_charge
         expense_group.save()
+        resolve_errors_for_exported_expense_group(expense_group)
 
 
 @handle_netsuite_exceptions(payment=False)
@@ -545,6 +559,7 @@ def create_expense_report(expense_group, task_log_id, last_export):
         expense_group.exported_at = datetime.now()
         expense_group.response_logs = created_expense_report
         expense_group.save()
+        resolve_errors_for_exported_expense_group(expense_group)
 
         task_log.save()
 
@@ -592,6 +607,7 @@ def create_journal_entry(expense_group, task_log_id, last_export):
         expense_group.exported_at = datetime.now()
         expense_group.response_logs = created_journal_entry
         expense_group.save()
+        resolve_errors_for_exported_expense_group(expense_group)
 
         task_log.save()
 
@@ -729,6 +745,18 @@ def __validate_tax_group_mapping(expense_group: ExpenseGroup, configuration: Con
                     'type': 'Tax Group Mapping',
                     'message': 'Tax Group Mapping not found'
                 })
+
+                if tax_group:
+                    Error.objects.update_or_create(
+                    workspace_id=tax_group.workspace_id,
+                    expense_attribute=tax_group,
+                    defaults={
+                        'type': 'TAX_MAPPING',
+                        'error_title': tax_group.value,
+                        'error_detail': 'Tax mapping is missing',
+                        'is_resolved': False
+                    }
+                )
 
         row = row + 1
 
@@ -1215,6 +1243,7 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
         task_log.status = 'COMPLETE'
 
         task_log.save()
+        resolve_errors_for_exported_expense_group(expense_group_ids, workspace_id)
 
 
 def create_vendor_payment(workspace_id):
