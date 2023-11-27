@@ -525,6 +525,9 @@ def post_tax_groups(platform_connection: PlatformConnector, workspace_id: int):
 
     platform_connection.tax_groups.sync()
     Mapping.bulk_create_mappings(netsuite_attributes, 'TAX_GROUP', 'TAX_ITEM', workspace_id)
+    resolve_expense_attribute_errors(
+        source_attribute_type='TAX_GROUP', workspace_id=workspace_id
+    )
 
 @handle_exceptions(task_name='Import Category to Fyle and Auto Create Mappings')
 def auto_create_category_mappings(workspace_id):
@@ -563,6 +566,12 @@ def auto_create_category_mappings(workspace_id):
     if reimbursable_expenses_object == 'EXPENSE REPORT' and \
         corporate_credit_card_expenses_object in ('BILL', 'JOURNAL ENTRY', 'CREDIT CARD CHARGE'):
         bulk_create_ccc_category_mappings(workspace_id)
+    
+    resolve_expense_attribute_errors(
+            source_attribute_type="CATEGORY", 
+            destination_attribute_type=reimbursable_destination_type, 
+            workspace_id=workspace_id
+    )
 
 
 def auto_import_and_map_fyle_fields(workspace_id):
