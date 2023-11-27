@@ -10,6 +10,8 @@ from netsuitesdk.internal.exceptions import NetSuiteRequestError
 from netsuitesdk import NetSuiteRateLimitError, NetSuiteLoginError
 from fyle_netsuite_api.exceptions import BulkError
 
+from .actions import update_last_export_details
+
 from django.db.models import Q
 
 logger = logging.getLogger(__name__)
@@ -24,7 +26,6 @@ def __handle_netsuite_connection_error(expense_group: ExpenseGroup, task_log: Ta
         expense_group.workspace_id
     )
     detail = {
-        'expense_group_id': expense_group.id,
         'message': 'NetSuite Account not connected'
     }
 
@@ -48,28 +49,6 @@ def __log_error(task_log: TaskLog) -> None:
     logger.exception('Something unexpected happened workspace_id: %s %s', task_log.workspace_id, task_log.detail)
 
 
-def update_last_export_details(workspace_id):
-    last_export_detail = LastExportDetail.objects.get(workspace_id=workspace_id)
-
-    failed_exports = TaskLog.objects.filter(
-        ~Q(type__in=['CREATING_VENDOR_PAYMENT','FETCHING_EXPENSES']), workspace_id=workspace_id, status__in=['FAILED', 'FATAL']
-    ).count()
-
-    successful_exports = TaskLog.objects.filter(
-        ~Q(type__in=['CREATING_VENDOR_PAYMENT', 'FETCHING_EXPENSES']),
-        workspace_id=workspace_id,
-        status='COMPLETE',
-        updated_at__gt=last_export_detail.last_exported_at
-    ).count()
-
-    last_export_detail.failed_expense_groups_count = failed_exports
-    last_export_detail.successful_expense_groups_count = successful_exports
-    last_export_detail.total_expense_groups_count = failed_exports + successful_exports
-    last_export_detail.save()
-
-    return last_export_detail
-
-
 def handle_netsuite_exceptions(payment=False):
     def decorator(func):
         def wrapper(*args):
@@ -78,13 +57,13 @@ def handle_netsuite_exceptions(payment=False):
                 workspace_id = args[1]
                 object_type = args[2]
                 task_log, _ = TaskLog.objects.update_or_create(
-                                workspace_id=workspace_id,
-                                task_id='PAYMENT_{}'.format(entity_object['unique_id']),
-                                defaults={
-                                    'status': 'IN_PROGRESS',
-                                    'type': 'CREATING_VENDOR_PAYMENT'
-                                }
-                            )
+                workspace_id=workspace_id,
+                task_id='PAYMENT_{}'.format(entity_object['unique_id']),
+                defaults={
+                    'status': 'IN_PROGRESS',
+                    'type': 'CREATING_VENDOR_PAYMENT'
+                    }
+                )
             else:
                 expense_group = args[0]
                 task_log_id = args[1]
@@ -123,7 +102,6 @@ def handle_netsuite_exceptions(payment=False):
                     'message': detail['message']
                 })
                 if not payment:
-                    all_details[0]['expense_group_id'] = expense_group.id
                     Error.objects.update_or_create(
                     workspace_id=expense_group.workspace_id,
                     expense_group=expense_group,
