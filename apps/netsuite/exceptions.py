@@ -19,25 +19,33 @@ logger.level = logging.INFO
 
 netsuite_error_message = 'NetSuite System Error'
 
-def __handle_netsuite_connection_error(expense_group: ExpenseGroup, task_log: TaskLog) -> None:
-    logger.info(
-        'NetSuite Credentials not found for workspace_id %s / expense group %s',
-        expense_group.id,
-        expense_group.workspace_id
-    )
+def __handle_netsuite_connection_error(expense_group: ExpenseGroup, task_log: TaskLog, workspace_id: int) -> None:
+
+    if expense_group:
+        logger.info(
+            'NetSuite Credentials not found for workspace_id %s / expense group %s',
+            expense_group.id,
+            expense_group.workspace_id
+        )
+    else:
+        logger.info(
+            'NetSuite Credentials not found for workspace_id %s',
+            workspace_id
+        )
     detail = {
         'message': 'NetSuite Account not connected'
     }
 
-    Error.objects.update_or_create(
-        workspace_id=expense_group.workspace_id,
-        expense_group=expense_group,
-        defaults={
-            'type': 'NETSUITE_ERROR',
-            'error_title': netsuite_error_message,
-            'error_detail': detail['message'],
-            'is_resolved': False
-        })
+    if expense_group:
+        Error.objects.update_or_create(
+            workspace_id=expense_group.workspace_id,
+            expense_group=expense_group,
+            defaults={
+                'type': 'NETSUITE_ERROR',
+                'error_title': netsuite_error_message,
+                'error_detail': detail['message'],
+                'is_resolved': False
+            })
 
     task_log.status = 'FAILED'
     task_log.detail = detail
@@ -56,6 +64,7 @@ def handle_netsuite_exceptions(payment=False):
                 entity_object = args[0]
                 workspace_id = args[1]
                 object_type = args[2]
+                expense_group = None
                 task_log, _ = TaskLog.objects.update_or_create(
                 workspace_id=workspace_id,
                 task_id='PAYMENT_{}'.format(entity_object['unique_id']),
@@ -66,6 +75,7 @@ def handle_netsuite_exceptions(payment=False):
                 )
             else:
                 expense_group = args[0]
+                workspace_id=expense_group.workspace_id
                 task_log_id = args[1]
                 task_log = TaskLog.objects.get(id=task_log_id)
                 last_export = args[2]
@@ -74,20 +84,7 @@ def handle_netsuite_exceptions(payment=False):
                 func(*args)
             
             except NetSuiteCredentials.DoesNotExist:
-                if payment:
-                    logger.info(
-                        'NetSuite Credentials not found for workspace_id %s',
-                        workspace_id
-                    )
-                    detail = {
-                        'message': 'NetSuite Account not connected'
-                    }
-                    task_log.status = 'FAILED'
-                    task_log.detail = detail
-
-                    task_log.save()
-                else:
-                    __handle_netsuite_connection_error(expense_group, task_log)
+                    __handle_netsuite_connection_error(expense_group, task_log, workspace_id)
 
             except (NetSuiteRequestError, NetSuiteLoginError) as exception:
                 all_details = []

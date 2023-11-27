@@ -959,7 +959,7 @@ def test_handle_netsuite_connection_error(db):
         workspace_id=1
     )
 
-    __handle_netsuite_connection_error(expense_group, task_log)
+    __handle_netsuite_connection_error(expense_group, task_log, workspace_id=1)
 
     task_log = TaskLog.objects.filter(workspace_id=1).last()
 
