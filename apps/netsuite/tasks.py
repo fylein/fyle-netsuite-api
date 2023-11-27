@@ -25,7 +25,7 @@ from fyle_netsuite_api.exceptions import BulkError
 from apps.fyle.models import ExpenseGroup, Expense, Reimbursement
 from apps.mappings.models import GeneralMapping, SubsidiaryMapping
 from apps.tasks.models import TaskLog, Error
-from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configuration, Workspace
+from apps.workspaces.models import LastExportDetail, NetSuiteCredentials, FyleCredential, Configuration, Workspace
 
 from .models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, JournalEntryLineItem, \
     VendorPayment, VendorPaymentLineitem, CreditCardCharge, CreditCardChargeLineItem
@@ -399,7 +399,7 @@ def resolve_errors_for_exported_expense_group(expense_group, workspace_id=None):
 
 
 @handle_netsuite_exceptions(payment=False)
-def create_bill(expense_group, task_log_id):
+def create_bill(expense_group, task_log_id, last_export):
     task_log = TaskLog.objects.get(id=task_log_id)
 
     if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
@@ -447,14 +447,11 @@ def create_bill(expense_group, task_log_id):
         expense_group.save()
         resolve_errors_for_exported_expense_group(expense_group)
 
-        async_task(
-            'apps.netsuite.tasks.upload_attachments_and_update_export',
-            expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
-        )
+        task_log.save()
 
 
 @handle_netsuite_exceptions(payment=False)
-def create_credit_card_charge(expense_group, task_log_id):
+def create_credit_card_charge(expense_group, task_log_id, last_export):
     task_log = TaskLog.objects.get(id=task_log_id)
 
     if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
@@ -521,7 +518,7 @@ def create_credit_card_charge(expense_group, task_log_id):
 
 
 @handle_netsuite_exceptions(payment=False)
-def create_expense_report(expense_group, task_log_id):
+def create_expense_report(expense_group, task_log_id, last_export):
     task_log = TaskLog.objects.get(id=task_log_id)
 
     if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
@@ -564,14 +561,11 @@ def create_expense_report(expense_group, task_log_id):
         expense_group.save()
         resolve_errors_for_exported_expense_group(expense_group)
 
-        async_task(
-            'apps.netsuite.tasks.upload_attachments_and_update_export',
-            expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
-        )
+        task_log.save()
 
 
 @handle_netsuite_exceptions(payment=False)
-def create_journal_entry(expense_group, task_log_id):
+def create_journal_entry(expense_group, task_log_id, last_export):
     task_log = TaskLog.objects.get(id=task_log_id)
 
     if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
@@ -615,10 +609,7 @@ def create_journal_entry(expense_group, task_log_id):
         expense_group.save()
         resolve_errors_for_exported_expense_group(expense_group)
 
-        async_task(
-            'apps.netsuite.tasks.upload_attachments_and_update_export',
-            expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
-        )
+        task_log.save()
 
 
 def __validate_general_mapping(expense_group: ExpenseGroup, configuration: Configuration) -> List[BulkError]:
@@ -964,7 +955,7 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str]):
         fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
         chain.append('apps.fyle.helpers.sync_dimensions', fyle_credentials, workspace_id)
 
-        for expense_group in expense_groups:
+        for index, expense_group in enumerate(expense_groups):
             task_log, _ = TaskLog.objects.get_or_create(
                 workspace_id=expense_group.workspace_id,
                 expense_group=expense_group,
@@ -978,8 +969,12 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str]):
                 task_log.type = 'CREATING_BILL'
                 task_log.status = 'ENQUEUED'
                 task_log.save()
+            
+            last_export = False
+            if expense_groups.count() == index + 1:
+                last_export = True
 
-            chain.append('apps.netsuite.tasks.create_bill', expense_group, task_log.id)
+            chain.append('apps.netsuite.tasks.create_bill', expense_group, task_log.id, last_export)
 
             task_log.save()
         if chain.length() > 1:
@@ -1005,7 +1000,7 @@ def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: L
         fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
         chain.append('apps.fyle.helpers.sync_dimensions', fyle_credentials, workspace_id)
 
-        for expense_group in expense_groups:
+        for index, expense_group in enumerate(expense_groups):
             expense_amount = expense_group.expenses.first().amount
             export_type = 'CREATING_CREDIT_CARD_CHARGE'
             if expense_amount < 0:
@@ -1024,8 +1019,12 @@ def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: L
                 task_log.type = export_type
                 task_log.status = 'ENQUEUED'
                 task_log.save()
+            
+            last_export = False
+            if expense_groups.count() == index + 1:
+                last_export = True
 
-            chain.append('apps.netsuite.tasks.create_credit_card_charge', expense_group, task_log.id)
+            chain.append('apps.netsuite.tasks.create_credit_card_charge', expense_group, task_log.id, last_export)
 
             task_log.save()
         if chain.length() > 1:
@@ -1051,7 +1050,7 @@ def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List
         fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
         chain.append('apps.fyle.helpers.sync_dimensions', fyle_credentials, workspace_id)
 
-        for expense_group in expense_groups:
+        for index, expense_group in enumerate(expense_groups):
             task_log, _ = TaskLog.objects.get_or_create(
                 workspace_id=expense_group.workspace_id,
                 expense_group=expense_group,
@@ -1065,8 +1064,12 @@ def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List
                 task_log.type = 'CREATING_EXPENSE_REPORT'
                 task_log.status = 'ENQUEUED'
                 task_log.save()
+            
+            last_export = False
+            if expense_groups.count() == index + 1:
+                last_export = True
 
-            chain.append('apps.netsuite.tasks.create_expense_report', expense_group, task_log.id)
+            chain.append('apps.netsuite.tasks.create_expense_report', expense_group, task_log.id, last_export)
             task_log.save()
         if chain.length() > 1:
             chain.run()
@@ -1090,7 +1093,7 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
         fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
         chain.append('apps.fyle.helpers.sync_dimensions', fyle_credentials, workspace_id)
 
-        for expense_group in expense_groups:
+        for index, expense_group in enumerate(expense_groups):
             task_log, _ = TaskLog.objects.get_or_create(
                 workspace_id=expense_group.workspace_id,
                 expense_group=expense_group,
@@ -1104,8 +1107,12 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
                 task_log.type = 'CREATING_JOURNAL_ENTRY'
                 task_log.status = 'ENQUEUED'
                 task_log.save()
+            
+            last_export = False
+            if expense_groups.count() == index + 1:
+                last_export = True
 
-            chain.append('apps.netsuite.tasks.create_journal_entry', expense_group, task_log.id)
+            chain.append('apps.netsuite.tasks.create_journal_entry', expense_group, task_log.id, last_export)
             task_log.save()
         if chain.length() > 1:
             chain.run()

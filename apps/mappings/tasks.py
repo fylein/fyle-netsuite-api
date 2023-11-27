@@ -225,7 +225,7 @@ def create_fyle_categories_payload(categories: List[DestinationAttribute], categ
                 'id': category.source_id,
                 'name': category.value,
                 'code': destination_id_of_category,
-                'is_enabled': category.active
+                'is_enabled': category.active if category.value != 'Unspecified' else True
             })
     else:
         for category in categories:
@@ -284,8 +284,8 @@ def upload_categories_to_fyle(workspace_id: int, configuration: Configuration, p
     if configuration.import_categories:
         netsuite_accounts = DestinationAttribute.objects.filter(
             workspace_id=workspace_id, 
-            attribute_type='EXPENSE_CATEGORY' if configuration.employee_field_mapping == 'EMPLOYEE' else 'ACCOUNT',
-            display_name='Expense Category' if configuration.employee_field_mapping == 'EMPLOYEE' else 'Account'
+            attribute_type='EXPENSE_CATEGORY' if configuration.reimbursable_expenses_object == 'EXPENSE REPORT' or configuration.corporate_credit_card_expenses_object == 'EXPENSE REPORT'  else 'ACCOUNT',
+            display_name='Expense Category' if configuration.reimbursable_expenses_object == 'EXPENSE REPORT' or configuration.corporate_credit_card_expenses_object == 'EXPENSE REPORT' else 'Account'
         )
         if netsuite_accounts:
             netsuite_attributes = netsuite_accounts
@@ -541,7 +541,7 @@ def auto_create_category_mappings(workspace_id):
     employee_field_mapping = configuration.employee_field_mapping
     corporate_credit_card_expenses_object = configuration.corporate_credit_card_expenses_object
 
-    if employee_field_mapping and employee_field_mapping == 'EMPLOYEE':
+    if configuration.reimbursable_expenses_object == 'EXPENSE REPORT' or configuration.corporate_credit_card_expenses_object == 'EXPENSE REPORT':
         reimbursable_destination_type = 'EXPENSE_CATEGORY'
     else:
         reimbursable_destination_type = 'ACCOUNT'
