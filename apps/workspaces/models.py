@@ -179,6 +179,7 @@ class Configuration(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
     name_in_journal_entry = models.CharField(max_length=100, help_text='Name in jounral entry for ccc expense only', default='MERCHANT',choices=NAME_IN_JOURNAL_ENTRY)
+    allow_intercompany_vendors = models.BooleanField(default=False, help_text='Allow intercompany vendors')
 
     class Meta:
         db_table = 'configurations'
