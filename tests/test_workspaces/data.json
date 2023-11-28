@@ -3,8 +3,8 @@
         "id":1,
         "workspace":"Workspace object (1)",
         "employee_field_mapping":"EMPLOYEE",
-        "reimbursable_expenses_object":"EXPENSE_REPORT",
-        "corporate_credit_card_expenses_object":"EXPENSE_REPORT",
+        "reimbursable_expenses_object":"EXPENSE REPORT",
+        "corporate_credit_card_expenses_object":"EXPENSE REPORT",
         "import_categories":true,
         "import_tax_items":false,
         "import_projects":true,
@@ -23,7 +23,8 @@
         "updated_at":"2021-11-10T20:19:39.312105Z",
         "import_netsuite_employees": true,
         "is_simplify_report_closure_enabled": true,
-        "name_in_journal_entry": "MERCHANT"
+        "name_in_journal_entry": "MERCHANT",
+        "allow_intercompany_vendors": false
     },
     "workspace": {
         "id":1,

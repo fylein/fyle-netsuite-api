@@ -87,7 +87,7 @@ class WorkspaceSchedule(models.Model):
     Workspace Schedule
     """
     id = models.AutoField(primary_key=True, help_text='Unique Id to identify a schedule')
-    workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
+    workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model', related_name='workspace_schedules')
     enabled = models.BooleanField(default=False)
     start_datetime = models.DateTimeField(help_text='Datetime for start of schedule', null=True)
     interval_hours = models.IntegerField(null=True)
@@ -179,6 +179,34 @@ class Configuration(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
     name_in_journal_entry = models.CharField(max_length=100, help_text='Name in jounral entry for ccc expense only', default='MERCHANT',choices=NAME_IN_JOURNAL_ENTRY)
+    allow_intercompany_vendors = models.BooleanField(default=False, help_text='Allow intercompany vendors')
 
     class Meta:
         db_table = 'configurations'
+
+
+EXPORT_MODE_CHOICES = (
+    ('MANUAL', 'MANUAL'),
+    ('AUTO', 'AUTO')
+)
+
+
+class LastExportDetail(models.Model):
+    """
+    Table to store Last Export Details
+    """
+    id = models.AutoField(primary_key=True)
+    last_exported_at = models.DateTimeField(help_text='Last exported at datetime', null=True)
+    next_export = models.DateTimeField(help_text='next export datetime', null=True)
+    export_mode = models.CharField(
+        max_length=50, help_text='Mode of the export Auto / Manual', choices=EXPORT_MODE_CHOICES, null=True
+    )
+    total_expense_groups_count = models.IntegerField(help_text='Total count of expense groups exported', null=True)
+    successful_expense_groups_count = models.IntegerField(help_text='count of successful expense_groups ', null=True)
+    failed_expense_groups_count = models.IntegerField(help_text='count of failed expense_groups ', null=True)
+    workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
+    created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')
+    updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime')
+
+    class Meta:
+        db_table = 'last_export_details'

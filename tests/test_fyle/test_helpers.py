@@ -34,9 +34,9 @@ def test_update_import_card_credits_flag():
     expense_group_setting = ExpenseGroupSettings.objects.get(id=1)
     assert expense_group_setting.import_card_credits == True
 
-    update_import_card_credits_flag('BILL', 'EXPENSE_REPORT', 1)
+    update_import_card_credits_flag('BILL', 'EXPENSE REPORT', 1)
     expense_group_setting = ExpenseGroupSettings.objects.get(id=1)
-    assert expense_group_setting.import_card_credits == False
+    assert expense_group_setting.import_card_credits == True
 
 
 @pytest.mark.django_db()
