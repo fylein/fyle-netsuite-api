@@ -1,6 +1,9 @@
 from rest_framework.views import Response
 from rest_framework.serializers import ValidationError
+import logging
 
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 EXPORT_TYPE_REDIRECTION = {
     'vendorBill': 'vendbill',
@@ -35,9 +38,12 @@ class LookupFieldMixin:
 
 def generate_netsuite_export_url(response_logs, ns_account_id):
     if response_logs:
-        export_type = response_logs['type'] if response_logs['type'] else 'chargeCard'
-        internal_id = response_logs['internalId']
-        redirection = EXPORT_TYPE_REDIRECTION[export_type]
-        url = f'https://{ns_account_id}.app.netsuite.com/app/accounting/transactions/${redirection}.nl?id={internal_id}'
-        return url
+        try:
+            export_type = response_logs['type'] if response_logs['type'] else 'chargeCard'
+            internal_id = response_logs['internalId']
+            redirection = EXPORT_TYPE_REDIRECTION[export_type]
+            url = f'https://{ns_account_id}.app.netsuite.com/app/accounting/transactions/${redirection}.nl?id={internal_id}'
+            return url
+        except Exception as exception:
+            logger.info({'error': exception})
     return None
