@@ -536,6 +536,7 @@ class NetSuiteConnector:
         Sync vendors
         """
         subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
+        configuration = Configuration.objects.filter(workspace_id=self.workspace_id).first()
 
         vendors_generator = self.connection.vendors.get_all_generator()
 
@@ -545,7 +546,7 @@ class NetSuiteConnector:
                 detail = {
                     'email': vendor['email'] if vendor['email'] else None
                 }
-                if 'subsidiary' in vendor and vendor['subsidiary']:
+                if 'subsidiary' in vendor and vendor['subsidiary'] or configuration.allow_intercompany_vendors:
                     if vendor['subsidiary']['internalId'] == subsidiary_mapping.internal_id:
                         attributes.append({
                             'attribute_type': 'VENDOR',
