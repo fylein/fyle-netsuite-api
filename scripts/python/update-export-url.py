@@ -3,11 +3,8 @@ from apps.workspaces.models import NetSuiteCredentials, Workspace
 from fyle_netsuite_api.utils import generate_netsuite_export_url
 
 
-folder_created_workspace_ids = []
-
 prod_workspaces = Workspace.objects.exclude(
     name__iregex=r'(fyle|test)',
-    id__in=folder_created_workspace_ids
 )
 
 for workspace in prod_workspaces:

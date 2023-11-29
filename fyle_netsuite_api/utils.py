@@ -45,5 +45,5 @@ def generate_netsuite_export_url(response_logs, ns_account_id):
             url = f'https://{ns_account_id}.app.netsuite.com/app/accounting/transactions/${redirection}.nl?id={internal_id}'
             return url
         except Exception as exception:
-            logger.info({'error': exception})
+            logger.exception({'error': exception})
     return None
