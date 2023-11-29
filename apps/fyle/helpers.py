@@ -8,12 +8,30 @@ from django.utils.module_loading import import_string
 from django.conf import settings
 from django.db.models import Q
 
-from apps.fyle.models import ExpenseGroupSettings, ExpenseFilter
+from apps.fyle.models import ExpenseGroupSettings, ExpenseFilter, ExpenseGroup
 from apps.mappings.models import GeneralMapping
-from apps.workspaces.models import FyleCredential, Workspace
+from apps.workspaces.models import FyleCredential, Workspace, Configuration
 from typing import List
 
 logger = logging.getLogger(__name__)
+
+
+def get_exportable_expense_group_ids(workspace_id):
+    configuration = Configuration.objects.get(workspace_id=workspace_id)
+    fund_source = []
+
+    if configuration.reimbursable_expenses_object:
+        fund_source.append('PERSONAL')
+    if configuration.corporate_credit_card_expenses_object:
+        fund_source.append('CCC')
+
+    expense_group_ids = ExpenseGroup.objects.filter(
+        workspace_id=workspace_id,
+        exported_at__isnull=True,
+        fund_source__in=fund_source
+    ).values_list('id', flat=True)
+    
+    return expense_group_ids
 
 
 def post_request(url, body, refresh_token=None):
