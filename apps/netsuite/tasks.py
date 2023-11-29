@@ -12,6 +12,7 @@ from django.utils.module_loading import import_string
 from apps.netsuite.exceptions import handle_netsuite_exceptions
 from django_q.models import Schedule
 from django_q.tasks import Chain, async_task
+from fyle_netsuite_api.utils import generate_netsuite_export_url
 
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
 from netsuitesdk import NetSuiteRateLimitError, NetSuiteLoginError
@@ -444,10 +445,12 @@ def create_bill(expense_group, task_log_id, last_export):
 
         expense_group.exported_at = datetime.now()
         expense_group.response_logs = created_bill
+        expense_group.url = generate_netsuite_export_url(response_logs=created_bill, ns_account_id=netsuite_credentials)
+
         expense_group.save()
+        
         resolve_errors_for_exported_expense_group(expense_group)
 
-        task_log.save()
 
 
 @handle_netsuite_exceptions(payment=False)
@@ -513,6 +516,7 @@ def create_credit_card_charge(expense_group, task_log_id, last_export):
 
         expense_group.exported_at = datetime.now()
         expense_group.response_logs = created_credit_card_charge
+        expense_group.export_url = generate_netsuite_export_url(response_logs=created_credit_card_charge, ns_account_id=netsuite_credentials)
         expense_group.save()
         resolve_errors_for_exported_expense_group(expense_group)
 
@@ -558,10 +562,10 @@ def create_expense_report(expense_group, task_log_id, last_export):
 
         expense_group.exported_at = datetime.now()
         expense_group.response_logs = created_expense_report
+        expense_group.export_url = generate_netsuite_export_url(response_logs=created_expense_report, ns_account_id=netsuite_credentials)
         expense_group.save()
         resolve_errors_for_exported_expense_group(expense_group)
 
-        task_log.save()
 
 
 @handle_netsuite_exceptions(payment=False)
@@ -606,11 +610,10 @@ def create_journal_entry(expense_group, task_log_id, last_export):
 
         expense_group.exported_at = datetime.now()
         expense_group.response_logs = created_journal_entry
+        expense_group.export_url = generate_netsuite_export_url(response_logs=created_journal_entry, ns_account_id=netsuite_credentials)      
         expense_group.save()
         resolve_errors_for_exported_expense_group(expense_group)
-
-        task_log.save()
-
+        
 
 def __validate_general_mapping(expense_group: ExpenseGroup, configuration: Configuration) -> List[BulkError]:
     bulk_errors = []
