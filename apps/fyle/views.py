@@ -14,7 +14,7 @@ from fyle_accounting_mappings.serializers import ExpenseAttributeSerializer
 
 from apps.workspaces.models import Configuration, FyleCredential, Workspace
 
-from .tasks import schedule_expense_group_creation
+from .tasks import schedule_expense_group_creation, get_task_log_and_fund_source, create_expense_groups
 from .helpers import check_interval_and_sync_dimension, sync_dimensions
 from .models import Expense, ExpenseGroup, ExpenseGroupSettings, ExpenseFilter
 from .serializers import ExpenseGroupSerializer, ExpenseSerializer, ExpenseFieldSerializer, \
@@ -419,3 +419,20 @@ class CustomFieldView(generics.RetrieveAPIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+
+class ExpenseGroupSyncView(generics.CreateAPIView):
+    """
+    Create expense groups
+    """
+    def post(self, request, *args, **kwargs):
+        """
+        Post expense groups creation
+        """
+        task_log, fund_source, configuration = get_task_log_and_fund_source(kwargs['workspace_id'])
+
+        create_expense_groups(kwargs['workspace_id'], configuration ,fund_source, task_log)
+
+        return Response(
+            status=status.HTTP_200_OK
+        )
