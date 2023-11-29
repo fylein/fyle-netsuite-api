@@ -928,7 +928,8 @@ CREATE TABLE public.expense_groups (
     fund_source character varying(255) NOT NULL,
     exported_at timestamp with time zone,
     response_logs jsonb,
-    employee_name character varying(100)
+    employee_name character varying(100),
+    export_url character varying(255)
 );
 
 
@@ -7827,11 +7828,12 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 169	mappings	0010_auto_20231025_0915	2023-11-07 07:21:37.268291+00
 170	mappings	0011_auto_20231107_0720	2023-11-07 07:21:37.285191+00
 171	netsuite	0023_bill_department_id	2023-11-07 07:21:37.291269+00
-172	workspaces	0036_auto_20231027_0709	2023-11-20 12:12:44.910371+00
-173	tasks	0009_error	2023-11-20 12:12:44.97278+00
-174	workspaces	0037_lastexportdetail	2023-11-20 12:12:45.043763+00
-175	workspaces	0038_configuration_allow_intercompany_vendors	2023-11-28 10:23:29.709496+00
-176	fyle	0027_expensegroup_employee_name	2023-11-29 11:09:45.601313+00
+172	workspaces	0037_lastexportdetail	2023-11-20 12:12:45.043763+00
+173	workspaces	0038_configuration_allow_intercompany_vendors	2023-11-28 10:23:29.709496+00
+174	fyle	0027_expensegroup_employee_name	2023-11-29 11:09:45.601313+00
+175	workspaces	0036_auto_20231027_0709	2023-11-20 11:19:47.53547+00
+176	tasks	0009_error	2023-11-20 11:19:47.609035+00
+177	fyle	0028_expensegroup_export_url	2023-11-22 11:49:48.090718+00
 \.
 
 
@@ -11421,13 +11423,13 @@ COPY public.expense_group_settings (id, reimbursable_expense_group_fields, corpo
 -- Data for Name: expense_groups; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.expense_groups (id, description, created_at, updated_at, workspace_id, fund_source, exported_at, response_logs, employee_name) FROM stdin;
-1	{"report_id": "rpuN3bgphxbK", "fund_source": "PERSONAL", "claim_number": "C/2021/11/R/5", "employee_email": "ashwin.t@fyle.in"}	2021-11-15 10:29:07.618062+00	2021-11-15 11:02:55.125634+00	1	PERSONAL	\N	\N	\N
-2	{"report_id": "rpHLA9Dfp9hN", "fund_source": "CCC", "claim_number": "C/2021/11/R/6", "employee_email": "ashwin.t@fyle.in"}	2021-11-15 13:12:12.275539+00	2021-11-15 13:27:27.538211+00	1	CCC	\N	\N	\N
-3	{"report_id": "rpu5W0LYrk6e", "fund_source": "PERSONAL", "claim_number": "C/2021/11/R/2", "employee_email": "ashwin.t@fyle.in"}	2021-11-16 04:25:49.206777+00	2021-11-16 04:25:49.206809+00	2	PERSONAL	\N	\N	\N
-4	{"spent_at": "2021-11-16", "report_id": "rprqDvARHUnv", "expense_id": "txMLGb6Xy8m8", "fund_source": "CCC", "claim_number": "C/2021/11/R/1", "employee_email": "ashwin.t@fyle.in"}	2021-11-16 04:25:49.226855+00	2021-11-16 04:25:49.226855+00	2	CCC	\N	\N	\N
-47	{"report_id": "rpXqCutQj85N", "fund_source": "PERSONAL", "claim_number": "C/2021/12/R/1", "employee_email": "admin1@fyleforintacct.in"}	2021-12-03 11:26:58.731339+00	2021-12-03 11:26:58.731398+00	49	PERSONAL	\N	\N	\N
-48	{"report_id": "rpXqCutQj85N", "expense_id": "txcKVVELn1Vl", "fund_source": "CCC", "claim_number": "C/2021/12/R/1", "employee_email": "admin1@fyleforintacct.in"}	2021-12-03 11:26:58.746214+00	2021-12-03 11:26:58.746248+00	49	CCC	\N	\N	\N
+COPY public.expense_groups (id, description, created_at, updated_at, workspace_id, fund_source, exported_at, response_logs, employee_name, export_url) FROM stdin;
+1	{"report_id": "rpuN3bgphxbK", "fund_source": "PERSONAL", "claim_number": "C/2021/11/R/5", "employee_email": "ashwin.t@fyle.in"}	2021-11-15 10:29:07.618062+00	2021-11-15 11:02:55.125634+00	1	PERSONAL	\N	\N	\N	\N
+2	{"report_id": "rpHLA9Dfp9hN", "fund_source": "CCC", "claim_number": "C/2021/11/R/6", "employee_email": "ashwin.t@fyle.in"}	2021-11-15 13:12:12.275539+00	2021-11-15 13:27:27.538211+00	1	CCC	\N	\N	\N	\N
+3	{"report_id": "rpu5W0LYrk6e", "fund_source": "PERSONAL", "claim_number": "C/2021/11/R/2", "employee_email": "ashwin.t@fyle.in"}	2021-11-16 04:25:49.206777+00	2021-11-16 04:25:49.206809+00	2	PERSONAL	\N	\N	\N	\N
+4	{"spent_at": "2021-11-16", "report_id": "rprqDvARHUnv", "expense_id": "txMLGb6Xy8m8", "fund_source": "CCC", "claim_number": "C/2021/11/R/1", "employee_email": "ashwin.t@fyle.in"}	2021-11-16 04:25:49.226855+00	2021-11-16 04:25:49.226855+00	2	CCC	\N	\N	\N	\N
+47	{"report_id": "rpXqCutQj85N", "fund_source": "PERSONAL", "claim_number": "C/2021/12/R/1", "employee_email": "admin1@fyleforintacct.in"}	2021-12-03 11:26:58.731339+00	2021-12-03 11:26:58.731398+00	49	PERSONAL	\N	\N	\N	\N
+48	{"report_id": "rpXqCutQj85N", "expense_id": "txcKVVELn1Vl", "fund_source": "CCC", "claim_number": "C/2021/12/R/1", "employee_email": "admin1@fyleforintacct.in"}	2021-12-03 11:26:58.746214+00	2021-12-03 11:26:58.746248+00	49	CCC	\N	\N	\N	\N
 \.
 
 

@@ -131,7 +131,14 @@ data = {
                 'claim_number': '    C/2021/12/R/198',
                 'employee_email': 'jhonsnow@fyle.in',
                 'employee_name': None,
-                'fund_source': 'CCC'
+                'fund_source': 'CCC',
+                'expense_number': 'E/2023/09/T/7',
+                'vendor': None,
+                'category': 'Train',
+                'amount': 101.0,
+                'report_id': 'dummy_report_id',
+                'settlement_id': 'dummy_settlement_id',
+                'expense_id': 'dummy_expense_id'
             },
             {
                 'updated_at': '2021-12-03T11:26:58.702209Z',
@@ -542,11 +549,25 @@ data = {
             "externalId": "03294720937402397402937",
             "internalId": "116142",
         },
+        "export_url": "https://TSTDRV2089588.app.netsuite.com/app/accounting/transactions/$journal.nl?id=725456",
         "created_at": "2021-11-15T10:29:07.618062Z",
         "exported_at": "2021-11-15T11:02:55.125205Z",
         "updated_at": "2021-11-15T11:02:55.125634Z",
         "workspace": 1,
-        "expenses": [1],
+        "expenses": [ {
+                    "updated_at": "2023-11-21T10:41:09.919000Z",
+                    "claim_number": "C/2023/06/R/4",
+                    "employee_email": "admin1@fyleforbadassashu.in",
+                    "employee_name": "Theresa Brown",
+                    "fund_source": "PERSONAL",
+                    "expense_number": "E/2023/06/T/21",
+                    "vendor": "95110",
+                    "category": "Airlines",
+                    "amount": 6377.0,
+                    "report_id": "rp0kaXoqkJle",
+                    "settlement_id": "setPzkM7eyQFd",
+                    "expense_id": "txyZ1zJDQfiK"
+                }],
     },
     "expense_group_setting_response": {
         "id": 1,

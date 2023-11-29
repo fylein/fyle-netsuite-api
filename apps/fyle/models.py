@@ -328,6 +328,7 @@ class ExpenseGroup(models.Model):
     employee_name = models.CharField(max_length=100, help_text='Expense Group Employee Name', null=True)
     description = JSONField(max_length=255, help_text='Description', null=True)
     response_logs = JSONField(help_text='Reponse log of the export', null=True)
+    export_url = models.CharField(max_length=255, help_text='Netsuite URL for the exported expenses', null=True)
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     exported_at = models.DateTimeField(help_text='Exported at', null=True)
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
@@ -393,6 +394,10 @@ class ExpenseGroup(models.Model):
             if expense_group_settings.ccc_export_date_type == 'last_spent_at':
                 expense_group['last_spent_at'] = Expense.objects.filter(
                     id__in=expense_group['expense_ids']).order_by('-spent_at').first().spent_at
+            
+            employee_name = Expense.objects.filter(
+                id__in=expense_group['expense_ids']
+            ).first().employee_name
 
             employee_name = Expense.objects.filter(
                 id__in=expense_group['expense_ids']
