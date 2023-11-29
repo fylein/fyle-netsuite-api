@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 from django.db.models import Q
-from apps.fyle.actions import get_expense_group_ids
+from apps.fyle.helpers import get_exportable_expense_group_ids
 
 from rest_framework.views import status
 from rest_framework import generics
@@ -84,7 +84,7 @@ class ExportableExpenseGroupsView(generics.RetrieveAPIView):
     """
     def get(self, request, *args, **kwargs):
         
-        expense_group_ids = get_expense_group_ids(workspace_id=kwargs['workspace_id'])
+        expense_group_ids = get_exportable_expense_group_ids(workspace_id=kwargs['workspace_id'])
         return Response(
             data={'exportable_expense_group_ids': expense_group_ids},
             status=status.HTTP_200_OK
