@@ -1,7 +1,5 @@
 from django.urls import path
 
-from apps.workspaces.views import LastExportDetailView
-
 from .views import NetSuiteFieldsView, DestinationAttributesView, CustomSegmentView, \
     SyncNetSuiteDimensionView, RefreshNetSuiteDimensionView, TriggerExportsView, TriggerPaymentsView, \
     DestinationAttributesCountView

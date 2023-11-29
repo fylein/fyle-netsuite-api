@@ -23,8 +23,7 @@
         "updated_at":"2021-11-10T20:19:39.312105Z",
         "import_netsuite_employees": true,
         "is_simplify_report_closure_enabled": true,
-        "name_in_journal_entry": "MERCHANT",
-        "allow_intercompany_vendors": false
+        "name_in_journal_entry": "MERCHANT"
     },
     "workspace": {
         "id":1,

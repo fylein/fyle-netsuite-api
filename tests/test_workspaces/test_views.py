@@ -6,7 +6,7 @@ from datetime import timedelta
 
 from fyle_netsuite_api.tests import settings
 from django.urls import reverse
-from apps.workspaces.models import Configuration, FyleCredential, NetSuiteCredentials, WorkspaceSchedule, LastExportDetail
+from apps.workspaces.models import Configuration, FyleCredential, NetSuiteCredentials, WorkspaceSchedule
 from .fixtures import *
 from fyle_accounting_mappings.models import ExpenseAttribute
 from tests.test_netsuite.fixtures import data as netsuite_data
@@ -519,40 +519,3 @@ def test_get_workspace_admin_view(api_client, access_token, db):
     response = json.loads(response.content)
 
     assert response[0]['email'] == 'ashwin.t@fyle.in'
-
-@pytest.mark.django_db(databases=['default'])
-def test_export_to_netsuite(mocker, api_client, access_token):
-    mocker.patch(
-        'apps.workspaces.views.export_to_netsuite',
-        return_value=None
-    )
-
-    workspace_id = 1
-    url = '/api/workspaces/{}/exports/trigger/'.format(workspace_id)
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
-
-    response = api_client.post(url)
-    assert response.status_code == 200
-
-
-@pytest.mark.django_db(databases=['default'])
-def test_last_export_detail_view(api_client, access_token):
-
-    workspace_id = 1
-    LastExportDetail.objects.create(workspace_id=1, export_mode='MANUAL', total_expense_groups_count=2, 
-                successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
-                created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
-
-    url = '/api/workspaces/{}/export_detail/'.format(workspace_id)
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
-
-    response = api_client.get(url)
-
-    assert response.status_code == 200
-
-    last_export_detail = LastExportDetail.objects.filter(workspace_id=workspace_id).first()
-    last_export_detail.total_expense_groups_count = 0
-    last_export_detail.save()
-
-    response = api_client.get(url)
-    assert response.status_code == 404
