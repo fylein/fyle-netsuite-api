@@ -450,8 +450,11 @@ def create_bill(expense_group, task_log_id, last_export):
         expense_group.save()
         
         resolve_errors_for_exported_expense_group(expense_group)
-
-
+        async_task(
+                'apps.netsuite.tasks.upload_attachments_and_update_export',
+                expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
+            )
+        
 
 @handle_netsuite_exceptions(payment=False)
 def create_credit_card_charge(expense_group, task_log_id, last_export):
@@ -565,6 +568,10 @@ def create_expense_report(expense_group, task_log_id, last_export):
         expense_group.export_url = generate_netsuite_export_url(response_logs=created_expense_report, ns_account_id=netsuite_credentials)
         expense_group.save()
         resolve_errors_for_exported_expense_group(expense_group)
+        async_task(
+            'apps.netsuite.tasks.upload_attachments_and_update_export',
+            expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
+        )
 
 
 
@@ -613,6 +620,10 @@ def create_journal_entry(expense_group, task_log_id, last_export):
         expense_group.export_url = generate_netsuite_export_url(response_logs=created_journal_entry, ns_account_id=netsuite_credentials)      
         expense_group.save()
         resolve_errors_for_exported_expense_group(expense_group)
+        async_task(
+            'apps.netsuite.tasks.upload_attachments_and_update_export',
+            expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
+        )
         
 
 def __validate_general_mapping(expense_group: ExpenseGroup, configuration: Configuration) -> List[BulkError]:
