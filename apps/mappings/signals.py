@@ -5,7 +5,7 @@ from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django_q.tasks import async_task
 
-from fyle_accounting_mappings.models import MappingSetting
+from fyle_accounting_mappings.models import MappingSetting, EmployeeMapping, Mapping, CategoryMapping
 
 from apps.mappings.tasks import upload_attributes_to_fyle, schedule_cost_centers_creation,\
     schedule_fyle_attributes_creation
@@ -13,10 +13,38 @@ from apps.mappings.helpers import schedule_or_delete_fyle_import_tasks
 from apps.netsuite.helpers import schedule_payment_sync
 from apps.workspaces.models import Configuration
 from apps.workspaces.tasks import delete_cards_mapping_settings
+from apps.tasks.models import Error
 
 from .models import GeneralMapping, SubsidiaryMapping
 from .tasks import schedule_auto_map_ccc_employees
 
+@receiver(post_save, sender=Mapping)
+def resolve_post_mapping_errors(sender, instance: Mapping, **kwargs):
+    """
+    Resolve errors after mapping is created
+    """
+    if instance.source_type == 'TAX_GROUP':
+        Error.objects.filter(expense_attribute_id=instance.source_id).update(
+            is_resolved=True
+        )
+
+@receiver(post_save, sender=CategoryMapping)
+def resolve_post_category_mapping_errors(sender, instance: Mapping, **kwargs):
+    """
+    Resolve errors after mapping is created
+    """
+    Error.objects.filter(expense_attribute_id=instance.source_category_id).update(
+        is_resolved=True
+    )
+
+@receiver(post_save, sender=EmployeeMapping)
+def resolve_post_employees_mapping_errors(sender, instance: Mapping, **kwargs):
+    """
+    Resolve errors after mapping is created 
+    """
+    Error.objects.filter(expense_attribute_id=instance.source_employee_id).update(
+        is_resolved=True
+    )
 
 @receiver(post_save, sender=SubsidiaryMapping)
 def run_post_subsidiary_mappings(sender, instance: SubsidiaryMapping, **kwargs):

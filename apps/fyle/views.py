@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 from django.db.models import Q
+from apps.fyle.helpers import get_exportable_expense_group_ids
 
 from rest_framework.views import status
 from rest_framework import generics
@@ -82,20 +83,8 @@ class ExportableExpenseGroupsView(generics.RetrieveAPIView):
     List Exportable Expense Groups
     """
     def get(self, request, *args, **kwargs):
-        configuration = Configuration.objects.get(workspace_id=kwargs['workspace_id'])
-        fund_source = []
-
-        if configuration.reimbursable_expenses_object:
-            fund_source.append('PERSONAL')
-        if configuration.corporate_credit_card_expenses_object:
-            fund_source.append('CCC')
-
-        expense_group_ids = ExpenseGroup.objects.filter(
-            workspace_id=self.kwargs['workspace_id'],
-            exported_at__isnull=True,
-            fund_source__in=fund_source
-        ).values_list('id', flat=True)
-
+        
+        expense_group_ids = get_exportable_expense_group_ids(workspace_id=kwargs['workspace_id'])
         return Response(
             data={'exportable_expense_group_ids': expense_group_ids},
             status=status.HTTP_200_OK

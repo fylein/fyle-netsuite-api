@@ -399,6 +399,9 @@ class ExpenseGroup(models.Model):
                 id__in=expense_group['expense_ids']
             ).first().employee_name
 
+            employee_name = Expense.objects.filter(
+                id__in=expense_group['expense_ids']
+            ).first().employee_name
             expense_ids = expense_group['expense_ids']
             expense_group.pop('total')
             expense_group.pop('expense_ids')
