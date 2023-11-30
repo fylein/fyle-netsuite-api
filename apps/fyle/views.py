@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 from django.db.models import Q
+from apps.fyle.helpers import get_exportable_expense_group_ids
 
 from rest_framework.views import status
 from rest_framework import generics
@@ -12,9 +13,9 @@ from fyle_integrations_platform_connector import PlatformConnector
 from fyle_accounting_mappings.models import ExpenseAttribute
 from fyle_accounting_mappings.serializers import ExpenseAttributeSerializer
 
-from apps.workspaces.models import FyleCredential, Workspace
+from apps.workspaces.models import Configuration, FyleCredential, Workspace
 
-from .tasks import schedule_expense_group_creation
+from .tasks import schedule_expense_group_creation, get_task_log_and_fund_source, create_expense_groups
 from .helpers import check_interval_and_sync_dimension, sync_dimensions
 from .models import Expense, ExpenseGroup, ExpenseGroupSettings, ExpenseFilter
 from .serializers import ExpenseGroupSerializer, ExpenseSerializer, ExpenseFieldSerializer, \
@@ -26,6 +27,8 @@ from fyle_netsuite_api import settings
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
+
+
 class ExpenseGroupView(generics.ListCreateAPIView):
     """
     List Fyle Expenses
@@ -34,14 +37,36 @@ class ExpenseGroupView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         state = self.request.query_params.get('state')
+        start_date = self.request.query_params.get('start_date', None)
+        end_date = self.request.query_params.get('end_date', None)
+        expense_group_ids = self.request.query_params.get('expense_group_ids', None)
+        exported_at = self.request.query_params.get('exported_at', None)
+
+        if expense_group_ids:
+            return ExpenseGroup.objects.filter(
+                workspace_id=self.kwargs['workspace_id'],
+                id__in=expense_group_ids.split(',')
+            )
+
+        if state == 'ALL':
+            return ExpenseGroup.objects.filter(workspace_id=self.kwargs['workspace_id']).order_by('-updated_at')
 
         if state == 'FAILED':
             return ExpenseGroup.objects.filter(
                 tasklog__status='FAILED', workspace_id=self.kwargs['workspace_id']).order_by('-updated_at')
 
         elif state == 'COMPLETE':
-            return ExpenseGroup.objects.filter(
-                tasklog__status='COMPLETE', workspace_id=self.kwargs['workspace_id']).order_by('-exported_at')
+            filters = {
+                'workspace_id': self.kwargs['workspace_id'],
+                'tasklog__status': 'COMPLETE'
+            }
+
+            if start_date and end_date:
+                filters['exported_at__range'] = [start_date, end_date]
+
+            if exported_at:
+                filters['exported_at__gte'] = exported_at
+            return ExpenseGroup.objects.filter(**filters).order_by('-exported_at')
 
         elif state == 'READY':
             return ExpenseGroup.objects.filter(
@@ -52,6 +77,19 @@ class ExpenseGroupView(generics.ListCreateAPIView):
                 creditcardcharge__id__isnull=True
             ).order_by('-updated_at')
 
+
+class ExportableExpenseGroupsView(generics.RetrieveAPIView):
+    """
+    List Exportable Expense Groups
+    """
+    def get(self, request, *args, **kwargs):
+        
+        expense_group_ids = get_exportable_expense_group_ids(workspace_id=kwargs['workspace_id'])
+        return Response(
+            data={'exportable_expense_group_ids': expense_group_ids},
+            status=status.HTTP_200_OK
+        )
+    
 
 class ExpenseGroupCountView(generics.ListAPIView):
     """
@@ -370,3 +408,20 @@ class CustomFieldView(generics.RetrieveAPIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+
+class ExpenseGroupSyncView(generics.CreateAPIView):
+    """
+    Create expense groups
+    """
+    def post(self, request, *args, **kwargs):
+        """
+        Post expense groups creation
+        """
+        task_log, fund_source, configuration = get_task_log_and_fund_source(kwargs['workspace_id'])
+
+        create_expense_groups(kwargs['workspace_id'], configuration ,fund_source, task_log)
+
+        return Response(
+            status=status.HTTP_200_OK
+        )

@@ -2,7 +2,7 @@ import itertools
 
 from django.urls import path
 
-from .views import ExpenseGroupView, ExpenseGroupByIdView, ExpenseGroupScheduleView, FyleFieldsView, ExpenseView,\
+from .views import ExpenseGroupSyncView, ExpenseGroupView, ExpenseGroupByIdView, ExpenseGroupScheduleView, ExportableExpenseGroupsView, FyleFieldsView, ExpenseView,\
     ExpenseAttributesView, ExpenseGroupSettingsView, SyncFyleDimensionView, RefreshFyleDimensionView,\
     ExpenseGroupCountView, ExpenseFilterView, ExpenseGroupExpenseView, CustomFieldView
 
@@ -12,7 +12,9 @@ expense_groups_paths = [
     path('expense_groups/trigger/', ExpenseGroupScheduleView.as_view(), name='expense-groups-trigger'),
     path('expense_groups/<int:pk>/', ExpenseGroupByIdView.as_view(), name='expense-group-by-id'),
     path('expense_groups/<int:expense_group_id>/expenses/', ExpenseGroupExpenseView.as_view(), name='expense-group-expenses'),
-    path('expense_group_settings/', ExpenseGroupSettingsView.as_view(), name='expense-group-settings')
+    path('expense_group_settings/', ExpenseGroupSettingsView.as_view(), name='expense-group-settings'),
+    path('exportable_expense_groups/', ExportableExpenseGroupsView.as_view(), name='expense-expense-groups'),
+    path('expense_groups/sync/', ExpenseGroupSyncView.as_view(), name='sync-expense-groups'),
 ]
 
 fyle_dimension_paths = [
