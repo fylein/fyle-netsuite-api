@@ -30,7 +30,7 @@ class TasksByExpenseGroupIdView(generics.RetrieveAPIView):
 
 
 class NewTaskView(LookupFieldMixin, generics.ListAPIView):
-
+    
     queryset = TaskLog.objects.all()
     serializer_class = TaskLogSerializer
     pagination_class = None
