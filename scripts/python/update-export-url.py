@@ -15,6 +15,6 @@ for workspace in prod_workspaces:
         limit = offset + page_size
         paginated_expense_groups = ExpenseGroup.objects.filter(workspace_id=workspace.id, response_logs__isnull=False)[offset:limit]
         for expense_group in paginated_expense_groups:
-            netsuite_creds = NetSuiteCredentials.objects.get(workspace_id=workspace.id)
-            expense_group.export_url = generate_netsuite_export_url(response_logs=expense_group.response_logs, netsuite_creds=netsuite_creds)
+            netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace.id)
+            expense_group.export_url = generate_netsuite_export_url(response_logs=expense_group.response_logs, netsuite_credentials=netsuite_credentials)
             expense_group.save()

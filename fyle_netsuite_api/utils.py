@@ -1,6 +1,8 @@
 from rest_framework.views import Response
 from rest_framework.serializers import ValidationError
 import logging
+from collections import OrderedDict
+from apps.workspaces.models import NetSuiteCredentials
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -36,10 +38,13 @@ class LookupFieldMixin:
         return super().filter_queryset(queryset)
     
 
-def generate_netsuite_export_url(response_logs, netsuite_creds):
+def generate_netsuite_export_url(response_logs : OrderedDict, netsuite_credentials: NetSuiteCredentials):
+
+    '''Generates the export url of expenses'''
+
     if response_logs:
         try:
-            ns_account_id = netsuite_creds.ns_account_id
+            ns_account_id = netsuite_credentials.ns_account_id
             export_type = response_logs['type'] if response_logs['type'] else 'chargeCard'
             internal_id = response_logs['internalId']
             redirection = EXPORT_TYPE_REDIRECTION[export_type]

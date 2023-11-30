@@ -445,7 +445,7 @@ def create_bill(expense_group, task_log_id, last_export):
 
         expense_group.exported_at = datetime.now()
         expense_group.response_logs = created_bill
-        expense_group.url = generate_netsuite_export_url(response_logs=created_bill, netsuite_creds=netsuite_credentials)
+        expense_group.url = generate_netsuite_export_url(response_logs=created_bill, netsuite_credentials=netsuite_credentials)
 
         expense_group.save()
         
@@ -519,7 +519,7 @@ def create_credit_card_charge(expense_group, task_log_id, last_export):
 
         expense_group.exported_at = datetime.now()
         expense_group.response_logs = created_credit_card_charge
-        expense_group.export_url = generate_netsuite_export_url(response_logs=created_credit_card_charge, netsuite_creds=netsuite_credentials)
+        expense_group.export_url = generate_netsuite_export_url(response_logs=created_credit_card_charge, netsuite_credentials=netsuite_credentials)
         expense_group.save()
         resolve_errors_for_exported_expense_group(expense_group)
 
@@ -565,7 +565,7 @@ def create_expense_report(expense_group, task_log_id, last_export):
 
         expense_group.exported_at = datetime.now()
         expense_group.response_logs = created_expense_report
-        expense_group.export_url = generate_netsuite_export_url(response_logs=created_expense_report, netsuite_creds=netsuite_credentials)
+        expense_group.export_url = generate_netsuite_export_url(response_logs=created_expense_report, netsuite_credentials=netsuite_credentials)
         expense_group.save()
         resolve_errors_for_exported_expense_group(expense_group)
         async_task(
@@ -617,7 +617,7 @@ def create_journal_entry(expense_group, task_log_id, last_export):
 
         expense_group.exported_at = datetime.now()
         expense_group.response_logs = created_journal_entry
-        expense_group.export_url = generate_netsuite_export_url(response_logs=created_journal_entry, netsuite_creds=netsuite_credentials)      
+        expense_group.export_url = generate_netsuite_export_url(response_logs=created_journal_entry, netsuite_credentials=netsuite_credentials)      
         expense_group.save()
         resolve_errors_for_exported_expense_group(expense_group)
         async_task(
