@@ -5,6 +5,28 @@ from apps.mappings.models import GeneralMapping
 from apps.tasks.models import Error
 from fyle_accounting_mappings.models import MappingSetting, ExpenseAttribute, EmployeeMapping, CategoryMapping, Mapping
 
+def test_pre_save_category_mappings(access_token):
+
+    category_mapping, _ = CategoryMapping.objects.update_or_create(
+       source_category_id=106,
+       destination_expense_head_id=20,
+       workspace_id=1
+    )
+
+    assert category_mapping.destination_expense_head_id == 20
+    assert category_mapping.destination_account_id == 419
+
+    category_mapping.destination_expense_head_id = None
+    category_mapping.save()
+
+    category_mapping, _ = CategoryMapping.objects.update_or_create(
+        source_category_id=106,
+        destination_account_id=419,
+        workspace_id=1
+    )
+
+    assert category_mapping.destination_account_id == 419
+    assert category_mapping.destination_expense_head_id == None
 
 def test_resolve_post_mapping_errors(access_token):
     tax_group = ExpenseAttribute.objects.filter(
