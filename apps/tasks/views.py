@@ -36,4 +36,3 @@ class NewTaskView(LookupFieldMixin, generics.ListAPIView):
     pagination_class = None
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = {'type':{'in'}, 'expense_group_id':{'in'}, 'status': {'in'}}
-    ordering = ['-updated_at']
