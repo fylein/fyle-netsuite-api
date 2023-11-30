@@ -325,7 +325,7 @@ class ExpenseGroup(models.Model):
                                   help_text='To which workspace this expense group belongs to')
     fund_source = models.CharField(max_length=255, help_text='Expense fund source')
     expenses = models.ManyToManyField(Expense, help_text="Expenses under this Expense Group")
-    employee_name = models.CharField(max_length=100, help_text='Expense Group Employee Name', null=True)
+    employee_name = models.CharField(max_length=255, help_text='Expense Group Employee Name', null=True)
     description = JSONField(max_length=255, help_text='Description', null=True)
     response_logs = JSONField(help_text='Reponse log of the export', null=True)
     export_url = models.CharField(max_length=255, help_text='Netsuite URL for the exported expenses', null=True)
