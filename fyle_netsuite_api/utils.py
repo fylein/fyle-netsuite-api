@@ -45,7 +45,7 @@ def generate_netsuite_export_url(response_logs : OrderedDict, netsuite_credentia
     if response_logs:
         try:
             ns_account_id = netsuite_credentials.ns_account_id.lower()
-            export_type = response_logs['type'] if response_logs['type'] else 'chargeCard'
+            export_type = response_logs['type'] if 'type' in response_logs and response_logs['type'] else 'chargeCard'
             internal_id = response_logs['internalId']
             redirection = EXPORT_TYPE_REDIRECTION[export_type]
             url = f'https://{ns_account_id}.app.netsuite.com/app/accounting/transactions/{redirection}.nl?id={internal_id}'
