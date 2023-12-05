@@ -36,8 +36,15 @@ def test_expense_group_view(api_client, access_token):
    response = api_client.get(url, {
       'state': 'FAILED'
    })
+
    response = json.loads(response.content)
    assert response == {'count': 0, 'next': None, 'previous': None, 'results': []}
+
+   response = api_client.get(url, {
+      'expense_group_ids': '1,2'
+    })
+   response = response.json()
+   assert response['count'] == 2
    
 
 @pytest.mark.django_db(databases=['default'])
@@ -382,3 +389,16 @@ def test_expenses(mocker, api_client, access_token):
    response = json.loads(response.content)
 
    assert dict_compare_keys(response, data['skipped_expenses']) == [], 'expense group api return diffs in keys'
+
+
+@pytest.mark.django_db(databases=['default'])
+def test_exportable_expense_group_view(api_client, access_token):
+
+   url = '/api/workspaces/1/fyle/exportable_expense_groups/'
+   api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
+
+   response = api_client.get(url)
+   assert response.status_code==200
+
+   response = json.loads(response.content)
+   assert response['exportable_expense_group_ids'] == [1, 2]

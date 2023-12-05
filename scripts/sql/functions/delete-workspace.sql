@@ -218,6 +218,18 @@ BEGIN
     RAISE NOTICE 'Deleted % workspace_schedules', rcount;
 
     DELETE
+    FROM last_export_details led
+    WHERE led.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % last_export_details', rcount;
+
+    DELETE
+    FROM errors e
+    WHERE e.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % errors', rcount;
+
+    DELETE
     FROM django_q_schedule dqs
     WHERE dqs.args = _workspace_id::varchar(255);
     GET DIAGNOSTICS rcount = ROW_COUNT;
