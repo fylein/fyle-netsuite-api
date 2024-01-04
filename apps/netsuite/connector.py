@@ -1229,6 +1229,9 @@ class NetSuiteConnector:
         configuration = Configuration.objects.get(workspace_id=self.workspace_id)
         try:
             bills_payload = self.__construct_bill(bill, bill_lineitems)
+
+            logger.info('Workspace: %s, Expense Group: %s Bill Payload - %s, Bill LineItem Payload - %s', bill.expense_group.workspace.id, bill.expense_group.id, bill, bill_lineitems)
+
             created_bill = self.connection.vendor_bills.post(bills_payload)
             return created_bill
 
@@ -1391,6 +1394,8 @@ class NetSuiteConnector:
 
         credit_card_charges_payload = self.__construct_credit_card_charge(
             credit_card_charge, credit_card_charge_lineitem, attachment_links)
+        
+        logger.info('Workspace: %s, Expense Group: %s Credit Card Charge Payload - %s, Credit Card Charge LineItem Payload - %s', credit_card_charge.expense_group.workspace.id, credit_card_charge.expense_group.id, credit_card_charges_payload, credit_card_charge_lineitem)
 
         oauth = OAuth1Session(
             client_key=consumer_key,
@@ -1650,6 +1655,9 @@ class NetSuiteConnector:
         try:
             expense_report_payload = self.__construct_expense_report(expense_report,
                                                                     expense_report_lineitems)
+            
+            logger.info('Workspace: %s, Expense Group: %s Expense Report Payload - %s, Expense Report LineItem Payload - %s', expense_report.expense_group.workspace.id, expense_report.expense_group.id, expense_report, expense_report_lineitems)
+
             created_expense_report = self.connection.expense_reports.post(expense_report_payload)
             return created_expense_report
 
@@ -1877,6 +1885,9 @@ class NetSuiteConnector:
         configuration = Configuration.objects.get(workspace_id=self.workspace_id)
         try:
             journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems)
+
+            logger.info('Workspace: %s, Expense Group: %s Journal Entry Payload - %s, Journal Entry LineItem Payload - %s', journal_entry.expense_group.workspace.id, journal_entry.expense_group.id, journal_entry, journal_entry_lineitems)
+
             created_journal_entry = self.connection.journal_entries.post(journal_entry_payload)
             return created_journal_entry
 
@@ -2032,5 +2043,8 @@ class NetSuiteConnector:
         vendor_payment_payload = self.__construct_vendor_payment(
             vendor_payment, vendor_payment_lineitems, department, netsuite_class
         )
+
+        logger.info('Vendor Payment Payload - %s, Vendor Payment LineItem Payload - %s', vendor_payment, vendor_payment_lineitems)
+
         created_vendor_payment = self.connection.vendor_payments.post(vendor_payment_payload)
         return created_vendor_payment
