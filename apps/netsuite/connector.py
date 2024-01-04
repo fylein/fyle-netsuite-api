@@ -1028,7 +1028,7 @@ class NetSuiteConnector:
                 {
                     'scriptId': 'custcolfyle_expense_url',
                     'type': 'String',
-                    'value': '{}/app/main/#/enterprise/view_expense/{}?org_id={}'.format(
+                    'value': '{}/app/admin/#/enterprise/view_expense/{}?org_id={}'.format(
                         settings.FYLE_EXPENSE_URL,
                         expense.expense_id,
                         org_id
@@ -1283,7 +1283,7 @@ class NetSuiteConnector:
         netsuite_custom_segments.append(
             {
                 'scriptId': 'custcolfyle_expense_url',
-                'value': '{}/app/main/#/enterprise/view_expense/{}?org_id={}'.format(
+                'value': '{}/app/admin/#/enterprise/view_expense/{}?org_id={}'.format(
                     settings.FYLE_EXPENSE_URL,
                     expense.expense_id,
                     org_id
@@ -1474,7 +1474,7 @@ class NetSuiteConnector:
                 {
                     'scriptId': 'custcolfyle_expense_url',
                     'type': 'String',
-                    'value': '{}/app/main/#/enterprise/view_expense/{}?org_id={}'.format(
+                    'value': '{}/app/admin/#/enterprise/view_expense/{}?org_id={}'.format(
                         settings.FYLE_EXPENSE_URL,
                         expense.expense_id,
                         org_id
@@ -1722,7 +1722,7 @@ class NetSuiteConnector:
                     {
                         'scriptId': 'custcolfyle_expense_url',
                         'type': 'String',
-                        'value': '{}/app/main/#/enterprise/view_expense/{}?org_id={}'.format(
+                        'value': '{}/app/admin/#/enterprise/view_expense/{}?org_id={}'.format(
                             settings.FYLE_EXPENSE_URL,
                             expense.expense_id,
                             org_id
