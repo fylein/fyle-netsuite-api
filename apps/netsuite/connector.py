@@ -902,9 +902,9 @@ class NetSuiteConnector:
         for tax_groups in tax_groups_generator:
             for tax_group in tax_groups:
                 if not tax_group['isInactive'] and tax_group['itemId']:
-                    if tax_group['nexusCountry']['internalId'] == 'CA':
-                        unit_price1 = float(tax_group['unitprice1'][:-1])
-                        unit_price2 = float(tax_group['unitprice2'][:-1])
+                    if tax_group['nexusCountry'] and tax_group['nexusCountry']['internalId'] == 'CA':
+                        unit_price1 = float(tax_group['unitprice1'][:-1] if tax_group['unitprice1'] else 0)
+                        unit_price2 = float(tax_group['unitprice2'][:-1] if tax_group['unitprice2'] else 0)
                         tax_rate = unit_price1 + unit_price2
                     else:
                         tax_rate = float(tax_group['rate'] if tax_group['rate'] else 0)
