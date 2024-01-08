@@ -35,7 +35,7 @@ def export_to_netsuite(workspace_id, export_mode=None):
         if len(expense_group_ids):
             is_expenses_exported = True
 
-        if configuration.reimbursable_expenses_object == 'EXPENSE_REPORT':
+        if configuration.reimbursable_expenses_object == 'EXPENSE REPORT':
             schedule_expense_reports_creation(
                 workspace_id=workspace_id, expense_group_ids=expense_group_ids
             )
@@ -45,7 +45,7 @@ def export_to_netsuite(workspace_id, export_mode=None):
                 workspace_id=workspace_id, expense_group_ids=expense_group_ids
             )
 
-        elif configuration.reimbursable_expenses_object == 'JOURNAL_ENTRY':
+        elif configuration.reimbursable_expenses_object == 'JOURNAL ENTRY':
             schedule_journal_entry_creation(
                 workspace_id=workspace_id, expense_group_ids=expense_group_ids
             )
@@ -57,7 +57,7 @@ def export_to_netsuite(workspace_id, export_mode=None):
         if len(expense_group_ids):
             is_expenses_exported = True
 
-        if configuration.corporate_credit_card_expenses_object == 'CHARGE_CARD_TRANSACTION':
+        if configuration.corporate_credit_card_expenses_object == 'CREDIT CARD CHARGE':
             schedule_credit_card_charge_creation(
                 workspace_id=workspace_id, expense_group_ids=expense_group_ids
             )
@@ -67,12 +67,12 @@ def export_to_netsuite(workspace_id, export_mode=None):
                 workspace_id=workspace_id, expense_group_ids=expense_group_ids
             )
 
-        elif configuration.corporate_credit_card_expenses_object == 'EXPENSE_REPORT':
+        elif configuration.corporate_credit_card_expenses_object == 'EXPENSE REPORT':
             schedule_expense_reports_creation(
                 workspace_id=workspace_id, expense_group_ids=expense_group_ids
             )
 
-        elif configuration.corporate_credit_card_expenses_object == 'JOURNAL_ENTRY':
+        elif configuration.corporate_credit_card_expenses_object == 'JOURNAL ENTRY':
             schedule_journal_entry_creation(
                 workspace_id=workspace_id, expense_group_ids=expense_group_ids
             )

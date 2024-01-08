@@ -133,6 +133,7 @@ def add_expense_id_to_expense_group_settings(workspace_id: int):
     expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=workspace_id)
     ccc_expense_group_fields = expense_group_settings.corporate_credit_card_expense_group_fields
     ccc_expense_group_fields.append('expense_id')
+    ccc_expense_group_fields.append('spent_at')
     expense_group_settings.corporate_credit_card_expense_group_fields = list(set(ccc_expense_group_fields))
     expense_group_settings.ccc_export_date_type = 'spent_at'
     expense_group_settings.save()
