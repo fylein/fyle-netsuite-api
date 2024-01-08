@@ -902,9 +902,13 @@ class NetSuiteConnector:
         for tax_groups in tax_groups_generator:
             for tax_group in tax_groups:
                 if not tax_group['isInactive'] and tax_group['itemId']:
+                    if tax_group['nexusCountry']['internalId'] == 'CA':
+                        unit_price1 = float(tax_group['unitprice1'][:-1])
+                        unit_price2 = float(tax_group['unitprice2'][:-1])
+                        tax_rate = unit_price1 + unit_price2
+                    else:
+                        tax_rate = float(tax_group['rate'] if tax_group['rate'] else 0)
                     tax_type = tax_group['taxType']['name'] if tax_group['taxType'] else None
-                    tax_rate = float(tax_group['rate'] if tax_group['rate'] else 0)
-
                     value = self.get_tax_code_name(tax_group['itemId'], tax_type, tax_rate)
                     if tax_rate >= 0:
                         attributes.append({
