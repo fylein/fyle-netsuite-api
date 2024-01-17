@@ -1299,7 +1299,7 @@ class NetSuiteConnector:
             'account': {
                 'internalId': line.account_id
             },
-            'amount': line.amount,
+            'amount': line.amount - line.tax_amount if (line.tax_item_id and line.tax_amount is not None) else line.amount,
             'memo': line.memo,
             'grossAmt': line.amount,
             'department': {
@@ -1319,10 +1319,10 @@ class NetSuiteConnector:
             'taxAmount': None,
             'taxCode': {
                 'name': None,
-                'internalId': None,
+                'internalId': line.tax_item_id if (line.tax_item_id and line.tax_amount is not None) else None,
                 'externalId': None,
                 'type': 'taxGroup'
-            },     
+            },
         }
         lines.append(line)
 
