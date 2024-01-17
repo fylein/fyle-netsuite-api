@@ -21,7 +21,7 @@ def test_add_expense_id_to_expense_group_settings():
     expense_group_setting = ExpenseGroupSettings.objects.get(id=1)
 
     assert sorted(expense_group_setting.corporate_credit_card_expense_group_fields) == [
-                  'claim_number', 'employee_email', 'expense_id', 'fund_source', 'report_id']
+                  'claim_number', 'employee_email', 'expense_id', 'fund_source', 'report_id', 'spent_at']
 
 
 @pytest.mark.django_db()
