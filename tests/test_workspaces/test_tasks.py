@@ -114,3 +114,11 @@ def test_async_update_workspace_name(mocker):
 
     workspace = Workspace.objects.get(id=1)
     assert workspace.name == 'Test Org'
+
+
+def test_async_create_admin_subcriptions(db, mocker):
+    mocker.patch(
+        'fyle.platform.apis.v1beta.admin.Subscriptions.post',
+        return_value={}
+    )
+    async_create_admin_subcriptions(1)

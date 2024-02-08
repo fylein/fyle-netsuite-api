@@ -9,6 +9,7 @@ from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django_q.models import Schedule
 from fyle_accounting_mappings.models import MappingSetting, ExpenseAttribute
+from fyle_integrations_platform_connector import PlatformConnector
 from fyle_rest_auth.helpers import get_fyle_admin
 
 from apps.fyle.models import ExpenseGroup
@@ -247,6 +248,22 @@ def delete_cards_mapping_settings(configuration: Configuration):
 
         if mapping_setting:
             mapping_setting.delete()
+
+
+def async_create_admin_subcriptions(workspace_id: int) -> None:
+    """
+    Create admin subscriptions
+    :param workspace_id: workspace id
+    :return: None
+    """
+    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+    platform = PlatformConnector(fyle_credentials)
+    payload = {
+        'is_enabled': True,
+        'webhook_url': '{}/workspaces/{}/fyle/exports/'.format(settings.API_URL, workspace_id)
+    }
+    platform.subscriptions.post(payload)
+
 
 def async_update_fyle_credentials(fyle_org_id: str, refresh_token: str):
     fyle_credentials = FyleCredential.objects.filter(workspace__fyle_org_id=fyle_org_id).first()

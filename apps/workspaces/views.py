@@ -105,6 +105,7 @@ class WorkspaceView(viewsets.ViewSet):
                 workspace_id=workspace.id,
                 cluster_domain=cluster_domain
             )
+            async_task('apps.workspaces.tasks.async_create_admin_subcriptions', workspace.id)
 
         return Response(
             data=WorkspaceSerializer(workspace).data,
