@@ -1,11 +1,14 @@
 import email
+import logging
 import time
+import json
 from datetime import datetime, timedelta, date
 from typing import List
 
 from django.conf import settings
 from django.db.models import Q
 from django.core.mail import EmailMessage
+from apps.fyle.helpers import post_request
 from django.template.loader import render_to_string
 from django_q.models import Schedule
 from fyle_accounting_mappings.models import MappingSetting, ExpenseAttribute
@@ -19,6 +22,9 @@ from apps.netsuite.tasks import schedule_bills_creation, schedule_journal_entry_
     schedule_expense_reports_creation, schedule_credit_card_charge_creation
 from apps.tasks.models import TaskLog
 from apps.workspaces.models import LastExportDetail, User, Workspace, WorkspaceSchedule, Configuration, FyleCredential
+
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 
 def export_to_netsuite(workspace_id, export_mode=None):
@@ -263,6 +269,26 @@ def async_create_admin_subcriptions(workspace_id: int) -> None:
         'webhook_url': '{}/workspaces/{}/fyle/exports/'.format(settings.API_URL, workspace_id)
     }
     platform.subscriptions.post(payload)
+
+
+def post_to_integration_settings(workspace_id: int, active: bool):
+    """
+    Post to integration settings
+    """
+    refresh_token = FyleCredential.objects.get(workspace_id=workspace_id).refresh_token
+    url = '{}/integrations/'.format(settings.INTEGRATIONS_SETTINGS_API)
+    payload = {
+        'tpa_id': settings.FYLE_CLIENT_ID,
+        'tpa_name': 'Fyle Netsuite Integration',
+        'type': 'ACCOUNTING',
+        'is_active': active,
+        'connected_at': datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+    }
+
+    try:
+        post_request(url, json.dumps(payload), refresh_token)
+    except Exception as error:
+        logger.error(error)
 
 
 def async_update_fyle_credentials(fyle_org_id: str, refresh_token: str):
