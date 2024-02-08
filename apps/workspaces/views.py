@@ -29,7 +29,8 @@ from apps.users.models import User
 
 from .models import LastExportDetail, Workspace, FyleCredential, NetSuiteCredentials, Configuration, \
     WorkspaceSchedule
-from .tasks import export_to_netsuite, schedule_sync
+from apps.workspaces.tasks import schedule_sync
+from apps.workspaces.actions import export_to_netsuite
 from .serializers import LastExportDetailSerializer, WorkspaceSerializer, FyleCredentialSerializer, NetSuiteCredentialSerializer, \
     ConfigurationSerializer, WorkspaceScheduleSerializer
 from .permissions import IsAuthenticatedForTest

@@ -20,6 +20,7 @@ from .helpers import check_interval_and_sync_dimension, sync_dimensions
 from .models import Expense, ExpenseGroup, ExpenseGroupSettings, ExpenseFilter
 from .serializers import ExpenseGroupSerializer, ExpenseSerializer, ExpenseFieldSerializer, \
     ExpenseGroupSettingsSerializer, ExpenseFilterSerializer, ExpenseGroupExpenseSerializer
+from .queue import async_import_and_export_expenses
 from .constants import DEFAULT_FYLE_CONDITIONS
 
 from fyle.platform import Platform
@@ -425,3 +426,16 @@ class ExpenseGroupSyncView(generics.CreateAPIView):
         return Response(
             status=status.HTTP_200_OK
         )
+
+
+class ExportView(generics.CreateAPIView):
+    """
+    Export View
+    """
+    authentication_classes = []
+    permission_classes = []
+
+    def post(self, request, *args, **kwargs):
+        async_import_and_export_expenses(request.data)
+
+        return Response(data={}, status=status.HTTP_200_OK)
