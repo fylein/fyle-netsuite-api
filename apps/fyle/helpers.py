@@ -52,7 +52,7 @@ def post_request(url, body, refresh_token=None):
         data=body
     )
 
-    if response.status_code == 200:
+    if response.status_code in [200, 201]:
         return json.loads(response.text)
     else:
         raise Exception(response.text)
