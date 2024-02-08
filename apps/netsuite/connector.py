@@ -879,7 +879,8 @@ class NetSuiteConnector:
         tax_items_generator = self.connection.tax_items.get_all_generator()
         tax_groups_generator = self.connection.tax_groups.get_all_generator()
 
-        attributes = []
+        tax_item_attributes = []
+        tax_group_attributes = []
 
         for tax_items in tax_items_generator:
             for tax_item in tax_items:
@@ -888,7 +889,7 @@ class NetSuiteConnector:
                     value = self.get_tax_code_name(tax_item['itemId'], tax_item['taxType']['name'], tax_rate)
 
                     if tax_rate >= 0:
-                        attributes.append({
+                        tax_item_attributes.append({
                             'attribute_type': 'TAX_ITEM',
                             'display_name': 'Tax Item',
                             'value': value,
@@ -898,6 +899,9 @@ class NetSuiteConnector:
                                 'tax_rate': tax_rate
                             }
                         })
+
+        DestinationAttribute.bulk_create_or_update_destination_attributes(
+                tax_item_attributes, 'TAX_ITEM', self.workspace_id, True)    
 
         for tax_groups in tax_groups_generator:
             for tax_group in tax_groups:
@@ -911,7 +915,7 @@ class NetSuiteConnector:
                     tax_type = tax_group['taxType']['name'] if tax_group['taxType'] else None
                     value = self.get_tax_code_name(tax_group['itemId'], tax_type, tax_rate)
                     if tax_rate >= 0:
-                        attributes.append({
+                        tax_group_attributes.append({
                             'attribute_type': 'TAX_ITEM',
                             'display_name': 'Tax Item',
                             'value': value,
@@ -923,7 +927,7 @@ class NetSuiteConnector:
                         })
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(
-                attributes, 'TAX_ITEM', self.workspace_id, True)
+                tax_group_attributes, 'TAX_ITEM', self.workspace_id, True)
 
         return []
 
