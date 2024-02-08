@@ -876,12 +876,11 @@ class NetSuiteConnector:
         """
         Sync Tax Details
         """
-        tax_items_generator = self.connection.tax_items.get_all_generator()
-        tax_groups_generator = self.connection.tax_groups.get_all_generator()
 
         tax_item_attributes = []
         tax_group_attributes = []
 
+        tax_items_generator = self.connection.tax_items.get_all_generator()
         for tax_items in tax_items_generator:
             for tax_item in tax_items:
                 if not tax_item['isInactive'] and tax_item['itemId'] and tax_item['taxType'] and tax_item['rate']:
@@ -903,6 +902,8 @@ class NetSuiteConnector:
         DestinationAttribute.bulk_create_or_update_destination_attributes(
                 tax_item_attributes, 'TAX_ITEM', self.workspace_id, True)    
 
+
+        tax_groups_generator = self.connection.tax_groups.get_all_generator()
         for tax_groups in tax_groups_generator:
             for tax_group in tax_groups:
                 if not tax_group['isInactive'] and tax_group['itemId']:
