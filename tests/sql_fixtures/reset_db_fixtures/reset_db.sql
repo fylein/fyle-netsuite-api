@@ -928,7 +928,7 @@ CREATE TABLE public.expense_groups (
     fund_source character varying(255) NOT NULL,
     exported_at timestamp with time zone,
     response_logs jsonb,
-    employee_name character varying(100),
+    employee_name character varying(255),
     export_url character varying(255)
 );
 
@@ -1092,7 +1092,10 @@ CREATE TABLE public.expenses (
     is_skipped boolean,
     report_title text,
     employee_name character varying(255),
-    posted_at timestamp with time zone
+    posted_at timestamp with time zone,
+    accounting_export_summary jsonb NOT NULL,
+    previous_export_state character varying(255),
+    workspace_id integer
 );
 
 
@@ -7834,6 +7837,8 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 175	workspaces	0036_auto_20231027_0709	2023-11-20 11:19:47.53547+00
 176	tasks	0009_error	2023-11-20 11:19:47.609035+00
 177	fyle	0028_expensegroup_export_url	2023-11-22 11:49:48.090718+00
+178	fyle	0029_auto_20231130_0821	2024-02-08 12:26:47.964376+00
+179	fyle	0030_auto_20240208_1206	2024-02-08 12:26:48.026661+00
 \.
 
 
@@ -11467,15 +11472,15 @@ COPY public.expense_reports (id, account_id, entity_id, currency, department_id,
 -- Data for Name: expenses; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.expenses (id, employee_email, category, sub_category, project, expense_id, expense_number, claim_number, amount, currency, foreign_amount, foreign_currency, settlement_id, reimbursable, state, vendor, cost_center, purpose, report_id, spent_at, approved_at, expense_created_at, expense_updated_at, created_at, updated_at, fund_source, custom_properties, verified_at, paid_on_netsuite, billable, org_id, tax_amount, tax_group_id, project_id, file_ids, corporate_card_id, is_skipped, report_title, employee_name, posted_at) FROM stdin;
-1	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txjvDntD9ZXR	E/2021/11/T/11	C/2021/11/R/5	50	USD	\N	\N	set6GUp6tcEEp	t	PAYMENT_PROCESSING	\N	Treasury	\N	rpuN3bgphxbK	2021-11-15 00:00:00+00	2021-11-15 00:00:00+00	2021-11-15 10:27:53.649+00	2021-11-15 10:28:46.775+00	2021-11-15 10:29:07.597095+00	2021-11-15 10:29:07.597111+00	PERSONAL	{"Team": "", "Class": "", "Klass": "", "Team 2": "", "Location": "", "Team Copy": "", "Tax Groups": "", "Departments": "", "User Dimension": "", "Location Entity": "", "Operating System": "", "System Operating": "", "User Dimension Copy": ""}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N	f	\N	\N	\N
-2	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txy6folbrG2j	E/2021/11/T/12	C/2021/11/R/6	100	USD	\N	\N	setNVTcPkZ6on	f	PAYMENT_PROCESSING	Ashwin Vendor	\N	\N	rpHLA9Dfp9hN	2021-11-15 00:00:00+00	2021-11-15 00:00:00+00	2021-11-15 13:11:22.304+00	2021-11-15 13:11:58.032+00	2021-11-15 13:12:12.250613+00	2021-11-15 13:12:12.250638+00	CCC	{"Team": "", "Class": "", "Klass": "Klass", "Team 2": "", "Location": "", "Team Copy": "", "Tax Groups": "", "Departments": "", "User Dimension": "", "Location Entity": "", "Operating System": "", "System Operating": "", "User Dimension Copy": ""}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N	f	\N	\N	\N
-3	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txeLau9Rdu4X	E/2021/11/T/1	C/2021/11/R/2	80	USD	\N	\N	setqgvGQnsAya	t	PAYMENT_PROCESSING	\N	\N	\N	rpu5W0LYrk6e	2021-11-16 00:00:00+00	2021-11-16 00:00:00+00	2021-11-16 04:24:18.688+00	2021-11-16 04:25:21.996+00	2021-11-16 04:25:49.174565+00	2021-11-16 04:25:49.174584+00	PERSONAL	{"Klass": "Klass", "Device Type": "", "Fyle Category": ""}	\N	f	\N	oraWFQlEpjbb	4.53	tg31j9m4PoEO	\N	\N	\N	f	\N	\N	\N
-4	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txMLGb6Xy8m8	E/2021/11/T/2	C/2021/11/R/1	100	USD	\N	\N	setqgvGQnsAya	f	PAYMENT_PROCESSING	\N	\N	\N	rprqDvARHUnv	2021-11-16 00:00:00+00	2021-11-16 00:00:00+00	2021-11-16 04:24:38.141+00	2021-11-16 04:25:21.996+00	2021-11-16 04:25:49.192351+00	2021-11-16 04:25:49.192367+00	CCC	{"Device Type": "", "Fyle Category": ""}	\N	f	\N	oraWFQlEpjbb	16.67	tgSYjXsBCviv	\N	\N	\N	f	\N	\N	\N
-173	admin1@fyleforintacct.in	Food	Food	Project 2	tx7A5QpesrV5	E/2021/12/T/1	C/2021/12/R/1	120	USD	\N	\N	set15sMvtRIiS	t	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85N	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:30.076+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.685597+00	2021-12-03 11:26:58.685616+00	PERSONAL	{}	\N	f	\N	orHe8CpW2hyN	\N	\N	\N	\N	\N	f	\N	\N	\N
-174	admin1@fyleforintacct.in	Food	Food	Project 2	txcKVVELn1Vl	E/2021/12/T/2	C/2021/12/R/1	130	USD	\N	\N	set15sMvtRIiS	f	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85N	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:49.51+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.702183+00	2021-12-03 11:26:58.702209+00	CCC	{}	\N	f	\N	orHe8CpW2hyN	\N	\N	\N	\N	\N	f	\N	\N	\N
-600	jhonsnoww@fyle.in	Food	Food	Project 2	txcKVVELn1Vlkill	E/2021/12/T/298	    C/2021/12/R/198	130	USD	\N	\N	set15sMvtRIiSkill	f	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85Nkill	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:49.51+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.702183+00	2021-12-03 11:26:58.702209+00	CCC	{}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N	t	\N	\N	\N
-601	jhonsnoww@fyle.in	Food	Food	Project 2	txcKVVELn1Vlgon	    E/2021/12/T/299	    C/2021/12/R/199	130	USD	\N	\N	set15sMvtRIiSgon	f	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85Ngon	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:49.51+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.702183+00	2021-12-03 11:26:58.702209+00	CCC	{}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N	t	\N	\N	\N
+COPY public.expenses (id, employee_email, category, sub_category, project, expense_id, expense_number, claim_number, amount, currency, foreign_amount, foreign_currency, settlement_id, reimbursable, state, vendor, cost_center, purpose, report_id, spent_at, approved_at, expense_created_at, expense_updated_at, created_at, updated_at, fund_source, custom_properties, verified_at, paid_on_netsuite, billable, org_id, tax_amount, tax_group_id, project_id, file_ids, corporate_card_id, is_skipped, report_title, employee_name, posted_at, accounting_export_summary, previous_export_state, workspace_id) FROM stdin;
+1	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txjvDntD9ZXR	E/2021/11/T/11	C/2021/11/R/5	50	USD	\N	\N	set6GUp6tcEEp	t	PAYMENT_PROCESSING	\N	Treasury	\N	rpuN3bgphxbK	2021-11-15 00:00:00+00	2021-11-15 00:00:00+00	2021-11-15 10:27:53.649+00	2021-11-15 10:28:46.775+00	2021-11-15 10:29:07.597095+00	2021-11-15 10:29:07.597111+00	PERSONAL	{"Team": "", "Class": "", "Klass": "", "Team 2": "", "Location": "", "Team Copy": "", "Tax Groups": "", "Departments": "", "User Dimension": "", "Location Entity": "", "Operating System": "", "System Operating": "", "User Dimension Copy": ""}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N	f	\N	\N	\N	{}	\N	\N
+2	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txy6folbrG2j	E/2021/11/T/12	C/2021/11/R/6	100	USD	\N	\N	setNVTcPkZ6on	f	PAYMENT_PROCESSING	Ashwin Vendor	\N	\N	rpHLA9Dfp9hN	2021-11-15 00:00:00+00	2021-11-15 00:00:00+00	2021-11-15 13:11:22.304+00	2021-11-15 13:11:58.032+00	2021-11-15 13:12:12.250613+00	2021-11-15 13:12:12.250638+00	CCC	{"Team": "", "Class": "", "Klass": "Klass", "Team 2": "", "Location": "", "Team Copy": "", "Tax Groups": "", "Departments": "", "User Dimension": "", "Location Entity": "", "Operating System": "", "System Operating": "", "User Dimension Copy": ""}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N	f	\N	\N	\N	{}	\N	\N
+3	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txeLau9Rdu4X	E/2021/11/T/1	C/2021/11/R/2	80	USD	\N	\N	setqgvGQnsAya	t	PAYMENT_PROCESSING	\N	\N	\N	rpu5W0LYrk6e	2021-11-16 00:00:00+00	2021-11-16 00:00:00+00	2021-11-16 04:24:18.688+00	2021-11-16 04:25:21.996+00	2021-11-16 04:25:49.174565+00	2021-11-16 04:25:49.174584+00	PERSONAL	{"Klass": "Klass", "Device Type": "", "Fyle Category": ""}	\N	f	\N	oraWFQlEpjbb	4.53	tg31j9m4PoEO	\N	\N	\N	f	\N	\N	\N	{}	\N	\N
+4	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txMLGb6Xy8m8	E/2021/11/T/2	C/2021/11/R/1	100	USD	\N	\N	setqgvGQnsAya	f	PAYMENT_PROCESSING	\N	\N	\N	rprqDvARHUnv	2021-11-16 00:00:00+00	2021-11-16 00:00:00+00	2021-11-16 04:24:38.141+00	2021-11-16 04:25:21.996+00	2021-11-16 04:25:49.192351+00	2021-11-16 04:25:49.192367+00	CCC	{"Device Type": "", "Fyle Category": ""}	\N	f	\N	oraWFQlEpjbb	16.67	tgSYjXsBCviv	\N	\N	\N	f	\N	\N	\N	{}	\N	\N
+173	admin1@fyleforintacct.in	Food	Food	Project 2	tx7A5QpesrV5	E/2021/12/T/1	C/2021/12/R/1	120	USD	\N	\N	set15sMvtRIiS	t	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85N	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:30.076+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.685597+00	2021-12-03 11:26:58.685616+00	PERSONAL	{}	\N	f	\N	orHe8CpW2hyN	\N	\N	\N	\N	\N	f	\N	\N	\N	{}	\N	\N
+174	admin1@fyleforintacct.in	Food	Food	Project 2	txcKVVELn1Vl	E/2021/12/T/2	C/2021/12/R/1	130	USD	\N	\N	set15sMvtRIiS	f	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85N	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:49.51+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.702183+00	2021-12-03 11:26:58.702209+00	CCC	{}	\N	f	\N	orHe8CpW2hyN	\N	\N	\N	\N	\N	f	\N	\N	\N	{}	\N	\N
+600	jhonsnoww@fyle.in	Food	Food	Project 2	txcKVVELn1Vlkill	E/2021/12/T/298	    C/2021/12/R/198	130	USD	\N	\N	set15sMvtRIiSkill	f	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85Nkill	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:49.51+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.702183+00	2021-12-03 11:26:58.702209+00	CCC	{}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N	t	\N	\N	\N	{}	\N	\N
+601	jhonsnoww@fyle.in	Food	Food	Project 2	txcKVVELn1Vlgon	    E/2021/12/T/299	    C/2021/12/R/199	130	USD	\N	\N	set15sMvtRIiSgon	f	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85Ngon	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:49.51+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.702183+00	2021-12-03 11:26:58.702209+00	CCC	{}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N	t	\N	\N	\N	{}	\N	\N
 \.
 
 
@@ -11729,7 +11734,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 45, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 176, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 179, true);
 
 
 --
@@ -12907,6 +12912,13 @@ CREATE INDEX expenses_expense_id_0e3511ea_like ON public.expenses USING btree (e
 
 
 --
+-- Name: expenses_workspace_id_72fb819f; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX expenses_workspace_id_72fb819f ON public.expenses USING btree (workspace_id);
+
+
+--
 -- Name: fyle_accounting_mappings_d_workspace_id_a6a3ab6a; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -13329,6 +13341,14 @@ ALTER TABLE ONLY public.expense_report_lineitems
 
 ALTER TABLE ONLY public.expense_reports
     ADD CONSTRAINT expense_reports_expense_group_id_3f864e9a_fk_expense_groups_id FOREIGN KEY (expense_group_id) REFERENCES public.expense_groups(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: expenses expenses_workspace_id_72fb819f_fk_workspaces_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.expenses
+    ADD CONSTRAINT expenses_workspace_id_72fb819f_fk_workspaces_id FOREIGN KEY (workspace_id) REFERENCES public.workspaces(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
