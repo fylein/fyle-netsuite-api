@@ -926,8 +926,8 @@ class NetSuiteConnector:
                             }
                         })
 
-            DestinationAttribute.bulk_create_or_update_destination_attributes(
-                    tax_group_attributes, 'TAX_ITEM', self.workspace_id, True)
+        DestinationAttribute.bulk_create_or_update_destination_attributes(
+                tax_group_attributes, 'TAX_ITEM', self.workspace_id, True)
 
         return []
 
