@@ -19,7 +19,7 @@ from apps.mappings.models import SubsidiaryMapping
 from apps.fyle.tasks import create_expense_groups
 from apps.tasks.models import TaskLog
 from apps.workspaces.models import LastExportDetail, User, Workspace, WorkspaceSchedule, Configuration, FyleCredential
-from apps.netsuite.tasks import export_to_netsuite
+from apps.workspaces.actions import export_to_netsuite
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
