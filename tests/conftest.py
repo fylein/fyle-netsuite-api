@@ -126,3 +126,9 @@ def default_session_fixture(request):
         return_value=None
     )
     patched_7.__enter__()
+
+    patched_8 = mock.patch(
+        'apps.workspaces.tasks.send_email',
+        return_value=None
+    )
+    patched_8.__enter__()
