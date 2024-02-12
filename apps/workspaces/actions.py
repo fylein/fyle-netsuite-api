@@ -2,7 +2,7 @@ import logging
 from datetime import datetime, timedelta
 
 from apps.fyle.models import ExpenseGroup
-from apps.netsuite.tasks import schedule_bills_creation, schedule_journal_entry_creation, \
+from apps.netsuite.queue import schedule_bills_creation, schedule_journal_entry_creation, \
     schedule_expense_reports_creation, schedule_credit_card_charge_creation
 from apps.workspaces.models import LastExportDetail, WorkspaceSchedule, Configuration
 

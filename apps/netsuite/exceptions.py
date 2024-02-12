@@ -11,6 +11,7 @@ from netsuitesdk import NetSuiteRateLimitError, NetSuiteLoginError
 from fyle_netsuite_api.exceptions import BulkError
 
 from .actions import update_last_export_details
+from apps.fyle.actions import update_failed_expenses
 
 from django.db.models import Q
 
@@ -112,6 +113,8 @@ def handle_netsuite_exceptions(payment=False):
                 task_log.detail = all_details
 
                 task_log.save()
+                if not payment:
+                    update_failed_expenses(expense_group.expenses.all(), False)
 
             except BulkError as exception:
                 logger.info(exception.response)
@@ -120,6 +123,8 @@ def handle_netsuite_exceptions(payment=False):
                 task_log.detail = detail
 
                 task_log.save()
+                if not payment:
+                    update_failed_expenses(expense_group.expenses.all(), True)
 
             except NetSuiteRateLimitError:
                 if not payment:
@@ -140,6 +145,8 @@ def handle_netsuite_exceptions(payment=False):
                 }
 
                 task_log.save()
+                if not payment:
+                    update_failed_expenses(expense_group.expenses.all(), False)
 
             except Exception:
                 error = traceback.format_exc()
@@ -148,6 +155,8 @@ def handle_netsuite_exceptions(payment=False):
                 }
                 task_log.status = 'FATAL'
                 task_log.save()
+                if not payment:
+                    update_failed_expenses(expense_group.expenses.all(), False)
                 __log_error(task_log)
             
             if not payment and last_export is True:
