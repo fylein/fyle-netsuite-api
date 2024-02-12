@@ -87,24 +87,6 @@ def update_expense_and_post_summary(in_progress_expenses: List[Expense], workspa
     post_accounting_export_summary(fyle_org_id, workspace_id, fund_source)
 
 
-def generate_export_url_and_update_expense(expense_group: ExpenseGroup) -> None:
-    """
-    Generate export url and update expense
-    :param expense_group: Expense Group
-    :return: None
-    """
-    try:
-        url = expense_group.export_url
-    except Exception as error:
-        # Defaulting it to Netsuite app url, worst case scenario if we're not able to parse it properly
-        netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
-        ns_account_id = netsuite_credentials.ns_account_id.lower()
-        url = f'https://{ns_account_id}.app.netsuite.com/app/'
-        logger.error('Error while generating export url %s', error)
-
-    update_complete_expenses(expense_group.expenses.all(), url)
-
-
 def load_attachments(netsuite_connection: NetSuiteConnector, expense: Expense, expense_group: ExpenseGroup):
     """
     Get attachments from Fyle
@@ -482,7 +464,7 @@ def create_bill(expense_group, task_log_id, last_export):
         expense_group.save()
         
         resolve_errors_for_exported_expense_group(expense_group)
-        generate_export_url_and_update_expense(expense_group)
+        update_complete_expenses(expense_group.expenses.all(), expense_group.export_url)
         async_task(
                 'apps.netsuite.tasks.upload_attachments_and_update_export',
                 expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
@@ -554,7 +536,7 @@ def create_credit_card_charge(expense_group, task_log_id, last_export):
         expense_group.response_logs = created_credit_card_charge
         expense_group.export_url = generate_netsuite_export_url(response_logs=created_credit_card_charge, netsuite_credentials=netsuite_credentials)
         expense_group.save()
-        generate_export_url_and_update_expense(expense_group)
+        update_complete_expenses(expense_group.expenses.all(), expense_group.export_url)
         resolve_errors_for_exported_expense_group(expense_group)
 
 
@@ -602,7 +584,7 @@ def create_expense_report(expense_group, task_log_id, last_export):
         expense_group.export_url = generate_netsuite_export_url(response_logs=created_expense_report, netsuite_credentials=netsuite_credentials)
         expense_group.save()
         resolve_errors_for_exported_expense_group(expense_group)
-        generate_export_url_and_update_expense(expense_group)
+        update_complete_expenses(expense_group.expenses.all(), expense_group.export_url)
         async_task(
             'apps.netsuite.tasks.upload_attachments_and_update_export',
             expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
@@ -655,7 +637,7 @@ def create_journal_entry(expense_group, task_log_id, last_export):
         expense_group.export_url = generate_netsuite_export_url(response_logs=created_journal_entry, netsuite_credentials=netsuite_credentials)      
         expense_group.save()
         resolve_errors_for_exported_expense_group(expense_group)
-        generate_export_url_and_update_expense(expense_group)
+        update_complete_expenses(expense_group.expenses.all(), expense_group.export_url)
         async_task(
             'apps.netsuite.tasks.upload_attachments_and_update_export',
             expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
