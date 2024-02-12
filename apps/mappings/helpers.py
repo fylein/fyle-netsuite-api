@@ -34,10 +34,10 @@ def validate_and_trigger_auto_map_employees(workspace_id: int):
     chain = Chain()
 
     if configuration.auto_map_employees:
-        chain.append('apps.mappings.tasks.async_auto_map_employees', workspace_id)
+        chain.append('apps.mappings.tasks.async_auto_map_employees', workspace_id, q_options={'cluster': 'import'})
 
     if general_mappings and general_mappings.default_ccc_account_name:
-        chain.append('apps.mappings.tasks.async_auto_map_ccc_account', workspace_id)
+        chain.append('apps.mappings.tasks.async_auto_map_ccc_account', workspace_id, q_options={'cluster': 'import'})
 
     chain.run()
 
@@ -52,6 +52,7 @@ def schedule_or_delete_fyle_import_tasks(configuration: Configuration):
         start_datetime = datetime.now()
         Schedule.objects.update_or_create(
             func='apps.mappings.tasks.auto_import_and_map_fyle_fields',
+            cluster='import',
             args='{}'.format(configuration.workspace_id),
             defaults={
                 'schedule_type': Schedule.MINUTES,

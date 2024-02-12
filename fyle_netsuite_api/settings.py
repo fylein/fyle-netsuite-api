@@ -211,7 +211,13 @@ Q_CLUSTER = {
     'recycle': 20,
     # The maximum resident set size in kilobytes before a worker will recycle and release resources.
     # Useful for limiting memory usage.
-    'max_rss': 50000 # 50mb
+    'max_rss': 50000, # 50mb
+    'ALT_CLUSTERS': {
+        'import': {
+            "retry": 14400,
+            "timeout": 3600
+        },
+    }
 }
 
 # Database

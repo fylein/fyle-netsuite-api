@@ -40,7 +40,7 @@ def run_post_configration_triggers(sender, instance: Configuration, **kwargs):
     schedule_payment_sync(configuration=instance)
     
     if not instance.import_items:
-        async_task('apps.mappings.tasks.disable_category_for_items_mapping', instance)
+        async_task('apps.mappings.tasks.disable_category_for_items_mapping', instance, q_options={'cluster': 'import'})
 
 
 @receiver(post_save, sender=NetSuiteCredentials)
