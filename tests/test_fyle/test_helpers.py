@@ -8,6 +8,7 @@ from apps.mappings.models import GeneralMapping
 from apps.workspaces.models import FyleCredential, Workspace
 from fyle_netsuite_api.tests import settings
 from .fixtures import data
+from apps.fyle.actions import __bulk_update_expenses
 
 
 @pytest.mark.django_db()
@@ -734,3 +735,29 @@ def test_multiple_construct_expense_filter(mocker, add_fyle_credentials):
     response = Q(**filter_1)
 
     assert final_filter == response
+
+
+def test_bulk_update_expenses(db):
+    expenses = Expense.objects.filter(org_id='or79Cob97KSh')
+    for expense in expenses:
+        expense.accounting_export_summary = get_updated_accounting_export_summary(
+            expense.expense_id,
+            'SKIPPED',
+            None,
+            '{}/workspaces/main/export_log'.format(settings.NETSUITE_INTEGRATION_APP_URL),
+            True
+        )
+        expense.save()
+
+    __bulk_update_expenses(expenses)
+
+    expenses = Expense.objects.filter(org_id='or79Cob97KSh')
+
+    for expense in expenses:
+        assert expense.accounting_export_summary['synced'] == True
+        assert expense.accounting_export_summary['state'] == 'SKIPPED'
+        assert expense.accounting_export_summary['error_type'] == None
+        assert expense.accounting_export_summary['url'] == '{}/workspaces/main/export_log'.format(
+            settings.NETSUITE_INTEGRATION_APP_URL
+        )
+        assert expense.accounting_export_summary['id'] == expense.expense_id
