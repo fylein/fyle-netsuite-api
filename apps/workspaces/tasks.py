@@ -21,6 +21,7 @@ from apps.workspaces.models import LastExportDetail, User, Workspace, WorkspaceS
 from apps.workspaces.actions import export_to_netsuite
 from .utils import send_email
 
+
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
