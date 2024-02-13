@@ -139,12 +139,13 @@ class AdvancedSettingsSerializer(serializers.ModelSerializer):
         )
 
         AdvancedConfigurationsTriggers.run_post_configurations_triggers(instance.id, workspace_schedule=workspace_schedules, configuration=configuration_instance)
+        # Commenting this for now, will uncomment once we expose to UI
+        AdvancedConfigurationsTriggers.post_to_integration_settings(instance.id, True)
 
         if instance.onboarding_state == 'ADVANCED_CONFIGURATION':
             instance.onboarding_state = 'COMPLETE'
             instance.save()
-            # Commenting this for now, will uncomment once we expose to UI
-            AdvancedConfigurationsTriggers.post_to_integration_settings(instance.id, True)
+            
 
         return instance
     
