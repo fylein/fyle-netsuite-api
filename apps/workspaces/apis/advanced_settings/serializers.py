@@ -144,7 +144,7 @@ class AdvancedSettingsSerializer(serializers.ModelSerializer):
             instance.onboarding_state = 'COMPLETE'
             instance.save()
             # Commenting this for now, will uncomment once we expose to UI
-            # AdvancedConfigurationsTriggers.post_to_integration_settings(instance.id, True)
+            AdvancedConfigurationsTriggers.post_to_integration_settings(instance.id, True)
 
         return instance
     
