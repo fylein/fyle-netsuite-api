@@ -236,6 +236,7 @@ def create_fyle_categories_payload(categories: List[DestinationAttribute], categ
                     'is_enabled': category.active
                 })
 
+    logger.info("| Importing Categories to Fyle | Content: {{Fyle Payload count: {}}}".format(len(payload)))
     return payload
 
 
@@ -613,6 +614,8 @@ def create_fyle_tax_group_payload(netsuite_attributes: List[DestinationAttribute
                     'percentage': round((netsuite_attribute.detail['tax_rate']/100), 2)
                 }
             )
+
+    logger.info("| Importing Tax Group to Fyle | Content: {{Fyle Payload count: {}}}".format(len(fyle_tax_group_payload)))            
     return fyle_tax_group_payload
 
 def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_project_names: list,
@@ -651,6 +654,7 @@ def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_
                     'is_enabled': True if project.active else project.active
                 })
 
+    logger.info("| Importing Projects to Fyle | Content: {{Fyle Payload count: {}}}".format(len(payload)))
     return payload
 
 
@@ -840,6 +844,7 @@ def create_fyle_cost_centers_payload(netsuite_attributes: List[DestinationAttrib
                 )
             })
 
+    logger.info("| Importing Cost Centers to Fyle | Content: {{Fyle Payload count: {}}}".format(len(fyle_cost_centers_payload)))
     return fyle_cost_centers_payload
 
 
@@ -952,6 +957,7 @@ def create_fyle_expense_custom_field_payload(netsuite_attributes: List[Destinati
             expense_custom_field_payload['id'] = custom_field_id
             expense_custom_field_payload['is_mandatory'] = expense_field['is_mandatory']
 
+        logger.info("| Importing Expense Custom Field to Fyle | Content: {{Fyle Payload: {}}}".format(expense_custom_field_payload))
         return expense_custom_field_payload
 
 
@@ -1042,6 +1048,8 @@ def create_fyle_merchants_payload(vendors, existing_merchants_name):
     for vendor in vendors:
         if vendor.value not in existing_merchants_name:
             payload.append(vendor.value)
+    
+    logger.info("| Importing Merchants to Fyle | Content: {{Fyle Payload count: {}}}".format(len(payload)))
     return payload
 
 def post_merchants(platform_connection: PlatformConnector, workspace_id: int):
@@ -1115,6 +1123,8 @@ def create_fyle_department_payload(department_name: str, parent_department: str,
                 'name': department_name,
                 'display_name': department
             })
+    
+    logger.info("| Importing Departments to Fyle | Content: {{Fyle Payload count: {}}}".format(len(departments_payload)))
     return departments_payload
 
 
@@ -1195,6 +1205,7 @@ def create_fyle_employee_payload(platform_connection: PlatformConnector, employe
         employee_approver_payload
     ))
 
+    logger.info("| Importing Employees to Fyle | Content: {{Fyle Employee Payload count: {} Employee Approver Payload count: {} Department Payload count: {}}}".format(len(employee_payload), len(employee_approver_payload), len(department_payload)))
     return employee_payload, employee_approver_payload, department_payload
 
 

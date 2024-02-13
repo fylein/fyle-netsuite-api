@@ -63,3 +63,4 @@ wcwidth==0.1.8
 wrapt==1.12.1
 zeep==4.1.0
 django-filter
+sendgrid==6.9.7
