@@ -1,6 +1,7 @@
 from apps.netsuite.helpers import schedule_payment_sync
 from apps.workspaces.models import Configuration, WorkspaceSchedule
 from apps.workspaces.tasks import schedule_sync
+from apps.workspaces.tasks import post_to_integration_settings
 
 
 class AdvancedConfigurationsTriggers:
@@ -22,3 +23,10 @@ class AdvancedConfigurationsTriggers:
         )
 
         schedule_payment_sync(configuration=configuration)
+
+        @staticmethod
+        def post_to_integration_settings(workspace_id: int, active: bool):
+            """
+            Post to integration settings
+            """
+            post_to_integration_settings(workspace_id, active)
