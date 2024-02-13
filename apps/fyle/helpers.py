@@ -5,20 +5,50 @@ from datetime import datetime, timezone
 from fyle_integrations_platform_connector import PlatformConnector
 import logging
 
-from django.utils.module_loading import import_string
 from django.conf import settings
 from django.db.models import Q
 
-from apps.fyle.models import ExpenseGroupSettings, ExpenseFilter, ExpenseGroup
+from apps.fyle.models import ExpenseGroupSettings, ExpenseFilter, ExpenseGroup, Expense
 from apps.tasks.models import TaskLog
 from apps.workspaces.models import FyleCredential, Workspace, Configuration
 from apps.mappings.models import GeneralMapping
 from apps.workspaces.models import FyleCredential, Workspace, Configuration
-from typing import List
+from typing import List, Union
 
 logger = logging.getLogger(__name__)
 
 SOURCE_ACCOUNT_MAP = {'PERSONAL': 'PERSONAL_CASH_ACCOUNT', 'CCC': 'PERSONAL_CORPORATE_CREDIT_CARD_ACCOUNT'}
+
+
+def get_updated_accounting_export_summary(
+        expense_id: str, state: str, error_type: Union[str, None], url: Union[str, None], is_synced: bool) -> dict:
+    """
+    Get updated accounting export summary
+    :param expense_id: expense id
+    :param state: state
+    :param error_type: error type
+    :param url: url
+    :param is_synced: is synced
+    :return: updated accounting export summary
+    """
+    return {
+        'id': expense_id,
+        'state': state,
+        'error_type': error_type,
+        'url': url,
+        'synced': is_synced
+    }
+
+def get_batched_expenses(batched_payload: List[dict], workspace_id: int) -> List[Expense]:
+    """
+    Get batched expenses
+    :param batched_payload: batched payload
+    :param workspace_id: workspace id
+    :return: batched expenses
+    """
+    expense_ids = [expense['id'] for expense in batched_payload]
+    return Expense.objects.filter(expense_id__in=expense_ids, workspace_id=workspace_id)
+
 
 
 def get_exportable_expense_group_ids(workspace_id):

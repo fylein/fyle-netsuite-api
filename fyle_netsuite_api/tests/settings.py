@@ -237,6 +237,7 @@ FYLE_BASE_URL = os.environ.get('FYLE_BASE_URL')
 FYLE_APP_URL = os.environ.get('APP_URL')
 FYLE_EXPENSE_URL = os.environ.get('FYLE_APP_URL')
 INTEGRATIONS_SETTINGS_API = os.environ.get('INTEGRATIONS_SETTINGS_API')
+NETSUITE_INTEGRATION_APP_URL = os.environ.get('NETSUITE_INTEGRATION_APP_URL')
 
 # Netsuite Settings
 NS_ACCOUNT_ID = 'sdfghj'
