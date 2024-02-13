@@ -24,9 +24,9 @@ class AdvancedConfigurationsTriggers:
 
         schedule_payment_sync(configuration=configuration)
 
-        @staticmethod
-        def post_to_integration_settings(workspace_id: int, active: bool):
-            """
-            Post to integration settings
-            """
-            post_to_integration_settings(workspace_id, active)
+    @staticmethod
+    def post_to_integration_settings(workspace_id: int, active: bool):
+        """
+        Post to integration settings
+        """
+        post_to_integration_settings(workspace_id, active)
