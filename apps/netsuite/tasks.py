@@ -459,7 +459,7 @@ def create_bill(expense_group, task_log_id, last_export):
 
         expense_group.exported_at = datetime.now()
         expense_group.response_logs = created_bill
-        expense_group.url = generate_netsuite_export_url(response_logs=created_bill, netsuite_credentials=netsuite_credentials)
+        expense_group.export_url = generate_netsuite_export_url(response_logs=created_bill, netsuite_credentials=netsuite_credentials)
 
         expense_group.save()
         
