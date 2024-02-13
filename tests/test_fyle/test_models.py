@@ -16,7 +16,7 @@ def test_create_expense(create_temp_workspace):
     mock_expenes = data['expenses']
     expense_count = len(Expense.objects.filter(org_id='or79Cob97KSh'))
     Expense.create_expense_objects(
-        mock_expenes
+        mock_expenes, 1
     )
 
     expense = Expense.objects.filter(org_id='or79Cob97KSh').order_by('created_at')
@@ -55,7 +55,7 @@ def test_expense_group_settings(create_temp_workspace):
 def test_create_expense_groups_by_report_id_fund_source_spent_at(db):
     expenses = data['expenses_spent_at']
 
-    expense_objects = Expense.create_expense_objects(expenses)
+    expense_objects = Expense.create_expense_objects(expenses, 1)
 
     configuration = Configuration.objects.get(workspace_id=1)
     workspace = Workspace.objects.get(id=1)
@@ -79,7 +79,7 @@ def test_create_expense_groups_by_report_id_fund_source_spent_at(db):
 def test_create_expense_groups_by_report_id_fund_source(db):
     expenses = data['expenses']
 
-    expense_objects = Expense.create_expense_objects(expenses)
+    expense_objects = Expense.create_expense_objects(expenses, 49)
 
     configuration = Configuration.objects.get(workspace_id=49)
     workspace = Workspace.objects.get(id=1)
