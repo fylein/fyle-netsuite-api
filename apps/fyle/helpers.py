@@ -1,19 +1,54 @@
 import json
+import traceback
 import requests
 from datetime import datetime, timezone
 from fyle_integrations_platform_connector import PlatformConnector
 import logging
 
-from django.utils.module_loading import import_string
 from django.conf import settings
 from django.db.models import Q
 
-from apps.fyle.models import ExpenseGroupSettings, ExpenseFilter, ExpenseGroup
+from apps.fyle.models import ExpenseGroupSettings, ExpenseFilter, ExpenseGroup, Expense
+from apps.tasks.models import TaskLog
+from apps.workspaces.models import FyleCredential, Workspace, Configuration
 from apps.mappings.models import GeneralMapping
 from apps.workspaces.models import FyleCredential, Workspace, Configuration
-from typing import List
+from typing import List, Union
 
 logger = logging.getLogger(__name__)
+
+SOURCE_ACCOUNT_MAP = {'PERSONAL': 'PERSONAL_CASH_ACCOUNT', 'CCC': 'PERSONAL_CORPORATE_CREDIT_CARD_ACCOUNT'}
+
+
+def get_updated_accounting_export_summary(
+        expense_id: str, state: str, error_type: Union[str, None], url: Union[str, None], is_synced: bool) -> dict:
+    """
+    Get updated accounting export summary
+    :param expense_id: expense id
+    :param state: state
+    :param error_type: error type
+    :param url: url
+    :param is_synced: is synced
+    :return: updated accounting export summary
+    """
+    return {
+        'id': expense_id,
+        'state': state,
+        'error_type': error_type,
+        'url': url,
+        'synced': is_synced
+    }
+
+def get_batched_expenses(batched_payload: List[dict], workspace_id: int) -> List[Expense]:
+    """
+    Get batched expenses
+    :param batched_payload: batched payload
+    :param workspace_id: workspace id
+    :return: batched expenses
+    """
+    expense_ids = [expense['id'] for expense in batched_payload]
+    return Expense.objects.filter(expense_id__in=expense_ids, workspace_id=workspace_id)
+
 
 
 def get_exportable_expense_group_ids(workspace_id):
@@ -56,6 +91,61 @@ def post_request(url, body, refresh_token=None):
         return json.loads(response.text)
     else:
         raise Exception(response.text)
+
+
+def get_source_account_type(fund_source: List[str]) -> List[str]:
+    """
+    Get source account type
+    :param fund_source: fund source
+    :return: source account type
+    """
+    source_account_type = []
+    for source in fund_source:
+        source_account_type.append(SOURCE_ACCOUNT_MAP[source])
+
+    return source_account_type
+
+
+def get_filter_credit_expenses(expense_group_settings: ExpenseGroupSettings) -> bool:
+    """
+    Get filter credit expenses
+    :param expense_group_settings: expense group settings
+    :return: filter credit expenses
+    """
+    filter_credit_expenses = True
+    if expense_group_settings.import_card_credits:
+        filter_credit_expenses = False
+
+    return filter_credit_expenses
+
+
+def get_fund_source(workspace_id: int) -> List[str]:
+    """
+    Get fund source
+    :param workspace_id: workspace id
+    :return: fund source
+    """
+    general_settings = Configuration.objects.get(workspace_id=workspace_id)
+    fund_source = []
+    if general_settings.reimbursable_expenses_object:
+        fund_source.append('PERSONAL')
+    if general_settings.corporate_credit_card_expenses_object:
+        fund_source.append('CCC')
+
+    return fund_source
+
+
+def handle_import_exception(task_log: TaskLog) -> None:
+    """
+    Handle import exception
+    :param task_log: task log
+    :return: None
+    """
+    error = traceback.format_exc()
+    task_log.detail = {'error': error}
+    task_log.status = 'FATAL'
+    task_log.save()
+    logger.error('Something unexpected happened workspace_id: %s %s', task_log.workspace_id, task_log.detail)
 
 
 def get_request(url, params, refresh_token):

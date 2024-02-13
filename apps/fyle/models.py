@@ -125,7 +125,7 @@ class Expense(models.Model):
         db_table = 'expenses'
 
     @staticmethod
-    def create_expense_objects(expenses: List[Dict]):
+    def create_expense_objects(expenses: List[Dict], workspace_id):
         """
         Bulk create expense objects
         """
@@ -173,7 +173,8 @@ class Expense(models.Model):
                     'expense_updated_at': expense['expense_updated_at'],
                     'fund_source': SOURCE_ACCOUNT_MAP[expense['source_account_type']],
                     'verified_at': expense['verified_at'],
-                    'custom_properties': expense['custom_properties']
+                    'custom_properties': expense['custom_properties'],
+                    'workspace_id': workspace_id
                 }
             )
 
