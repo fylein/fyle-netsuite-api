@@ -6,7 +6,7 @@ from datetime import datetime
 from django.db import transaction
 from django_q.tasks import async_task
 
-from fyle.platform.exceptions import InvalidTokenError
+from fyle.platform.exceptions import InvalidTokenError, RetryException
 from fyle_integrations_platform_connector import PlatformConnector
 
 
@@ -143,6 +143,14 @@ def create_expense_groups(workspace_id: int, configuration: Configuration, fund_
             'message': 'Fyle credentials do not exist in workspace / Invalid token'
         }
         task_log.status = 'FAILED'
+        task_log.save()
+
+    except RetryException:
+        logger.info('Fyle Retry Exception occured in workspace_id: %s', workspace_id)
+        task_log.detail = {
+            'message': 'Fyle Retry Exception occured'
+        }
+        task_log.status = 'FATAL'
         task_log.save()
 
     except Exception:

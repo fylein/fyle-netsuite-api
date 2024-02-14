@@ -2,7 +2,12 @@ import logging
 import traceback
 
 from netsuitesdk import NetSuiteRateLimitError, NetSuiteLoginError, NetSuiteRequestError
-from fyle.platform.exceptions import WrongParamsError, InvalidTokenError, InternalServerError
+from fyle.platform.exceptions import (
+    WrongParamsError,
+    InvalidTokenError,
+    InternalServerError,
+    RetryException
+)
 import requests
 
 
@@ -39,6 +44,9 @@ def handle_exceptions(task_name):
             except NetSuiteRequestError as exception:
                 error['message'] = 'NetSuite request error - '.format(exception.code)
                 error['response'] = exception.message
+
+            except RetryException:
+                error['message'] = 'Fyle Retry Exception occured'
 
             except InternalServerError as exception:
                 error['message'] = 'Internal server error while importing to Fyle'
