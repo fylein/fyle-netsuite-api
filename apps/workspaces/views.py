@@ -29,7 +29,8 @@ from apps.users.models import User
 
 from .models import LastExportDetail, Workspace, FyleCredential, NetSuiteCredentials, Configuration, \
     WorkspaceSchedule
-from .tasks import export_to_netsuite, schedule_sync
+from apps.workspaces.tasks import schedule_sync
+from apps.workspaces.actions import export_to_netsuite
 from .serializers import LastExportDetailSerializer, WorkspaceSerializer, FyleCredentialSerializer, NetSuiteCredentialSerializer, \
     ConfigurationSerializer, WorkspaceScheduleSerializer
 from .permissions import IsAuthenticatedForTest
@@ -105,6 +106,7 @@ class WorkspaceView(viewsets.ViewSet):
                 workspace_id=workspace.id,
                 cluster_domain=cluster_domain
             )
+            async_task('apps.workspaces.tasks.async_create_admin_subcriptions', workspace.id)
 
         return Response(
             data=WorkspaceSerializer(workspace).data,

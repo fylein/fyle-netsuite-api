@@ -21,6 +21,7 @@ services:
       NO_WORKERS: 1
       API_URL: http://localhost:8000/api
       DATABASE_URL: postgres://postgres:postgres@db:5432/netsuite_db
+      INTEGRATIONS_SETTINGS_API: http://localhost:8006/api
       DB_HOST: db
       FYLE_BASE_URL: ${FYLE_BASE_URL}
       FYLE_CLIENT_ID: ''

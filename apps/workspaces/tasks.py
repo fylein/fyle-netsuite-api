@@ -1,94 +1,29 @@
 import email
-import time
 import logging
+import time
+import json
 from datetime import datetime, timedelta, date
 from typing import List
 
 from django.conf import settings
 from django.db.models import Q
+from apps.fyle.helpers import post_request
 from django.template.loader import render_to_string
 from django_q.models import Schedule
 from fyle_accounting_mappings.models import MappingSetting, ExpenseAttribute
+from fyle_integrations_platform_connector import PlatformConnector
 from fyle_rest_auth.helpers import get_fyle_admin
 
-from apps.fyle.models import ExpenseGroup
 from apps.mappings.models import SubsidiaryMapping
 from apps.fyle.tasks import create_expense_groups
-from apps.netsuite.tasks import schedule_bills_creation, schedule_journal_entry_creation, \
-    schedule_expense_reports_creation, schedule_credit_card_charge_creation
 from apps.tasks.models import TaskLog
 from apps.workspaces.models import LastExportDetail, User, Workspace, WorkspaceSchedule, Configuration, FyleCredential
-
+from apps.workspaces.actions import export_to_netsuite
 from .utils import send_email
+
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
-
-def export_to_netsuite(workspace_id, export_mode=None):
-    configuration = Configuration.objects.get(workspace_id=workspace_id)
-    last_export_detail = LastExportDetail.objects.get(workspace_id=workspace_id)
-    workspace_schedule = WorkspaceSchedule.objects.filter(workspace_id=workspace_id, interval_hours__gt=0, enabled=True).first()
-
-    last_exported_at = datetime.now()
-    is_expenses_exported = False
-
-    if configuration.reimbursable_expenses_object:
-        expense_group_ids = ExpenseGroup.objects.filter(
-            fund_source='PERSONAL', exported_at__isnull=True).values_list('id', flat=True)
-
-        if len(expense_group_ids):
-            is_expenses_exported = True
-
-        if configuration.reimbursable_expenses_object == 'EXPENSE REPORT':
-            schedule_expense_reports_creation(
-                workspace_id=workspace_id, expense_group_ids=expense_group_ids
-            )
-
-        elif configuration.reimbursable_expenses_object == 'BILL':
-            schedule_bills_creation(
-                workspace_id=workspace_id, expense_group_ids=expense_group_ids
-            )
-
-        elif configuration.reimbursable_expenses_object == 'JOURNAL ENTRY':
-            schedule_journal_entry_creation(
-                workspace_id=workspace_id, expense_group_ids=expense_group_ids
-            )
-
-    if configuration.corporate_credit_card_expenses_object:
-        expense_group_ids = ExpenseGroup.objects.filter(
-            fund_source='CCC', exported_at__isnull=True).values_list('id', flat=True)
-
-        if len(expense_group_ids):
-            is_expenses_exported = True
-
-        if configuration.corporate_credit_card_expenses_object == 'CREDIT CARD CHARGE':
-            schedule_credit_card_charge_creation(
-                workspace_id=workspace_id, expense_group_ids=expense_group_ids
-            )
-
-        elif configuration.corporate_credit_card_expenses_object == 'BILL':
-            schedule_bills_creation(
-                workspace_id=workspace_id, expense_group_ids=expense_group_ids
-            )
-
-        elif configuration.corporate_credit_card_expenses_object == 'EXPENSE REPORT':
-            schedule_expense_reports_creation(
-                workspace_id=workspace_id, expense_group_ids=expense_group_ids
-            )
-
-        elif configuration.corporate_credit_card_expenses_object == 'JOURNAL ENTRY':
-            schedule_journal_entry_creation(
-                workspace_id=workspace_id, expense_group_ids=expense_group_ids
-            )
-
-    if is_expenses_exported:
-        last_export_detail.last_exported_at = last_exported_at
-        last_export_detail.export_mode = export_mode or 'MANUAL'
-
-        if workspace_schedule:
-            last_export_detail.next_export_at = last_exported_at + timedelta(hours=workspace_schedule.interval_hours)
-
-        last_export_detail.save()
 
 
 def schedule_email_notification(workspace_id: int, schedule_enabled: bool):
@@ -251,6 +186,42 @@ def delete_cards_mapping_settings(configuration: Configuration):
 
         if mapping_setting:
             mapping_setting.delete()
+
+
+def async_create_admin_subcriptions(workspace_id: int) -> None:
+    """
+    Create admin subscriptions
+    :param workspace_id: workspace id
+    :return: None
+    """
+    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+    platform = PlatformConnector(fyle_credentials)
+    payload = {
+        'is_enabled': True,
+        'webhook_url': '{}/workspaces/{}/fyle/exports/'.format(settings.API_URL, workspace_id)
+    }
+    platform.subscriptions.post(payload)
+
+
+def post_to_integration_settings(workspace_id: int, active: bool):
+    """
+    Post to integration settings
+    """
+    refresh_token = FyleCredential.objects.get(workspace_id=workspace_id).refresh_token
+    url = '{}/integrations/'.format(settings.INTEGRATIONS_SETTINGS_API)
+    payload = {
+        'tpa_id': settings.FYLE_CLIENT_ID,
+        'tpa_name': 'Fyle Netsuite Integration',
+        'type': 'ACCOUNTING',
+        'is_active': active,
+        'connected_at': datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+    }
+
+    try:
+        post_request(url, json.dumps(payload), refresh_token)
+    except Exception as error:
+        logger.error(error)
+
 
 def async_update_fyle_credentials(fyle_org_id: str, refresh_token: str):
     fyle_credentials = FyleCredential.objects.filter(workspace__fyle_org_id=fyle_org_id).first()
