@@ -174,9 +174,9 @@ Q_CLUSTER = {
     # Useful for limiting memory usage.
     'max_rss': 50000, # 50mb
     'ALT_CLUSTERS': {
-        'import': {
-            "retry": 14400,
-            "timeout": 3600
+         'import': {
+            'retry': 14400,
+            'timeout': 3600
         },
     }
 }
