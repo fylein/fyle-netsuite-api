@@ -338,6 +338,7 @@ class Bill(models.Model):
     location_id = models.CharField(max_length=255, help_text='NetSuite Location id', null=True)
     currency = models.CharField(max_length=255, help_text='Bill Currency')
     memo = models.TextField(help_text='Bill Description')
+    override_tax_details = models.BooleanField(help_text='Override Tax Details', default=False)
     reference_number = models.CharField(max_length=255, help_text='NetSuite reference number', null=True)
     external_id = models.CharField(max_length=255, unique=True, help_text='Fyle reimbursement id')
     transaction_date = models.DateTimeField(help_text='Bill transaction date')
@@ -390,6 +391,7 @@ class Bill(models.Model):
                 'Credit card expenses by {0}'.format(description.get('employee_email')),
                 'reference_number': get_report_or_expense_number(expense_group),
                 'currency': currency.destination_id if currency else '1',
+                'override_tax_details': general_mappings.override_tax_details,
                 'transaction_date': get_transaction_date(expense_group),
                 'external_id': 'bill {} - {}'.format(expense_group.id, description.get('employee_email'))
             }
