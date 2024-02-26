@@ -303,6 +303,8 @@ def construct_payload_and_update_export(expense_id_receipt_url_map: dict, task_l
         item_list = []
         payload = {}
 
+        general_mappings = GeneralMapping.objects.get(workspace_id=workspace.id)
+
         # Since we have credit and debit for Journal Entry lines, we need to construct them separately
         if task_log.type == 'CREATING_JOURNAL_ENTRY':
             construct_lines = getattr(netsuite_connection, func)
@@ -319,7 +321,7 @@ def construct_payload_and_update_export(expense_id_receipt_url_map: dict, task_l
         elif task_log.type == 'CREATING_BILL':
             construct_lines = getattr(netsuite_connection, func)
             # calling the target construct payload function
-            expense_list, item_list = construct_lines(export_line_items, expense_id_receipt_url_map, cluster_domain, workspace.fyle_org_id)
+            expense_list, item_list = construct_lines(export_line_items, expense_id_receipt_url_map, cluster_domain, workspace.fyle_org_id, general_mappings.override_tax_details)
         else:
             construct_lines = getattr(netsuite_connection, func)
             # calling the target construct payload function
