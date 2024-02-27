@@ -1031,6 +1031,7 @@ def schedule_fyle_attributes_creation(workspace_id: int):
     if mapping_settings:
         schedule, _ = Schedule.objects.get_or_create(
             func='apps.mappings.tasks.async_auto_create_custom_field_mappings',
+            cluster='import',
             args='{0}'.format(workspace_id),
             defaults={
                 'schedule_type': Schedule.MINUTES,
