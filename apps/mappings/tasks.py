@@ -493,6 +493,7 @@ def schedule_tax_groups_creation(import_tax_items, workspace_id):
     if import_tax_items:
         schedule, _ = Schedule.objects.update_or_create(
             func='apps.mappings.tasks.auto_create_tax_group_mappings',
+            cluster='import',
             args='{}'.format(workspace_id),
             defaults={
                 'schedule_type': Schedule.MINUTES,
@@ -585,13 +586,13 @@ def auto_import_and_map_fyle_fields(workspace_id):
     chain = Chain()
 
     if configuration.import_vendors_as_merchants:
-        chain.append('apps.mappings.tasks.auto_create_vendors_as_merchants', workspace_id)
+        chain.append('apps.mappings.tasks.auto_create_vendors_as_merchants', workspace_id, q_options={'cluster': 'import'})
 
     if configuration.import_categories or configuration.import_items:
-        chain.append('apps.mappings.tasks.auto_create_category_mappings', workspace_id)
+        chain.append('apps.mappings.tasks.auto_create_category_mappings', workspace_id, q_options={'cluster': 'import'})
 
     if project_mapping and project_mapping.import_to_fyle:
-        chain.append('apps.mappings.tasks.auto_create_project_mappings', workspace_id)
+        chain.append('apps.mappings.tasks.auto_create_project_mappings', workspace_id, q_options={'cluster': 'import'})
 
     if chain.length() > 0:
         chain.run()
@@ -739,6 +740,7 @@ def schedule_auto_map_employees(employee_mapping_preference: str, workspace_id: 
     if employee_mapping_preference:
         schedule, _ = Schedule.objects.update_or_create(
             func='apps.mappings.tasks.async_auto_map_employees',
+            cluster='import',
             args='{0}'.format(workspace_id),
             defaults={
                 'schedule_type': Schedule.MINUTES,
@@ -773,6 +775,7 @@ def schedule_auto_map_ccc_employees(workspace_id: int):
     if configuration.auto_map_employees and configuration.corporate_credit_card_expenses_object:
         schedule, _ = Schedule.objects.update_or_create(
             func='apps.mappings.tasks.async_auto_map_ccc_account',
+            cluster='import',
             args='{0}'.format(workspace_id),
             defaults={
                 'schedule_type': Schedule.MINUTES,
@@ -897,6 +900,7 @@ def schedule_cost_centers_creation(import_to_fyle, workspace_id):
     if import_to_fyle:
         schedule, _ = Schedule.objects.update_or_create(
             func='apps.mappings.tasks.auto_create_cost_center_mappings',
+            cluster='import',
             args='{}'.format(workspace_id),
             defaults={
                 'schedule_type': Schedule.MINUTES,
@@ -1027,6 +1031,7 @@ def schedule_fyle_attributes_creation(workspace_id: int):
     if mapping_settings:
         schedule, _ = Schedule.objects.get_or_create(
             func='apps.mappings.tasks.async_auto_create_custom_field_mappings',
+            cluster='import',
             args='{0}'.format(workspace_id),
             defaults={
                 'schedule_type': Schedule.MINUTES,
@@ -1265,6 +1270,7 @@ def schedule_netsuite_employee_creation_on_fyle(import_netsuite_employees, works
     if import_netsuite_employees:
         schedule, _ = Schedule.objects.update_or_create(
             func='apps.mappings.tasks.auto_create_netsuite_employees_on_fyle',
+            cluster='import',
             args='{}'.format(workspace_id),
             defaults={
                 'schedule_type': Schedule.MINUTES,

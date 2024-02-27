@@ -195,13 +195,13 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
             for mapping_setting in mapping_settings:
                 if mapping_setting.source_field == 'PROJECT':
                     # run auto_import_and_map_fyle_fields
-                    chain.append('apps.mappings.tasks.auto_import_and_map_fyle_fields', int(workspace.id))
+                    chain.append('apps.mappings.tasks.auto_import_and_map_fyle_fields', int(workspace.id), q_options={'cluster': 'import'})
                 elif mapping_setting.source_field == 'COST_CENTER':
                     # run auto_create_cost_center_mappings
-                    chain.append('apps.mappings.tasks.auto_create_cost_center_mappings', int(workspace.id))
+                    chain.append('apps.mappings.tasks.auto_create_cost_center_mappings', int(workspace.id), q_options={'cluster': 'import'})
                 elif mapping_setting.is_custom:
                     # run async_auto_create_custom_field_mappings
-                    chain.append('apps.mappings.tasks.async_auto_create_custom_field_mappings', int(workspace.id))
+                    chain.append('apps.mappings.tasks.async_auto_create_custom_field_mappings', int(workspace.id), q_options={'cluster': 'import'})
             
             if chain.length() > 0:
                 chain.run()

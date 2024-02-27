@@ -113,7 +113,8 @@ def run_pre_mapping_settings_triggers(sender, instance: MappingSetting, **kwargs
             'apps.mappings.tasks.auto_create_expense_fields_mappings',
             int(instance.workspace_id),
             instance.destination_field,
-            instance.source_field
+            instance.source_field,
+            q_options={'cluster': 'import'}
         )
 
 @receiver(post_save, sender=GeneralMapping)

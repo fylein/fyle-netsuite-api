@@ -125,7 +125,8 @@ class WorkspaceView(viewsets.ViewSet):
             async_task(
                 'apps.workspaces.tasks.async_update_workspace_name',
                 workspaces[0],
-                request.META.get('HTTP_AUTHORIZATION')
+                request.META.get('HTTP_AUTHORIZATION'),
+                q_options={'cluster': 'import'}
             )
         return Response(
             data=WorkspaceSerializer(workspaces, many=True).data,

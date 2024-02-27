@@ -153,13 +153,32 @@ CACHES = {
 
 Q_CLUSTER = {
     'name': 'fyle_netsuite_api',
-    'compress': True,
     'save_limit': 0,
-    'workers': 4,
-    'queue_limit': 30,
+    'workers': int(os.environ.get('NO_WORKERS', 4)),
+    # How many tasks are kept in memory by a single cluster.
+    # Helps balance the workload and the memory overhead of each individual cluster
+    'queue_limit': 10,
+    'cached': False,
     'orm': 'default',
     'ack_failures': True,
-    'poll': 1
+    'poll': 1,
+    'max_attempts': 1,
+    'attempt_count': 1,
+    'retry': 14400,
+    'timeout': 900, # 15 mins
+    'catch_up': False,
+    # The number of tasks a worker will process before recycling.
+    # Useful to release memory resources on a regular basis.
+    'recycle': 20,
+    # The maximum resident set size in kilobytes before a worker will recycle and release resources.
+    # Useful for limiting memory usage.
+    'max_rss': 50000, # 50mb
+    'ALT_CLUSTERS': {
+         'import': {
+            'retry': 14400,
+            'timeout': 3600
+        },
+    }
 }
 
 # Database
