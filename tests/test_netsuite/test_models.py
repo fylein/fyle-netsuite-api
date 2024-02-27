@@ -4,6 +4,7 @@ import pytest
 from apps.fyle.models import Expense, ExpenseGroup
 from apps.netsuite.models import *
 from apps.netsuite.tasks import *
+from apps.netsuite.queue import *
 from apps.workspaces.models import Configuration
 from fyle_accounting_mappings.models import Mapping, MappingSetting, DestinationAttribute, ExpenseAttribute
 from apps.fyle.models import Expense, ExpenseGroup, Reimbursement, get_default_expense_group_fields, get_default_expense_state, \
@@ -380,7 +381,7 @@ def test_support_post_date_integrations(mocker, db):
 
     payload = fyle_expense_data['expenses']
     expense_id = fyle_expense_data['expenses'][0]['id']
-    Expense.create_expense_objects(payload)
+    Expense.create_expense_objects(payload, 1)
     expense_objects = Expense.objects.get(expense_id=expense_id)
     expense_objects.reimbursable = False
     expense_objects.fund_source = 'CCC'

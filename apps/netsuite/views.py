@@ -17,10 +17,10 @@ from apps.workspaces.models import NetSuiteCredentials, Workspace, Configuration
 from django_q.tasks import Chain
 
 from .serializers import NetSuiteFieldSerializer, CustomSegmentSerializer
-from .tasks import schedule_bills_creation, schedule_expense_reports_creation, schedule_journal_entry_creation,\
-    create_vendor_payment, check_netsuite_object_status, process_reimbursements, schedule_credit_card_charge_creation
+from .tasks import  create_vendor_payment, check_netsuite_object_status, process_reimbursements
 from .models import CustomSegment
 from .helpers import check_interval_and_sync_dimension, sync_dimensions
+from apps.workspaces.actions import export_to_netsuite
 
 
 logger = logging.getLogger(__name__)
@@ -31,17 +31,7 @@ class TriggerExportsView(generics.GenericAPIView):
     Trigger exports creation
     """
     def post(self, request, *args, **kwargs):
-        expense_group_ids = request.data.get('expense_group_ids', [])
-        export_type = request.data.get('export_type')
-
-        if export_type == 'BILL':
-            schedule_bills_creation(kwargs['workspace_id'], expense_group_ids)
-        elif export_type == 'CREDIT CARD CHARGE':
-            schedule_credit_card_charge_creation(kwargs['workspace_id'], expense_group_ids)
-        elif export_type == 'JOURNAL ENTRY':
-            schedule_journal_entry_creation(kwargs['workspace_id'], expense_group_ids)
-        elif export_type == 'EXPENSE REPORT':
-            schedule_expense_reports_creation(kwargs['workspace_id'], expense_group_ids)
+        export_to_netsuite(workspace_id=kwargs['workspace_id'])
 
         return Response(
             status=status.HTTP_200_OK

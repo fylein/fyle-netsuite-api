@@ -1010,8 +1010,13 @@ class NetSuiteConnector:
 
         return []
 
-    def construct_bill_lineitems(self, bill_lineitems: List[BillLineitem],
-                                   attachment_links: Dict, cluster_domain: str, org_id: str) -> List[Dict]:
+    def construct_bill_lineitems(
+            self,
+            bill_lineitems: List[BillLineitem],
+            attachment_links: Dict,
+            cluster_domain: str, org_id: str,
+            override_tax_details: bool
+        ) -> List[Dict]:
         """
         Create bill line items
         :return: constructed line items
@@ -1050,7 +1055,7 @@ class NetSuiteConnector:
                 'orderLine': None,
                 'line': None,
                 'amount': line.amount - line.tax_amount if (line.tax_item_id and line.tax_amount is not None) else line.amount,
-                'grossAmt': line.amount,
+                'grossAmt': None if override_tax_details else line.amount,
                 'taxDetailsReference': None,
                 'department': {
                     'name': None,
@@ -1079,7 +1084,7 @@ class NetSuiteConnector:
                 'customFieldList': netsuite_custom_segments,
                 'isBillable': line.billable,
                 'tax1Amt': None,
-                'taxAmount': line.tax_amount if (line.tax_item_id and line.tax_amount is not None) else None,
+                'taxAmount': line.tax_amount if (line.tax_item_id and line.tax_amount is not None and not override_tax_details) else None,
                 'taxCode':{
                     'name': None,
                     'internalId': line.tax_item_id if (line.tax_item_id and line.tax_amount is not None) else None,
@@ -1144,7 +1149,7 @@ class NetSuiteConnector:
         cluster_domain = fyle_credentials.cluster_domain
         org_id = Workspace.objects.get(id=bill.expense_group.workspace_id).fyle_org_id
 
-        expense_list, item_list = self.construct_bill_lineitems( bill_lineitems, {}, cluster_domain, org_id)
+        expense_list, item_list = self.construct_bill_lineitems( bill_lineitems, {}, cluster_domain, org_id, bill.override_tax_details)
 
         bill_payload = {
             'nullFieldList': None,
@@ -1153,7 +1158,7 @@ class NetSuiteConnector:
             'nexus': None,
             'subsidiaryTaxRegNum': None,
             'taxRegOverride': None,
-            'taxDetailsOverride': None,
+            'taxDetailsOverride': True if bill.override_tax_details else None,
             'customForm': None,
             'billAddressList': None,
             'account': {

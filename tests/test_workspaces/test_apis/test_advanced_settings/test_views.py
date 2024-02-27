@@ -1,13 +1,19 @@
 import json
 from tests.helper import dict_compare_keys
-from apps.workspaces.models import Workspace, Configuration
+from apps.workspaces.models import Workspace, FyleCredential
 from .fixtures import data
 import pytest
 from django.urls import reverse
 
 @pytest.mark.django_db(databases=['default'])
 def test_advanced_settings(api_client, access_token):
-
+    FyleCredential.objects.update_or_create(
+        workspace_id=1,
+        defaults={
+            'refresh_token': 'ey.ey.ey',
+            'cluster_domain': 'cluster_domain'
+        }
+    )
     workspace = Workspace.objects.get(id=1)
     workspace.onboarding_state = 'ADVANCED_CONFIGURATION'
     workspace.save()

@@ -2,14 +2,17 @@ from cmath import exp
 import pytest
 from fyle_integrations_platform_connector import PlatformConnector
 import json
+from django.db.models import Q
 from apps.fyle.models import ExpenseFilter, ExpenseGroup, Expense, ExpenseGroupSettings
 from apps.tasks.models import TaskLog
-from apps.fyle.tasks import create_expense_groups, schedule_expense_group_creation
+from apps.fyle.tasks import create_expense_groups, schedule_expense_group_creation, post_accounting_export_summary
 from apps.workspaces.models import Configuration, FyleCredential, Workspace
 from .fixtures import data
 from django.urls import reverse
 from tests.helper import dict_compare_keys
 from unittest import mock
+from apps.fyle.actions import mark_expenses_as_skipped
+
 
 
 @pytest.mark.django_db()
@@ -134,3 +137,27 @@ def test_schedule_expense_group_creation(mocker, add_fyle_credentials):
     #the count didn't increased beacause async blocks don't work while testing
     assert len(expense_group) == expense_group_count
     assert len(expenses) == expenses_count
+
+
+def test_post_accounting_export_summary(db, mocker):
+    expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
+    expense_id = expense_group.expenses.first().id
+    expense_group.expenses.remove(expense_id)
+
+    workspace = Workspace.objects.get(id=1)
+
+    expense = Expense.objects.filter(id=expense_id).first()
+    expense.workspace_id = 1
+    expense.save()
+
+    mark_expenses_as_skipped(Q(), [expense_id], workspace)
+
+    assert Expense.objects.filter(id=expense_id).first().accounting_export_summary['synced'] == False
+
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.Expenses.post_bulk_accounting_export_summary',
+        return_value=[]
+    )
+    post_accounting_export_summary('or79Cob97KSh', 1)
+
+    assert Expense.objects.filter(id=expense_id).first().accounting_export_summary['synced'] == True
