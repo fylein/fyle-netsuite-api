@@ -49,6 +49,10 @@ class GeneralMapping(models.Model):
     department_id = models.CharField(max_length=255, help_text='NetSuite Department id', null=True)
     department_level = models.CharField(max_length=255, help_text='Transaction Body, Line, Both', null=True)
 
+    class_name = models.CharField(max_length=255, help_text='NetSuite Class name', null=True)
+    class_id = models.CharField(max_length=255, help_text='NetSuite Class id', null=True)
+    class_level = models.CharField(max_length=255, help_text='Transaction Body, Line, Both', null=True)
+
     vendor_payment_account_id = models.CharField(
         max_length=255, help_text='NetSuite VendorPayment Account id', null=True)    
     vendor_payment_account_name = models.CharField(max_length=255, help_text='VendorPayment Account name', null=True)

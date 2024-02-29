@@ -1191,6 +1191,12 @@ class NetSuiteConnector:
                 'externalId': None,
                 'type': 'department'
             },
+            'class': {
+                'name': None,
+                'internalId': bill.class_id,
+                'externalId': None,
+                'type': 'classification'
+            },
             'approvalStatus': None,
             'nextApprover': None,
             'vatRegNum': None,
@@ -1370,6 +1376,9 @@ class NetSuiteConnector:
             },
             'department': {
                 'internalId': credit_card_charge.department_id
+            },
+            'class': {
+                'internalId': credit_card_charge.class_id
             },
             'tranDate': transaction_date,
             'memo': credit_card_charge.memo,
