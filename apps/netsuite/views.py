@@ -31,7 +31,8 @@ class TriggerExportsView(generics.GenericAPIView):
     Trigger exports creation
     """
     def post(self, request, *args, **kwargs):
-        export_to_netsuite(workspace_id=kwargs['workspace_id'])
+        expense_group_ids = request.data.get('expense_group_ids', [])
+        export_to_netsuite(workspace_id=kwargs['workspace_id'], export_mode='MANUAL', expense_group_ids=expense_group_ids)
 
         return Response(
             status=status.HTTP_200_OK
