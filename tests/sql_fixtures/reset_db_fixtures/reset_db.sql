@@ -223,7 +223,8 @@ CREATE TABLE public.bills (
     paid_on_netsuite boolean NOT NULL,
     reference_number character varying(255),
     department_id character varying(255),
-    override_tax_details boolean NOT NULL
+    override_tax_details boolean NOT NULL,
+    class_id character varying(255)
 );
 
 
@@ -391,7 +392,8 @@ CREATE TABLE public.credit_card_charges (
     updated_at timestamp with time zone NOT NULL,
     expense_group_id integer NOT NULL,
     reference_number character varying(255),
-    department_id character varying(255)
+    department_id character varying(255),
+    class_id character varying(255)
 );
 
 
@@ -1384,7 +1386,10 @@ CREATE TABLE public.general_mappings (
     use_employee_location boolean NOT NULL,
     department_id character varying(255),
     department_name character varying(255),
-    override_tax_details boolean NOT NULL
+    override_tax_details boolean NOT NULL,
+    class_id character varying(255),
+    class_level character varying(255),
+    class_name character varying(255)
 );
 
 
@@ -2551,7 +2556,7 @@ COPY public.bill_lineitems (id, account_id, location_id, department_id, class_id
 -- Data for Name: bills; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.bills (id, entity_id, accounts_payable_id, subsidiary_id, location_id, currency, memo, external_id, created_at, updated_at, expense_group_id, transaction_date, payment_synced, paid_on_netsuite, reference_number, department_id, override_tax_details) FROM stdin;
+COPY public.bills (id, entity_id, accounts_payable_id, subsidiary_id, location_id, currency, memo, external_id, created_at, updated_at, expense_group_id, transaction_date, payment_synced, paid_on_netsuite, reference_number, department_id, override_tax_details, class_id) FROM stdin;
 \.
 
 
@@ -2591,7 +2596,7 @@ COPY public.credit_card_charge_lineitems (id, account_id, location_id, departmen
 -- Data for Name: credit_card_charges; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.credit_card_charges (id, credit_card_account_id, entity_id, subsidiary_id, location_id, currency, memo, external_id, transaction_date, created_at, updated_at, expense_group_id, reference_number, department_id) FROM stdin;
+COPY public.credit_card_charges (id, credit_card_account_id, entity_id, subsidiary_id, location_id, currency, memo, external_id, transaction_date, created_at, updated_at, expense_group_id, reference_number, department_id, class_id) FROM stdin;
 \.
 
 
@@ -7848,6 +7853,8 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 182	fyle	0030_auto_20240208_1206	2024-02-08 12:26:48.026661+00
 183	mappings	0012_generalmapping_override_tax_details	2024-02-23 09:02:00.114563+00
 184	netsuite	0024_bill_override_tax_details	2024-02-23 09:02:00.124562+00
+185	mappings	0013_auto_20240229_0804	2024-02-29 10:14:58.836562+00
+186	netsuite	0025_auto_20240229_0804	2024-02-29 10:14:58.850038+00
 \.
 
 
@@ -11505,10 +11512,10 @@ COPY public.fyle_credentials (id, refresh_token, created_at, updated_at, workspa
 -- Data for Name: general_mappings; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.general_mappings (id, location_name, location_id, accounts_payable_name, accounts_payable_id, created_at, updated_at, workspace_id, default_ccc_account_id, default_ccc_account_name, reimbursable_account_id, reimbursable_account_name, default_ccc_vendor_id, default_ccc_vendor_name, vendor_payment_account_id, vendor_payment_account_name, location_level, department_level, use_employee_department, use_employee_class, use_employee_location, department_id, department_name, override_tax_details) FROM stdin;
-1	hubajuba	8	Accounts Payable	25	2021-11-15 08:56:31.432106+00	2021-11-15 13:21:26.113427+00	1	\N	\N	118	Unapproved Expense Reports	1674	Ashwin Vendor	\N	\N	TRANSACTION_BODY	\N	f	f	f	\N	\N	f
-2	\N	\N	Accounts Payable	25	2021-11-16 04:18:39.195287+00	2021-11-16 04:18:39.195312+00	2	228	Aus Account	118	Unapproved Expense Reports	12104	Nilesh Aus Vendor	\N	\N	\N	\N	f	f	f	\N	\N	f
-3	hukiju	10	\N	\N	2021-12-03 11:24:17.962764+00	2021-12-03 11:24:17.962809+00	49	228	Aus Account	228	Aus Account	12104	Nilesh Aus Vendor	\N	\N	TRANSACTION_BODY	\N	f	f	f	\N	\N	f
+COPY public.general_mappings (id, location_name, location_id, accounts_payable_name, accounts_payable_id, created_at, updated_at, workspace_id, default_ccc_account_id, default_ccc_account_name, reimbursable_account_id, reimbursable_account_name, default_ccc_vendor_id, default_ccc_vendor_name, vendor_payment_account_id, vendor_payment_account_name, location_level, department_level, use_employee_department, use_employee_class, use_employee_location, department_id, department_name, override_tax_details, class_id, class_level, class_name) FROM stdin;
+1	hubajuba	8	Accounts Payable	25	2021-11-15 08:56:31.432106+00	2021-11-15 13:21:26.113427+00	1	\N	\N	118	Unapproved Expense Reports	1674	Ashwin Vendor	\N	\N	TRANSACTION_BODY	\N	f	f	f	\N	\N	f	\N	\N	\N
+2	\N	\N	Accounts Payable	25	2021-11-16 04:18:39.195287+00	2021-11-16 04:18:39.195312+00	2	228	Aus Account	118	Unapproved Expense Reports	12104	Nilesh Aus Vendor	\N	\N	\N	\N	f	f	f	\N	\N	f	\N	\N	\N
+3	hukiju	10	\N	\N	2021-12-03 11:24:17.962764+00	2021-12-03 11:24:17.962809+00	49	228	Aus Account	228	Aus Account	12104	Nilesh Aus Vendor	\N	\N	TRANSACTION_BODY	\N	f	f	f	\N	\N	f	\N	\N	\N
 \.
 
 
@@ -11743,7 +11750,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 45, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 181, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 186, true);
 
 
 --
