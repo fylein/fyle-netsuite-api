@@ -166,6 +166,12 @@ data = {
                 'externalId': None,
                 'type': 'department'
             },
+            'class': {
+                'name': None,
+                'internalId': None,
+                'externalId': None,
+                'type': 'classification'
+            },
             "approvalStatus": None,
             "nextApprover": None,
             "vatRegNum": None,
@@ -312,6 +318,12 @@ data = {
             'internalId': None,
             'externalId': None,
             'type': 'department'
+        },
+        'class': {
+            'name': None,
+            'internalId': None,
+            'externalId': None,
+            'type': 'classification'
         },
         "approvalStatus": None,
         "nextApprover": None,
@@ -464,6 +476,12 @@ data = {
             'internalId': None,
             'externalId': None,
             'type': 'department'
+        },
+        'class': {
+            'name': None,
+            'internalId': None,
+            'externalId': None,
+            'type': 'classification'
         },
         "approvalStatus": None,
         "nextApprover": None,
@@ -1021,6 +1039,7 @@ data = {
             'location': {'internalId': '10'},
             'currency': {'internalId': '1'},
             'department': {'internalId': None},
+            'class': {'internalId': None},
             'tranDate': '12/03/2021',
             'memo': 'Credit card expenses by admin1@fyleforintacct.in',
             'tranid':'CR/27/B/8',
