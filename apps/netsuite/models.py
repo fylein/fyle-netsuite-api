@@ -335,6 +335,7 @@ class Bill(models.Model):
     entity_id = models.CharField(max_length=255, help_text='NetSuite vendor id')
     subsidiary_id = models.CharField(max_length=255, help_text='NetSuite subsidiary id')
     department_id = models.CharField(max_length=255, help_text='NetSuite department id', null=True)
+    class_id = models.CharField(max_length=255, help_text='NetSuite Class id', null=True)
     location_id = models.CharField(max_length=255, help_text='NetSuite Location id', null=True)
     currency = models.CharField(max_length=255, help_text='Bill Currency')
     memo = models.TextField(help_text='Bill Description')
@@ -383,6 +384,8 @@ class Bill(models.Model):
                 'accounts_payable_id': general_mappings.accounts_payable_id,
                 'entity_id': vendor_id,
                 'department_id': general_mappings.department_id if general_mappings.department_level in [
+                    'TRANSACTION_BODY', 'ALL'] else None,
+                'class_id': general_mappings.class_id if general_mappings.class_level in [
                     'TRANSACTION_BODY', 'ALL'] else None,
                 'location_id': general_mappings.location_id if general_mappings.location_level in [
                     'TRANSACTION_BODY', 'ALL'] else None,
@@ -536,6 +539,7 @@ class CreditCardCharge(models.Model):
     credit_card_account_id = models.CharField(max_length=255, help_text='NetSuite Accounts Payable Account id')
     entity_id = models.CharField(max_length=255, help_text='NetSuite vendor id')
     department_id = models.CharField(max_length=255, help_text='NetSuite department id', null=True)
+    class_id = models.CharField(max_length=255, help_text='NetSuite Class id', null=True)
     subsidiary_id = models.CharField(max_length=255, help_text='NetSuite subsidiary id')
     location_id = models.CharField(max_length=255, help_text='NetSuite Location id', null=True)
     currency = models.CharField(max_length=255, help_text='CC Charge Currency')
@@ -599,6 +603,8 @@ class CreditCardCharge(models.Model):
                 'subsidiary_id': subsidiary_mappings.internal_id,
                 'credit_card_account_id': ccc_account_id,
                 'department_id': department_id,
+                'class_id': general_mappings.class_id if general_mappings.class_level in [
+                    'TRANSACTION_BODY', 'ALL'] else None,
                 'entity_id': vendor_id,
                 'location_id': general_mappings.location_id if general_mappings.location_level in [
                     'TRANSACTION_BODY', 'ALL'] else None,
