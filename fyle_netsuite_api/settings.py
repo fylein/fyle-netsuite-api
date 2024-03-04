@@ -216,7 +216,7 @@ Q_CLUSTER = {
     'ALT_CLUSTERS': {
         'import': {
             'retry': 14400,
-            'timeout': 3600
+            'timeout': 900, # 15 mins
         },
     }
 }
