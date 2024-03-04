@@ -192,7 +192,8 @@ FYLE_REST_AUTH_SETTINGS = {
 
 Q_CLUSTER = {
     'name': 'fyle_netsuite_api',
-    'save_limit': 0,
+    # The number of tasks will be stored in django q tasks
+    "save_limit": 100000,
     'workers': int(os.environ.get('NO_WORKERS', 4)),
     # How many tasks are kept in memory by a single cluster.
     # Helps balance the workload and the memory overhead of each individual cluster
