@@ -55,7 +55,8 @@ DEFAULT_NETSUITE_IMPORT_TYPES = [
 SYNC_METHODS = {
     'ACCOUNT': 'accounts',
     'ITEM': 'items',
-    'TAX_ITEMS': 'tax_items',
+    'TAX_ITEM': 'tax_items',
+    'TAX_CODE': 'tax_items',
     'CUSTOMER': 'customers',
     'VENDOR': 'vendors',
     'PROJECT': 'projects',
