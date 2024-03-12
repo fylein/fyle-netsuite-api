@@ -182,42 +182,6 @@ def test_create_fyle_category_payload(mocker, db):
 def test_construct_filter_based_on_destination(test_input, expected):
     filter = construct_filter_based_on_destination(test_input)
     assert filter == expected
-    
-
-def test_create_fyle_projects_payload(db):
-    existing_project_names = ExpenseAttribute.objects.filter(
-        attribute_type='PROJECT', workspace_id=2).values_list('value', flat=True)
-    
-    paginated_ns_attributes = DestinationAttribute.objects.filter(
-            attribute_type='PROJECT', workspace_id=2).order_by('value', 'id')
-
-    destination_attributes = DestinationAttribute.objects.get(workspace_id=2, value='Nilesh Pant')
-
-    expense_attributes = ExpenseAttribute.objects.get(workspace_id=2, value=destination_attributes.value)
-    expense_attributes.value = 'sample'
-    expense_attributes.save()
-
-    paginated_ns_attributes = remove_duplicates(paginated_ns_attributes)
-
-    fyle_payload = create_fyle_projects_payload(
-        paginated_ns_attributes, existing_project_names)
-
-    assert fyle_payload[0]['name'] == data['fyle_project_payload'][0]['name']
-
-    expense_attributes.value = 'Nilesh Pant'
-    expense_attributes.save()
-    expense_attributes = ExpenseAttribute.objects.filter(workspace_id=2, value='Nilesh Pant')
-
-    mapping = Mapping.objects.get(source_type='PROJECT')
-    mapping.workspace_id = 2
-    mapping.source = expense_attributes.first()
-    mapping.save()
-
-    fyle_payload = create_fyle_projects_payload(
-        projects=[], existing_project_names=[], updated_projects=expense_attributes)
-    
-    assert fyle_payload[0]['name'] == data['fyle_project_payload'][0]['name']
-
 
 def test_create_cost_center_payload(db):
     existing_cost_center_names = ExpenseAttribute.objects.filter(
@@ -493,69 +457,6 @@ def test_auto_create_category_mappings(db, mocker):
 
     response = auto_create_category_mappings(workspace_id=1)
     assert response == None
-
-
-def test_auto_create_project_mappings(db, mocker):
-    workspace_id = 1
-
-    mocker.patch(
-        'fyle_integrations_platform_connector.apis.Projects.post_bulk',
-        return_value=[]
-    )
-    mocker.patch(
-        'fyle_integrations_platform_connector.apis.Projects.sync',
-        return_value=[]
-    )
-    mocker.patch(
-        'apps.netsuite.connector.NetSuiteConnector.sync_projects',
-        return_value=None
-    )
-    mocker.patch(
-        'apps.netsuite.connector.NetSuiteConnector.sync_customers',
-        return_value=None
-    )
-    mocker.patch(
-        'apps.mappings.tasks.create_fyle_projects_payload',
-        return_value=data['fyle_project_payload']
-    )
-
-    mocker.patch(
-        'netsuitesdk.api.customers.Customers.count',
-        return_value=len(netsuite_data['get_all_projects'][0])
-    )
-    workspace_id = 1
-
-    destination_attribute = DestinationAttribute.objects.filter(
-        mapping__isnull=False,
-        mapping__destination_type='PROJECT',
-        attribute_type='PROJECT',
-        workspace_id=workspace_id
-	).first()
-
-    destination_attribute.active = False
-    destination_attribute.save()
-
-    response = auto_create_project_mappings(workspace_id=workspace_id)
-    assert response == None
-
-    projects = DestinationAttribute.objects.filter(workspace_id=workspace_id, attribute_type='PROJECT', mapping__isnull=False).count()
-    mappings = Mapping.objects.filter(workspace_id=workspace_id, destination_type='PROJECT').count()
-
-    assert mappings == projects
-
-    with mock.patch('apps.netsuite.connector.NetSuiteConnector.sync_projects') as mock_call:
-        mock_call.side_effect = WrongParamsError(msg='wrong parameter error', response="wrong parameter error")
-        response = auto_create_project_mappings(workspace_id=1)
-
-        mock_call.side_effect = Exception()
-        response = auto_create_project_mappings(workspace_id=1)
-
-    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-    fyle_credentials.delete()
-
-    response = auto_create_project_mappings(workspace_id=workspace_id)
-    assert response == None
-
 
 def test_auto_create_cost_center_mappings(db, mocker):
     mocker.patch('fyle_integrations_platform_connector.apis.CostCenters.post_bulk')

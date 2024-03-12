@@ -5,6 +5,7 @@ from fyle_accounting_mappings.models import MappingSetting
 
 from apps.fyle.models import ExpenseGroupSettings
 from apps.mappings.helpers import schedule_or_delete_fyle_import_tasks
+from apps.mappings.schedules import new_schedule_or_delete_fyle_import_tasks
 from apps.mappings.tasks import (
     schedule_cost_centers_creation,
     schedule_fyle_attributes_creation,
@@ -12,6 +13,7 @@ from apps.mappings.tasks import (
 )
 from apps.workspaces.models import Configuration
 from django_q.tasks import async_task
+
 
 class ImportSettingsTrigger:
     """
@@ -80,6 +82,10 @@ class ImportSettingsTrigger:
         schedule_tax_groups_creation(import_tax_items=self.__configurations.get('import_tax_items'), workspace_id=self.__workspace_id)
 
         schedule_or_delete_fyle_import_tasks(configurations_instance)
+        new_schedule_or_delete_fyle_import_tasks(
+            configuration_instance=configurations_instance,
+            mapping_settings=self.__mapping_settings
+        )
 
         if not configurations_instance.import_items:
             async_task('apps.mappings.tasks.disable_category_for_items_mapping', q_options={'cluster': 'import'})
@@ -132,3 +138,7 @@ class ImportSettingsTrigger:
         self.__update_expense_group_settings_for_departments()
 
         schedule_or_delete_fyle_import_tasks(configurations_instance)
+        new_schedule_or_delete_fyle_import_tasks(
+            configuration_instance=configurations_instance,
+            mapping_settings=self.__mapping_settings
+        )

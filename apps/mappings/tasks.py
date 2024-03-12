@@ -1,16 +1,9 @@
 import logging
-import traceback
 from datetime import datetime, timedelta
-from django.db.models import Q
 
 from typing import List, Dict
-from dateutil import parser
 from django_q.tasks import Chain
 from django_q.models import Schedule
-
-from netsuitesdk import NetSuiteRateLimitError, NetSuiteLoginError
-
-from fyle.platform.exceptions import WrongParamsError, InvalidTokenError
 
 from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttribute, DestinationAttribute,\
     CategoryMapping, EmployeeMapping
@@ -581,7 +574,6 @@ def auto_import_and_map_fyle_fields(workspace_id):
     Auto import and map fyle fields
     """
     configuration: Configuration = Configuration.objects.get(workspace_id=workspace_id)
-    project_mapping = MappingSetting.objects.filter(source_field='PROJECT', workspace_id=configuration.workspace_id).first()
 
     chain = Chain()
 
@@ -590,9 +582,6 @@ def auto_import_and_map_fyle_fields(workspace_id):
 
     if configuration.import_categories or configuration.import_items:
         chain.append('apps.mappings.tasks.auto_create_category_mappings', workspace_id, q_options={'cluster': 'import'})
-
-    if project_mapping and project_mapping.import_to_fyle:
-        chain.append('apps.mappings.tasks.auto_create_project_mappings', workspace_id, q_options={'cluster': 'import'})
 
     if chain.length() > 0:
         chain.run()
@@ -618,96 +607,6 @@ def create_fyle_tax_group_payload(netsuite_attributes: List[DestinationAttribute
 
     logger.info("| Importing Tax Group to Fyle | Content: {{Fyle Payload count: {}}}".format(len(fyle_tax_group_payload)))            
     return fyle_tax_group_payload
-
-def create_fyle_projects_payload(projects: List[DestinationAttribute], existing_project_names: list,
-                                     updated_projects: List[ExpenseAttribute] = None):
-    """
-    Create Fyle Projects Payload from NetSuite Projects
-    :param existing_project_names: Existing Projects in Fyle
-    :param projects: NetSuite Projects
-    :return: Fyle Projects Payload
-    """
-    payload = []
-    if updated_projects:
-        for project in updated_projects:
-            destination_id_of_project = project.mapping.first().destination.destination_id
-            payload.append({
-                'id': project.source_id,
-                'name': project.value,
-                'code': destination_id_of_project,
-                'description': 'Project - {0}, Id - {1}'.format(
-                    project.value,
-                    destination_id_of_project
-                ),
-                'is_enabled': project.active
-            })
-    else:
-        existing_project_names = [project_name.lower() for project_name in existing_project_names]
-        for project in projects:
-            if project.value.lower() not in existing_project_names:
-                payload.append({
-                    'name': project.value,
-                    'code': project.destination_id,
-                    'description': 'Project - {0}, Id - {1}'.format(
-                        project.value,
-                        project.destination_id
-                    ),
-                    'is_enabled': True if project.active else project.active
-                })
-
-    logger.info("| Importing Projects to Fyle | Content: {{Fyle Payload count: {}}}".format(len(payload)))
-    return payload
-
-
-def post_projects_in_batches(platform: PlatformConnector, workspace_id: int, destination_field: str):
-    existing_project_names = ExpenseAttribute.objects.filter(
-        attribute_type='PROJECT', workspace_id=workspace_id).values_list('value', flat=True)
-    ns_attributes_count = DestinationAttribute.objects.filter(
-        attribute_type=destination_field, workspace_id=workspace_id).count()
-    page_size = 200
-
-    for offset in range(0, ns_attributes_count, page_size):
-        limit = offset + page_size
-        paginated_ns_attributes = DestinationAttribute.objects.filter(
-            attribute_type=destination_field, workspace_id=workspace_id).order_by('value', 'id')[offset:limit]
-
-        paginated_ns_attributes = remove_duplicates(paginated_ns_attributes)
-
-        fyle_payload: List[Dict] = create_fyle_projects_payload(
-            paginated_ns_attributes, existing_project_names)
-        if fyle_payload:
-            platform.projects.post_bulk(fyle_payload)
-            platform.projects.sync()
-
-        Mapping.bulk_create_mappings(paginated_ns_attributes, 'PROJECT', destination_field, workspace_id)
-    
-    if destination_field == 'PROJECT':
-        project_ids_to_be_changed = disable_expense_attributes('PROJECT', 'PROJECT', workspace_id)
-        if project_ids_to_be_changed:
-            expense_attributes = ExpenseAttribute.objects.filter(id__in=project_ids_to_be_changed)
-            fyle_payload: List[Dict] = create_fyle_projects_payload(projects=[], existing_project_names=[], updated_projects=expense_attributes)
-            platform.projects.post_bulk(fyle_payload)
-            platform.projects.sync()
-
-
-
-@handle_exceptions(task_name='Import Project to Fyle and Auto Create Mappings')
-def auto_create_project_mappings(workspace_id):
-    """
-    Create Project Mappings
-    """
-    fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
-
-    platform = PlatformConnector(fyle_credentials=fyle_credentials)
-    platform.projects.sync()
-
-    mapping_setting = MappingSetting.objects.get(
-        source_field='PROJECT', workspace_id=workspace_id
-    )
-
-    sync_netsuite_attribute(mapping_setting.destination_field, workspace_id)
-
-    post_projects_in_batches(platform, workspace_id, mapping_setting.destination_field)
 
 
 @handle_exceptions(task_name='Auto Map Employees')

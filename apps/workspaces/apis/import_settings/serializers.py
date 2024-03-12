@@ -84,10 +84,10 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
         model = Workspace
         fields = ['configuration', 'mapping_settings', 'workspace_id']
         read_only_fields = ['workspace_id']
-    
+
     def get_workspace_id(self, instance):
         return instance.id
-    
+
     def update(self, instance, validated_data):
 
         configurations = validated_data.pop('configuration')
