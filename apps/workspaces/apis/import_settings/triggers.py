@@ -7,7 +7,6 @@ from apps.fyle.models import ExpenseGroupSettings
 from apps.mappings.helpers import schedule_or_delete_fyle_import_tasks
 from apps.mappings.schedules import new_schedule_or_delete_fyle_import_tasks
 from apps.mappings.tasks import (
-    schedule_cost_centers_creation,
     schedule_fyle_attributes_creation,
     schedule_tax_groups_creation,
 )
@@ -107,14 +106,12 @@ class ImportSettingsTrigger:
         """
         mapping_settings = self.__mapping_settings
 
-        cost_center_mapping_available = False
-
         for setting in mapping_settings:
             if setting['source_field'] == 'COST_CENTER':
-                cost_center_mapping_available = True
-
-        if not cost_center_mapping_available:
-            schedule_cost_centers_creation(False, self.__workspace_id)
+                new_schedule_or_delete_fyle_import_tasks(
+                    configuration_instance=Configuration.objects.get(workspace_id=self.__workspace_id),
+                    mapping_settings=mapping_settings
+                )
 
         schedule_fyle_attributes_creation(self.__workspace_id)
 
