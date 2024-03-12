@@ -63,7 +63,7 @@ class ConfigurationsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Configuration
         fields = [
-            'import_categories', 
+            'import_categories',
             'import_vendors_as_merchants',
             'import_items',
             'import_tax_items',

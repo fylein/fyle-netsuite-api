@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'fyle_rest_auth',
     'fyle_accounting_mappings',
+    'fyle_integrations_imports'
 
     # User Created Apps
     'apps.users',
@@ -175,6 +176,11 @@ LOGGING = {
             'handlers': ['request_logs'],
             'level': 'INFO',
             'propagate': False
+        },
+        'fyle_integrations_imports': {
+            'handlers': ['debug_logs'],
+            'level': 'INFO',
+            'propagate': True
         }
     }
 }
@@ -287,6 +293,7 @@ FYLE_CLIENT_SECRET = os.environ.get('FYLE_CLIENT_SECRET')
 FYLE_BASE_URL = os.environ.get('FYLE_BASE_URL')
 FYLE_APP_URL = os.environ.get('APP_URL')
 FYLE_EXPENSE_URL = os.environ.get('FYLE_APP_URL')
+FYLE_NETSUITE_URL = os.environ.get('FYLE_NETSUITE_URL')
 
 # Netsuite Settings
 NS_CONSUMER_KEY = os.environ.get('NS_CONSUMER_KEY')
