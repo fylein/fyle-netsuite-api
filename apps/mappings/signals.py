@@ -9,7 +9,7 @@ from fyle_accounting_mappings.models import MappingSetting, EmployeeMapping, Map
 
 from apps.mappings.tasks import upload_attributes_to_fyle, schedule_cost_centers_creation,\
     schedule_fyle_attributes_creation
-from apps.mappings.helpers import schedule_or_delete_fyle_import_tasks
+from apps.mappings.schedules import new_schedule_or_delete_fyle_import_tasks
 from apps.netsuite.helpers import schedule_payment_sync
 from apps.workspaces.models import Configuration
 from apps.workspaces.tasks import delete_cards_mapping_settings
@@ -80,7 +80,12 @@ def run_post_mapping_settings_triggers(sender, instance: MappingSetting, **kwarg
     """
     configuration = Configuration.objects.filter(workspace_id=instance.workspace_id).first()
     if instance.source_field == 'PROJECT':
-        schedule_or_delete_fyle_import_tasks(configuration)
+        new_schedule_or_delete_fyle_import_tasks(
+            configuration_instance=configuration,
+            mapping_settings=MappingSetting.objects.filter(
+                workspace_id=instance.workspace_id
+            ).values()
+        )
 
     if instance.source_field == 'COST_CENTER':
         schedule_cost_centers_creation(instance.import_to_fyle, int(instance.workspace_id))
@@ -90,6 +95,7 @@ def run_post_mapping_settings_triggers(sender, instance: MappingSetting, **kwarg
 
     if configuration:
         delete_cards_mapping_settings(configuration)
+
 
 @receiver(pre_save, sender=MappingSetting)
 def run_pre_mapping_settings_triggers(sender, instance: MappingSetting, **kwargs):
@@ -116,6 +122,7 @@ def run_pre_mapping_settings_triggers(sender, instance: MappingSetting, **kwargs
             instance.source_field,
             q_options={'cluster': 'import'}
         )
+
 
 @receiver(post_save, sender=GeneralMapping)
 def run_post_general_mapping_triggers(sender, instance: GeneralMapping, **kwargs):
