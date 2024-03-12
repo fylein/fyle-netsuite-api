@@ -48,7 +48,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'fyle_rest_auth',
     'fyle_accounting_mappings',
-    'fyle_integrations_imports'
+    'fyle_integrations_imports',
 
     # User Created Apps
     'apps.users',
