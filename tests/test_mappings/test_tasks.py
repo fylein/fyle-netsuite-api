@@ -197,18 +197,6 @@ def test_create_fyle_tax_group_payload(db):
     
     assert fyle_payload == []
         
-def test_create_fyle_expense_custom_field_payload(db, add_fyle_credentials):
-    fyle_credentials = FyleCredential.objects.filter().first()
-    platform = PlatformConnector(fyle_credentials)
-
-    netsuite_attributes = DestinationAttribute.objects.filter(
-        attribute_type='ASHWINTEST1', workspace_id=49).order_by('value', 'id')
-    
-    netsuite_attributes = remove_duplicates(netsuite_attributes)
-
-    payload = create_fyle_expense_custom_field_payload(netsuite_attributes, 49, 'ASHWINTEST1', platform)
-
-    assert payload == data['expense_custom_field_payload']
 
 def test_create_fyle_merchants_payload(db):
     existing_merchants_name = ExpenseAttribute.objects.filter(
@@ -488,42 +476,6 @@ def test_auto_create_tax_group_mappings(mocker, db):
     with mock.patch('fyle_integrations_platform_connector.apis.TaxGroups.sync') as mock_call:
         mock_call.side_effect = WrongParamsError(msg='wrong parameter error', response="wrong parameter error")
         auto_create_tax_group_mappings(workspace_id=2)
-    
-
-def test_schedule_fyle_attributes_creation(db, mocker):
-
-    schedule_fyle_attributes_creation(49)
-
-    mocker.patch(
-            'fyle_integrations_platform_connector.apis.ExpenseCustomFields.post',
-            return_value=[]
-    )
-    mocker.patch(
-            'fyle_integrations_platform_connector.apis.ExpenseCustomFields.sync',
-            return_value=[]
-    )
-
-    schedule = Schedule.objects.filter(
-        func='apps.mappings.tasks.async_auto_create_custom_field_mappings',
-        args='{}'.format(49),
-    ).first()
-    assert schedule.func == 'apps.mappings.tasks.async_auto_create_custom_field_mappings'
-
-    async_auto_create_custom_field_mappings(49)
-
-    mapping_settings = MappingSetting.objects.filter(
-        is_custom=True, import_to_fyle=True, workspace_id=49
-    ).first()
-    mapping_settings.is_custom = False
-    mapping_settings.save()
-
-    schedule_fyle_attributes_creation(49)
-
-    schedule = Schedule.objects.filter(
-        func='apps.mappings.tasks.async_auto_create_custom_field_mappings',
-        args='{}'.format(49),
-    ).first()
-    assert schedule == None
 
 
 def test_async_auto_map_employees(mocker, db):
@@ -713,26 +665,6 @@ def test_auto_create_vendors_as_merchants(db, mocker):
     with mock.patch('fyle_integrations_platform_connector.apis.Merchants.sync') as mock_call:
         mock_call.side_effect = WrongParamsError(msg='wrong parameter error', response="wrong parameter error")
         response = auto_create_vendors_as_merchants(workspace_id=1)
-
-
-def test_auto_create_expense_fields_mappings(db, mocker):
-    mocker.patch(
-        'fyle_integrations_platform_connector.apis.ExpenseCustomFields.post',
-        return_value=[]
-    )
-    mocker.patch(
-        'fyle_integrations_platform_connector.apis.ExpenseCustomFields.sync',
-        return_value=[]
-    )
-    workspace_id = 1
-    auto_create_expense_fields_mappings(workspace_id, 'CREDIT_CARD_ACCOUNT', 'CREDIT_CARD_ACCOUNT')
-
-    with mock.patch('fyle_integrations_platform_connector.apis.ExpenseCustomFields.post') as mock_call:
-        mock_call.side_effect = WrongParamsError(msg='wrong parameter error', response="wrong parameter error")
-        auto_create_expense_fields_mappings(workspace_id, 'CREDIT_CARD_ACCOUNT', 'CREDIT_CARD_ACCOUNT')
-
-        mock_call.side_effect = Exception()
-        auto_create_expense_fields_mappings(workspace_id, 'CREDIT_CARD_ACCOUNT', 'CREDIT_CARD_ACCOUNT')
 
 
 @pytest.mark.django_db

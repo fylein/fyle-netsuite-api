@@ -41,7 +41,7 @@ def construct_tasks_and_chain_import_fields_to_fyle(workspace_id: int):
 
     if mapping_settings:
         for mapping_setting in mapping_settings:
-            if mapping_setting.source_field in ALLOWED_SOURCE_FIELDS:
+            if mapping_setting.source_field in ALLOWED_SOURCE_FIELDS or mapping_setting.is_custom:
                 task_settings['mapping_settings'].append(
                     {
                         'source_field': mapping_setting.source_field,
