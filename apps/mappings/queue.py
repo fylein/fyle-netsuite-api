@@ -35,7 +35,8 @@ def construct_tasks_and_chain_import_fields_to_fyle(workspace_id: int):
     }
 
     ALLOWED_SOURCE_FIELDS = [
-        'PROJECT'
+        'PROJECT',
+        'COST_CENTER'
     ]
 
     if mapping_settings:

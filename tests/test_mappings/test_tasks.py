@@ -183,18 +183,6 @@ def test_construct_filter_based_on_destination(test_input, expected):
     filter = construct_filter_based_on_destination(test_input)
     assert filter == expected
 
-def test_create_cost_center_payload(db):
-    existing_cost_center_names = ExpenseAttribute.objects.filter(
-        attribute_type='COST_CENTER', workspace_id=1).values_list('value', flat=True)
-    
-    netsuite_attributes = DestinationAttribute.objects.filter(
-            attribute_type='CLASS', workspace_id=1).order_by('value', 'id')
-    
-    netsuite_attributes = remove_duplicates(netsuite_attributes)
-
-    cost_center_payload = create_fyle_cost_centers_payload(netsuite_attributes, existing_cost_center_names)
-    assert cost_center_payload[0] == data['cost_center_payload'][0]
-
 def test_create_fyle_tax_group_payload(db):
     existing_tax_items_name = ExpenseAttribute.objects.filter(
         attribute_type='TAX_GROUP', workspace_id=2).values_list('value', flat=True)
@@ -365,23 +353,6 @@ def test_filter_unmapped_destinations(db, mocker):
     destination_attributes = filter_unmapped_destinations('EXPENSE_CATEGORY', netsuite_attributes)
     assert len(destination_attributes) == 33
 
-
-def test_schedule_creation(db):
-    schedule_cost_centers_creation(True, 1)
-
-    schedule = Schedule.objects.filter(
-        func='apps.mappings.tasks.auto_create_cost_center_mappings',
-        args='{}'.format(1),
-    ).first()
-    assert schedule.func == 'apps.mappings.tasks.auto_create_cost_center_mappings'
-
-    schedule_cost_centers_creation(False, 1)
-    schedule: Schedule = Schedule.objects.filter(
-        func='apps.mappings.tasks.auto_create_cost_center_mappings',
-        args='{}'.format(1)
-    ).first()
-    assert schedule == None
-
 def test_auto_create_category_mappings(db, mocker):
     mocker.patch('fyle_integrations_platform_connector.apis.Categories.post_bulk')
 
@@ -457,49 +428,6 @@ def test_auto_create_category_mappings(db, mocker):
 
     response = auto_create_category_mappings(workspace_id=1)
     assert response == None
-
-def test_auto_create_cost_center_mappings(db, mocker):
-    mocker.patch('fyle_integrations_platform_connector.apis.CostCenters.post_bulk')
-
-    mocker.patch(
-        'fyle.platform.apis.v1beta.admin.CostCenters.list_all',
-        return_value=fyle_data['get_all_cost_centers']
-    )
-
-    mocker.patch(
-        'netsuitesdk.api.departments.Departments.get_all_generator',
-        return_value=netsuite_data['get_all_departments']
-    )
-    
-    response = auto_create_cost_center_mappings(workspace_id=1)
-    assert response == None
-
-    cost_center = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='DEPARTMENT').count()
-    mappings = Mapping.objects.filter(workspace_id=1, source_type='COST_CENTER').count()
-
-    assert cost_center == 13
-    assert mappings == 3
-
-    # Sales and Cross - Included
-    category = ExpenseAttribute.objects.filter(value='Sales and Cross - Exempted', workspace_id = 1).first()
-
-    assert category == None
-
-    category = ExpenseAttribute.objects.filter(value='Sales and Cross - Included', workspace_id = 1).first()
-
-    assert category != None
-    assert category.value == 'Sales and Cross - Included'
-
-    fyle_credentials = FyleCredential.objects.get(workspace_id=1)
-    fyle_credentials.delete()
-
-    response = auto_create_cost_center_mappings(workspace_id=1)
-    assert response == None
-
-    with mock.patch('fyle_integrations_platform_connector.apis.CostCenters.sync') as mock_call:
-        mock_call.side_effect = WrongParamsError(msg='wrong parameter error', response="wrong parameter error")
-        response = auto_create_cost_center_mappings(workspace_id=1)
-
 
 def test_schedule_tax_group_creation(db):
     workspace_id=2
