@@ -7,8 +7,7 @@ from apps.fyle.models import ExpenseGroupSettings
 from apps.mappings.helpers import schedule_or_delete_fyle_import_tasks
 from apps.mappings.schedules import new_schedule_or_delete_fyle_import_tasks
 from apps.mappings.tasks import (
-    schedule_fyle_attributes_creation,
-    schedule_tax_groups_creation,
+    schedule_tax_groups_creation
 )
 from apps.workspaces.models import Configuration
 from django_q.tasks import async_task
@@ -113,7 +112,10 @@ class ImportSettingsTrigger:
                     mapping_settings=mapping_settings
                 )
 
-        schedule_fyle_attributes_creation(self.__workspace_id)
+        new_schedule_or_delete_fyle_import_tasks(
+            configuration_instance=Configuration.objects.get(workspace_id=self.__workspace_id),
+            mapping_settings=mapping_settings
+        )
 
         # Removal of department grouping will be taken care from post_delete() signal
 
