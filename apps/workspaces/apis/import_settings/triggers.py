@@ -100,13 +100,6 @@ class ImportSettingsTrigger:
         """
         mapping_settings = self.__mapping_settings
 
-        for setting in mapping_settings:
-            if setting['source_field'] == 'COST_CENTER':
-                new_schedule_or_delete_fyle_import_tasks(
-                    configuration_instance=Configuration.objects.get(workspace_id=self.__workspace_id),
-                    mapping_settings=mapping_settings
-                )
-
         new_schedule_or_delete_fyle_import_tasks(
             configuration_instance=Configuration.objects.get(workspace_id=self.__workspace_id),
             mapping_settings=mapping_settings
