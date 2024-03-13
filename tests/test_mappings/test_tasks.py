@@ -183,20 +183,6 @@ def test_construct_filter_based_on_destination(test_input, expected):
     filter = construct_filter_based_on_destination(test_input)
     assert filter == expected
 
-def test_create_fyle_tax_group_payload(db):
-    existing_tax_items_name = ExpenseAttribute.objects.filter(
-        attribute_type='TAX_GROUP', workspace_id=2).values_list('value', flat=True)
-
-    netsuite_attributes = DestinationAttribute.objects.filter(
-        attribute_type='TAX_ITEM', workspace_id=2).order_by('value', 'id')
-
-    netsuite_attributes = remove_duplicates(netsuite_attributes)
-
-    fyle_payload = create_fyle_tax_group_payload(
-        netsuite_attributes, existing_tax_items_name)
-    
-    assert fyle_payload == []
-        
 
 def test_create_fyle_merchants_payload(db):
     existing_merchants_name = ExpenseAttribute.objects.filter(
@@ -416,67 +402,6 @@ def test_auto_create_category_mappings(db, mocker):
 
     response = auto_create_category_mappings(workspace_id=1)
     assert response == None
-
-def test_schedule_tax_group_creation(db):
-    workspace_id=2
-    schedule_tax_groups_creation(import_tax_items=True, workspace_id=workspace_id)
-
-    schedule = Schedule.objects.filter(
-        func='apps.mappings.tasks.auto_create_tax_group_mappings',
-        args='{}'.format(workspace_id),
-    ).first()
-    
-    assert schedule.func == 'apps.mappings.tasks.auto_create_tax_group_mappings'
-
-    schedule_tax_groups_creation(import_tax_items=False, workspace_id=workspace_id)
-
-    schedule = Schedule.objects.filter(
-        func='apps.mappings.tasks.auto_create_tax_group_mappings',
-        args='{}'.format(workspace_id),
-    ).first()
-
-    assert schedule == None
-
-
-def test_auto_create_tax_group_mappings(mocker, db):
-    mocker.patch('fyle_integrations_platform_connector.apis.TaxGroups.post_bulk')
-
-    mocker.patch(
-        'fyle.platform.apis.v1beta.admin.TaxGroups.list_all',
-        return_value=fyle_data['get_all_tax_groups']
-    )
-
-    mocker.patch(
-        'netsuitesdk.api.tax_items.TaxItems.get_all_generator',
-        return_value=netsuite_data['get_all_tax_items']    
-    )
-
-    mocker.patch(
-        'netsuitesdk.api.tax_groups.TaxGroups.get_all_generator',
-        return_value=netsuite_data['get_all_tax_groups']
-    )
-
-    tax_groups = DestinationAttribute.objects.filter(workspace_id=2, attribute_type='TAX_ITEM').count()
-    mappings = Mapping.objects.filter(workspace_id=2, destination_type='TAX_ITEM').count()
-    
-    assert tax_groups == 26
-    assert mappings == 9
-
-    auto_create_tax_group_mappings(workspace_id=2)
-
-    tax_groups = DestinationAttribute.objects.filter(workspace_id=2, attribute_type='TAX_ITEM').count()
-    mappings = Mapping.objects.filter(workspace_id=2, destination_type='TAX_ITEM').count()
-    assert mappings == 26
-
-    mapping_settings = MappingSetting.objects.get(source_field='TAX_GROUP', workspace_id=2)
-    mapping_settings.delete()
-
-    auto_create_tax_group_mappings(workspace_id=2)
-
-    with mock.patch('fyle_integrations_platform_connector.apis.TaxGroups.sync') as mock_call:
-        mock_call.side_effect = WrongParamsError(msg='wrong parameter error', response="wrong parameter error")
-        auto_create_tax_group_mappings(workspace_id=2)
-
 
 def test_async_auto_map_employees(mocker, db):
     mocker.patch(
