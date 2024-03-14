@@ -21,6 +21,7 @@ def new_schedule_or_delete_fyle_import_tasks(
 
     if (
         task_to_be_scheduled
+        or configuration_instance.import_tax_items
     ):
         Schedule.objects.update_or_create(
             func='apps.mappings.queue.construct_tasks_and_chain_import_fields_to_fyle',

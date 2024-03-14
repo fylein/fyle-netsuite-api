@@ -5,7 +5,6 @@ from django.db import transaction
 from django.db.models import Q
 
 from apps.workspaces.models import Workspace, Configuration
-from apps.mappings.models import GeneralMapping
 
 
 class MappingSettingFilteredListSerializer(serializers.ListSerializer):
@@ -110,7 +109,7 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
         trigger.pre_save_mapping_settings()
 
         if configurations['import_tax_items']:
-            mapping_settings.append({'source_field': 'TAX_GROUP', 'destination_field': 'TAX_CODE', 'import_to_fyle': True, 'is_custom': False})
+            mapping_settings.append({'source_field': 'TAX_GROUP', 'destination_field': 'TAX_ITEM', 'import_to_fyle': True, 'is_custom': False})
 
         mapping_settings.append({'source_field': 'CATEGORY', 'destination_field': 'ACCOUNT', 'import_to_fyle': False, 'is_custom': False})
 
@@ -132,7 +131,7 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
         if instance.onboarding_state == 'IMPORT_SETTINGS':
             instance.onboarding_state = 'ADVANCED_CONFIGURATION'
             instance.save()
-        
+
         return instance
 
     def validate(self, data):

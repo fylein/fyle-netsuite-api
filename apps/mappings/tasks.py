@@ -1,11 +1,11 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from typing import List, Dict
 from django_q.tasks import Chain
 from django_q.models import Schedule
 
-from fyle_accounting_mappings.models import Mapping, MappingSetting, ExpenseAttribute, DestinationAttribute,\
+from fyle_accounting_mappings.models import Mapping, ExpenseAttribute, DestinationAttribute,\
     CategoryMapping, EmployeeMapping
 from fyle_accounting_mappings.helpers import EmployeesAutoMappingHelper
 
@@ -461,67 +461,6 @@ def create_category_mappings(destination_attributes: List[DestinationAttribute],
 
     bulk_create_update_category_mappings(mapping_creation_batch)
 
-@handle_exceptions(task_name='Import Tax Group to Fyle and Auto Create Mappings')
-def auto_create_tax_group_mappings(workspace_id):
-    """
-    Create Tax Groups Mappings
-    :return: None
-    """
-    fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
-
-    fyle_connection = PlatformConnector(fyle_credentials)
-
-    fyle_connection.tax_groups.sync()
-
-    mapping_setting = MappingSetting.objects.get(
-        source_field='TAX_GROUP', workspace_id=workspace_id
-    )
-
-    sync_netsuite_attribute(mapping_setting.destination_field, workspace_id)
-    post_tax_groups(fyle_connection, workspace_id)
-
-
-def schedule_tax_groups_creation(import_tax_items, workspace_id):
-    if import_tax_items:
-        schedule, _ = Schedule.objects.update_or_create(
-            func='apps.mappings.tasks.auto_create_tax_group_mappings',
-            cluster='import',
-            args='{}'.format(workspace_id),
-            defaults={
-                'schedule_type': Schedule.MINUTES,
-                'minutes': 24 * 60,
-                'next_run': datetime.now()
-            }
-        )
-    else:
-        schedule: Schedule = Schedule.objects.filter(
-            func='apps.mappings.tasks.auto_create_tax_group_mappings',
-            args='{}'.format(workspace_id),
-        ).first()
-
-        if schedule:
-            schedule.delete()
-
-def post_tax_groups(platform_connection: PlatformConnector, workspace_id: int):
-    existing_tax_items_name = ExpenseAttribute.objects.filter(
-        attribute_type='TAX_GROUP', workspace_id=workspace_id).values_list('value', flat=True)
-
-    netsuite_attributes = DestinationAttribute.objects.filter(
-        attribute_type='TAX_ITEM', workspace_id=workspace_id).order_by('value', 'id')
-
-    netsuite_attributes = remove_duplicates(netsuite_attributes)
-
-    fyle_payload: List[Dict] = create_fyle_tax_group_payload(
-        netsuite_attributes, existing_tax_items_name)
-    
-    if fyle_payload:
-        platform_connection.tax_groups.post_bulk(fyle_payload)
-
-    platform_connection.tax_groups.sync()
-    Mapping.bulk_create_mappings(netsuite_attributes, 'TAX_GROUP', 'TAX_ITEM', workspace_id)
-    resolve_expense_attribute_errors(
-        source_attribute_type='TAX_GROUP', workspace_id=workspace_id
-    )
 
 @handle_exceptions(task_name='Import Category to Fyle and Auto Create Mappings')
 def auto_create_category_mappings(workspace_id):
@@ -584,28 +523,6 @@ def auto_import_and_map_fyle_fields(workspace_id):
 
     if chain.length() > 0:
         chain.run()
-
-
-def create_fyle_tax_group_payload(netsuite_attributes: List[DestinationAttribute], existing_fyle_tax_groups: list):
-    """
-    Create Fyle Tax Group Payload from Netsuite Objects
-    :param existing_fyle_tax_groups: Existing tax group names
-    :param netsuite_attributes: Netsuite Objects Objects
-    :return: Fyle Tax Group Payload
-    """
-    fyle_tax_group_payload = []
-    for netsuite_attribute in netsuite_attributes:
-        if netsuite_attribute.value not in existing_fyle_tax_groups:
-            fyle_tax_group_payload.append(
-                {
-                    'name': netsuite_attribute.value,
-                    'is_enabled': True,
-                    'percentage': round((netsuite_attribute.detail['tax_rate']/100), 2)
-                }
-            )
-
-    logger.info("| Importing Tax Group to Fyle | Content: {{Fyle Payload count: {}}}".format(len(fyle_tax_group_payload)))            
-    return fyle_tax_group_payload
 
 
 @handle_exceptions(task_name='Auto Map Employees')
