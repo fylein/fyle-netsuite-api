@@ -24,6 +24,7 @@ def new_schedule_or_delete_fyle_import_tasks(
         or configuration_instance.import_tax_items
         or configuration_instance.import_categories
         or configuration_instance.import_items
+        or configuration_instance.import_vendors_as_merchants
     ):
         Schedule.objects.update_or_create(
             func='apps.mappings.queue.construct_tasks_and_chain_import_fields_to_fyle',

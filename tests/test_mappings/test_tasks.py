@@ -87,20 +87,6 @@ def test_remove_duplicates(db):
     assert len(attributes) == 20
 
 
-def test_create_fyle_merchants_payload(db):
-    existing_merchants_name = ExpenseAttribute.objects.filter(
-        attribute_type='MERCHANT', workspace_id=2).values_list('value', flat=True)
-
-    netsuite_attributes = DestinationAttribute.objects.filter(
-        attribute_type='VENDOR', workspace_id=2).order_by('value', 'id')
-
-    netsuite_attributes = remove_duplicates(netsuite_attributes)
-
-    fyle_payload = create_fyle_merchants_payload(
-        netsuite_attributes, existing_merchants_name)
-    assert len(fyle_payload) == 7
-
-
 def test_async_auto_map_employees(mocker, db):
     mocker.patch(
         'netsuitesdk.api.vendors.Vendors.get_all_generator',
@@ -251,60 +237,6 @@ def test_async_auto_map_ccc_account(db, mocker):
     async_auto_map_ccc_account(workspace_id=1)
     employee_mappings = EmployeeMapping.objects.filter(workspace_id=1).count()
     assert employee_mappings == 42
-
-
-def test_auto_create_vendors_as_merchants(db, mocker):
-    mocker.patch('fyle_integrations_platform_connector.apis.Merchants.post')
-
-    mocker.patch(
-        'fyle.platform.apis.v1beta.admin.ExpenseFields.list_all',
-        return_value=fyle_data['get_all_expense_fields']
-    )
-    
-    mocker.patch(
-        'netsuitesdk.api.vendors.Vendors.get_all_generator',
-        return_value=netsuite_data['get_all_vendors']    
-    )
-
-    vendors = DestinationAttribute.objects.filter(workspace_id=49, attribute_type='VENDOR').count()
-    expense_attribute = ExpenseAttribute.objects.filter(workspace_id=49, attribute_type='MERCHANT').count()
-    assert vendors == 7
-    assert expense_attribute == 0
-
-    auto_create_vendors_as_merchants(workspace_id=49)
-    
-    vendors = DestinationAttribute.objects.filter(workspace_id=49, attribute_type='VENDOR').count()
-    expense_attribute = ExpenseAttribute.objects.filter(workspace_id=49, attribute_type='MERCHANT').count()
-    assert expense_attribute == 12
-    assert vendors == 7
-
-    fyle_credentials = FyleCredential.objects.get(workspace_id=1)
-    fyle_credentials.delete()
-
-    response = auto_create_vendors_as_merchants(workspace_id=1)
-
-    assert response == None
-
-    with mock.patch('fyle_integrations_platform_connector.apis.Merchants.sync') as mock_call:
-        mock_call.side_effect = WrongParamsError(msg='wrong parameter error', response="wrong parameter error")
-        response = auto_create_vendors_as_merchants(workspace_id=1)
-
-
-@pytest.mark.django_db
-def test_post_merchants(db, mocker):
-    mocker.patch('fyle_integrations_platform_connector.apis.Merchants.post')
-    mocker.patch(
-        'fyle.platform.apis.v1beta.admin.ExpenseFields.list_all',
-        return_value=fyle_data['get_all_expense_fields']
-    )
-
-    fyle_credentials = FyleCredential.objects.all()
-    fyle_credentials = FyleCredential.objects.get(workspace_id=49) 
-    fyle_connection = PlatformConnector(fyle_credentials)
-    post_merchants(fyle_connection, 49)
-
-    expense_attribute = ExpenseAttribute.objects.filter(attribute_type='MERCHANT', workspace_id=49).count()
-    assert expense_attribute == 12
 
 
 def test_schedule_netsuite_employee_creation_on_fyle(db):

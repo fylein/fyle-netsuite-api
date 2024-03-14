@@ -4,7 +4,6 @@ from django.db.models import Q
 from fyle_accounting_mappings.models import MappingSetting
 
 from apps.fyle.models import ExpenseGroupSettings
-from apps.mappings.helpers import schedule_or_delete_fyle_import_tasks
 from apps.mappings.schedules import new_schedule_or_delete_fyle_import_tasks
 from apps.workspaces.models import Configuration
 
@@ -73,7 +72,6 @@ class ImportSettingsTrigger:
         """
         Post save action for workspace general settings
         """
-        schedule_or_delete_fyle_import_tasks(configurations_instance)
         new_schedule_or_delete_fyle_import_tasks(
             configuration_instance=configurations_instance,
             mapping_settings=self.__mapping_settings
@@ -120,7 +118,6 @@ class ImportSettingsTrigger:
 
         self.__update_expense_group_settings_for_departments()
 
-        schedule_or_delete_fyle_import_tasks(configurations_instance)
         new_schedule_or_delete_fyle_import_tasks(
             configuration_instance=configurations_instance,
             mapping_settings=self.__mapping_settings

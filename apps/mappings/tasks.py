@@ -2,7 +2,6 @@ import logging
 from datetime import datetime
 
 from typing import List, Dict
-from django_q.tasks import Chain
 from django_q.models import Schedule
 
 from fyle_accounting_mappings.models import Mapping, ExpenseAttribute, DestinationAttribute,\
@@ -90,21 +89,6 @@ def remove_duplicates(ns_attributes: List[DestinationAttribute]):
             attribute_values.append(attribute.value.lower())
 
     return unique_attributes
-
-
-def auto_import_and_map_fyle_fields(workspace_id):
-    """
-    Auto import and map fyle fields
-    """
-    configuration: Configuration = Configuration.objects.get(workspace_id=workspace_id)
-
-    chain = Chain()
-
-    if configuration.import_vendors_as_merchants:
-        chain.append('apps.mappings.tasks.auto_create_vendors_as_merchants', workspace_id, q_options={'cluster': 'import'})
-
-    if chain.length() > 0:
-        chain.run()
 
 
 @handle_exceptions(task_name='Auto Map Employees')
@@ -222,45 +206,6 @@ def sync_netsuite_attribute(netsuite_attribute_type: str, workspace_id: int):
 
     else:
         ns_connection.sync_custom_segments()
-
-
-def create_fyle_merchants_payload(vendors, existing_merchants_name):
-    payload: List[str] = []
-    for vendor in vendors:
-        if vendor.value not in existing_merchants_name:
-            payload.append(vendor.value)
-
-    logger.info("| Importing Merchants to Fyle | Content: {{Fyle Payload count: {}}}".format(len(payload)))
-    return payload
-
-
-def post_merchants(platform_connection: PlatformConnector, workspace_id: int):
-    existing_merchants_name = ExpenseAttribute.objects.filter(
-        attribute_type='MERCHANT', workspace_id=workspace_id).values_list('value', flat=True)
-
-    netsuite_attributes = DestinationAttribute.objects.filter(
-        attribute_type='VENDOR',
-        workspace_id=workspace_id,
-    ).order_by('value', 'id')
-
-    netsuite_attributes = remove_duplicates(netsuite_attributes)
-    fyle_payload: List[str] = create_fyle_merchants_payload(
-        netsuite_attributes, existing_merchants_name)
-
-    if fyle_payload:
-        platform_connection.merchants.post(fyle_payload)
-
-    platform_connection.merchants.sync()
-
-
-@handle_exceptions(task_name='Import Merchant to Fyle from NetSuite')
-def auto_create_vendors_as_merchants(workspace_id):
-    fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
-    fyle_connection = PlatformConnector(fyle_credentials)
-    fyle_connection.merchants.sync()
-
-    sync_netsuite_attribute('VENDOR', workspace_id)
-    post_merchants(fyle_connection, workspace_id)
 
 
 def create_fyle_department_payload(department_name: str, parent_department: str, existing_departments: Dict):
