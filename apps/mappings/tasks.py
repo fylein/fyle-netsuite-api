@@ -20,6 +20,7 @@ from .exceptions import handle_exceptions
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
+
 def get_mapped_attributes_ids(source_attribute_type: str, destination_attribute_type: str, errored_attribute_ids: List[int]):
 
     mapped_attribute_ids = []
@@ -77,6 +78,7 @@ def resolve_expense_attribute_errors(
         if mapped_attribute_ids:
             Error.objects.filter(expense_attribute_id__in=mapped_attribute_ids).update(is_resolved=True)
 
+
 def remove_duplicates(ns_attributes: List[DestinationAttribute]):
     unique_attributes = []
 
@@ -89,423 +91,6 @@ def remove_duplicates(ns_attributes: List[DestinationAttribute]):
 
     return unique_attributes
 
-@handle_exceptions(task_name='Disable Category for Items Mapping')
-def disable_category_for_items_mapping(configuration: Configuration):
-    """
-    Disable Category for Items Mapping
-    :param configuration: Workspace General Settings
-    :return: None
-    """
-    workspace_id = configuration.workspace_id
-
-    fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
-    platform = PlatformConnector(fyle_credentials)
-    platform.categories.sync()
-
-    netsuite_credentials: NetSuiteCredentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
-
-    netsuite_connection = NetSuiteConnector(
-        netsuite_credentials=netsuite_credentials,
-        workspace_id=workspace_id
-    )
-
-    netsuite_connection.sync_items()
-
-    category_ids_to_be_disabled = disable_expense_attributes('CATEGORY', 'ACCOUNT', workspace_id, display_name='Item')
-    if category_ids_to_be_disabled:
-        expense_attributes = ExpenseAttribute.objects.filter(id__in=category_ids_to_be_disabled)
-        fyle_payload: List[Dict] = create_fyle_categories_payload(categories=[], category_map={}, updated_categories=expense_attributes, destination_type='ACCOUNT')
-        platform.categories.post_bulk(fyle_payload)
-        platform.categories.sync()
-
-
-def disable_expense_attributes(source_field, destination_field, workspace_id, display_name:str=None):
-
-    # Get All the inactive destination attribute ids
-    filter = {
-        'mapping__isnull': False,
-        'mapping__destination_type': destination_field
-    }
-
-    if source_field == 'CATEGORY':
-        if destination_field == 'EXPENSE_CATEGORY':
-            filter = {
-                'destination_expense_head__isnull': False
-            }
-        elif destination_field == 'ACCOUNT':
-            filter = {
-                'destination_account__isnull': False
-            }
-    
-    if display_name:
-        filter['display_name'] = display_name
-
-    destination_attribute_ids = DestinationAttribute.objects.filter(
-        attribute_type=destination_field,
-        active=False,
-        workspace_id=workspace_id,
-        **filter
-    ).values_list('id', flat=True)
-
-    # Get all the expense attributes that are mapped to these destination_attribute_ids
-    filter = {
-        'mapping__destination_id__in': destination_attribute_ids
-    }
-
-    if source_field == 'CATEGORY':
-        if destination_field == 'EXPENSE_CATEGORY':
-            filter = {
-                'categorymapping__destination_expense_head_id__in': destination_attribute_ids
-            }
-        elif destination_field == 'ACCOUNT':
-            filter = {
-                'categorymapping__destination_account_id__in': destination_attribute_ids
-            }
-
-    expense_attributes_to_disable = ExpenseAttribute.objects.filter(
-        attribute_type=source_field,
-        active=True,
-        **filter
-    )
-
-    # Update active column to false for expense attributes to be disabled
-    expense_attributes_ids = []
-    if expense_attributes_to_disable :
-        expense_attributes_ids = [expense_attribute.id for expense_attribute in expense_attributes_to_disable]
-        expense_attributes_to_disable.update(active=False)
-
-    return expense_attributes_ids
-
-
-def get_all_categories_from_fyle(platform: PlatformConnector):
-
-    categories_generator = platform.connection.v1beta.admin.categories.list_all(query_params={
-            'order': 'id.desc'
-        })
-
-    categories = []
-
-    for response in categories_generator:
-        if response.get('data'):
-            categories.extend(response['data'])
-
-    category_name_map = {}
-    for category in categories:
-        if category['sub_category'] and category['name'] != category['sub_category']:
-            category['name'] = '{0} / {1}'.format(category['name'], category['sub_category'])
-        category_name_map[category['name'].lower()] = category
-
-    return category_name_map
-
-
-def create_fyle_categories_payload(categories: List[DestinationAttribute], category_map: Dict, updated_categories: List[ExpenseAttribute] = [], destination_type: str = None):
-    """
-    Create Fyle Categories Payload from NetSuite Customer / Categories
-    :param workspace_id: Workspace integer id
-    :param categories: NetSuite Categories
-    :return: Fyle Categories Payload
-    """
-    payload = []
-
-    if updated_categories:
-        for category in updated_categories:
-            if destination_type == 'EXPENSE_CATEGORY':
-                destination_id_of_category = category.categorymapping.destination_expense_head.destination_id
-            elif destination_type == 'ACCOUNT':
-                destination_id_of_category = category.categorymapping.destination_account.destination_id
-            payload.append({
-                'id': category.source_id,
-                'name': category.value,
-                'code': destination_id_of_category,
-                'is_enabled': category.active if category.value != 'Unspecified' else True
-            })
-    else:
-        for category in categories:
-            if category.value.lower() not in category_map:
-                payload.append({
-                    'name': category.value,
-                    'code': category.destination_id,
-                    'is_enabled': category.active
-                })
-
-    logger.info("| Importing Categories to Fyle | Content: {{Fyle Payload count: {}}}".format(len(payload)))
-    return payload
-
-
-def sync_expense_categories_and_accounts(configuration: Configuration, netsuite_connection: NetSuiteConnector):
-    """
-    Sync Expense Categories and Accounts from NetSuite to Fyle
-    :configuration: Configuration object
-    :netsuite_connection: NetSuite Connection Object
-    :return: None
-    """
-    if (configuration.reimbursable_expenses_object and configuration.reimbursable_expenses_object == 'EXPENSE REPORT') or configuration.corporate_credit_card_expenses_object == 'EXPENSE REPORT':
-        netsuite_connection.sync_expense_categories()
-
-    if (configuration.reimbursable_expenses_object and configuration.reimbursable_expenses_object  in ('BILL', 'JOURNAL ENTRY')) or \
-        configuration.corporate_credit_card_expenses_object in ('BILL', 'JOURNAL ENTRY', 'CREDIT CARD CHARGE'):
-        netsuite_connection.sync_accounts()
-
-    if configuration.import_items:
-        netsuite_connection.sync_items()
-
-
-def upload_categories_to_fyle(workspace_id: int, configuration: Configuration, platform: PlatformConnector):
-    """
-    Upload categories to Fyle
-    :param workspace_id: Workspace integer id
-    :param configuration: Configuration object
-    :param platform: Platform Connection Object
-    :return: None
-    """
-    netsuite_credentials: NetSuiteCredentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
-
-    category_map = get_all_categories_from_fyle(platform=platform)
-
-    netsuite_connection = NetSuiteConnector(
-        netsuite_credentials=netsuite_credentials,
-        workspace_id=workspace_id
-    )
-
-    platform.categories.sync()
-
-    sync_expense_categories_and_accounts(
-        configuration, netsuite_connection)
-    
-    netsuite_attributes: List[DestinationAttribute] = []
-    
-    if configuration.import_categories:
-        netsuite_accounts = DestinationAttribute.objects.filter(
-            workspace_id=workspace_id, 
-            attribute_type='EXPENSE_CATEGORY' if configuration.reimbursable_expenses_object == 'EXPENSE REPORT' or configuration.corporate_credit_card_expenses_object == 'EXPENSE REPORT'  else 'ACCOUNT',
-            display_name='Expense Category' if configuration.reimbursable_expenses_object == 'EXPENSE REPORT' or configuration.corporate_credit_card_expenses_object == 'EXPENSE REPORT' else 'Account'
-        )
-        if netsuite_accounts:
-            netsuite_attributes = netsuite_accounts
-
-    
-    if configuration.import_items:
-        netsuite_items = DestinationAttribute.objects.filter(
-            workspace_id=workspace_id,
-            attribute_type='ACCOUNT',
-            display_name='Item'
-        )
-        if netsuite_items:
-            netsuite_attributes = netsuite_attributes.union(netsuite_items) if netsuite_attributes else netsuite_items
-
-
-    netsuite_attributes = remove_duplicates(netsuite_attributes)
-
-    fyle_payload: List[Dict] = create_fyle_categories_payload(netsuite_attributes, category_map)
-
-    if fyle_payload:
-        platform.categories.post_bulk(fyle_payload)
-        platform.categories.sync()
-
-    return netsuite_attributes
-
-
-def bulk_create_ccc_category_mappings(workspace_id: int):
-    """
-    Create Category Mappings for CCC Expenses
-    :param workspace_id: Workspace Id
-    """
-    # Filtering unmapped ccc category mappings
-    category_mappings = CategoryMapping.objects.filter(
-        workspace_id=workspace_id,
-        destination_account__isnull=True
-    ).all()
-
-    account_internal_ids = []
-
-    for category_mapping in category_mappings:
-        if category_mapping.destination_expense_head.detail and \
-            'account_internal_id' in category_mapping.destination_expense_head.detail and \
-                category_mapping.destination_expense_head.detail['account_internal_id']:
-            account_internal_ids.append(category_mapping.destination_expense_head.detail['account_internal_id'])
-
-    # Retreiving accounts for creating ccc mapping
-    destination_attributes = DestinationAttribute.objects.filter(
-        workspace_id=workspace_id,
-        attribute_type='ACCOUNT',
-        destination_id__in=account_internal_ids
-    ).values('id', 'destination_id')
-
-    destination_id_pk_map = {}
-    for attribute in destination_attributes:
-        destination_id_pk_map[attribute['destination_id'].lower()] = attribute['id']
-
-    mapping_updation_batch = []
-
-    for category_mapping in category_mappings:
-        # Adding a check if the account_internal_id has a account accociated in destination attributes table
-        ccc_account_id = destination_id_pk_map[category_mapping.destination_expense_head.detail['account_internal_id'].lower()] \
-            if category_mapping.destination_expense_head.detail['account_internal_id'].lower() in destination_id_pk_map else None        
-
-        if ccc_account_id:
-            mapping_updation_batch.append(
-                CategoryMapping(
-                    id=category_mapping.id,
-                    source_category_id=category_mapping.source_category.id,
-                    destination_account_id=ccc_account_id
-                )
-            )
-
-    if mapping_updation_batch:
-        CategoryMapping.objects.bulk_update(
-            mapping_updation_batch, fields=['destination_account'], batch_size=50
-        )
-
-
-def construct_filter_based_on_destination(reimbursable_destination_type: str):
-    """
-    Construct Filter Based on Destination
-    :param reimbursable_destination_type: Reimbusable Destination Type
-    :return: Filter
-    """
-    filters = {}
-    if reimbursable_destination_type == 'EXPENSE_CATEGORY':
-        filters['destination_expense_head__isnull'] = True
-    elif reimbursable_destination_type == 'ACCOUNT':
-        filters['destination_account__isnull'] = True
-
-    return filters
-
-
-def filter_unmapped_destinations(reimbursable_destination_type: str,
-    destination_attributes: List[DestinationAttribute]):
-    """
-    Filter unmapped destinations based on workspace
-    :param reimbursable_destination_type: Reimbusable destination type
-    :param destination_attributes: List of destination attributes
-    """
-    filters = construct_filter_based_on_destination(reimbursable_destination_type)
-
-    destination_attribute_ids = [destination_attribute.id for destination_attribute in destination_attributes]
-
-    # Filtering unmapped categories
-    destination_attributes = DestinationAttribute.objects.filter(
-        pk__in=destination_attribute_ids,
-        **filters
-    ).values('id', 'value')
-
-    return destination_attributes
-
-
-def bulk_create_update_category_mappings(mapping_creation_batch: List[CategoryMapping]):
-    """
-    Bulk Create and Update Category Mappings
-    :param mapping_creation_batch: List of Category Mappings
-    """
-    expense_attributes_to_be_updated = []
-    created_mappings = []
-
-    if mapping_creation_batch:
-        created_mappings = CategoryMapping.objects.bulk_create(mapping_creation_batch, batch_size=50)
-
-    for category_mapping in created_mappings:
-        expense_attributes_to_be_updated.append(
-            ExpenseAttribute(
-                id=category_mapping.source_category.id,
-                auto_mapped=True
-            )
-        )
-
-    if expense_attributes_to_be_updated:
-        ExpenseAttribute.objects.bulk_update(
-            expense_attributes_to_be_updated, fields=['auto_mapped'], batch_size=50)
-
-
-def create_category_mappings(destination_attributes: List[DestinationAttribute],
-    reimbursable_destination_type: str, workspace_id: int):
-    """
-    Bulk create category mappings
-    :param destination_attributes: Desitination Attributes
-    :param reimbursable_destination_type: Reimbursable Destination Type
-    :param workspace_id: Workspace ID
-    :return: None
-    """
-    destination_attributes = filter_unmapped_destinations(reimbursable_destination_type, destination_attributes)
-
-    attribute_value_list = []
-    attribute_value_list = [destination_attribute['value'] for destination_attribute in destination_attributes]
-
-    # Filtering unmapped categories
-    source_attributes = ExpenseAttribute.objects.filter(
-        workspace_id=workspace_id,
-        attribute_type='CATEGORY',
-        value__in=attribute_value_list,
-        categorymapping__source_category__isnull=True
-    ).values('id', 'value')
-
-    source_attributes_id_map = {source_attribute['value'].lower(): source_attribute['id'] \
-        for source_attribute in source_attributes}
-
-    mapping_creation_batch = []
-
-    for destination_attribute in destination_attributes:
-        if destination_attribute['value'].lower() in source_attributes_id_map:
-            destination = {}
-            if reimbursable_destination_type == 'EXPENSE_CATEGORY':
-                destination['destination_expense_head_id'] = destination_attribute['id']
-            elif reimbursable_destination_type == 'ACCOUNT':
-                destination['destination_account_id'] = destination_attribute['id']
-
-            mapping_creation_batch.append(
-                CategoryMapping(
-                    source_category_id=source_attributes_id_map[destination_attribute['value'].lower()],
-                    workspace_id=workspace_id,
-                    **destination
-                )
-            )
-
-    bulk_create_update_category_mappings(mapping_creation_batch)
-
-
-@handle_exceptions(task_name='Import Category to Fyle and Auto Create Mappings')
-def auto_create_category_mappings(workspace_id):
-    """
-    Create Category Mappings
-    :return: mappings
-    """
-    configuration: Configuration = Configuration.objects.get(workspace_id=workspace_id)
-
-    reimbursable_expenses_object = configuration.reimbursable_expenses_object
-    employee_field_mapping = configuration.employee_field_mapping
-    corporate_credit_card_expenses_object = configuration.corporate_credit_card_expenses_object
-
-    if configuration.reimbursable_expenses_object == 'EXPENSE REPORT' or configuration.corporate_credit_card_expenses_object == 'EXPENSE REPORT':
-        reimbursable_destination_type = 'EXPENSE_CATEGORY'
-    else:
-        reimbursable_destination_type = 'ACCOUNT'
-
-    fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
-    platform = PlatformConnector(fyle_credentials=fyle_credentials)
-
-    fyle_categories = upload_categories_to_fyle(
-        workspace_id=workspace_id, configuration=configuration, platform=platform)
-
-    create_category_mappings(fyle_categories, reimbursable_destination_type, workspace_id)
-
-    # auto-sync categories and expense accounts
-    category_ids_to_be_changed = disable_expense_attributes('CATEGORY', reimbursable_destination_type, workspace_id)
-    if category_ids_to_be_changed:
-        expense_attributes = ExpenseAttribute.objects.filter(id__in=category_ids_to_be_changed)
-        fyle_payload: List[Dict] = create_fyle_categories_payload(categories=[], category_map={}, updated_categories=expense_attributes, destination_type=reimbursable_destination_type)
-
-        platform.categories.post_bulk(fyle_payload)
-        platform.categories.sync()
-
-    if reimbursable_expenses_object == 'EXPENSE REPORT' and \
-        corporate_credit_card_expenses_object in ('BILL', 'JOURNAL ENTRY', 'CREDIT CARD CHARGE'):
-        bulk_create_ccc_category_mappings(workspace_id)
-    
-    resolve_expense_attribute_errors(
-            source_attribute_type="CATEGORY", 
-            destination_attribute_type=reimbursable_destination_type, 
-            workspace_id=workspace_id
-    )
-
 
 def auto_import_and_map_fyle_fields(workspace_id):
     """
@@ -517,9 +102,6 @@ def auto_import_and_map_fyle_fields(workspace_id):
 
     if configuration.import_vendors_as_merchants:
         chain.append('apps.mappings.tasks.auto_create_vendors_as_merchants', workspace_id, q_options={'cluster': 'import'})
-
-    if configuration.import_categories or configuration.import_items:
-        chain.append('apps.mappings.tasks.auto_create_category_mappings', workspace_id, q_options={'cluster': 'import'})
 
     if chain.length() > 0:
         chain.run()
@@ -647,9 +229,10 @@ def create_fyle_merchants_payload(vendors, existing_merchants_name):
     for vendor in vendors:
         if vendor.value not in existing_merchants_name:
             payload.append(vendor.value)
-    
+
     logger.info("| Importing Merchants to Fyle | Content: {{Fyle Payload count: {}}}".format(len(payload)))
     return payload
+
 
 def post_merchants(platform_connection: PlatformConnector, workspace_id: int):
     existing_merchants_name = ExpenseAttribute.objects.filter(
@@ -668,6 +251,7 @@ def post_merchants(platform_connection: PlatformConnector, workspace_id: int):
         platform_connection.merchants.post(fyle_payload)
 
     platform_connection.merchants.sync()
+
 
 @handle_exceptions(task_name='Import Merchant to Fyle from NetSuite')
 def auto_create_vendors_as_merchants(workspace_id):
@@ -722,7 +306,7 @@ def create_fyle_department_payload(department_name: str, parent_department: str,
                 'name': department_name,
                 'display_name': department
             })
-    
+
     logger.info("| Importing Departments to Fyle | Content: {{Fyle Payload count: {}}}".format(len(departments_payload)))
     return departments_payload
 
@@ -847,6 +431,7 @@ def post_employees(platform_connection: PlatformConnector, workspace_id: int):
         workspace.save()
 
     platform_connection.employees.sync()
+
 
 @handle_exceptions(task_name='Import NetSuite Employees to Fyle')
 def auto_create_netsuite_employees_on_fyle(workspace_id):
