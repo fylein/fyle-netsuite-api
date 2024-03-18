@@ -7,7 +7,6 @@ from apps.fyle.models import ExpenseGroupSettings
 from apps.mappings.helpers import schedule_or_delete_fyle_import_tasks
 from apps.mappings.schedules import new_schedule_or_delete_fyle_import_tasks
 from apps.workspaces.models import Configuration
-from django_q.tasks import async_task
 
 
 class ImportSettingsTrigger:
@@ -79,9 +78,6 @@ class ImportSettingsTrigger:
             configuration_instance=configurations_instance,
             mapping_settings=self.__mapping_settings
         )
-
-        if not configurations_instance.import_items:
-            async_task('apps.mappings.tasks.disable_category_for_items_mapping', q_options={'cluster': 'import'})
 
     def __remove_old_department_source_field(self, current_mappings_settings: List[MappingSetting], new_mappings_settings: List[Dict]):
         """

@@ -47,6 +47,39 @@ def construct_tasks_and_chain_import_fields_to_fyle(workspace_id: int):
             'is_3d_mapping': False
         }
 
+    if configurations.import_categories:
+        destination_sync_methods = []
+        destination_field = None
+        is_3d_mapping_enabled = False
+
+        if configurations.import_items:
+            destination_sync_methods.append(SYNC_METHODS['ITEM'])
+
+        if (configurations.reimbursable_expenses_object and configurations.reimbursable_expenses_object == 'EXPENSE REPORT') or configurations.corporate_credit_card_expenses_object == 'EXPENSE REPORT':
+            destination_sync_methods.append(SYNC_METHODS['EXPENSE_CATEGORY'])
+            destination_field = 'EXPENSE_CATEGORY'
+
+        if (configurations.reimbursable_expenses_object and configurations.reimbursable_expenses_object in ('BILL', 'JOURNAL ENTRY')) or \
+            configurations.corporate_credit_card_expenses_object in ('BILL', 'JOURNAL ENTRY', 'CREDIT CARD CHARGE'):
+            destination_sync_methods.append(SYNC_METHODS['ACCOUNT'])
+            destination_field = 'ACCOUNT'
+
+        if configurations.reimbursable_expenses_object == 'EXPENSE_REPORT' and \
+        configurations.corporate_credit_card_expenses_object in ('BILL', 'CHARGE_CARD_TRANSACTION', 'JOURNAL_ENTRY'):
+            is_3d_mapping_enabled = True
+
+        task_settings['import_categories'] = {
+            'destination_field': destination_field,
+            'destination_sync_methods': destination_sync_methods,
+            'is_auto_sync_enabled': True,
+            'is_3d_mapping': is_3d_mapping_enabled,
+            'charts_of_accounts': [],
+            'use_mapping_table': True
+        }
+
+    if not configurations.import_items:
+        task_settings['import_items'] = False
+
     if mapping_settings:
         for mapping_setting in mapping_settings:
             if mapping_setting.source_field in ALLOWED_SOURCE_FIELDS or mapping_setting.is_custom:
