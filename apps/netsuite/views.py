@@ -23,6 +23,7 @@ from .helpers import check_interval_and_sync_dimension, sync_dimensions
 from apps.workspaces.actions import export_to_netsuite
 from apps.mappings.constants import SYNC_METHODS
 from apps.mappings.helpers import is_auto_sync_allowed
+from apps.mappings.queue import get_import_categories_settings
 
 logger = logging.getLogger(__name__)
 
@@ -191,6 +192,7 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
             netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace.id)
 
             mapping_settings = MappingSetting.objects.filter(workspace_id=workspace.id, import_to_fyle=True)
+            configurations = Configuration.objects.get(workspace_id=workspace.id)
             workspace_id = workspace.id
 
             chain = Chain()
@@ -211,10 +213,68 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
                         'apps.netsuite.connector.NetSuiteConnector',
                         netsuite_credentials,
                         [SYNC_METHODS[mapping_setting.destination_field.upper()]],
-                        is_auto_sync_allowed(workspace_general_settings, mapping_setting),
+                        is_auto_sync_allowed(configuration=configurations, mapping_setting=mapping_setting),
                         False,
                         None,
                         mapping_setting.is_custom,
+                        q_options={
+                            'cluster': 'import'
+                        }
+                    )
+
+            if configurations:
+                if configurations.import_vendors_as_merchants:
+                    chain.append(
+                        'fyle_integrations_imports.tasks.trigger_import_via_schedule',
+                        workspace_id,
+                        'VENDOR',
+                        'MERCHANT',
+                        'apps.netsuite.connector.NetSuiteConnector',
+                        netsuite_credentials,
+                        [SYNC_METHODS['VENDOR']],
+                        False,
+                        False,
+                        None,
+                        False,
+                        q_options={
+                            'cluster': 'import'
+                        }
+                    )
+
+                if configurations.import_categories:
+                    # get import categories settings
+                    is_3d_mapping_enabled, destination_field, destination_sync_methods = get_import_categories_settings(configurations)
+                    chain.append(
+                        'fyle_integrations_imports.tasks.trigger_import_via_schedule',
+                        workspace_id,
+                        destination_field,
+                        'CATEGORY',
+                        'apps.netsuite.connector.NetSuiteConnector',
+                        netsuite_credentials,
+                        destination_sync_methods,
+                        True,
+                        is_3d_mapping_enabled,
+                        None,
+                        False,
+                        False,
+                        q_options={
+                            'cluster': 'import'
+                        }
+                    )
+
+                if configurations.import_tax_items:
+                    chain.append(
+                        'fyle_integrations_imports.tasks.trigger_import_via_schedule',
+                        workspace_id,
+                        'TAX_ITEM',
+                        'TAX_GROUP',
+                        'apps.netsuite.connector.NetSuiteConnector',
+                        netsuite_credentials,
+                        [SYNC_METHODS['TAX_ITEM']],
+                        False,
+                        False,
+                        None,
+                        False,
                         q_options={
                             'cluster': 'import'
                         }
