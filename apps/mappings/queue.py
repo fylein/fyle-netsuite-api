@@ -27,8 +27,8 @@ def get_import_categories_settings(configurations: Configuration):
         destination_sync_methods.append(SYNC_METHODS['ACCOUNT'])
         destination_field = 'ACCOUNT'
 
-    if configurations.reimbursable_expenses_object == 'EXPENSE_REPORT' and \
-    configurations.corporate_credit_card_expenses_object in ('BILL', 'CHARGE_CARD_TRANSACTION', 'JOURNAL_ENTRY'):
+    if configurations.reimbursable_expenses_object == 'EXPENSE REPORT' and \
+    configurations.corporate_credit_card_expenses_object in ('BILL', 'CREDIT CARD CHARGE', 'JOURNAL ENTRY'):
         is_3d_mapping_enabled = True
 
     return is_3d_mapping_enabled, destination_field, destination_sync_methods
