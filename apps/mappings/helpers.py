@@ -47,7 +47,7 @@ def is_auto_sync_allowed(configuration: Configuration, mapping_setting: MappingS
     :return: bool
     """
     is_auto_sync_status_allowed = False
-    if (mapping_setting and mapping_setting.destination_field == 'CUSTOMER' and mapping_setting.source_field == 'PROJECT') or configuration.import_categories:
+    if (mapping_setting and mapping_setting.destination_field == 'PROJECT' and mapping_setting.source_field == 'PROJECT') or configuration.import_categories:
         is_auto_sync_status_allowed = True
 
     return is_auto_sync_status_allowed
