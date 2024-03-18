@@ -16,7 +16,6 @@ def schedule_or_delete_auto_mapping_tasks(configuration: Configuration):
     :param configuration: Workspace Configuration Instance
     :return: None
     """
-    schedule_or_delete_fyle_import_tasks(configuration)
     new_schedule_or_delete_fyle_import_tasks(configuration, MappingSetting.objects.filter(workspace_id=configuration.workspace_id).values())
     schedule_auto_map_employees(
         employee_mapping_preference=configuration.auto_map_employees, workspace_id=int(configuration.workspace_id))
@@ -40,30 +39,6 @@ def validate_and_trigger_auto_map_employees(workspace_id: int):
         chain.append('apps.mappings.tasks.async_auto_map_ccc_account', workspace_id, q_options={'cluster': 'import'})
 
     chain.run()
-
-
-def schedule_or_delete_fyle_import_tasks(configuration: Configuration):
-    """
-    :param configuration: Workspace Configuration Instance
-    :return: None
-    """
-    if configuration.import_vendors_as_merchants:
-        start_datetime = datetime.now()
-        Schedule.objects.update_or_create(
-            func='apps.mappings.tasks.auto_import_and_map_fyle_fields',
-            cluster='import',
-            args='{}'.format(configuration.workspace_id),
-            defaults={
-                'schedule_type': Schedule.MINUTES,
-                'minutes': 24 * 60,
-                'next_run': start_datetime
-            }
-        )
-    elif not configuration.import_vendors_as_merchants:
-        Schedule.objects.filter(
-            func='apps.mappings.tasks.auto_import_and_map_fyle_fields',
-            args='{}'.format(configuration.workspace_id)
-        ).delete()
 
 
 def is_auto_sync_allowed(configuration: Configuration, mapping_setting: MappingSetting = None):

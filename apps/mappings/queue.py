@@ -80,6 +80,14 @@ def construct_tasks_and_chain_import_fields_to_fyle(workspace_id: int):
     if not configurations.import_items:
         task_settings['import_items'] = False
 
+    if configurations.import_vendors_as_merchants:
+        task_settings['import_vendors_as_merchants'] = {
+            'destination_field': 'VENDOR',
+            'destination_sync_methods': [SYNC_METHODS['VENDOR']],
+            'is_auto_sync_enabled': False,
+            'is_3d_mapping': False
+        }
+
     if mapping_settings:
         for mapping_setting in mapping_settings:
             if mapping_setting.source_field in ALLOWED_SOURCE_FIELDS or mapping_setting.is_custom:
