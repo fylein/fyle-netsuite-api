@@ -20,7 +20,6 @@ logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
 
-
 def get_mapped_attributes_ids(source_attribute_type: str, destination_attribute_type: str, errored_attribute_ids: List[int]):
 
     mapped_attribute_ids = []
