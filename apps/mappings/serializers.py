@@ -34,8 +34,8 @@ class GeneralMappingSerializer(serializers.ModelSerializer):
             defaults=validated_data
         )
         
-        if is_created:
-            post_to_integration_settings(workspace_id, True)
+        # if is_created:
+        #     post_to_integration_settings(workspace_id, True)
 
         return general_mapping_object
 

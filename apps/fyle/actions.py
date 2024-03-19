@@ -42,7 +42,7 @@ def update_expenses_in_progress(in_progress_expenses: List[Expense]) -> None:
                     expense.expense_id,
                     'IN_PROGRESS',
                     None,
-                    '{}/workspaces/main/dashboard'.format(settings.NETSUITE_INTEGRATION_APP_URL),
+                    '{}/workspaces/{}/dashboard'.format(settings.NETSUITE_INTEGRATION_APP_URL, expense.workspace_id),
                     False
                 )
             )
@@ -185,7 +185,7 @@ def __handle_post_accounting_export_summary_exception(exception: Exception, work
                             expense_instance.expense_id,
                             'DELETED',
                             None,
-                            '{}/workspaces/main/dashboard'.format(settings.NETSUITE_INTEGRATION_APP_URL),
+                            '{}/workspaces/{}/dashboard'.format(settings.NETSUITE_INTEGRATION_APP_URL, workspace_id),
                             True
                         )
                     )
