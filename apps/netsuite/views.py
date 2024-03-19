@@ -205,6 +205,11 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
             for mapping_setting in mapping_settings:
                 if mapping_setting.source_field in ALLOWED_SOURCE_FIELDS or mapping_setting.is_custom:
                     # run new_schedule_or_delete_fyle_import_tasks
+                    destination_sync_methods = [SYNC_METHODS[mapping_setting.destination_field.upper()]]
+
+                    if mapping_setting.source_field == 'PROJECT':
+                        destination_sync_methods.append(SYNC_METHODS['CUSTOMER'])
+
                     chain.append(
                         'fyle_integrations_imports.tasks.trigger_import_via_schedule',
                         workspace_id,
@@ -212,7 +217,7 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
                         mapping_setting.source_field,
                         'apps.netsuite.connector.NetSuiteConnector',
                         netsuite_credentials,
-                        [SYNC_METHODS[mapping_setting.destination_field.upper()]],
+                        destination_sync_methods,
                         is_auto_sync_allowed(configuration=configurations, mapping_setting=mapping_setting),
                         False,
                         None,
