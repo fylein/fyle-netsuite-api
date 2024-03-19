@@ -192,7 +192,7 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
             netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace.id)
 
             mapping_settings = MappingSetting.objects.filter(workspace_id=workspace.id, import_to_fyle=True)
-            configurations = Configuration.objects.get(workspace_id=workspace.id)
+            configurations = Configuration.objects.filter(workspace_id=workspace.id).first()
             workspace_id = workspace.id
 
             chain = Chain()
@@ -207,7 +207,7 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
                     # run new_schedule_or_delete_fyle_import_tasks
                     destination_sync_methods = [SYNC_METHODS[mapping_setting.destination_field.upper()]]
 
-                    if mapping_setting.source_field == 'PROJECT':
+                    if mapping_setting.destination_field == 'PROJECT':
                         destination_sync_methods.append(SYNC_METHODS['CUSTOMER'])
 
                     chain.append(
