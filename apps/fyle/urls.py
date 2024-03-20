@@ -8,7 +8,7 @@ from .views import ExpenseGroupSyncView, ExpenseGroupView, ExpenseGroupByIdView,
 
 expense_groups_paths = [
     path('expense_groups/', ExpenseGroupView.as_view(), name='expense-groups'),
-    path('expense_groups/v2', ExpenseGroupViewV2.as_view(), name='expense-groups-v2'),
+    path('expense_groups/v2/', ExpenseGroupViewV2.as_view(), name='expense-groups-v2'),
     path('expense_groups/count/', ExpenseGroupCountView.as_view(), name='expense-groups-count'),
     path('expense_groups/trigger/', ExpenseGroupScheduleView.as_view(), name='expense-groups-trigger'),
     path('expense_groups/<int:pk>/', ExpenseGroupByIdView.as_view(), name='expense-group-by-id'),
@@ -29,7 +29,7 @@ other_paths = [
     path('fyle_fields/', FyleFieldsView.as_view(), name='fyle-fields'),
     path('expense_filters/', ExpenseFilterView.as_view(), name='expense-filters'),
     path('expenses/', ExpenseView.as_view(), name='expenses'),
-    path('expenses/v2', ExpenseViewV2.as_view(), name='expenses-v2'),
+    path('expenses/v2/', ExpenseViewV2.as_view(), name='expenses-v2'),
     path('custom_fields/', CustomFieldView.as_view(), name='custom-field')
 ]
 
