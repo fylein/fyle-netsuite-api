@@ -28,9 +28,7 @@ def test_update_expenses_in_progress(db):
     for expense in expenses:
         assert expense.accounting_export_summary['synced'] == False
         assert expense.accounting_export_summary['state'] == 'IN_PROGRESS'
-        assert expense.accounting_export_summary['url'] == '{}/workspaces/main/dashboard'.format(
-            settings.NETSUITE_INTEGRATION_APP_URL
-        )
+        assert expense.accounting_export_summary['url'] == '{}/workspaces/{}/dashboard'.format(settings.NETSUITE_INTEGRATION_APP_URL, expense.workspace_id)
         assert expense.accounting_export_summary['error_type'] == None
         assert expense.accounting_export_summary['id'] == expense.expense_id
 
@@ -44,9 +42,7 @@ def test_update_failed_expenses(db):
         assert expense.accounting_export_summary['synced'] == False
         assert expense.accounting_export_summary['state'] == 'ERROR'
         assert expense.accounting_export_summary['error_type'] == 'MAPPING'
-        assert expense.accounting_export_summary['url'] == '{}/workspaces/main/dashboard'.format(
-            settings.NETSUITE_INTEGRATION_APP_URL
-        )
+        assert expense.accounting_export_summary['url'] == '{}/workspaces/{}/expense_groups?page_number=0&page_size=10&state=FAILED'.format(settings.NETSUITE_INTEGRATION_APP_URL, expense.workspace_id)
         assert expense.accounting_export_summary['id'] == expense.expense_id
 
 def test_update_complete_expenses(db):
@@ -122,9 +118,7 @@ def test_handle_post_accounting_export_summary_exception(db):
     assert expense.accounting_export_summary['synced'] == True
     assert expense.accounting_export_summary['state'] == 'DELETED'
     assert expense.accounting_export_summary['error_type'] == None
-    assert expense.accounting_export_summary['url'] == '{}/workspaces/main/dashboard'.format(
-        settings.NETSUITE_INTEGRATION_APP_URL
-    )
+    assert expense.accounting_export_summary['url'] == '{}/workspaces/{}/dashboard'.format(settings.NETSUITE_INTEGRATION_APP_URL, expense.workspace_id)
     assert expense.accounting_export_summary['id'] == expense_id
 
 
@@ -135,7 +129,7 @@ def test_mark_accounting_export_summary_as_synced(db):
             'tx_123',
             'SKIPPED',
             None,
-            '{}/workspaces/main/export_log'.format(settings.NETSUITE_INTEGRATION_APP_URL),
+            '{}/workspaces/{}/expense_groups?page_number=0&page_size=10&state=SKIP'.format(settings.NETSUITE_INTEGRATION_APP_URL, expense.workspace_id),
             True
         )
         expense.save()

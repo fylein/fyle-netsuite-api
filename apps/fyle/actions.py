@@ -42,7 +42,7 @@ def update_expenses_in_progress(in_progress_expenses: List[Expense]) -> None:
                     expense.expense_id,
                     'IN_PROGRESS',
                     None,
-                    '{}/workspaces/main/dashboard'.format(settings.NETSUITE_INTEGRATION_APP_URL),
+                    '{}/workspaces/{}/dashboard'.format(settings.NETSUITE_INTEGRATION_APP_URL, expense.workspace_id),
                     False
                 )
             )
@@ -77,7 +77,7 @@ def mark_expenses_as_skipped(final_query: Q, expenses_object_ids: List, workspac
                     expense.expense_id,
                     'SKIPPED',
                     None,
-                    '{}/workspaces/main/export_log'.format(settings.NETSUITE_INTEGRATION_APP_URL),
+                    '{}/workspaces/{}/expense_groups?page_number=0&page_size=10&state=SKIP'.format(settings.NETSUITE_INTEGRATION_APP_URL, workspace.id),
                     False
                 )
             )
@@ -127,7 +127,7 @@ def update_failed_expenses(failed_expenses: List[Expense], is_mapping_error: boo
                         expense.expense_id,
                         'ERROR',
                         error_type,
-                        '{}/workspaces/main/dashboard'.format(settings.NETSUITE_INTEGRATION_APP_URL),
+                        '{}/workspaces/{}/expense_groups?page_number=0&page_size=10&state=FAILED'.format(settings.NETSUITE_INTEGRATION_APP_URL, expense.workspace_id),
                         False
                     )
                 )
@@ -185,7 +185,7 @@ def __handle_post_accounting_export_summary_exception(exception: Exception, work
                             expense_instance.expense_id,
                             'DELETED',
                             None,
-                            '{}/workspaces/main/dashboard'.format(settings.NETSUITE_INTEGRATION_APP_URL),
+                            '{}/workspaces/{}/dashboard'.format(settings.NETSUITE_INTEGRATION_APP_URL, workspace_id),
                             True
                         )
                     )

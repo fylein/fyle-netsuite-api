@@ -744,7 +744,7 @@ def test_bulk_update_expenses(db):
             expense.expense_id,
             'SKIPPED',
             None,
-            '{}/workspaces/main/export_log'.format(settings.NETSUITE_INTEGRATION_APP_URL),
+            '{}/workspaces/{}/expense_groups?page_number=0&page_size=10&state=SKIP'.format(settings.NETSUITE_INTEGRATION_APP_URL, expense.workspace_id),
             True
         )
         expense.save()
@@ -757,7 +757,5 @@ def test_bulk_update_expenses(db):
         assert expense.accounting_export_summary['synced'] == True
         assert expense.accounting_export_summary['state'] == 'SKIPPED'
         assert expense.accounting_export_summary['error_type'] == None
-        assert expense.accounting_export_summary['url'] == '{}/workspaces/main/export_log'.format(
-            settings.NETSUITE_INTEGRATION_APP_URL
-        )
+        assert expense.accounting_export_summary['url'] == '{}/workspaces/{}/expense_groups?page_number=0&page_size=10&state=SKIP'.format(settings.NETSUITE_INTEGRATION_APP_URL, expense.workspace_id)
         assert expense.accounting_export_summary['id'] == expense.expense_id

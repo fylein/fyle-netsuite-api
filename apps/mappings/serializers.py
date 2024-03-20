@@ -3,6 +3,7 @@ from rest_framework import serializers
 from apps.workspaces.models import Configuration
 
 from .models import GeneralMapping, SubsidiaryMapping
+from apps.workspaces.tasks import post_to_integration_settings
 
 
 class SubsidiaryMappingSerializer(serializers.ModelSerializer):
@@ -28,10 +29,13 @@ class GeneralMappingSerializer(serializers.ModelSerializer):
         """
         workspace_id = validated_data.pop('workspace')
 
-        general_mapping_object, _ = GeneralMapping.objects.update_or_create(
+        general_mapping_object, is_created = GeneralMapping.objects.update_or_create(
             workspace_id=workspace_id,
             defaults=validated_data
         )
+        
+        # if is_created:
+        #     post_to_integration_settings(workspace_id, True)
 
         return general_mapping_object
 
