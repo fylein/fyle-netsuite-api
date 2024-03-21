@@ -22,8 +22,9 @@ def get_import_categories_settings(configurations: Configuration):
         destination_sync_methods.append(SYNC_METHODS['EXPENSE_CATEGORY'])
         destination_field = 'EXPENSE_CATEGORY'
 
-    if (configurations.reimbursable_expenses_object and configurations.reimbursable_expenses_object in ('BILL', 'JOURNAL ENTRY')) or \
-        configurations.corporate_credit_card_expenses_object in ('BILL', 'JOURNAL ENTRY', 'CREDIT CARD CHARGE'):
+    if configurations.reimbursable_expenses_object != 'EXPENSE REPORT' and (
+        configurations.reimbursable_expenses_object in ('BILL', 'JOURNAL ENTRY')
+        or configurations.corporate_credit_card_expenses_object in ('BILL', 'JOURNAL ENTRY', 'CREDIT CARD CHARGE')):
         destination_sync_methods.append(SYNC_METHODS['ACCOUNT'])
         destination_field = 'ACCOUNT'
 
