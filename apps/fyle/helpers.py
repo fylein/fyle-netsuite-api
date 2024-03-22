@@ -286,7 +286,7 @@ def check_interval_and_sync_dimension(workspace: Workspace, fyle_credentials: Fy
         time_interval = datetime.now(timezone.utc) - workspace.source_synced_at
 
     if workspace.source_synced_at is None or time_interval.days > 0:
-        sync_dimensions(fyle_credentials, workspace.id)
+        sync_dimensions(fyle_credentials)
         return True
 
     return False
