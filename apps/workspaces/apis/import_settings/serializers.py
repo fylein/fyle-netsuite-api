@@ -67,7 +67,8 @@ class ConfigurationsSerializer(serializers.ModelSerializer):
             'import_vendors_as_merchants',
             'import_items',
             'import_tax_items',
-            'auto_create_merchants'
+            'auto_create_merchants',
+            'import_netsuite_employees'
         ]
 
 

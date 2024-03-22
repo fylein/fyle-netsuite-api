@@ -27,6 +27,9 @@ class ConfigurationSerializer(serializers.ModelSerializer):
             'reimbursable_expenses_object',
             'corporate_credit_card_expenses_object',
             'is_simplify_report_closure_enabled',
+            'name_in_journal_entry',
+            'employee_field_mapping',
+            'auto_map_employees'
         ]
 
         read_only_fields = ['is_simplify_report_closure_enabled']   
@@ -122,6 +125,9 @@ class ExportSettingsSerializer(serializers.ModelSerializer):
             defaults={
                 'reimbursable_expenses_object': configurations['reimbursable_expenses_object'], 
                 'corporate_credit_card_expenses_object': configurations['corporate_credit_card_expenses_object'],
+                'employee_field_mapping': configurations['employee_field_mapping'],
+                'name_in_journal_entry': configurations['name_in_journal_entry'],
+                'auto_map_employees': configurations['auto_map_employees'],
             }
         )
 
