@@ -121,7 +121,7 @@ class ExportSettingsSerializer(serializers.ModelSerializer):
         general_mappings = validated_data.pop('general_mappings')
         workspace_id = instance.id
 
-        Configuration.objects.update_or_create(
+        configuration_instance, _ = Configuration.objects.update_or_create(
             workspace_id=workspace_id,
             defaults={
                 'reimbursable_expenses_object': configurations['reimbursable_expenses_object'], 
@@ -131,7 +131,7 @@ class ExportSettingsSerializer(serializers.ModelSerializer):
 
         exports_trigger = ExportSettingsTrigger(
             workspace_id=workspace_id,
-            configuration=Configuration.objects.filter(workspace_id=workspace_id).first()
+            configuration=configuration_instance
         )
 
         exports_trigger.post_save_configurations()
