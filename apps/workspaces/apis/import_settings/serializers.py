@@ -5,7 +5,6 @@ from django.db import transaction
 from django.db.models import Q
 
 from apps.workspaces.models import Workspace, Configuration
-from apps.mappings.models import GeneralMapping
 
 
 class MappingSettingFilteredListSerializer(serializers.ListSerializer):
@@ -63,7 +62,7 @@ class ConfigurationsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Configuration
         fields = [
-            'import_categories', 
+            'import_categories',
             'import_vendors_as_merchants',
             'import_items',
             'import_tax_items',
@@ -84,10 +83,10 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
         model = Workspace
         fields = ['configuration', 'mapping_settings', 'workspace_id']
         read_only_fields = ['workspace_id']
-    
+
     def get_workspace_id(self, instance):
         return instance.id
-    
+
     def update(self, instance, validated_data):
 
         configurations = validated_data.pop('configuration')
@@ -110,7 +109,7 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
         trigger.pre_save_mapping_settings()
 
         if configurations['import_tax_items']:
-            mapping_settings.append({'source_field': 'TAX_GROUP', 'destination_field': 'TAX_CODE', 'import_to_fyle': True, 'is_custom': False})
+            mapping_settings.append({'source_field': 'TAX_GROUP', 'destination_field': 'TAX_ITEM', 'import_to_fyle': True, 'is_custom': False})
 
         mapping_settings.append({'source_field': 'CATEGORY', 'destination_field': 'ACCOUNT', 'import_to_fyle': False, 'is_custom': False})
 
@@ -132,7 +131,7 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
         if instance.onboarding_state == 'IMPORT_SETTINGS':
             instance.onboarding_state = 'ADVANCED_CONFIGURATION'
             instance.save()
-        
+
         return instance
 
     def validate(self, data):
