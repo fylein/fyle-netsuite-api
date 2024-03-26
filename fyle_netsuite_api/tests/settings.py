@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'fyle_rest_auth',
     'fyle_accounting_mappings',
+    'fyle_integrations_imports',
 
     # User Created Apps
     'apps.users',
@@ -140,6 +141,16 @@ LOGGING = {
             'handlers': ['debug_logs'],
             'level': 'ERROR',
             'propagate': False
+        },
+        'django_q': {
+            'handlers': ['debug_logs'],
+            'level': 'INFO',
+            'propagate': True
+        },
+        'fyle_integrations_imports': {
+            'handlers': ['debug_logs'],
+            'level': 'INFO',
+            'propagate': True
         }
     }
 }
@@ -257,6 +268,7 @@ FYLE_APP_URL = os.environ.get('APP_URL')
 FYLE_EXPENSE_URL = os.environ.get('FYLE_APP_URL')
 INTEGRATIONS_SETTINGS_API = os.environ.get('INTEGRATIONS_SETTINGS_API')
 NETSUITE_INTEGRATION_APP_URL = os.environ.get('NETSUITE_INTEGRATION_APP_URL')
+FYLE_NETSUITE_URL = os.environ.get('FYLE_NETSUITE_URL')
 
 # Netsuite Settings
 NS_ACCOUNT_ID = 'sdfghj'
