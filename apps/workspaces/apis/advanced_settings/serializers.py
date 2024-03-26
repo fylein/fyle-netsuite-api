@@ -154,7 +154,6 @@ class AdvancedSettingsSerializer(serializers.ModelSerializer):
             }
         )
         
-        print('ghcg', general_mappings)
         GeneralMapping.objects.update_or_create(
             workspace=instance,
             defaults={
