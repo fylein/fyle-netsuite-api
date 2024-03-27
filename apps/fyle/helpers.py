@@ -7,6 +7,7 @@ import logging
 
 from django.conf import settings
 from django.db.models import Q
+from fyle_accounting_mappings.models import ExpenseAttribute
 
 from apps.fyle.models import ExpenseGroupSettings, ExpenseFilter, ExpenseGroup, Expense
 from apps.tasks.models import TaskLog
@@ -285,16 +286,33 @@ def check_interval_and_sync_dimension(workspace: Workspace, fyle_credentials: Fy
         time_interval = datetime.now(timezone.utc) - workspace.source_synced_at
 
     if workspace.source_synced_at is None or time_interval.days > 0:
-        sync_dimensions(fyle_credentials, workspace.id)
+        sync_dimensions(fyle_credentials)
         return True
 
     return False
 
 
-def sync_dimensions(fyle_credentials: FyleCredential, workspace_id: int) -> None:
+def sync_dimensions(fyle_credentials: FyleCredential, is_export: bool = False) -> None:
     platform = PlatformConnector(fyle_credentials)
+    platform.import_fyle_dimensions(is_export=is_export)
+    if is_export:
+        categories_count = platform.categories.get_count()
 
-    platform.import_fyle_dimensions(import_taxes=True)
+        categories_expense_attribute_count = ExpenseAttribute.objects.filter(
+            attribute_type="CATEGORY", workspace_id=fyle_credentials.workspace_id, active=True
+        ).count()
+
+        if categories_count != categories_expense_attribute_count:
+            platform.categories.sync()
+
+        projects_count = platform.projects.get_count()
+
+        projects_expense_attribute_count = ExpenseAttribute.objects.filter(
+            attribute_type="PROJECT", workspace_id=fyle_credentials.workspace_id, active=True
+        ).count()
+
+        if projects_count != projects_expense_attribute_count:
+            platform.projects.sync()
 
 def construct_expense_filter_query(expense_filters: List[ExpenseFilter]):
     final_filter = None

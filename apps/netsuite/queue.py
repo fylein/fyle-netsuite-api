@@ -26,7 +26,7 @@ def __create_chain_and_run(fyle_credentials: FyleCredential, in_progress_expense
     chain = Chain()
 
     chain.append('apps.netsuite.tasks.update_expense_and_post_summary', in_progress_expenses, workspace_id, fund_source)
-    chain.append('apps.fyle.helpers.sync_dimensions', fyle_credentials, workspace_id)
+    chain.append('apps.fyle.helpers.sync_dimensions', fyle_credentials, True)
 
     for task in chain_tasks:
         chain.append(task['target'], task['expense_group'], task['task_log_id'], task['last_export'])
