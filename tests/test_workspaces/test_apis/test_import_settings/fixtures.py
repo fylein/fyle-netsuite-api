@@ -5,7 +5,8 @@ data = {
             "import_items": False,
             "import_tax_items": True,
             "import_vendors_as_merchants": True,
-            "auto_create_merchants": False
+            "auto_create_merchants": False,
+            "import_netsuite_employees": False
         },
         "mapping_settings": [
             {
@@ -38,6 +39,7 @@ data = {
             "auto_create_merchants": False,
             "import_tax_items": True,
             "import_vendors_as_merchants": True,
+            "import_netsuite_employees": False
         },
         "mapping_settings": [
             {
@@ -56,6 +58,7 @@ data = {
             "import_items": False,
             "auto_create_merchants": False,
             "import_vendors_as_merchants": True,
+            "import_netsuite_employees": False
         },
         "mapping_settings": [
             {
@@ -89,6 +92,7 @@ data = {
             "import_items": False,
             "auto_create_merchants": False,
             "import_vendors_as_merchants": True,
+            "import_netsuite_employees": False
         },
         "mapping_settings": None,
     },
