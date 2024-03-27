@@ -54,7 +54,6 @@ def schedule_expense_group_creation(workspace_id: int):
     :param user: User email
     :return: None
     """
-    
     task_log, fund_source, configuration = get_task_log_and_fund_source(workspace_id)
 
     async_task('apps.fyle.tasks.create_expense_groups', workspace_id, configuration, fund_source, task_log)

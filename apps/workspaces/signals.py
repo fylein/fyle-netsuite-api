@@ -2,7 +2,6 @@
 Workspace Signals
 """
 import logging
-from datetime import timedelta
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -14,6 +13,8 @@ from apps.fyle.helpers import add_expense_id_to_expense_group_settings, update_i
 from apps.netsuite.helpers import schedule_payment_sync
 from apps.netsuite.connector import NetSuiteConnector
 from apps.mappings.helpers import schedule_or_delete_auto_mapping_tasks
+from apps.mappings.schedules import new_schedule_or_delete_fyle_import_tasks
+from fyle_accounting_mappings.models import MappingSetting
 
 from .models import Configuration, NetSuiteCredentials
 
@@ -36,12 +37,14 @@ def run_post_configration_triggers(sender, instance: Configuration, **kwargs):
     update_import_card_credits_flag(instance.corporate_credit_card_expenses_object, instance.reimbursable_expenses_object, int(instance.workspace_id))
 
     schedule_or_delete_auto_mapping_tasks(configuration=instance)
+    new_schedule_or_delete_fyle_import_tasks(
+        configuration_instance=instance,
+        mapping_settings=MappingSetting.objects.filter(
+            workspace_id=instance.workspace_id
+        ).values()
+    )
 
     schedule_payment_sync(configuration=instance)
-    
-    if not instance.import_items:
-        async_task('apps.mappings.tasks.disable_category_for_items_mapping', instance, q_options={'cluster': 'import'})
-
 
 @receiver(post_save, sender=NetSuiteCredentials)
 def run_post_netsuite_credential_trigger(sender, instance: NetSuiteCredentials, **kwargs):
