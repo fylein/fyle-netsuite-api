@@ -128,31 +128,12 @@ def test_run_post_mapping_settings_triggers(access_token):
     mapping_setting.save()
 
     schedule = Schedule.objects.filter(
-        func='apps.mappings.tasks.auto_import_and_map_fyle_fields',
+        func='apps.mappings.queue.construct_tasks_and_chain_import_fields_to_fyle',
         args='{}'.format(2),
     ).first()
 
-    assert schedule.func == 'apps.mappings.tasks.auto_import_and_map_fyle_fields'
+    assert schedule.func == 'apps.mappings.queue.construct_tasks_and_chain_import_fields_to_fyle'
     assert schedule.args == '2'
-
-    mapping_setting = MappingSetting(
-        source_field='COST_CENTER',
-        destination_field='CLASS',
-        workspace_id=1,
-        import_to_fyle=True,
-        is_custom=False
-    )
-
-    mapping_setting.save()
-
-    schedule = Schedule.objects.filter(
-        func='apps.mappings.tasks.auto_create_cost_center_mappings',
-        args='{}'.format(1),
-    ).first()
-
-    assert schedule.func == 'apps.mappings.tasks.auto_create_cost_center_mappings'
-    assert schedule.args == '1'
-
 
 def test_run_post_general_mapping_triggers(db, access_token):
 

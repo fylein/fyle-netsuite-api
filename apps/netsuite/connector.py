@@ -412,6 +412,9 @@ class NetSuiteConnector:
 
         for custom_segment in custom_segments:
             attribute_type = custom_segment.name.upper().replace(' ', '_')
+            if attribute_type in ('LOCATION', 'DEPARTMENT', 'CLASS'):
+                attribute_type = '{}-CS'.format(attribute_type)
+
             if custom_segment.segment_type == 'CUSTOM_LIST':
                 custom_segment_attributes = self.get_custom_list_attributes(attribute_type, custom_segment.internal_id)
 

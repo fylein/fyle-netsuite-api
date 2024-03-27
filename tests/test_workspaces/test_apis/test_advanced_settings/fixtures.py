@@ -8,15 +8,28 @@ data = {
             "memo_structure": ["merchant", "purpose"],
         },
         "general_mappings": {
+            "vendor_payment_account": {
+                "name": "Payment Account",
+                "id": 12
+            },
             "netsuite_location": {
-            "name": "Bir Billing",
-            "id": "13"
-        },
-        "netsuite_location_level": "TRANSACTION_BODY",
-        "department_level": "",
-        "use_employee_location": False,
-        "use_employee_department": False,
-        "use_employee_class": False
+                "name": "Bir Billing",
+                "id": "13"
+            },
+            "netsuite_department": {
+                "name": "Bir Billing",
+                "id": "13"
+            },
+            "netsuite_class": {
+                "name": "Bir Billing",
+                "id": "13"
+            },
+            "netsuite_location_level": "TRANSACTION_BODY",
+            "netsuite_department_level": "TRANSACTION_BODY",
+            "netsuite_class_level": "TRANSACTION_BODY",
+            "use_employee_location": False,
+            "use_employee_department": False,
+            "use_employee_class": False
         },
         "workspace_schedules": {
             "enabled": True,
@@ -34,15 +47,28 @@ data = {
             "memo_structure": ["merchant", "purpose"],
         },
         "general_mappings": {
+            "vendor_payment_account": {
+                "name": "Payment Account",
+                "id": 12
+            },
             "netsuite_location": {
-            "name": "Bir Billing",
-            "id": "13"
-        },
-        "netsuite_location_level": "TRANSACTION_BODY",
-        "department_level": "",
-        "use_employee_location": False,
-        "use_employee_department": False,
-        "use_employee_class": False
+                "name": "Bir Billing",
+                "id": "13"
+            },
+            "netsuite_department": {
+                "name": "Bir Billing",
+                "id": "13"
+            },
+            "netsuite_class": {
+                "name": "Bir Billing",
+                "id": "13"
+            },
+            "netsuite_location_level": "TRANSACTION_BODY",
+            "netsuite_department_level": "TRANSACTION_BODY",
+            "netsuite_class_level": "TRANSACTION_BODY",
+            "use_employee_location": False,
+            "use_employee_department": False,
+            "use_employee_class": False
         },
         "workspace_schedules": {
             "enabled": True,

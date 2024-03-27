@@ -5,9 +5,10 @@ from django_q.models import Schedule
 from fyle_accounting_mappings.models import MappingSetting
 
 from apps.mappings.tasks import schedule_auto_map_employees, \
-    schedule_auto_map_ccc_employees, schedule_tax_groups_creation, schedule_netsuite_employee_creation_on_fyle
+    schedule_auto_map_ccc_employees, schedule_netsuite_employee_creation_on_fyle
 from apps.mappings.models import GeneralMapping
 from apps.workspaces.models import Configuration
+from apps.mappings.schedules import new_schedule_or_delete_fyle_import_tasks
 
 
 def schedule_or_delete_auto_mapping_tasks(configuration: Configuration):
@@ -15,11 +16,9 @@ def schedule_or_delete_auto_mapping_tasks(configuration: Configuration):
     :param configuration: Workspace Configuration Instance
     :return: None
     """
-    schedule_or_delete_fyle_import_tasks(configuration)
+    new_schedule_or_delete_fyle_import_tasks(configuration, MappingSetting.objects.filter(workspace_id=configuration.workspace_id).values())
     schedule_auto_map_employees(
         employee_mapping_preference=configuration.auto_map_employees, workspace_id=int(configuration.workspace_id))
-    schedule_tax_groups_creation(
-        import_tax_items=configuration.import_tax_items, workspace_id=int(configuration.workspace_id))
     schedule_netsuite_employee_creation_on_fyle(
         import_netsuite_employees=configuration.import_netsuite_employees, workspace_id=int(configuration.workspace_id)
     )
@@ -42,26 +41,13 @@ def validate_and_trigger_auto_map_employees(workspace_id: int):
     chain.run()
 
 
-def schedule_or_delete_fyle_import_tasks(configuration: Configuration):
+def is_auto_sync_allowed(configuration: Configuration, mapping_setting: MappingSetting = None):
     """
-    :param configuration: Workspace Configuration Instance
-    :return: None
+    Get the auto sync permission
+    :return: bool
     """
-    project_mapping = MappingSetting.objects.filter(source_field='PROJECT', workspace_id=configuration.workspace_id).first()
-    if configuration.import_categories or (project_mapping and project_mapping.import_to_fyle) or configuration.import_vendors_as_merchants or configuration.import_items:
-        start_datetime = datetime.now()
-        Schedule.objects.update_or_create(
-            func='apps.mappings.tasks.auto_import_and_map_fyle_fields',
-            cluster='import',
-            args='{}'.format(configuration.workspace_id),
-            defaults={
-                'schedule_type': Schedule.MINUTES,
-                'minutes': 24 * 60,
-                'next_run': start_datetime
-            }
-        )
-    elif not configuration.import_categories and not (project_mapping and project_mapping.import_to_fyle) and not configuration.import_vendors_as_merchants and not configuration.import_items:
-        Schedule.objects.filter(
-            func='apps.mappings.tasks.auto_import_and_map_fyle_fields',
-            args='{}'.format(configuration.workspace_id)
-        ).delete()
+    is_auto_sync_status_allowed = False
+    if (mapping_setting and mapping_setting.destination_field == 'PROJECT' and mapping_setting.source_field == 'PROJECT') or configuration.import_categories:
+        is_auto_sync_status_allowed = True
+
+    return is_auto_sync_status_allowed

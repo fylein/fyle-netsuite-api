@@ -2,6 +2,8 @@ from apps.fyle.models import ExpenseGroupSettings
 from apps.mappings.models import GeneralMapping
 from apps.workspaces.models import Configuration, Workspace
 from rest_framework import serializers
+from apps.workspaces.apis.export_settings.triggers import ExportSettingsTrigger
+
 
 class ReadWriteSerializerMethodField(serializers.SerializerMethodField):
     """
@@ -19,17 +21,22 @@ class ReadWriteSerializerMethodField(serializers.SerializerMethodField):
             self.field_name: data
         }
 
+
 class ConfigurationSerializer(serializers.ModelSerializer):
-    
+
     class Meta:
         model = Configuration
         fields = [
             'reimbursable_expenses_object',
             'corporate_credit_card_expenses_object',
             'is_simplify_report_closure_enabled',
+            'name_in_journal_entry',
+            'employee_field_mapping',
+            'auto_map_employees'
         ]
 
         read_only_fields = ['is_simplify_report_closure_enabled']   
+
 
 class GeneralMappingsSerializer(serializers.ModelSerializer):
     reimbursable_account = ReadWriteSerializerMethodField()
@@ -51,24 +58,25 @@ class GeneralMappingsSerializer(serializers.ModelSerializer):
             'id': instance.reimbursable_account_id,
             'name': instance.reimbursable_account_name 
         }
-    
+
     def get_default_ccc_account(self, instance: GeneralMapping):
         return {
             'id': instance.default_ccc_account_id,
             'name': instance.default_ccc_account_name
         }
-    
+
     def get_accounts_payable(self, instance: GeneralMapping):
         return {
             'id': instance.accounts_payable_id,
             'name': instance.accounts_payable_name
         }
-    
+
     def get_default_ccc_vendor(self, instance: GeneralMapping):
         return {
             'id': instance.default_ccc_vendor_id,
             'name': instance.default_ccc_vendor_name
         }
+
 
 class ExpenseGroupSettingsSerializer(serializers.ModelSerializer):
     reimbursable_expense_group_fields = serializers.ListField(allow_null=True, required=False)
@@ -106,7 +114,6 @@ class ExportSettingsSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['workspace_id']
 
-
     def get_workspace_id(self, instance):
         return instance.id
 
@@ -117,13 +124,23 @@ class ExportSettingsSerializer(serializers.ModelSerializer):
         general_mappings = validated_data.pop('general_mappings')
         workspace_id = instance.id
 
-        Configuration.objects.update_or_create(
+        configuration_instance, _ = Configuration.objects.update_or_create(
             workspace_id=workspace_id,
             defaults={
                 'reimbursable_expenses_object': configurations['reimbursable_expenses_object'], 
                 'corporate_credit_card_expenses_object': configurations['corporate_credit_card_expenses_object'],
+                'employee_field_mapping': configurations['employee_field_mapping'],
+                'name_in_journal_entry': configurations['name_in_journal_entry'],
+                'auto_map_employees': configurations['auto_map_employees'],
             }
         )
+
+        exports_trigger = ExportSettingsTrigger(
+            workspace_id=workspace_id,
+            configuration=configuration_instance
+        )
+
+        exports_trigger.post_save_configurations()
 
         if not expense_group_settings['reimbursable_expense_group_fields']:
             expense_group_settings['reimbursable_expense_group_fields'] = ['employee_email', 'report_id', 'fund_source', 'claim_number']
@@ -140,7 +157,7 @@ class ExportSettingsSerializer(serializers.ModelSerializer):
         ExpenseGroupSettings.update_expense_group_settings(expense_group_settings, workspace_id=workspace_id)
 
         GeneralMapping.objects.update_or_create(
-            workspace = instance,
+            workspace=instance,
             defaults={
                 'reimbursable_account_id': general_mappings['reimbursable_account']['id'],
                 'reimbursable_account_name': general_mappings['reimbursable_account']['name'],
@@ -156,17 +173,17 @@ class ExportSettingsSerializer(serializers.ModelSerializer):
         if instance.onboarding_state == 'EXPORT_SETTINGS':
             instance.onboarding_state = 'IMPORT_SETTINGS'
             instance.save()
-        
+
         return instance
 
     def validate(self, data):
 
         if not data.get('expense_group_settings'):
             raise serializers.ValidationError('Expense group settings are required')
-        
+
         if not data.get('configuration'):
             raise serializers.ValidationError('Configurations settings are required')
-            
+
         if not data.get('general_mappings'):
             raise serializers.ValidationError('General mappings are required')
 
