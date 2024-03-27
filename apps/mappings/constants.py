@@ -63,4 +63,5 @@ SYNC_METHODS = {
     'DEPARTMENT': 'departments',
     'LOCATION': 'locations',
     'CLASS': 'classifications',
+    'custom_segments': 'custom_segments',
 }
