@@ -280,7 +280,7 @@ class RefreshFyleDimensionView(generics.ListCreateAPIView):
         try:
             workspace = Workspace.objects.get(id=kwargs['workspace_id'])
             fyle_credentials = FyleCredential.objects.get(workspace_id=workspace.id)
-            sync_dimensions(fyle_credentials, workspace.id)
+            sync_dimensions(fyle_credentials)
 
             workspace.source_synced_at = datetime.now()
             workspace.save(update_fields=['source_synced_at'])
