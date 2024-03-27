@@ -182,26 +182,7 @@ def sync_netsuite_attribute(netsuite_attribute_type: str, workspace_id: int):
         workspace_id=workspace_id
     )
 
-    if netsuite_attribute_type == 'LOCATION':
-        ns_connection.sync_locations()
-
-    elif netsuite_attribute_type == 'PROJECT':
-        ns_connection.sync_projects()
-        ns_connection.sync_customers()
-
-    elif netsuite_attribute_type == 'DEPARTMENT':
-        ns_connection.sync_departments()
-
-    elif netsuite_attribute_type == 'CLASS':
-        ns_connection.sync_classifications()
-
-    elif netsuite_attribute_type == 'TAX_ITEM':
-        ns_connection.sync_tax_items()
-
-    elif netsuite_attribute_type == 'VENDOR':
-        ns_connection.sync_vendors()
-
-    elif netsuite_attribute_type == 'EMPLOYEE':
+    if netsuite_attribute_type == 'EMPLOYEE':
         ns_connection.sync_employees()
 
     else:
