@@ -26,6 +26,7 @@ fyle_dimension_paths = [
 other_paths = [
     path('expense_attributes/', ExpenseAttributesView.as_view(), name='expense-attributes'),
     path('fyle_fields/', FyleFieldsView.as_view(), name='fyle-fields'),
+    path('fields/', FyleFieldsView.as_view(), name='fyle-fields-v2'),
     path('expense_filters/', ExpenseFilterView.as_view(), name='expense-filters'),
     path('expenses/', ExpenseView.as_view(), name='expenses'),
     path('custom_fields/', CustomFieldView.as_view(), name='custom-field')

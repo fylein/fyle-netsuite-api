@@ -37,22 +37,35 @@ class GeneralMappingsSerializer(serializers.ModelSerializer):
 
     netsuite_location = ReadWriteSerializerMethodField()
     netsuite_location_level = ReadWriteSerializerMethodField()
-    department_level = ReadWriteSerializerMethodField()
+    netsuite_department = ReadWriteSerializerMethodField()
+    netsuite_department_level = ReadWriteSerializerMethodField()
+    netsuite_class = ReadWriteSerializerMethodField()
+    netsuite_class_level = ReadWriteSerializerMethodField()
     use_employee_location = ReadWriteSerializerMethodField()
     use_employee_department = ReadWriteSerializerMethodField()
     use_employee_class = ReadWriteSerializerMethodField()
+    vendor_payment_account = ReadWriteSerializerMethodField()
 
     class Meta:
         model = GeneralMapping
         fields = [
+            'vendor_payment_account',
             'netsuite_location',
             'netsuite_location_level',
-            'department_level',
+            'netsuite_department',
+            'netsuite_department_level',
+            'netsuite_class',
+            'netsuite_class_level',
             'use_employee_location',
             'use_employee_department',
             'use_employee_class'
         ]
 
+    def get_vendor_payment_account(self, instance: GeneralMapping):
+        return {
+            'name': instance.vendor_payment_account_name,
+            'id': instance.vendor_payment_account_id
+        }
 
     def get_netsuite_location(self, instance: GeneralMapping):
         return {
@@ -63,8 +76,23 @@ class GeneralMappingsSerializer(serializers.ModelSerializer):
     def get_netsuite_location_level(self, instance: GeneralMapping):
         return instance.location_level
 
-    def get_department_level(self, instance: GeneralMapping):
+    def get_netsuite_department(self, instance: GeneralMapping):
+        return {
+            'name': instance.department_name,
+            'id': instance.department_id
+        }
+ 
+    def get_netsuite_department_level(self, instance: GeneralMapping):
         return instance.department_level
+
+    def get_netsuite_class(self, instance: GeneralMapping):
+        return {
+            'name': instance.class_name,
+            'id': instance.class_id
+        }
+
+    def get_netsuite_class_level(self, instance: GeneralMapping):
+        return instance.class_level 
 
     def get_use_employee_location(self, instance: GeneralMapping):
         return instance.use_employee_location
@@ -129,12 +157,20 @@ class AdvancedSettingsSerializer(serializers.ModelSerializer):
         GeneralMapping.objects.update_or_create(
             workspace=instance,
             defaults={
-            'netsuite_location': general_mappings.get('netsuite_location'),
-            'netsuite_location_level': general_mappings.get('netsuite_location_level'),
-            'department_level': general_mappings.get('department_level'),
-            'use_employee_location': general_mappings.get('use_employee_location'),
-            'use_employee_department': general_mappings.get('use_employee_department'),
-            'use_employee_class': general_mappings.get('use_employee_class')
+                'vendor_payment_account_id': general_mappings.get('vendor_payment_account').get('id'),
+                'vendor_payment_account_name': general_mappings.get('vendor_payment_account').get('name'),
+                'location_id': general_mappings.get('netsuite_location').get('id'),
+                'location_name': general_mappings.get('netsuite_location').get('name'),
+                'department_id': general_mappings.get('netsuite_department').get('id'),
+                'department_name': general_mappings.get('netsuite_department').get('name'),
+                'class_id': general_mappings.get('netsuite_class').get('id'),
+                'class_name': general_mappings.get('netsuite_class').get('name'),
+                'location_level': general_mappings.get('netsuite_location_level'),
+                'department_level': general_mappings.get('netsuite_department_level'),
+                'class_level': general_mappings.get('netsuite_class_level'),
+                'use_employee_location': general_mappings.get('use_employee_location'),
+                'use_employee_department': general_mappings.get('use_employee_department'),
+                'use_employee_class': general_mappings.get('use_employee_class')
             }
         )
 
