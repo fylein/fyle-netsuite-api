@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'fyle_rest_auth',
     'fyle_accounting_mappings',
+    'fyle_integrations_imports',
 
     # User Created Apps
     'apps.users',
@@ -140,6 +141,16 @@ LOGGING = {
             'handlers': ['debug_logs'],
             'level': 'ERROR',
             'propagate': False
+        },
+        'django_q': {
+            'handlers': ['debug_logs'],
+            'level': 'INFO',
+            'propagate': True
+        },
+        'fyle_integrations_imports': {
+            'handlers': ['debug_logs'],
+            'level': 'INFO',
+            'propagate': True
         }
     }
 }

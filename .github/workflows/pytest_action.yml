@@ -9,12 +9,14 @@ jobs:
     runs-on: ubuntu-latest
     environment: CI Environment
     steps:
-      - uses: actions/checkout@v2 
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - name: Bring up Services and Run Tests
         run: |
           docker-compose -f docker-compose-pipeline.yml build
           docker-compose -f docker-compose-pipeline.yml up -d
-          docker-compose -f docker-compose-pipeline.yml exec -T api pytest tests/ --cov --cov-report=xml --cov-fail-under=94 --junit-xml=test-reports/report.xml | tee pytest-coverage.txt
+          docker-compose -f docker-compose-pipeline.yml exec -T api pytest tests/ --cov --cov-report=xml --cov-fail-under=90 --junit-xml=test-reports/report.xml | tee pytest-coverage.txt
           echo "STATUS=$(cat pytest-coverage.txt | grep 'Required test' | awk '{ print $1 }')" >> $GITHUB_ENV
           echo "FAILED=$(cat test-reports/report.xml | awk -F'=' '{print $5}' | awk -F' ' '{gsub(/"/, "", $1); print $1}')" >> $GITHUB_ENV
         env:

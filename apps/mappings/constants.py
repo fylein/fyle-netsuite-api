@@ -51,3 +51,17 @@ DEFAULT_NETSUITE_IMPORT_TYPES = [
     'VENDOR',
     'EMPLOYEE'
 ]
+
+SYNC_METHODS = {
+    'ACCOUNT': 'accounts',
+    'EXPENSE_CATEGORY': 'expense_categories',
+    'ITEM': 'items',
+    'TAX_ITEM': 'tax_items',
+    'CUSTOMER': 'customers',
+    'VENDOR': 'vendors',
+    'PROJECT': 'projects',
+    'DEPARTMENT': 'departments',
+    'LOCATION': 'locations',
+    'CLASS': 'classifications',
+    'custom_segments': 'custom_segments',
+}

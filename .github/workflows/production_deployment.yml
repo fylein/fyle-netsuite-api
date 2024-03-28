@@ -10,6 +10,8 @@ jobs:
     environment: Production
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - name: push to dockerhub
         uses: fylein/docker-release-action@master
         env:
