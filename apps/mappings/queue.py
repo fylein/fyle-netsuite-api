@@ -102,7 +102,7 @@ def construct_tasks_and_chain_import_fields_to_fyle(workspace_id: int):
     if mapping_settings:
         for mapping_setting in mapping_settings:
             if mapping_setting.source_field in ALLOWED_SOURCE_FIELDS or mapping_setting.is_custom:
-                destination_sync_methods = [SYNC_METHODS[mapping_setting.destination_field.upper()]]
+                destination_sync_methods = [SYNC_METHODS.get(mapping_setting.destination_field.upper(), 'custom_segments')]
 
                 if mapping_setting.destination_field == 'PROJECT':
                     destination_sync_methods.append(SYNC_METHODS['CUSTOMER'])

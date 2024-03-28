@@ -7,6 +7,7 @@ import logging
 
 from django.conf import settings
 from django.db.models import Q
+from fyle_accounting_mappings.models import ExpenseAttribute
 
 from apps.fyle.models import ExpenseGroupSettings, ExpenseFilter, ExpenseGroup, Expense
 from apps.tasks.models import TaskLog
@@ -14,6 +15,8 @@ from apps.workspaces.models import FyleCredential, Workspace, Configuration
 from apps.mappings.models import GeneralMapping
 from apps.workspaces.models import FyleCredential, Workspace, Configuration
 from typing import List, Union
+
+import django_filters
 
 logger = logging.getLogger(__name__)
 
@@ -285,16 +288,33 @@ def check_interval_and_sync_dimension(workspace: Workspace, fyle_credentials: Fy
         time_interval = datetime.now(timezone.utc) - workspace.source_synced_at
 
     if workspace.source_synced_at is None or time_interval.days > 0:
-        sync_dimensions(fyle_credentials, workspace.id)
+        sync_dimensions(fyle_credentials)
         return True
 
     return False
 
 
-def sync_dimensions(fyle_credentials: FyleCredential, workspace_id: int) -> None:
+def sync_dimensions(fyle_credentials: FyleCredential, is_export: bool = False) -> None:
     platform = PlatformConnector(fyle_credentials)
+    platform.import_fyle_dimensions(is_export=is_export)
+    if is_export:
+        categories_count = platform.categories.get_count()
 
-    platform.import_fyle_dimensions(import_taxes=True)
+        categories_expense_attribute_count = ExpenseAttribute.objects.filter(
+            attribute_type="CATEGORY", workspace_id=fyle_credentials.workspace_id, active=True
+        ).count()
+
+        if categories_count != categories_expense_attribute_count:
+            platform.categories.sync()
+
+        projects_count = platform.projects.get_count()
+
+        projects_expense_attribute_count = ExpenseAttribute.objects.filter(
+            attribute_type="PROJECT", workspace_id=fyle_credentials.workspace_id, active=True
+        ).count()
+
+        if projects_count != projects_expense_attribute_count:
+            platform.projects.sync()
 
 def construct_expense_filter_query(expense_filters: List[ExpenseFilter]):
     final_filter = None
@@ -365,3 +385,63 @@ def construct_expense_filter(expense_filter: ExpenseFilter):
         constructed_expense_filter = Q(**filter1)
 
     return constructed_expense_filter
+
+
+class AdvanceSearchFilter(django_filters.FilterSet):
+    def filter_queryset(self, queryset):
+        or_filtered_queryset = queryset.none()
+        or_filter_fields = getattr(self.Meta, 'or_fields', [])
+        or_field_present = False
+
+        for field_name in self.Meta.fields:
+            value = self.data.get(field_name)
+            if value:
+                if field_name == 'is_skipped':
+                    value = True if str(value) == 'true' else False
+                filter_instance = self.filters[field_name]
+                queryset = filter_instance.filter(queryset, value)
+
+        for field_name in or_filter_fields:
+            value = self.data.get(field_name)
+            if value:
+                or_field_present = True
+                filter_instance = self.filters[field_name]
+                field_filtered_queryset = filter_instance.filter(queryset, value)
+                or_filtered_queryset |= field_filtered_queryset
+
+        if or_field_present:
+            queryset = queryset & or_filtered_queryset
+            return queryset
+
+        return queryset
+
+
+class ExpenseGroupSearchFilter(AdvanceSearchFilter):
+    exported_at__gte = django_filters.DateTimeFilter(lookup_expr='gte', field_name='exported_at')
+    exported_at__lte = django_filters.DateTimeFilter(lookup_expr='lte', field_name='exported_at')
+    tasklog__status = django_filters.CharFilter()
+    expenses__expense_number = django_filters.CharFilter(field_name='expenses__expense_number', lookup_expr='icontains')
+    expenses__employee_name = django_filters.CharFilter(field_name='expenses__employee_name', lookup_expr='icontains')
+    expenses__employee_email = django_filters.CharFilter(field_name='expenses__employee_email', lookup_expr='icontains')
+    expenses__claim_number = django_filters.CharFilter(field_name='expenses__claim_number', lookup_expr='icontains')
+
+    class Meta:
+        model = ExpenseGroup
+        fields = ['exported_at__gte', 'exported_at__lte', 'tasklog__status']
+        or_fields = ['expenses__expense_number', 'expenses__employee_name', 'expenses__employee_email', 'expenses__claim_number']
+
+
+class ExpenseSearchFilter(AdvanceSearchFilter):
+    org_id = django_filters.CharFilter()
+    is_skipped = django_filters.BooleanFilter()
+    updated_at__gte = django_filters.DateTimeFilter(lookup_expr='gte', field_name='updated_at')
+    updated_at__lte = django_filters.DateTimeFilter(lookup_expr='lte', field_name='updated_at')
+    expense_number = django_filters.CharFilter(field_name='expense_number', lookup_expr='icontains')
+    employee_name = django_filters.CharFilter(field_name='employee_name', lookup_expr='icontains')
+    employee_email = django_filters.CharFilter(field_name='employee_email', lookup_expr='icontains')
+    claim_number = django_filters.CharFilter(field_name='claim_number', lookup_expr='icontains')
+
+    class Meta:
+        model = Expense
+        fields = ['org_id', 'is_skipped', 'updated_at__gte', 'updated_at__lte']
+        or_fields = ['expense_number', 'employee_name', 'employee_email', 'claim_number']
