@@ -33,6 +33,5 @@ class NewTaskView(LookupFieldMixin, generics.ListAPIView):
     
     queryset = TaskLog.objects.all()
     serializer_class = TaskLogSerializer
-    pagination_class = None
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = {'type':{'in'}, 'expense_group_id':{'in'}, 'status': {'in'}}
