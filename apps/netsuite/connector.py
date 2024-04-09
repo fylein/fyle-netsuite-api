@@ -329,20 +329,19 @@ class NetSuiteConnector:
             }
 
         for field in custom_records:
-            if not field['isInactive']:
-                custom_segment_attributes.append(
-                    {
-                        'attribute_type': attribute_type,
-                        'display_name': custom_records[0]['recType']['name'],
-                        'value': field['name'],
-                        'destination_id': field['internalId'],
-                        'active': not field['isInactive']
-                    }
-                )
+            custom_segment_attributes.append(
+                {
+                    'attribute_type': attribute_type,
+                    'display_name': custom_records[0]['recType']['name'],
+                    'value': field['name'],
+                    'destination_id': field['internalId'],
+                    'active': not field['isInactive']
+                }
+            )
 
-                # Pop the value from the map if it exists
-                if field['internalId'] in disabled_fields_map:
-                    disabled_fields_map.pop(field['internalId'])
+            # Pop the value from the map if it exists
+            if field['internalId'] in disabled_fields_map:
+                disabled_fields_map.pop(field['internalId'])
 
         # Add the disabled fields to the list
         for key, value in disabled_fields_map.items():
@@ -377,20 +376,19 @@ class NetSuiteConnector:
             }
 
         for field in custom_records:
-            if not field['isInactive']:
-                custom_segment_attributes.append(
-                    {
-                        'attribute_type': attribute_type,
-                        'display_name': custom_records[0]['recType']['name'],
-                        'value': field['name'],
-                        'destination_id': field['internalId'],
-                        'active': not field['isInactive']
-                    }
-                )
+            custom_segment_attributes.append(
+                {
+                    'attribute_type': attribute_type,
+                    'display_name': custom_records[0]['recType']['name'],
+                    'value': field['name'],
+                    'destination_id': field['internalId'],
+                    'active': not field['isInactive']
+                }
+            )
 
-                # Pop the value from the map if it exists
-                if field['internalId'] in disabled_fields_map:
-                    disabled_fields_map.pop(field['internalId'])
+            # Pop the value from the map if it exists
+            if field['internalId'] in disabled_fields_map:
+                disabled_fields_map.pop(field['internalId'])
 
         # Add the disabled fields to the list
         for key, value in disabled_fields_map.items():
