@@ -329,19 +329,20 @@ class NetSuiteConnector:
             }
 
         for field in custom_records:
-            custom_segment_attributes.append(
-                {
-                    'attribute_type': attribute_type,
-                    'display_name': custom_records[0]['recType']['name'],
-                    'value': field['name'],
-                    'destination_id': field['internalId'],
-                    'active': not field['isInactive']
-                }
-            )
+            if not field['isInactive']:
+                custom_segment_attributes.append(
+                    {
+                        'attribute_type': attribute_type,
+                        'display_name': custom_records[0]['recType']['name'],
+                        'value': field['name'],
+                        'destination_id': field['internalId'],
+                        'active': not field['isInactive']
+                    }
+                )
 
-            # Pop the value from the map if it exists
-            if field['internalId'] in disabled_fields_map:
-                disabled_fields_map.pop(field['internalId'])
+                # Pop the value from the map if it exists
+                if field['internalId'] in disabled_fields_map:
+                    disabled_fields_map.pop(field['internalId'])
 
         # Add the disabled fields to the list
         for key, value in disabled_fields_map.items():
@@ -376,19 +377,20 @@ class NetSuiteConnector:
             }
 
         for field in custom_records:
-            custom_segment_attributes.append(
-                {
-                    'attribute_type': attribute_type,
-                    'display_name': custom_records[0]['recType']['name'],
-                    'value': field['name'],
-                    'destination_id': field['internalId'],
-                    'active': not field['isInactive']
-                }
-            )
+            if not field['isInactive']:
+                custom_segment_attributes.append(
+                    {
+                        'attribute_type': attribute_type,
+                        'display_name': custom_records[0]['recType']['name'],
+                        'value': field['name'],
+                        'destination_id': field['internalId'],
+                        'active': not field['isInactive']
+                    }
+                )
 
-            # Pop the value from the map if it exists
-            if field['internalId'] in disabled_fields_map:
-                disabled_fields_map.pop(field['internalId'])
+                # Pop the value from the map if it exists
+                if field['internalId'] in disabled_fields_map:
+                    disabled_fields_map.pop(field['internalId'])
 
         # Add the disabled fields to the list
         for key, value in disabled_fields_map.items():
@@ -464,11 +466,20 @@ class NetSuiteConnector:
         location_attributes = []
 
         for location in locations:
-            if 'subsidiaryList' in location and location['subsidiaryList']:
-                subsidiaries = location['subsidiaryList']['recordRef']
-                counter = 0
-                if subsidiaries[counter]['internalId'] == subsidiary_mapping.internal_id:
-                    counter += 1
+            if not location['isInactive']:
+                if 'subsidiaryList' in location and location['subsidiaryList']:
+                    subsidiaries = location['subsidiaryList']['recordRef']
+                    counter = 0
+                    if subsidiaries[counter]['internalId'] == subsidiary_mapping.internal_id:
+                        counter += 1
+                        location_attributes.append({
+                            'attribute_type': 'LOCATION',
+                            'display_name': 'Location',
+                            'value': location['name'],
+                            'destination_id': location['internalId'],
+                            'active': not location['isInactive']
+                        })
+                else:
                     location_attributes.append({
                         'attribute_type': 'LOCATION',
                         'display_name': 'Location',
@@ -476,14 +487,6 @@ class NetSuiteConnector:
                         'destination_id': location['internalId'],
                         'active': not location['isInactive']
                     })
-            else:
-                location_attributes.append({
-                    'attribute_type': 'LOCATION',
-                    'display_name': 'Location',
-                    'value': location['name'],
-                    'destination_id': location['internalId'],
-                    'active': not location['isInactive']
-                })
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(
             location_attributes, 'LOCATION', self.workspace_id, True)
@@ -499,13 +502,14 @@ class NetSuiteConnector:
         classification_attributes = []
 
         for classification in classifications:
-            classification_attributes.append({
-                'attribute_type': 'CLASS',
-                'display_name': 'Class',
-                'value': classification['name'],
-                'destination_id': classification['internalId'],
-                'active': not classification['isInactive']
-            })
+            if not classification['isInactive']:
+                classification_attributes.append({
+                    'attribute_type': 'CLASS',
+                    'display_name': 'Class',
+                    'value': classification['name'],
+                    'destination_id': classification['internalId'],
+                    'active': not classification['isInactive']
+                })
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(
             classification_attributes, 'CLASS', self.workspace_id, True)
@@ -521,13 +525,14 @@ class NetSuiteConnector:
         department_attributes = []
 
         for department in departments:
-            department_attributes.append({
-                'attribute_type': 'DEPARTMENT',
-                'display_name': 'Department',
-                'value': department['name'],
-                'destination_id': department['internalId'],
-                'active': not department['isInactive']
-            })
+            if not department['isInactive']:
+                department_attributes.append({
+                    'attribute_type': 'DEPARTMENT',
+                    'display_name': 'Department',
+                    'value': department['name'],
+                    'destination_id': department['internalId'],
+                    'active': not department['isInactive']
+                })
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(
             department_attributes, 'DEPARTMENT', self.workspace_id, True)
@@ -551,11 +556,21 @@ class NetSuiteConnector:
         for vendors in vendors_generator:
             attributes = []
             for vendor in vendors:
-                detail = {
-                    'email': vendor['email'] if vendor['email'] else None
-                }
-                if 'subsidiary' in vendor and vendor['subsidiary']:
-                    if vendor['subsidiary']['internalId'] == subsidiary_mapping.internal_id or configuration.allow_intercompany_vendors:
+                if not vendor['isInactive']:
+                    detail = {
+                        'email': vendor['email'] if vendor['email'] else None
+                    }
+                    if 'subsidiary' in vendor and vendor['subsidiary']:
+                        if vendor['subsidiary']['internalId'] == subsidiary_mapping.internal_id or configuration.allow_intercompany_vendors:
+                            attributes.append({
+                                'attribute_type': 'VENDOR',
+                                'display_name': 'Vendor',
+                                'value': unidecode.unidecode(u'{0}'.format(vendor['entityId'])),
+                                'destination_id': vendor['internalId'],
+                                'detail': detail,
+                                'active': not vendor['isInactive']
+                            })
+                    else:
                         attributes.append({
                             'attribute_type': 'VENDOR',
                             'display_name': 'Vendor',
@@ -564,15 +579,6 @@ class NetSuiteConnector:
                             'detail': detail,
                             'active': not vendor['isInactive']
                         })
-                else:
-                    attributes.append({
-                        'attribute_type': 'VENDOR',
-                        'display_name': 'Vendor',
-                        'value': unidecode.unidecode(u'{0}'.format(vendor['entityId'])),
-                        'destination_id': vendor['internalId'],
-                        'detail': detail,
-                        'active': not vendor['isInactive']
-                    })
 
             DestinationAttribute.bulk_create_or_update_destination_attributes(
                 attributes, 'VENDOR', self.workspace_id, True)
