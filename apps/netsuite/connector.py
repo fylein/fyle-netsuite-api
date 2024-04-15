@@ -761,15 +761,17 @@ class NetSuiteConnector:
         return created_attribute
 
     def get_or_create_vendor(self, expense_attribute: ExpenseAttribute, expense_group: ExpenseGroup):
-        vendor = self.connection.vendors.search(
+        vendors = self.connection.vendors.search(
             attribute='entityId', value=expense_attribute.detail['full_name'], operator='is')
 
-        if not vendor:
+        active_vendors = list(filter(lambda vendor: not vendor['isInactive'], vendors)) if vendors else []
+
+        if not active_vendors:
             created_vendor = self.post_vendor(expense_group, expense_attribute)
             return self.create_destination_attribute(
                 'vendor', expense_attribute.detail['full_name'], created_vendor['internalId'], expense_attribute.value)
         else:
-            vendor = vendor[0]
+            vendor = active_vendors[0]
             return self.create_destination_attribute(
                 'vendor', vendor['entityId'], vendor['internalId'], vendor['email'])
 
