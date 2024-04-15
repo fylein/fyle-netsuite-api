@@ -764,14 +764,14 @@ class NetSuiteConnector:
         vendors = self.connection.vendors.search(
             attribute='entityId', value=expense_attribute.detail['full_name'], operator='is')
 
-        active_vendor = list(filter(lambda vendor: not vendor['isInactive'], vendors)) if vendors else []
+        active_vendors = list(filter(lambda vendor: not vendor['isInactive'], vendors)) if vendors else []
 
-        if not active_vendor:
+        if not active_vendors:
             created_vendor = self.post_vendor(expense_group, expense_attribute)
             return self.create_destination_attribute(
                 'vendor', expense_attribute.detail['full_name'], created_vendor['internalId'], expense_attribute.value)
         else:
-            vendor = vendor[0]
+            vendor = active_vendors[0]
             return self.create_destination_attribute(
                 'vendor', vendor['entityId'], vendor['internalId'], vendor['email'])
 
