@@ -163,14 +163,16 @@ def get_or_create_credit_card_vendor(expense_group: ExpenseGroup, merchant: str,
     netsuite_connection = NetSuiteConnector(
         netsuite_credentials=netsuite_credentials, workspace_id=int(expense_group.workspace_id))
 
-    vendor = netsuite_connection.connection.vendors.search(attribute='entityId', value=merchant, operator='is')
+    vendors = netsuite_connection.connection.vendors.search(attribute='entityId', value=merchant, operator='is')
 
-    if not vendor:
+    active_vendors = list(filter(lambda vendor: not vendor['isInactive'], vendors)) if vendors else []
+
+    if not active_vendors:
         if auto_create_merchants and merchant is not None:
             created_vendor = netsuite_connection.post_vendor(expense_group=expense_group, merchant=merchant)
             return netsuite_connection.create_destination_attribute('vendor', merchant, created_vendor['internalId'])
     else:
-        vendor = vendor[0]
+        vendor = active_vendors[0]
         return netsuite_connection.create_destination_attribute(
             'vendor', vendor['entityId'], vendor['internalId'])
 
