@@ -54,7 +54,7 @@ for workspace in workspaces:
                         error_type = 'MAPPING'
                     else:
                         error_type = 'ACCOUNTING_INTEGRATION_ERROR'
-                url = '{}/workspaces/{}/dashboard'.format(settings.NETSUITE_INTEGRATION_APP_URL, expense.workspace_id),
+                url = '{}/workspaces/{}/dashboard'.format(settings.NETSUITE_INTEGRATION_APP_URL, expense.workspace_id)
             else:
                 if expense_group.export_url:
                     url = expense_group.export_url
