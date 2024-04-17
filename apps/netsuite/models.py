@@ -108,6 +108,8 @@ def get_tax_item_id_or_none(expense_group: ExpenseGroup, lineitem: Expense = Non
     ).first()
     if mapping:
         tax_code = mapping.destination.destination_id
+    else:
+        tax_code = GeneralMapping.default_tax_code_id
 
     return tax_code
 
