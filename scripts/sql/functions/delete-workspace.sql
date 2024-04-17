@@ -8,6 +8,12 @@ BEGIN
     RAISE NOTICE 'Deleting data from workspace %', _workspace_id;
 
     DELETE
+    FROM import_logs il
+    WHERE il.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % import_logs', rcount;
+
+    DELETE
     FROM task_logs tl
     WHERE tl.workspace_id = _workspace_id;
     GET DIAGNOSTICS rcount = ROW_COUNT;
