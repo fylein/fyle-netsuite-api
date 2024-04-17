@@ -58,7 +58,7 @@ def test_get_department_id_or_none(access_token, mocker):
     assert department_id == None
 
 def test_get_tax_item_id_or_none(db):
-    expense_group = ExpenseGroup.objects.get(id=1)
+    expense_group = ExpenseGroup.objects.get(id=47)
     expenses = expense_group.expenses.all()
 
     for lineitem in expenses:
