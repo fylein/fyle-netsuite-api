@@ -31,6 +31,11 @@ data = {
                 "source_placeholder": "class",
             },
         ],
+        "general_mapping": [
+            {
+                "default_tax_code": ["123"]
+            }
+        ]
     },
     "import_settings_without_mapping": {
         "configuration": {
