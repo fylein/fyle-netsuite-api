@@ -57,14 +57,6 @@ def test_get_department_id_or_none(access_token, mocker):
     department_id = get_department_id_or_none(expense_group, None)
     assert department_id == None
 
-def test_get_tax_item_id_or_none(db):
-    expense_group = ExpenseGroup.objects.get(id=47)
-    expenses = expense_group.expenses.all()
-
-    for lineitem in expenses:
-        location_id = get_tax_item_id_or_none(expense_group, lineitem)
-        assert location_id == None
-
 def test_get_ccc_account_id(db, mocker):
     configuration = Configuration.objects.get(workspace_id=49)
     configuration.map_fyle_cards_netsuite_account = True

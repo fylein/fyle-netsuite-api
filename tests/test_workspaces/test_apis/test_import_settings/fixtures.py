@@ -31,9 +31,9 @@ data = {
                 "source_placeholder": "class",
             },
         ],
-        "general_mapping": [
+        "general_mappings": [
             {
-                "default_tax_code": ["123"]
+                "default_tax_code": ["anish"]
             }
         ]
     },
@@ -55,6 +55,11 @@ data = {
                 "source_placeholder": "class",
             }
         ],
+        "general_mappings": [
+            {
+                "default_tax_code": ["anish123"]
+            }
+        ]
     },
     "response": {
         "configuration": {
