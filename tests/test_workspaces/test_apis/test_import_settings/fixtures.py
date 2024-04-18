@@ -66,6 +66,9 @@ data = {
             "import_vendors_as_merchants": True,
             "import_netsuite_employees": False
         },
+        "general_mappings": {
+            "default_tax_code": {"name": "12.5% TR @12.5%", "id": "22"}
+        },
         "mapping_settings": [
             {
                 "source_field": "COST_CENTER",
