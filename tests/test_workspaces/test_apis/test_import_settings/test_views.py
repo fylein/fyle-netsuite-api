@@ -24,7 +24,7 @@ def test_import_settings(mocker, api_client, access_token):
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
     response = api_client.put(url, data=data['import_settings'], format='json')
 
-    # assert response.status_code == 200
+    assert response.status_code == 200
 
     response = json.loads(response.content)
     assert dict_compare_keys(response, data['response']) == [], 'workspaces api returns a diff in the keys'
