@@ -31,11 +31,9 @@ data = {
                 "source_placeholder": "class",
             },
         ],
-        "general_mappings": [
-            {
-                "default_tax_code": ["anish"]
-            }
-        ]
+        "general_mappings": {
+            "default_tax_code": {"name": "12.5% TR @12.5%", "id": "22"}
+        },
     },
     "import_settings_without_mapping": {
         "configuration": {
@@ -55,11 +53,9 @@ data = {
                 "source_placeholder": "class",
             }
         ],
-        "general_mappings": [
-            {
-                "default_tax_code": ["anish123"]
-            }
-        ]
+        "general_mappings": {
+            "default_tax_code": {"name": "12.5% TR @12.5%", "id": "22"}
+        },
     },
     "response": {
         "configuration": {

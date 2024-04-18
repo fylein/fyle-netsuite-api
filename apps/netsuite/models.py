@@ -98,7 +98,7 @@ def get_class_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
     return class_id
 
 
-def get_tax_item_id_or_none(expense_group: ExpenseGroup, lineitem: Expense = None):
+def get_tax_item_id_or_none(expense_group: ExpenseGroup, general_mapping: GeneralMapping, lineitem: Expense = None):
     tax_code = None
     mapping: Mapping = Mapping.objects.filter(
         source_type='TAX_GROUP',
@@ -109,7 +109,7 @@ def get_tax_item_id_or_none(expense_group: ExpenseGroup, lineitem: Expense = Non
     if mapping:
         tax_code = mapping.destination.destination_id
     else:
-        tax_code = GeneralMapping.default_tax_code_id
+        tax_code = general_mapping.default_tax_code_id
 
     return tax_code
 
@@ -519,7 +519,7 @@ class BillLineitem(models.Model):
                     'department_id': department_id,
                     'customer_id': customer_id,
                     'amount': lineitem.amount,
-                    'tax_item_id': get_tax_item_id_or_none(expense_group, lineitem),
+                    'tax_item_id': get_tax_item_id_or_none(expense_group, general_mappings,lineitem),
                     'tax_amount': lineitem.tax_amount,
                     'billable': billable,
                     'memo': get_expense_purpose(lineitem, category, configuration),
@@ -731,7 +731,7 @@ class CreditCardChargeLineItem(models.Model):
                 'department_id': department_id,
                 'customer_id': customer_id,
                 'amount': lineitem.amount,
-                'tax_item_id': get_tax_item_id_or_none(expense_group, lineitem),
+                'tax_item_id': get_tax_item_id_or_none(expense_group, general_mappings,lineitem),
                 'tax_amount': lineitem.tax_amount,
                 'billable': billable,
                 'memo': get_expense_purpose(lineitem, category, configuration),
@@ -963,7 +963,7 @@ class ExpenseReportLineItem(models.Model):
                     'location_id': location_id,
                     'department_id': department_id,
                     'currency': currency.destination_id if currency else '1',
-                    'tax_item_id': get_tax_item_id_or_none(expense_group, lineitem),
+                    'tax_item_id': get_tax_item_id_or_none(expense_group, general_mappings,lineitem),
                     'tax_amount': lineitem.tax_amount,
                     'transaction_date': get_transaction_date(expense_group),
                     'memo': get_expense_purpose(lineitem, category, configuration),
@@ -1184,7 +1184,7 @@ class JournalEntryLineItem(models.Model):
                     'class_id': class_id if class_id else None,
                     'entity_id': entity_id,
                     'amount': lineitem.amount,
-                    'tax_item_id': get_tax_item_id_or_none(expense_group, lineitem),
+                    'tax_item_id': get_tax_item_id_or_none(expense_group, general_mappings,lineitem),
                     'tax_amount': lineitem.tax_amount,
                     'memo': get_expense_purpose(lineitem, category, configuration),
                     'netsuite_custom_segments': custom_segments
