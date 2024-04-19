@@ -3,6 +3,7 @@ import json
 from datetime import datetime, timedelta
 from typing import List, Dict
 import logging
+import zeep.exceptions as zeep_exceptions
 
 from django.conf import settings
 from django.db.models import Max
@@ -1691,6 +1692,9 @@ class NetSuiteConnector:
 
             created_expense_report = self.connection.expense_reports.post(expense_report_payload)
             return created_expense_report
+
+        except zeep_exceptions.Fault as exception:
+            logger.info('Error in Expense Report creation: %s', exception.__dict__)
 
         except NetSuiteRequestError as exception:
             detail = json.dumps(exception.__dict__)
