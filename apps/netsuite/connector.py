@@ -1452,10 +1452,10 @@ class NetSuiteConnector:
             logger.info('Charge Card Error - %s', raw_response.text)
 
             try:
-                error_message = json.loads(eval(raw_response.text)['error']['message'])['message']
-            except Exception:
-                response = json.loads((raw_response.text.replace('"{', '{').replace('}"', '}').replace('\\', '').replace('"https://', "'https://").replace('.html"', ".html'")))
-                error_message = response['error']['message']['message'] if 'error' in response and 'message' in response['error'] and 'message' in response['error']['message'] else response['message']['message']
+                from apps.netsuite.helpers import parse_error_and_get_message
+                error_message = parse_error_and_get_message(raw_response.text)
+            except Exception as e:
+                logger.info('Error while parsing error message - %s', e)
 
             if error_message == 'The transaction date you specified is not within the date range of your accounting period.':
                 first_day_of_month = datetime.today().date().replace(day=1)
