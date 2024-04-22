@@ -35,7 +35,7 @@ def error_matcher(string, workspace_id, export_type='expense_report'):
                     numbers = re.findall(r'-?\d+', string)
                     return [{'attribute_type': key, 'destination_id':number} for key, number in zip(error_data['keys'], numbers)]
 
-    return None
+    return []
 
 
 def get_entity_values(error_dict, workspace_id):
