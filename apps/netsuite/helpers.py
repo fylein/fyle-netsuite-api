@@ -76,8 +76,7 @@ def parse_error_and_get_message(raw_response):
         parsed_response = json.loads(raw_response)
         return get_message_from_parsed_error(parsed_response)
     except Exception:
-        raw_response = raw_response.replace('\""', '"')\
-            .replace('"creditCardCharge"', 'creditCardCharge')\
+        raw_response = raw_response.replace('"creditCardCharge"', 'creditCardCharge')\
             .replace('""{', '{').replace('}""', '}')\
             .replace('"{', '{').replace('}"', '}')\
             .replace('\\"', '"').replace('\\', '')\

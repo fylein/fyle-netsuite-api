@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from apps.netsuite.helpers import check_interval_and_sync_dimension, sync_dimensions
+from apps.netsuite.helpers import check_interval_and_sync_dimension, sync_dimensions, parse_error_and_get_message
 from fyle_accounting_mappings.models import DestinationAttribute
 from apps.workspaces.models import NetSuiteCredentials, Workspace
 from .fixtures import data
@@ -97,3 +97,11 @@ def test_sync_dimensions(mocker, db):
     assert employee_count == 13
     assert project_count == 1087
     assert category_count == 34
+
+
+def test_parse_error_and_get_message():
+    raw_responses = data['charge_card_error_raw_responses']
+
+    for raw_response in raw_responses:
+        message = parse_error_and_get_message(raw_response['text'])
+        assert message == raw_response['message']

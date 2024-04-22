@@ -7402,5 +7402,27 @@ data = {
                 "updated_at": "2020-09-02T08:06:17.063568+00:00"
             }
         ]
-    }]
+    }],
+    'charge_card_error_raw_responses': [
+        {
+            "text": """{"error" : {"code" : "USER_ERROR", "message" : "{\"type\":\"error.SuiteScriptError\",\"name\":\"USER_ERROR\",\"message\":\"Please enter value(s) for: Tax Code\",\"id\":\"\",\"stack\":[\"anonymous(N/serverRecordService)\",\"<anonymous>(/SuiteBundles/Bundle 355595/create_credit_card_charge.js:128)\",\"CreateNetSuiteCreditCardCharge(/SuiteBundles/Bundle 355595/create_credit_card_charge.js:59)\",\"doPost(/SuiteBundles/Bundle 355595/create_credit_card_charge.js:23)\"],\"cause\":{\"type\":\"internal error\",\"code\":\"USER_ERROR\",\"details\":\"Please enter value(s) for: Tax Code\",\"userEvent\":null,\"stackTrace\":[\"anonymous(N/serverRecordService)\",\"<anonymous>(/SuiteBundles/Bundle 355595/create_credit_card_charge.js:128)\",\"CreateNetSuiteCreditCardCharge(/SuiteBundles/Bundle 355595/create_credit_card_charge.js:59)\",\"doPost(/SuiteBundles/Bundle 355595/create_credit_card_charge.js:23)\"],\"notifyOff\":false},\"notifyOff\":false,\"userFacing\":false}"}}""",
+            "message": "Please enter value(s) for: Tax Code",
+        },
+        {
+            "text": """{"error" : {"code" : "INVALID_FLD_VALUE", "message" : "{\"type\":\"error.SuiteScriptError\",\"name\":\"INVALID_FLD_VALUE\",\"message\":\"You have entered an Invalid Field Value 29 for the following field: class\",\"id\":\"\",\"stack\":[\"anonymous(N/serverRecordService)\",\"<anonymous>(/SuiteBundles/Bundle 355595/create_credit_card_charge.js:83)\",\"CreateNetSuiteCreditCardCharge(/SuiteBundles/Bundle 355595/create_credit_card_charge.js:58)\",\"doPost(/SuiteBundles/Bundle 355595/create_credit_card_charge.js:23)\"],\"cause\":{\"type\":\"internal error\",\"code\":\"INVALID_FLD_VALUE\",\"details\":\"You have entered an Invalid Field Value 29 for the following field: class\",\"userEvent\":null,\"stackTrace\":[\"anonymous(N/serverRecordService)\",\"<anonymous>(/SuiteBundles/Bundle 355595/create_credit_card_charge.js:83)\",\"CreateNetSuiteCreditCardCharge(/SuiteBundles/Bundle 355595/create_credit_card_charge.js:58)\",\"doPost(/SuiteBundles/Bundle 355595/create_credit_card_charge.js:23)\"],\"notifyOff\":false},\"notifyOff\":false,\"userFacing\":false}"}}""",
+            "message": "You have entered an Invalid Field Value 29 for the following field: class"
+        },
+        {
+            "text": """{'error': {'code': 'USER_ERROR', 'message': {'type': 'error.SuiteScriptError', 'name': 'USER_ERROR', 'message': 'The transaction date you specified is not within the date range of your accounting period.', 'id': '', 'stack': ['anonymous(N/serverRecordService)', 'CreateNetSuiteCreditCardCharge(/SuiteBundles/Bundle 355595/create_credit_card_charge.js:121)', 'doPost(/SuiteBundles/Bundle 355595/create_credit_card_charge.js:23)'], 'cause': {'type': 'internal error', 'code': 'USER_ERROR', 'details': 'The transaction date you specified is not within the date range of your accounting period.', 'userEvent': None, 'stackTrace': ['anonymous(N/serverRecordService)', 'CreateNetSuiteCreditCardCharge(/SuiteBundles/Bundle 355595/create_credit_card_charge.js:121)', 'doPost(/SuiteBundles/Bundle 355595/create_credit_card_charge.js:23)'], 'notifyOff': False}, 'notifyOff': False, 'userFacing': False}}}""",
+            "message": "The transaction date you specified is not within the date range of your accounting period."
+        },
+        {
+            "text": """{"error" : {"code" : "SSS_REQUEST_LIMIT_EXCEEDED", "message" : "Request Limit Exceeded!"}}""",
+            "message": "Request Limit Exceeded!"
+        },
+        {
+            "text": """{"error" : {"code" : "REFERENCE_ERROR", "message" : "org.mozilla.javascript.EcmaError: ReferenceError: \"creditCardCharge\" is not defined. (/SuiteBundles/Bundle 355595/credit_card_refund.js#46)."}}""",
+            "message": """org.mozilla.javascript.EcmaError: ReferenceError: creditCardCharge is not defined. (/SuiteBundles/Bundle 355595/credit_card_refund.js#46)."""
+        }
+    ]
 }
