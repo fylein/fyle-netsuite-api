@@ -15,6 +15,10 @@ from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configur
 from apps.tasks.models import Error
 
 from .exceptions import handle_exceptions
+from fyle.platform.exceptions import (
+    InternalServerError,
+    InvalidTokenError as FyleInvalidTokenError
+)
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -145,10 +149,14 @@ def async_auto_map_ccc_account(workspace_id: int):
     default_ccc_account_id = general_mappings.default_ccc_account_id
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-    platform = PlatformConnector(fyle_credentials=fyle_credentials)
-    platform.employees.sync()
-
-    EmployeesAutoMappingHelper(workspace_id, 'CREDIT_CARD_ACCOUNT').ccc_mapping(default_ccc_account_id)
+    try:
+        platform = PlatformConnector(fyle_credentials=fyle_credentials)
+        platform.employees.sync()
+        EmployeesAutoMappingHelper(workspace_id, 'CREDIT_CARD_ACCOUNT').ccc_mapping(default_ccc_account_id)
+    except FyleInvalidTokenError:
+        logger.info('Invalid Token for fyle in workspace - %s', workspace_id)
+    except InternalServerError:
+        logger.info('Fyle Internal Server Error in workspace - %s', workspace_id)
 
 
 def schedule_auto_map_ccc_employees(workspace_id: int):

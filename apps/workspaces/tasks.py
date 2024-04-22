@@ -227,7 +227,7 @@ def post_to_integration_settings(workspace_id: int, active: bool):
 
 def async_update_fyle_credentials(fyle_org_id: str, refresh_token: str):
     fyle_credentials = FyleCredential.objects.filter(workspace__fyle_org_id=fyle_org_id).first()
-    if fyle_credentials:
+    if fyle_credentials and refresh_token:
         fyle_credentials.refresh_token = refresh_token
         fyle_credentials.save()
 
