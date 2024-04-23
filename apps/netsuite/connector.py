@@ -22,7 +22,7 @@ from apps.workspaces.models import Configuration
 from apps.mappings.models import SubsidiaryMapping
 from apps.netsuite.models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, \
     JournalEntryLineItem, CustomSegment, VendorPayment, VendorPaymentLineitem, CreditCardChargeLineItem, \
-    CreditCardCharge
+    CreditCardCharge, get_tax_info
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Workspace
 
 logger = logging.getLogger(__name__)
@@ -904,7 +904,8 @@ class NetSuiteConnector:
                             'destination_id': tax_item['internalId'],
                             'active': True,
                             'detail': {
-                                'tax_rate': tax_rate
+                                'tax_rate': tax_rate,
+                                'tax_type': tax_item['taxType']
                             }
                         })
 
@@ -1034,7 +1035,7 @@ class NetSuiteConnector:
         item_list = []
 
         for line in bill_lineitems:
-            expense = Expense.objects.get(pk=line.expense_id)
+            expense: Expense = Expense.objects.get(pk=line.expense_id)
 
             netsuite_custom_segments = line.netsuite_custom_segments
 
@@ -1065,7 +1066,7 @@ class NetSuiteConnector:
                 'line': None,
                 'amount': line.amount - line.tax_amount if (line.tax_item_id and line.tax_amount is not None) else line.amount,
                 'grossAmt': None if override_tax_details else line.amount,
-                'taxDetailsReference': None,
+                'taxDetailsReference': expense.expense_number if override_tax_details else None,
                 'department': {
                     'name': None,
                     'internalId': line.department_id,
@@ -1146,6 +1147,37 @@ class NetSuiteConnector:
                 item_list.append(lineitem)
 
         return expense_list, item_list
+    
+    def construct_tax_details_list(self, bill_lineitems: List[BillLineitem]):
+        tax_details_list = {}
+        tax_details = []
+
+        for line in bill_lineitems:
+            expense: Expense = Expense.objects.get(pk=line.expense_id)
+
+            tax_type_id = None
+            tax_code_id = None
+            tax_rate =  None
+
+            tax_code_id, tax_rate, tax_type_id = get_tax_info(expense)
+
+            details = {
+                'taxType': {
+                    'internalId' : tax_type_id
+                },
+                'taxCode': {
+                    'internalId': tax_code_id
+                },
+                'taxRate': tax_rate,
+                'taxBasis': expense.amount - expense.tax_amount,
+                'taxAmount': expense.tax_amount,
+                'taxDetailsReference': expense.expense_number
+            }
+            tax_details.append(details)
+
+        tax_details_list['taxDetails'] = tax_details
+        return tax_details_list
+
 
     def __construct_bill(self, bill: Bill, bill_lineitems: List[BillLineitem]) -> Dict:
         """
@@ -1158,7 +1190,11 @@ class NetSuiteConnector:
         cluster_domain = fyle_credentials.cluster_domain
         org_id = Workspace.objects.get(id=bill.expense_group.workspace_id).fyle_org_id
 
-        expense_list, item_list = self.construct_bill_lineitems( bill_lineitems, {}, cluster_domain, org_id, bill.override_tax_details)
+        tax_details_list =  None
+        expense_list, item_list = self.construct_bill_lineitems(bill_lineitems, {}, cluster_domain, org_id, bill.override_tax_details)
+
+        if bill.override_tax_details:
+            tax_details_list = self.construct_tax_details_list(bill_lineitems)
 
         bill_payload = {
             'nullFieldList': None,
@@ -1243,7 +1279,7 @@ class NetSuiteConnector:
             'accountingBookDetailList': None,
             'landedCostsList': None,
             'purchaseOrderList': None,
-            'taxDetailsList': None,
+            'taxDetailsList': tax_details_list if bill.override_tax_details else None,
             'customFieldList': None,
             'internalId': None,
             'externalId': bill.external_id
