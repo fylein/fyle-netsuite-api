@@ -125,7 +125,7 @@ def get_tax_info(lineitem: Expense = None):
     if mapping:
         tax_code = mapping.destination.destination_id
         tax_rate = mapping.destination.detail.get('tax_rate')
-        tax_type = mapping.destination.detail.get('tax_type')['internalId']
+        tax_type = mapping.destination.detail.get('tax_type', {}).get('internalId')
 
     return tax_code, tax_rate, tax_type
 
