@@ -905,7 +905,8 @@ class NetSuiteConnector:
                             'active': True,
                             'detail': {
                                 'tax_rate': tax_rate,
-                                'tax_type': tax_item['taxType']
+                                'tax_type_internal_id': tax_item['taxType']['internalId'],
+                                'tax_type_name': tax_item['taxType']['name']
                             }
                         })
 
