@@ -1097,7 +1097,7 @@ class NetSuiteConnector:
                 'taxAmount': line.tax_amount if (line.tax_item_id and line.tax_amount is not None and not override_tax_details) else None,
                 'taxCode':{
                     'name': None,
-                    'internalId': line.tax_item_id if (line.tax_item_id and line.tax_amount is not None) else None,
+                    'internalId': line.tax_item_id if (line.tax_item_id and line.tax_amount is not None and not override_tax_details) else None,
                     'externalId': None,
                     'type': 'taxGroup'
                 },
