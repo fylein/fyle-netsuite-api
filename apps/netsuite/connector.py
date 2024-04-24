@@ -1154,7 +1154,7 @@ class NetSuiteConnector:
         tax_details = []
 
         for line in bill_lineitems:
-            expense: Expense = Expense.objects.get(pk=line.expense_id)
+            expense = line.expense
 
             tax_type_id = None
             tax_code_id = None
