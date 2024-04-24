@@ -1427,7 +1427,9 @@ CREATE TABLE public.general_mappings (
     override_tax_details boolean NOT NULL,
     class_id character varying(255),
     class_level character varying(255),
-    class_name character varying(255)
+    class_name character varying(255),
+    default_tax_code_id character varying(255),
+    default_tax_code_name character varying(255)
 );
 
 
@@ -7964,6 +7966,7 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 189	fyle_accounting_mappings	0025_expenseattributesdeletioncache	2024-04-22 16:01:06.704869+00
 190	fyle_integrations_imports	0001_initial	2024-04-22 16:01:06.803517+00
 191	tasks	0010_auto_20240422_0944	2024-04-22 16:01:06.921481+00
+192	mappings	0014_auto_20240417_0807	2024-04-17 08:10:15.113227+00
 \.
 
 
@@ -11629,10 +11632,18 @@ COPY public.fyle_credentials (id, refresh_token, created_at, updated_at, workspa
 -- Data for Name: general_mappings; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.general_mappings (id, location_name, location_id, accounts_payable_name, accounts_payable_id, created_at, updated_at, workspace_id, default_ccc_account_id, default_ccc_account_name, reimbursable_account_id, reimbursable_account_name, default_ccc_vendor_id, default_ccc_vendor_name, vendor_payment_account_id, vendor_payment_account_name, location_level, department_level, use_employee_department, use_employee_class, use_employee_location, department_id, department_name, override_tax_details, class_id, class_level, class_name) FROM stdin;
-1	hubajuba	8	Accounts Payable	25	2021-11-15 08:56:31.432106+00	2021-11-15 13:21:26.113427+00	1	\N	\N	118	Unapproved Expense Reports	1674	Ashwin Vendor	\N	\N	TRANSACTION_BODY	\N	f	f	f	\N	\N	f	\N	\N	\N
-2	\N	\N	Accounts Payable	25	2021-11-16 04:18:39.195287+00	2021-11-16 04:18:39.195312+00	2	228	Aus Account	118	Unapproved Expense Reports	12104	Nilesh Aus Vendor	\N	\N	\N	\N	f	f	f	\N	\N	f	\N	\N	\N
-3	hukiju	10	\N	\N	2021-12-03 11:24:17.962764+00	2021-12-03 11:24:17.962809+00	49	228	Aus Account	228	Aus Account	12104	Nilesh Aus Vendor	\N	\N	TRANSACTION_BODY	\N	f	f	f	\N	\N	f	\N	\N	\N
+COPY public.general_mappings (id, location_name, location_id, accounts_payable_name, accounts_payable_id, created_at, updated_at, workspace_id, default_ccc_account_id, default_ccc_account_name, reimbursable_account_id, reimbursable_account_name, default_ccc_vendor_id, default_ccc_vendor_name, vendor_payment_account_id, vendor_payment_account_name, location_level, department_level, use_employee_department, use_employee_class, use_employee_location, department_id, department_name, override_tax_details, class_id, class_level, class_name, default_tax_code_id, default_tax_code_name) FROM stdin;
+1	hubajuba	8	Accounts Payable	25	2021-11-15 08:56:31.432106+00	2021-11-15 13:21:26.113427+00	1	\N	\N	118	Unapproved Expense Reports	1674	Ashwin Vendor	\N	\N	TRANSACTION_BODY	\N	f	f	f	\N	\N	f	\N	\N	\N	\N	\N
+2	\N	\N	Accounts Payable	25	2021-11-16 04:18:39.195287+00	2021-11-16 04:18:39.195312+00	2	228	Aus Account	118	Unapproved Expense Reports	12104	Nilesh Aus Vendor	\N	\N	\N	\N	f	f	f	\N	\N	f	\N	\N	\N	\N	\N
+3	hukiju	10	\N	\N	2021-12-03 11:24:17.962764+00	2021-12-03 11:24:17.962809+00	49	228	Aus Account	228	Aus Account	12104	Nilesh Aus Vendor	\N	\N	TRANSACTION_BODY	\N	f	f	f	\N	\N	f	\N	\N	\N	\N	\N
+\.
+
+
+--
+-- Data for Name: import_logs; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.import_logs (id, attribute_type, status, error_log, total_batches_count, processed_batches_count, last_successful_run_at, created_at, updated_at, workspace_id) FROM stdin;
 \.
 
 

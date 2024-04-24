@@ -31,6 +31,9 @@ data = {
                 "source_placeholder": "class",
             },
         ],
+        "general_mappings": {
+            "default_tax_code": {"name": "12.5% TR @12.5%", "id": "22"}
+        },
     },
     "import_settings_without_mapping": {
         "configuration": {
@@ -50,6 +53,9 @@ data = {
                 "source_placeholder": "class",
             }
         ],
+        "general_mappings": {
+            "default_tax_code": {"name": "12.5% TR @12.5%", "id": "22"}
+        },
     },
     "response": {
         "configuration": {
@@ -59,6 +65,9 @@ data = {
             "auto_create_merchants": False,
             "import_vendors_as_merchants": True,
             "import_netsuite_employees": False
+        },
+        "general_mappings": {
+            "default_tax_code": {"name": "12.5% TR @12.5%", "id": "22"}
         },
         "mapping_settings": [
             {

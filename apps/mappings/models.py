@@ -60,6 +60,13 @@ class GeneralMapping(models.Model):
     default_ccc_vendor_id = models.CharField(max_length=255, help_text='Default CCC Vendor ID', null=True)
     default_ccc_vendor_name = models.CharField(max_length=255, help_text='Default CCC Vendor Name', null=True)
 
+    default_tax_code_name = models.CharField(
+        max_length=255, help_text="Netsuite default Tax Code name", null=True
+    )
+    default_tax_code_id = models.CharField(
+        max_length=255, help_text="Netsuite default Tax Code ID", null=True
+    )
+
     override_tax_details = models.BooleanField(default=False, help_text='Override tax details')
     
     workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model', related_name='general_mappings')
