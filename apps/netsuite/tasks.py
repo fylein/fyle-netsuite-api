@@ -371,11 +371,21 @@ def upload_attachments_and_update_export(expenses: List[Expense], task_log: Task
 
         for expense in expenses:
             if expense.file_ids and len(expense.file_ids):
-                # Grabbing 1st attachment since we can upload only 1 attachment per expense
-                payload = [{'id': expense.file_ids[0]}]
-                attachments = platform.files.bulk_generate_file_urls(payload)
+                files_list = []
+                attachments = []
 
-                attachment = attachments[0] if len(attachments) else None
+                file_ids = expense.file_ids
+
+                for file_id in file_ids:
+                    files_list.append({'id': file_id})
+
+                attachments = platform.files.bulk_generate_file_urls(files_list)
+
+                # Filter HTML attachments
+                attachments = list(filter(lambda attachment: attachment['content_type'] != 'text/html', attachments))
+
+                # Grabbing 1st attachment since we can upload only 1 attachment per expense
+                attachment =  attachments[0] if len(attachments) else None
 
                 if attachment:
                     netsuite_connection.connection.files.post({
