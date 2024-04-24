@@ -6,6 +6,7 @@ errors_with_two_fields = [
             r"An error occured in a upsert request: Invalid location reference key -?\d+ for subsidiary -?\d+.?$",
             r"An error occured in a upsert request: Invalid department reference key -?\d+ for subsidiary -?\d+.?$",
             r"An error occured in a upsert request: Invalid currency reference key -?\d+ for subsidiary -?\d+.?$",
+            r"An error occured in a upsert request: Invalid currency reference key -?\d+ for entity -?\d+.?$",
             r"An error occured in a upsert request: Invalid entity reference key -?\d+ for subsidiary -?\d+.?$", 
             r"An error occured in a upsert request: Invalid class reference key -?\d+ for subsidiary -?\d+.?$",
             r"An error occured in a upsert request: Invalid taxcode reference key -?\d+ for subsidiary -?\d+.?$",
@@ -107,7 +108,12 @@ error_reference = {
         'tax_code_reference_error': {
             'regex': r"An error occured in a upsert request: Invalid taxcode reference key -?\d+ for subsidiary -?\d+.?$",
             'keys': ['TAX_ITEM', 'subsidiary']
-        }
+        },
+
+        'currency_entity_reference_error':{
+            'regex': r"An error occured in a upsert request: Invalid currency reference key -?\d+ for entity -?\d+.?$",
+            'keys': ['currency', 'vendor']
+        },
     },
     "journal_entry": {
         'location_reference_error': {
@@ -147,6 +153,14 @@ error_reference = {
         'tax_code_reference_error': {
             'regex': r"An error occured in a upsert request: Invalid taxcode reference key -?\d+ for subsidiary -?\d+.?$",
             'keys': ['TAX_ITEM', 'subsidiary']
-        }
+        },
+        'currency_entity_reference_error':{
+            'regex': r"An error occured in a upsert request: Invalid currency reference key -?\d+ for entity -?\d+.?$",
+            'keys': ['currency', 'employee']
+        },
+        'vendor_reference_error': {
+            'regex': r"An error occured in a upsert request: Invalid entity reference key -?\d+ for subsidiary -?\d+.?$", 
+            'keys': ['vendor', 'subsidiary']
+        },
     }
 }

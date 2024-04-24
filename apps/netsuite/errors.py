@@ -4,7 +4,7 @@ from apps.workspaces.models import Configuration
 from .errors_reference import error_reference, errors_with_two_fields, errors_with_single_fields
 from fyle_accounting_mappings.models import DestinationAttribute
 
-def error_matcher(string, workspace_id, export_type='expense_report'):
+def error_matcher(string, workspace_id, export_type):
 
     for pattern in errors_with_single_fields:
         if re.match(pattern['regex'], string):
@@ -53,7 +53,7 @@ def get_entity_values(error_dict, workspace_id):
     if all(destination_attributes):
         return destination_attributes
 
-    return None
+    return []
 
 def replace_destination_id_with_values(input_string, replacement):
 
