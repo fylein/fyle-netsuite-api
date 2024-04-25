@@ -65,21 +65,23 @@ def parse_error(message, workspace_id, expense_group):
     export_types = {
         'EXPENSE REPORT' : 'expense_report',
         'JOURNAL ENTRY': 'journal_entry',
-        'BILL': 'bills'
+        'BILL': 'bills',
+        'CREDIT CARD CHARGE': 'credit_card_charge'
     }
     
     fund_source = expense_group.fund_source
+    configuration = Configuration.objects.get(workspace_id=workspace_id)
     if fund_source == 'PERSONAL':
         configuration_export_type = Configuration.objects.get(workspace_id=workspace_id).reimbursable_expenses_object
     else:
         configuration_export_type = Configuration.objects.get(workspace_id=workspace_id).corporate_credit_card_expenses_object
     
     if configuration_export_type not in export_types.keys():
-        return None
-    
+        return []
+
     export_type = export_types[configuration_export_type]
 
-    error_dict = error_matcher(message, workspace_id, export_type)
+    error_dict = error_matcher(message, export_type, configuration)
     entities = get_entity_values(error_dict, workspace_id)
     message = replace_destination_id_with_values(message, entities)
     return message
