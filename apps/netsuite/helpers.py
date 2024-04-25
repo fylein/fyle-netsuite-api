@@ -67,7 +67,7 @@ def sync_dimensions(ns_credentials: NetSuiteCredentials, workspace_id: int, dime
 
 def parse_error_and_get_message(raw_response):
     try:
-        if raw_response == '<HTML><HEAD>':
+        if raw_response == '<HTML><HEAD>' or raw_response == '<html>':
             return 'HTML bad response from NetSuite'
         raw_response = raw_response.replace("'", '"')\
             .replace("False", 'false')\
@@ -80,7 +80,8 @@ def parse_error_and_get_message(raw_response):
             .replace('""{', '{').replace('}""', '}')\
             .replace('"{', '{').replace('}"', '}')\
             .replace('\\"', '"').replace('\\', '')\
-            .replace('"https://', "'https://").replace('.html"', ".html'")
+            .replace('"https://', "'https://").replace('.html"', ".html'")\
+            .replace('="', "=").replace('">', ">")
         parsed_response = json.loads(raw_response)
         return get_message_from_parsed_error(parsed_response)
 
