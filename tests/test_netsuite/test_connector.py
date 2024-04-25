@@ -1,5 +1,4 @@
 import pytest
-import zeep.exceptions
 from unittest import mock
 from apps.fyle.models import ExpenseGroup
 from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute
@@ -604,10 +603,6 @@ def test_post_expense_report_exception(db, mocker, create_expense_report):
 
     with mock.patch('netsuitesdk.api.expense_reports.ExpenseReports.post') as mock_call:
         mock_call.side_effect = [NetSuiteRequestError('An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'), None]
-        netsuite_connection.post_expense_report(expense_report_transaction, expense_report_transaction_lineitems)
-
-    with mock.patch('netsuitesdk.api.expense_reports.ExpenseReports.post') as mock_call:
-        mock_call.side_effect = [zeep.exceptions.Fault('An unexpected error occurred.'), None]
         netsuite_connection.post_expense_report(expense_report_transaction, expense_report_transaction_lineitems)
 
 

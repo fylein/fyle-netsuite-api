@@ -171,7 +171,7 @@ def test_create_bill(db):
     assert bill.subsidiary_id == '1'
 
 
-def test_create_expense_report(db):
+def test_create_expense_report(db, mocker):
 
     expense_group = ExpenseGroup.objects.get(id=1)
     general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)

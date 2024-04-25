@@ -1,6 +1,7 @@
 import logging
 import json
 import traceback
+import zeep.exceptions as zeep_exceptions
 
 from apps.fyle.models import ExpenseGroup
 from apps.tasks.models import TaskLog, Error
@@ -147,6 +148,14 @@ def handle_netsuite_exceptions(payment=False):
                 task_log.save()
                 if not payment:
                     update_failed_expenses(expense_group.expenses.all(), False)
+
+            except zeep_exceptions.Fault as exception:
+                logger.info('Error in Expense Report creation: %s', exception.__dict__)
+                detail = json.dumps(exception.__dict__)
+                detail = json.loads(detail)
+                task_log.status = 'FAILED'
+                task_log.detail = detail
+                task_log.save()
 
             except Exception:
                 error = traceback.format_exc()
