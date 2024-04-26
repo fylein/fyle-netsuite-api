@@ -56,26 +56,22 @@ def error_matcher(message, export_type, configuration: Configuration):
                 #here we are checking if the attribute is custom field by querying custom_segment model.
                 custom_attribute = get_custom_attribute(value)
                 if custom_attribute:
-                    return [{'attribute_type': custom_attribute,
-                            'destination_id': field}]
+                    return [{'attribute_type': custom_attribute,'destination_id': field}], pattern['article_link']
                 
                 #we are using error_mapping as some of the errors attribute are not accurate like taxcode.
                 if value in error_mappings.items():
                     value = error_mappings[value]
 
-                return [{'attribute_type': value,
-                        'destination_id': field}]
+                return [{'attribute_type': value, 'destination_id': field}], pattern['article_link']
             else:
                 custom_attribute = get_custom_attribute(field)
                 if custom_attribute:
-                    return [{'attribute_type': custom_attribute,
-                            'destination_id': value}]
+                    return [{'attribute_type': custom_attribute, 'destination_id': value}], pattern['article_link']
 
                 if field in error_mappings.items():
                     field = error_mappings[field]
 
-                return [{'attribute_type': field,
-                        'destination_id': value}]
+                return [{'attribute_type': field, 'destination_id': value}], pattern['article_link']
         
     # The second type of errors contain two destination_ids.
     # Here we are checking if that error message matches these regex and proceed to get the respective attribute_types and destination_ids.
@@ -87,9 +83,9 @@ def error_matcher(message, export_type, configuration: Configuration):
                     attribute_1, id_1, attribute_2, id_2 = match.group(1), match.group(2), match.group(3), match.group(4)
                     custom_attribute = get_custom_attribute(attribute_1)
                     if custom_attribute:
-                        return [{'attribute_type': custom_attribute, 'destination_id': id_1}, {'attribute_type': attribute_2, 'destination_id': id_2}]
+                        return [{'attribute_type': custom_attribute, 'destination_id': id_1}, {'attribute_type': attribute_2, 'destination_id': id_2}], error_data['article_link']
                     
-                    return [{'attribute_type': key, 'destination_id':number} for key, number in zip(error_data['keys'], [id_1, id_2])]
+                    return [{'attribute_type': key, 'destination_id':number} for key, number in zip(error_data['keys'], [id_1, id_2])], error_data['article_link']
 
     return []
 

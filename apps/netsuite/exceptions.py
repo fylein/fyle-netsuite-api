@@ -81,10 +81,10 @@ def parse_error(message, workspace_id, expense_group):
 
     export_type = export_types[configuration_export_type]
 
-    error_dict = error_matcher(message, export_type, configuration)
+    error_dict, article_link = error_matcher(message, export_type, configuration)
     entities = get_entity_values(error_dict, workspace_id)
     message = replace_destination_id_with_values(message, entities)
-    return message
+    return message, article_link
 
 def handle_netsuite_exceptions(payment=False):
     def decorator(func):
@@ -117,6 +117,7 @@ def handle_netsuite_exceptions(payment=False):
 
             except (NetSuiteRequestError, NetSuiteLoginError) as exception:
                 all_details = []
+                is_parsed = False
                 logger.info({'error': exception})
                 detail = json.dumps(exception.__dict__)
                 detail = json.loads(detail)
@@ -129,8 +130,9 @@ def handle_netsuite_exceptions(payment=False):
                     'message': detail['message']
                 })
                 if not payment:
-                    parsed_message = parse_error(detail['message'], expense_group.workspace_id, expense_group)
+                    parsed_message, article_link = parse_error(detail['message'], expense_group.workspace_id, expense_group)
                     if parsed_message:
+                        is_parsed = True
                         all_details[-1]['message'] = parsed_message
                     Error.objects.update_or_create(
                     workspace_id=expense_group.workspace_id,
@@ -138,8 +140,10 @@ def handle_netsuite_exceptions(payment=False):
                     defaults={
                         'type': 'NETSUITE_ERROR',
                         'error_title': netsuite_error_message,
-                        'error_detail': parsed_message if parsed_message else detail['message'],
-                        'is_resolved': False
+                        'error_detail': parsed_message if is_parsed else detail['message'],
+                        'is_resolved': False,
+                        'is_parsed': is_parsed,
+                        'article_link': article_link
                     }
                 )
                 task_log.detail = all_details
