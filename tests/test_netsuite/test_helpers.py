@@ -1,8 +1,9 @@
 from datetime import datetime, timezone
 
-from apps.netsuite.helpers import check_interval_and_sync_dimension, sync_dimensions, parse_error_and_get_message
+from apps.netsuite.helpers import check_interval_and_sync_dimension, sync_dimensions
 from fyle_accounting_mappings.models import DestinationAttribute
 from apps.workspaces.models import NetSuiteCredentials, Workspace
+from apps.netsuite.connector import parse_error_and_get_message
 from .fixtures import data
 
 

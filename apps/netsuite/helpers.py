@@ -1,6 +1,5 @@
 from datetime import datetime, timezone
 import logging
-import json
 
 from django.utils.module_loading import import_string
 
@@ -64,37 +63,3 @@ def sync_dimensions(ns_credentials: NetSuiteCredentials, workspace_id: int, dime
         except Exception as exception:
             logger.info(exception)
 
-
-def parse_error_and_get_message(raw_response):
-    try:
-        if raw_response == '<HTML><HEAD>' or raw_response == '<html>':
-            return 'HTML bad response from NetSuite'
-        raw_response = raw_response.replace("'", '"')\
-            .replace("False", 'false')\
-            .replace("True", 'true')\
-            .replace("None", 'null')
-        parsed_response = json.loads(raw_response)
-        return get_message_from_parsed_error(parsed_response)
-    except Exception:
-        raw_response = raw_response.replace('"creditCardCharge"', 'creditCardCharge')\
-            .replace('""{', '{').replace('}""', '}')\
-            .replace('"{', '{').replace('}"', '}')\
-            .replace('\\"', '"').replace('\\', '')\
-            .replace('"https://', "'https://").replace('.html"', ".html'")\
-            .replace('="', "=").replace('">', ">")
-        parsed_response = json.loads(raw_response)
-        return get_message_from_parsed_error(parsed_response)
-
-
-def get_message_from_parsed_error(parsed_response):
-    try:
-        if 'error' in parsed_response:
-            if 'message' in parsed_response['error']:
-                if 'message' in parsed_response['error']['message']:
-                    return parsed_response['error']['message']['message']
-                return parsed_response['error']['message']
-        elif 'message' in parsed_response:
-            if 'message' in parsed_response['message']:
-                return parsed_response['message']['message']
-    except Exception:
-        raise
