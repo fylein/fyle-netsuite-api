@@ -784,6 +784,10 @@ def __validate_tax_group_mapping(expense_group: ExpenseGroup, configuration: Con
             ).first()
 
             if not tax_code:
+                general_mapping =  GeneralMapping.objects.filter(workspace_id=expense_group.workspace_id).first()
+                tax_code = general_mapping.default_tax_code_id if general_mapping else None
+
+            if not tax_code:
                 bulk_errors.append({
                     'row': row,
                     'expense_group_id': expense_group.id,
