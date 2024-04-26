@@ -1,9 +1,12 @@
+from django_q.tasks import async_task
+
 from apps.workspaces.models import Configuration, NetSuiteCredentials
 from fyle_accounting_mappings.models import MappingSetting
 from fyle_integrations_imports.dataclasses import TaskSetting
 from fyle_integrations_imports.queues import chain_import_fields_to_fyle
 from apps.mappings.helpers import is_auto_sync_allowed
 from apps.mappings.constants import SYNC_METHODS
+from apps.mappings.models import GeneralMapping
 
 
 def get_import_categories_settings(configurations: Configuration):
@@ -47,6 +50,9 @@ def construct_tasks_and_chain_import_fields_to_fyle(workspace_id: int):
     configurations = Configuration.objects.get(
         workspace_id=workspace_id
     )
+    general_mappings = GeneralMapping.objects.get(
+        workspace_id=workspace_id
+    )
     credentials = NetSuiteCredentials.objects.get(
         workspace_id=workspace_id
     )
@@ -68,11 +74,19 @@ def construct_tasks_and_chain_import_fields_to_fyle(workspace_id: int):
         'COST_CENTER'
     ]
 
-    if configurations.import_tax_items:
+    if configurations.import_tax_items and general_mappings.override_tax_details:
+        async_task('apps.netsuite.helpers.sync_override_tax_items', credentials, workspace_id, q_options={'cluster': 'import'})
         task_settings['import_tax'] = {
             'destination_field': 'TAX_ITEM',
-            'destination_sync_methods': [SYNC_METHODS['TAX_ITEM']],
+            'destination_sync_methods': [],
             'is_auto_sync_enabled': False,
+            'is_3d_mapping': False
+        }
+    elif configurations.import_tax_items:
+        task_settings['import_tax'] = {
+            'destination_field': 'TAX_GROUP',
+            'destination_sync_methods': [SYNC_METHODS['TAX_GROUP']],
+            'is_auto_sync_enabled': True,
             'is_3d_mapping': False
         }
 

@@ -19,7 +19,7 @@ from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribu
 from apps.fyle.models import Expense, ExpenseGroup
 from apps.workspaces.models import Configuration
 
-from apps.mappings.models import SubsidiaryMapping
+from apps.mappings.models import SubsidiaryMapping, GeneralMapping
 from apps.netsuite.models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, \
     JournalEntryLineItem, CustomSegment, VendorPayment, VendorPaymentLineitem, CreditCardChargeLineItem, \
     CreditCardCharge, get_tax_info
@@ -885,61 +885,88 @@ class NetSuiteConnector:
         """
         Sync Tax Details
         """
-
+        general_mapping = GeneralMapping.objects.filter(workspace_id=self.workspace_id).first()
         tax_item_attributes = []
         tax_group_attributes = []
 
-        tax_items_generator = self.connection.tax_items.get_all_generator()
-        for tax_items in tax_items_generator:
-            for tax_item in tax_items:
-                if not tax_item['isInactive'] and tax_item['itemId'] and tax_item['taxType'] and tax_item['rate']:
-                    tax_rate = float(tax_item['rate'].replace('%', ''))
-                    value = self.get_tax_code_name(tax_item['itemId'], tax_item['taxType']['name'], tax_rate)
+        if general_mapping.override_tax_details:
+            tax_items_generator = self.connection.tax_items.get_all_generator()
+            for tax_items in tax_items_generator:
+                for tax_item in tax_items:
+                    tax_rate = None
+                    for fields in tax_item['customFieldList']['customField']:
+                        if fields['scriptId'] == 'custrecord_ste_taxcode_taxrate':
+                            tax_rate = fields['value']
+                    if not tax_item['isInactive'] and tax_item['name'] and tax_item['taxType'] and tax_rate:
+                        value = self.get_tax_code_name(tax_item['name'], tax_item['taxType']['name'], tax_rate)
 
-                    if tax_rate >= 0:
-                        tax_item_attributes.append({
-                            'attribute_type': 'TAX_ITEM',
-                            'display_name': 'Tax Item',
-                            'value': value,
-                            'destination_id': tax_item['internalId'],
-                            'active': True,
-                            'detail': {
-                                'tax_rate': tax_rate,
-                                'tax_type_internal_id': tax_item['taxType']['internalId'],
-                                'tax_type_name': tax_item['taxType']['name']
-                            }
-                        })
+                        if tax_rate >= 0:
+                            tax_item_attributes.append({
+                                'attribute_type': 'TAX_ITEM',
+                                'display_name': 'Tax Item',
+                                'value': value,
+                                'destination_id': tax_item['internalId'],
+                                'active': True,
+                                'detail': {
+                                    'tax_rate': tax_rate,
+                                    'tax_type_internal_id': tax_item['taxType']['internalId'],
+                                    'tax_type_name': tax_item['taxType']['name']
+                                }
+                            })
 
-        DestinationAttribute.bulk_create_or_update_destination_attributes(
-                tax_item_attributes, 'TAX_ITEM', self.workspace_id, True)    
+            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                    tax_item_attributes, 'TAX_ITEM', self.workspace_id, True) 
+        else:
+            tax_items_generator = self.connection.tax_items.get_all_generator()
+            for tax_items in tax_items_generator:
+                for tax_item in tax_items:
+                    if not tax_item['isInactive'] and tax_item['itemId'] and tax_item['taxType'] and tax_item['rate']:
+                        tax_rate = float(tax_item['rate'].replace('%', ''))
+                        value = self.get_tax_code_name(tax_item['itemId'], tax_item['taxType']['name'], tax_rate)
 
+                        if tax_rate >= 0:
+                            tax_item_attributes.append({
+                                'attribute_type': 'TAX_ITEM',
+                                'display_name': 'Tax Item',
+                                'value': value,
+                                'destination_id': tax_item['internalId'],
+                                'active': True,
+                                'detail': {
+                                    'tax_rate': tax_rate,
+                                    'tax_type_internal_id': tax_item['taxType']['internalId'],
+                                    'tax_type_name': tax_item['taxType']['name']
+                                }
+                            })
 
-        tax_groups_generator = self.connection.tax_groups.get_all_generator()
-        for tax_groups in tax_groups_generator:
-            for tax_group in tax_groups:
-                if not tax_group['isInactive'] and tax_group['itemId']:
-                    if tax_group['nexusCountry'] and tax_group['nexusCountry']['internalId'] == 'CA':
-                        unit_price1 = float(tax_group['unitprice1'][:-1] if tax_group['unitprice1'] else 0)
-                        unit_price2 = float(tax_group['unitprice2'][:-1] if tax_group['unitprice2'] else 0)
-                        tax_rate = unit_price1 + unit_price2
-                    else:
-                        tax_rate = float(tax_group['rate'] if tax_group['rate'] else 0)
-                    tax_type = tax_group['taxType']['name'] if tax_group['taxType'] else None
-                    value = self.get_tax_code_name(tax_group['itemId'], tax_type, tax_rate)
-                    if tax_rate >= 0:
-                        tax_group_attributes.append({
-                            'attribute_type': 'TAX_ITEM',
-                            'display_name': 'Tax Item',
-                            'value': value,
-                            'destination_id': tax_group['internalId'],
-                            'active': True,
-                            'detail': {
-                                'tax_rate': tax_rate if tax_rate >= 0 else 0
-                            }
-                        })
+            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                    tax_item_attributes, 'TAX_ITEM', self.workspace_id, True)    
 
-        DestinationAttribute.bulk_create_or_update_destination_attributes(
-                tax_group_attributes, 'TAX_ITEM', self.workspace_id, True)
+            tax_groups_generator = self.connection.tax_groups.get_all_generator()
+            for tax_groups in tax_groups_generator:
+                for tax_group in tax_groups:
+                    if not tax_group['isInactive'] and tax_group['itemId']:
+                        if tax_group['nexusCountry'] and tax_group['nexusCountry']['internalId'] == 'CA':
+                            unit_price1 = float(tax_group['unitprice1'][:-1] if tax_group['unitprice1'] else 0)
+                            unit_price2 = float(tax_group['unitprice2'][:-1] if tax_group['unitprice2'] else 0)
+                            tax_rate = unit_price1 + unit_price2
+                        else:
+                            tax_rate = float(tax_group['rate'] if tax_group['rate'] else 0)
+                        tax_type = tax_group['taxType']['name'] if tax_group['taxType'] else None
+                        value = self.get_tax_code_name(tax_group['itemId'], tax_type, tax_rate)
+                        if tax_rate >= 0:
+                            tax_group_attributes.append({
+                                'attribute_type': 'TAX_ITEM',
+                                'display_name': 'Tax Item',
+                                'value': value,
+                                'destination_id': tax_group['internalId'],
+                                'active': True,
+                                'detail': {
+                                    'tax_rate': tax_rate if tax_rate >= 0 else 0
+                                }
+                            })
+
+            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                    tax_group_attributes, 'TAX_ITEM', self.workspace_id, True)
 
         return []
 
