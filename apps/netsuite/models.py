@@ -168,6 +168,7 @@ def get_location_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
 
 
 def get_custom_segments(expense_group: ExpenseGroup, lineitem: Expense):
+
     mapping_settings = MappingSetting.objects.filter(workspace_id=expense_group.workspace_id).all()
 
     custom_segments = []

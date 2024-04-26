@@ -6,7 +6,7 @@ from .errors_reference import error_reference, errors_with_two_fields, errors_wi
 from fyle_accounting_mappings.models import DestinationAttribute
 
 
-def get_custom_attribute(custom_attribute):
+def get_custom_segment_attribute(script_id):
 
     """
     Get the custom attribute from custom_segment model.
@@ -18,7 +18,7 @@ def get_custom_attribute(custom_attribute):
         str or None: return the custom_attribute if this attribute is custom field else return none.
     """
 
-    custom_segment = CustomSegment.objects.filter(script_id=custom_attribute).first()
+    custom_segment = CustomSegment.objects.filter(script_id=script_id).first()
     if custom_segment:
         custom_attribute = custom_segment.name
         return custom_attribute
@@ -46,33 +46,26 @@ def error_matcher(message, export_type, configuration: Configuration):
             match = re.match(pattern['regex'], message)
             value = match.group(1)
             field = match.group(2)
+            
+            # Some times the error has attribute first then id and vice versa. In this case 
+            # I have added a inverse attribute in the error_reference to check if the values need to inversed.
+            if not pattern['inverse']:
+                value, field = field, value
 
+            #here we are checking if the attribute is custom field by querying custom_segment model.
+            custom_attribute = get_custom_segment_attribute(value)
+            if custom_attribute:
+                return [{'attribute_type': custom_attribute,'destination_id': field}], pattern['article_link']    
+            
             if value == 'entity':
                 value = configuration.employee_field_mapping
 
-            # Some times the error has attribute first then id and vice versa. In this case 
-            # I have added a inverse attribute in the error_reference to check if the values need to inversed.
-            if pattern['inverse']:
-                #here we are checking if the attribute is custom field by querying custom_segment model.
-                custom_attribute = get_custom_attribute(value)
-                if custom_attribute:
-                    return [{'attribute_type': custom_attribute,'destination_id': field}], pattern['article_link']
-                
-                #we are using error_mapping as some of the errors attribute are not accurate like taxcode.
-                if value in error_mappings.items():
-                    value = error_mappings[value]
+            #we are using error_mapping as some of the errors attribute are not accurate like 'taxcode'.
+            if value in error_mappings.items():
+                value = error_mappings[value]
 
-                return [{'attribute_type': value, 'destination_id': field}], pattern['article_link']
-            else:
-                custom_attribute = get_custom_attribute(field)
-                if custom_attribute:
-                    return [{'attribute_type': custom_attribute, 'destination_id': value}], pattern['article_link']
-
-                if field in error_mappings.items():
-                    field = error_mappings[field]
-
-                return [{'attribute_type': field, 'destination_id': value}], pattern['article_link']
-        
+            return [{'attribute_type': value, 'destination_id': field}], pattern['article_link']
+       
     # The second type of errors contain two destination_ids.
     # Here we are checking if that error message matches these regex and proceed to get the respective attribute_types and destination_ids.
     for pattern in errors_with_two_fields:
@@ -81,13 +74,13 @@ def error_matcher(message, export_type, configuration: Configuration):
                 if re.match(error_data['regex'], message):
                     match = re.search(pattern, message)
                     attribute_1, id_1, attribute_2, id_2 = match.group(1), match.group(2), match.group(3), match.group(4)
-                    custom_attribute = get_custom_attribute(attribute_1)
+                    custom_attribute = get_custom_segment_attribute(attribute_1)
                     if custom_attribute:
                         return [{'attribute_type': custom_attribute, 'destination_id': id_1}, {'attribute_type': attribute_2, 'destination_id': id_2}], error_data['article_link']
                     
                     return [{'attribute_type': key, 'destination_id':number} for key, number in zip(error_data['keys'], [id_1, id_2])], error_data['article_link']
 
-    return []
+    return [],''
 
 
 def get_entity_values(error_dict, workspace_id):
