@@ -13,6 +13,9 @@ errors_with_single_fields = [
     'inverse': True},   
 ]
 
+error_mappings = {
+    'taxcode': 'TAX_ITEM'
+}
 
 error_reference = {
     "expense_report": {
@@ -44,16 +47,6 @@ error_reference = {
             'regex': r"An error occured in a upsert request: Invalid class reference key -?\d+ for subsidiary -?\d+.?$",
             'keys': ['class', 'subsidiary']
         },
-        'custom_reference_error_1': {
-            'regex': r"An error occured in a upsert request: Invalid custcol_cseg1 reference key -?\d+ for subsidiary -?\d+.?$",
-            'keys': ['custom', 'subsidiary']
-        },
-
-        'custom_reference_error_2': {
-            'regex': r"An error occured in a upsert request: Invalid cseg_be_locationcen reference key -?\d+ for class -?\d+.?$",
-            'keys': ['custom', 'class']
-        },
-
         'tax_code_reference_error': {
             'regex': r"An error occured in a upsert request: Invalid taxcode reference key -?\d+ for subsidiary -?\d+.?$",
             'keys': ['TAX_ITEM', 'subsidiary']

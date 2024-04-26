@@ -2,7 +2,7 @@ import re
 
 from apps.netsuite.models import CustomSegment
 from apps.workspaces.models import Configuration
-from .errors_reference import error_reference, errors_with_two_fields, errors_with_single_fields
+from .errors_reference import error_reference, errors_with_two_fields, errors_with_single_fields, error_mappings
 from fyle_accounting_mappings.models import DestinationAttribute
 
 
@@ -58,6 +58,11 @@ def error_matcher(message, export_type, configuration: Configuration):
                 if custom_attribute:
                     return [{'attribute_type': custom_attribute,
                             'destination_id': field}]
+                
+                #we are using error_mapping as some of the errors attribute are not accurate like taxcode.
+                if value in error_mappings.items():
+                    value = error_mappings[value]
+
                 return [{'attribute_type': value,
                         'destination_id': field}]
             else:
@@ -65,6 +70,10 @@ def error_matcher(message, export_type, configuration: Configuration):
                 if custom_attribute:
                     return [{'attribute_type': custom_attribute,
                             'destination_id': value}]
+
+                if field in error_mappings.items():
+                    field = error_mappings[field]
+
                 return [{'attribute_type': field,
                         'destination_id': value}]
         
@@ -80,7 +89,6 @@ def error_matcher(message, export_type, configuration: Configuration):
                     if custom_attribute:
                         return [{'attribute_type': custom_attribute, 'destination_id': id_1}, {'attribute_type': attribute_2, 'destination_id': id_2}]
                     
-                    print([{'attribute_type': key, 'destination_id':number} for key, number in zip(error_data['keys'], [id_1, id_2])])
                     return [{'attribute_type': key, 'destination_id':number} for key, number in zip(error_data['keys'], [id_1, id_2])]
 
     return []
@@ -141,3 +149,4 @@ def replace_destination_id_with_values(message, replacement):
     updated_message = re.sub(numeric_pattern, lambda x: replacement_map.get(x.group(), x.group()), message)
     
     return updated_message
+
