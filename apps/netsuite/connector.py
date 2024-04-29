@@ -911,7 +911,7 @@ class NetSuiteConnector:
                     tax_rate = -1
                     for fields in tax_item['customFieldList']['customField']:
                         if fields['scriptId'] == 'custrecord_ste_taxcode_taxrate':
-                            tax_rate = fields['value']
+                            tax_rate = float(fields['value'])
                     if not tax_item['isInactive'] and tax_item['name'] and tax_item['taxType'] and tax_rate:
                         value = self.get_tax_code_name(tax_item['name'], tax_item['taxType']['name'], tax_rate)
                         
