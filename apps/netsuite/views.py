@@ -24,6 +24,7 @@ from apps.workspaces.actions import export_to_netsuite
 from apps.mappings.constants import SYNC_METHODS
 from apps.mappings.helpers import is_auto_sync_allowed
 from apps.mappings.queue import get_import_categories_settings
+from apps.mappings.models import GeneralMapping
 
 logger = logging.getLogger(__name__)
 
@@ -193,6 +194,7 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
 
             mapping_settings = MappingSetting.objects.filter(workspace_id=workspace.id, import_to_fyle=True)
             configurations = Configuration.objects.filter(workspace_id=workspace.id).first()
+            general_mappings = GeneralMapping.objects.filter(workspace_id=workspace.id).first()
             workspace_id = workspace.id
 
             chain = Chain()
@@ -267,7 +269,30 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
                         }
                     )
 
-                if configurations.import_tax_items:
+                if configurations.import_tax_items and general_mappings.override_tax_details:
+                    chain.append(
+                        'apps.netsuite.helpers.sync_override_tax_items',
+                        netsuite_credentials,
+                        workspace_id,
+                        q_options={'cluster': 'import'}
+                    )
+                    chain.append(
+                        'fyle_integrations_imports.tasks.trigger_import_via_schedule',
+                        workspace_id,
+                        'TAX_ITEM',
+                        'TAX_GROUP',
+                        'apps.netsuite.connector.NetSuiteConnector',
+                        netsuite_credentials,
+                        [],
+                        False,
+                        False,
+                        None,
+                        False,
+                        q_options={
+                            'cluster': 'import'
+                        }
+                    )
+                elif configurations.import_tax_items:
                     chain.append(
                         'fyle_integrations_imports.tasks.trigger_import_via_schedule',
                         workspace_id,
