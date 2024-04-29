@@ -150,7 +150,7 @@ def handle_netsuite_exceptions(payment=False):
                     update_failed_expenses(expense_group.expenses.all(), False)
 
             except zeep_exceptions.Fault as exception:
-                logger.info('Error in Expense Report creation: %s', exception.__dict__)
+                logger.info('Error while exporting: %s', exception.__dict__)
                 detail = json.dumps(exception.__dict__)
                 detail = json.loads(detail)
                 task_log.status = 'FAILED'
