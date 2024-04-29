@@ -881,7 +881,7 @@ class NetSuiteConnector:
 
         return []
     
-    def get_tax_item_attributes(tax_rate, tax_item, tax_item_attributes, value, is_overide_tax_details=False):
+    def get_tax_item_attributes(self, tax_rate, tax_item, tax_item_attributes, value, is_overide_tax_details=False):
         if tax_rate >= 0:
             tax_item_attributes.append({
                 'attribute_type': 'TAX_ITEM',
