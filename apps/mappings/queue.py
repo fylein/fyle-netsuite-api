@@ -1,5 +1,3 @@
-from django_q.tasks import async_task
-
 from apps.workspaces.models import Configuration, NetSuiteCredentials
 from fyle_accounting_mappings.models import MappingSetting
 from fyle_integrations_imports.dataclasses import TaskSetting

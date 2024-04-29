@@ -15,12 +15,15 @@ logger = logging.getLogger(__name__)
 
 
 def sync_override_tax_items(netsuite_credentials: NetSuiteCredentials, workspace_id: int):
-    netsuite_connection = NetSuiteConnector(
-        netsuite_credentials=netsuite_credentials,
-        workspace_id=workspace_id,
-        search_body_fields_only=False
-    )
-    netsuite_connection.sync_tax_items()
+    try:
+        netsuite_connection = NetSuiteConnector(
+            netsuite_credentials=netsuite_credentials,
+            workspace_id=workspace_id,
+            search_body_fields_only=False
+        )
+        netsuite_connection.sync_tax_items()
+    except Exception as e:
+        logger.info(e)
     
 
 def schedule_payment_sync(configuration: Configuration):

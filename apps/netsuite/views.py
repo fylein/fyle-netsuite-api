@@ -1,7 +1,6 @@
 import json
 import logging
 from datetime import datetime
-from django_q.tasks import async_task
 
 from django.db.models import Q
 from rest_framework import generics
