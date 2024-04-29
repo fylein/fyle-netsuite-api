@@ -31,7 +31,7 @@ error_reference = {
         },
         'project_reference_error': {
             'regex': r"An error occured in a upsert request: Invalid customer reference key -?\d+ for entity -?\d+.?$", 
-            'keys': ['customer', 'employee'],
+            'keys': ['project', 'employee'],
             'article_link': ''
         },
         'location_reference_error': {
@@ -127,7 +127,7 @@ error_reference = {
         },
         'project_reference_error': {
             'regex': r"An error occured in a upsert request: Invalid customer reference key -?\d+ for entity -?\d+.?$", 
-            'keys': ['customer', 'employee'],
+            'keys': ['project', 'employee'],
             'article_link': ''
         },
         'class_reference_error':{
@@ -165,7 +165,7 @@ error_reference = {
         },
         'project_reference_error': {
             'regex': r"An error occured in a upsert request: Invalid customer reference key -?\d+ for entity -?\d+.?$", 
-            'keys': ['customer', 'employee'],
+            'keys': ['project', 'employee'],
             'article_link': ''
         },
         'location_reference_error': {
