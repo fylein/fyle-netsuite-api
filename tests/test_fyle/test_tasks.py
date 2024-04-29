@@ -1,9 +1,8 @@
 from cmath import exp
 import pytest
-from fyle_integrations_platform_connector import PlatformConnector
 import json
 from django.db.models import Q
-from apps.fyle.models import ExpenseFilter, ExpenseGroup, Expense, ExpenseGroupSettings
+from apps.fyle.models import ExpenseGroup, Expense, ExpenseGroupSettings
 from apps.tasks.models import TaskLog
 from apps.fyle.tasks import create_expense_groups, schedule_expense_group_creation, post_accounting_export_summary
 from apps.workspaces.models import Configuration, FyleCredential, Workspace
@@ -12,6 +11,7 @@ from django.urls import reverse
 from tests.helper import dict_compare_keys
 from unittest import mock
 from apps.fyle.actions import mark_expenses_as_skipped
+from fyle.platform.exceptions import InvalidTokenError, InternalServerError
 
 
 
@@ -62,7 +62,15 @@ def test_create_expense_group(mocker, add_fyle_credentials):
         create_expense_groups(1, configuration, ['PERSONAL', 'CCC'], task_log)
 
         task_log = TaskLog.objects.get(workspace_id=1)
-        assert task_log.status == 'FATAL' 
+        assert task_log.status == 'FATAL'
+
+        mock_call.side_effect = InternalServerError('Error')
+        create_expense_groups(1, configuration, ['PERSONAL', 'CCC'], task_log)
+
+        mock_call.side_effect = InvalidTokenError('Invalid Token')
+        create_expense_groups(1, configuration, ['PERSONAL', 'CCC'], task_log)
+
+        assert mock_call.call_count == 2
 
 
 @pytest.mark.django_db()
