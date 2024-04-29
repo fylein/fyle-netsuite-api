@@ -23,6 +23,7 @@ def sync_override_tax_items(netsuite_credentials: NetSuiteCredentials, workspace
         )
         netsuite_connection.sync_tax_items()
     except Exception as e:
+        logger.info("Error during sync of tax items with search body fields: workspace_id: %s", workspace_id)
         logger.info(e)
     
 
