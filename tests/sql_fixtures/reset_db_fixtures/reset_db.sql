@@ -768,7 +768,7 @@ CREATE TABLE public.errors (
     expense_attribute_id integer,
     expense_group_id integer,
     workspace_id integer NOT NULL,
-    article_link character varying(255) NOT NULL,
+    article_link character varying(255),
     is_parsed boolean NOT NULL
 );
 
@@ -7967,6 +7967,7 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 190	fyle_integrations_imports	0001_initial	2024-04-22 16:01:06.803517+00
 191	tasks	0010_auto_20240422_0944	2024-04-22 16:01:06.921481+00
 192	mappings	0014_auto_20240417_0807	2024-04-17 08:10:15.113227+00
+193	tasks	0011_alter_error_article_link	2024-04-29 09:52:53.697224+00
 \.
 
 
@@ -11648,14 +11649,6 @@ COPY public.import_logs (id, attribute_type, status, error_log, total_batches_co
 
 
 --
--- Data for Name: import_logs; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.import_logs (id, attribute_type, status, error_log, total_batches_count, processed_batches_count, last_successful_run_at, created_at, updated_at, workspace_id) FROM stdin;
-\.
-
-
---
 -- Data for Name: journal_entries; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -11886,7 +11879,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 47, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 191, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 193, true);
 
 
 --
