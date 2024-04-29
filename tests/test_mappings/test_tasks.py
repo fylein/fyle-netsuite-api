@@ -3,17 +3,22 @@ from apps.fyle.models import ExpenseGroup
 import pytest
 from unittest import mock
 from django_q.models import Schedule
-from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute, CategoryMapping, \
-     Mapping, MappingSetting, EmployeeMapping
-from apps.netsuite.connector import NetSuiteConnector
-from apps.workspaces.models import Configuration, FyleCredential, NetSuiteCredentials
+from fyle_accounting_mappings.models import (
+    DestinationAttribute,
+    ExpenseAttribute,
+    EmployeeMapping
+)
+
+from apps.workspaces.models import Configuration, FyleCredential
 from apps.mappings.tasks import *
-from fyle_integrations_platform_connector import PlatformConnector
 from apps.mappings.models import GeneralMapping
 from tests.test_netsuite.fixtures import data as netsuite_data
 from tests.test_fyle.fixtures import data as fyle_data
-from .fixtures import data
-from fyle.platform.exceptions import WrongParamsError
+from fyle.platform.exceptions import (
+    WrongParamsError,
+    InvalidTokenError as FyleInvalidTokenError,
+    InternalServerError
+)
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -223,7 +228,7 @@ def test_schedule_auto_map_ccc_employees(db, mocker):
 
 @pytest.mark.django_db
 def test_async_auto_map_ccc_account(db, mocker):
-    mocker.patch(
+    mock_call = mocker.patch(
         'fyle.platform.apis.v1beta.admin.Employees.list_all',
         return_value=fyle_data['get_all_employees']
     )
@@ -237,6 +242,14 @@ def test_async_auto_map_ccc_account(db, mocker):
     async_auto_map_ccc_account(workspace_id=1)
     employee_mappings = EmployeeMapping.objects.filter(workspace_id=1).count()
     assert employee_mappings == 42
+
+    mock_call.side_effect = FyleInvalidTokenError('Invalid Token')
+    async_auto_map_ccc_account(workspace_id=1)
+
+    mock_call.side_effect = InternalServerError('Internal Server Error')
+    async_auto_map_ccc_account(workspace_id=1)
+
+    assert mock_call.call_count == 3
 
 
 def test_schedule_netsuite_employee_creation_on_fyle(db):
