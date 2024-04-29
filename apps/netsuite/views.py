@@ -271,7 +271,12 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
                     )
 
                 if configurations.import_tax_items and general_mappings.override_tax_details:
-                    async_task('apps.netsuite.helpers.sync_override_tax_items', netsuite_credentials, workspace_id, q_options={'cluster': 'import'})
+                    chain.append(
+                        'apps.netsuite.helpers.sync_override_tax_items',
+                        netsuite_credentials,
+                        workspace_id,
+                        q_options={'cluster': 'import'}
+                    )
                     chain.append(
                         'fyle_integrations_imports.tasks.trigger_import_via_schedule',
                         workspace_id,

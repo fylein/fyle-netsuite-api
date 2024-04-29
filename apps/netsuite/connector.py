@@ -881,68 +881,60 @@ class NetSuiteConnector:
 
         return []
     
+    def get_tax_item_attributes(tax_rate, tax_item, tax_item_attributes, value, is_overide_tax_details=False):
+        if tax_rate >= 0:
+            tax_item_attributes.append({
+                'attribute_type': 'TAX_ITEM',
+                'display_name': 'Tax Item',
+                'value': value,
+                'destination_id': tax_item['internalId'],
+                'active': True,
+                'detail': {
+                    'tax_rate': tax_rate,
+                    'tax_type_internal_id': tax_item['taxType']['internalId'] if is_overide_tax_details else None,
+                    'tax_type_name': tax_item['taxType']['name'] if is_overide_tax_details else None
+                }
+            })
+    
     def sync_tax_items(self):
         """
         Sync Tax Details
         """
         general_mapping = GeneralMapping.objects.filter(workspace_id=self.workspace_id).first()
-        tax_item_attributes = []
-        tax_group_attributes = []
 
-        if general_mapping.override_tax_details:
-            tax_items_generator = self.connection.tax_items.get_all_generator()
+        tax_items_generator = self.connection.tax_items.get_all_generator()
+
+        if general_mapping and general_mapping.override_tax_details:
             for tax_items in tax_items_generator:
+                tax_item_attributes = []
                 for tax_item in tax_items:
-                    tax_rate = None
+                    tax_rate = -1
                     for fields in tax_item['customFieldList']['customField']:
                         if fields['scriptId'] == 'custrecord_ste_taxcode_taxrate':
                             tax_rate = fields['value']
                     if not tax_item['isInactive'] and tax_item['name'] and tax_item['taxType'] and tax_rate:
                         value = self.get_tax_code_name(tax_item['name'], tax_item['taxType']['name'], tax_rate)
+                        
+                        self.get_tax_item_attributes(tax_rate, tax_item, tax_item_attributes, value, True)
 
-                        if tax_rate >= 0:
-                            tax_item_attributes.append({
-                                'attribute_type': 'TAX_ITEM',
-                                'display_name': 'Tax Item',
-                                'value': value,
-                                'destination_id': tax_item['internalId'],
-                                'active': True,
-                                'detail': {
-                                    'tax_rate': tax_rate,
-                                    'tax_type_internal_id': tax_item['taxType']['internalId'],
-                                    'tax_type_name': tax_item['taxType']['name']
-                                }
-                            })
-
-            DestinationAttribute.bulk_create_or_update_destination_attributes(
-                    tax_item_attributes, 'TAX_ITEM', self.workspace_id, True) 
+                DestinationAttribute.bulk_create_or_update_destination_attributes(
+                        tax_item_attributes, 'TAX_ITEM', self.workspace_id, True) 
         else:
-            tax_items_generator = self.connection.tax_items.get_all_generator()
             for tax_items in tax_items_generator:
+                tax_item_attributes = []
                 for tax_item in tax_items:
                     if not tax_item['isInactive'] and tax_item['itemId'] and tax_item['taxType'] and tax_item['rate']:
                         tax_rate = float(tax_item['rate'].replace('%', ''))
                         value = self.get_tax_code_name(tax_item['itemId'], tax_item['taxType']['name'], tax_rate)
 
-                        if tax_rate >= 0:
-                            tax_item_attributes.append({
-                                'attribute_type': 'TAX_ITEM',
-                                'display_name': 'Tax Item',
-                                'value': value,
-                                'destination_id': tax_item['internalId'],
-                                'active': True,
-                                'detail': {
-                                    'tax_rate': tax_rate,
-                                    'tax_type_internal_id': tax_item['taxType']['internalId'],
-                                    'tax_type_name': tax_item['taxType']['name']
-                                }
-                            })
+                        self.get_tax_item_attributes(tax_rate, tax_item, tax_item_attributes, value)
 
-            DestinationAttribute.bulk_create_or_update_destination_attributes(
-                    tax_item_attributes, 'TAX_ITEM', self.workspace_id, True)    
+                DestinationAttribute.bulk_create_or_update_destination_attributes(
+                        tax_item_attributes, 'TAX_ITEM', self.workspace_id, True)    
 
             tax_groups_generator = self.connection.tax_groups.get_all_generator()
             for tax_groups in tax_groups_generator:
+                tax_group_attributes = []
                 for tax_group in tax_groups:
                     if not tax_group['isInactive'] and tax_group['itemId']:
                         if tax_group['nexusCountry'] and tax_group['nexusCountry']['internalId'] == 'CA':
@@ -965,8 +957,8 @@ class NetSuiteConnector:
                                 }
                             })
 
-            DestinationAttribute.bulk_create_or_update_destination_attributes(
-                    tax_group_attributes, 'TAX_ITEM', self.workspace_id, True)
+                DestinationAttribute.bulk_create_or_update_destination_attributes(
+                        tax_group_attributes, 'TAX_ITEM', self.workspace_id, True)
 
         return []
 
