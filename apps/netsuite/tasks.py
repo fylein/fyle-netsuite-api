@@ -371,11 +371,21 @@ def upload_attachments_and_update_export(expenses: List[Expense], task_log: Task
 
         for expense in expenses:
             if expense.file_ids and len(expense.file_ids):
-                # Grabbing 1st attachment since we can upload only 1 attachment per expense
-                payload = [{'id': expense.file_ids[0]}]
-                attachments = platform.files.bulk_generate_file_urls(payload)
+                files_list = []
+                attachments = []
 
-                attachment = attachments[0] if len(attachments) else None
+                file_ids = expense.file_ids
+
+                for file_id in file_ids:
+                    files_list.append({'id': file_id})
+
+                attachments = platform.files.bulk_generate_file_urls(files_list)
+
+                # Filter HTML attachments
+                attachments = list(filter(lambda attachment: attachment['content_type'] != 'text/html', attachments))
+
+                # Grabbing 1st attachment since we can upload only 1 attachment per expense
+                attachment =  attachments[0] if len(attachments) else None
 
                 if attachment:
                     netsuite_connection.connection.files.post({
@@ -772,6 +782,10 @@ def __validate_tax_group_mapping(expense_group: ExpenseGroup, configuration: Con
                 source__value=tax_group.value,
                 workspace_id=expense_group.workspace_id
             ).first()
+
+            if not tax_code:
+                general_mapping =  GeneralMapping.objects.filter(workspace_id=expense_group.workspace_id).first()
+                tax_code = general_mapping.default_tax_code_id if general_mapping else None
 
             if not tax_code:
                 bulk_errors.append({
