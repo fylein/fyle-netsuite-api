@@ -26,7 +26,7 @@ fyle-integrations-platform-connector==1.37.1
 fyle-rest-auth==1.7.2
 gunicorn==20.1.0
 gevent==23.9.1
-idna==2.8
+idna==3.7
 iniconfig==1.1.1
 isodate==0.6.0
 isort==5.10.1
