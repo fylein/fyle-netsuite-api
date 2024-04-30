@@ -21,9 +21,9 @@ django-sendgrid-v5==1.2.0
 enum34==1.1.10
 future==0.18.2
 fyle==0.36.1
-fyle-integrations-platform-connector==1.36.3
-fyle-accounting-mappings==1.31.3
-fyle-rest-auth==1.7.0
+fyle-accounting-mappings==1.32.1
+fyle-integrations-platform-connector==1.37.1
+fyle-rest-auth==1.7.2
 gunicorn==20.1.0
 gevent==23.9.1
 idna==2.8
@@ -33,7 +33,7 @@ isort==5.10.1
 lazy-object-proxy==1.6.0
 lxml==4.6.5
 mccabe==0.6.1
-netsuitesdk==2.21.0
+netsuitesdk==2.21.3
 oauthlib==3.2.1
 packaging==21.3
 platformdirs==2.4.0

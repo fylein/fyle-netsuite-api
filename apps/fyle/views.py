@@ -14,9 +14,10 @@ from fyle_accounting_mappings.models import ExpenseAttribute
 from fyle_accounting_mappings.serializers import ExpenseAttributeSerializer
 
 from apps.workspaces.models import Configuration, FyleCredential, Workspace
+from fyle_netsuite_api.utils import LookupFieldMixin
 
 from .tasks import schedule_expense_group_creation, get_task_log_and_fund_source, create_expense_groups
-from .helpers import check_interval_and_sync_dimension, sync_dimensions
+from .helpers import ExpenseGroupSearchFilter, ExpenseSearchFilter, check_interval_and_sync_dimension, sync_dimensions
 from .models import Expense, ExpenseGroup, ExpenseGroupSettings, ExpenseFilter
 from .serializers import ExpenseGroupSerializer, ExpenseSerializer, ExpenseFieldSerializer, \
     ExpenseGroupSettingsSerializer, ExpenseFilterSerializer, ExpenseGroupExpenseSerializer
@@ -26,8 +27,28 @@ from .constants import DEFAULT_FYLE_CONDITIONS
 from fyle.platform import Platform
 from fyle_netsuite_api import settings
 
+from django_filters.rest_framework import DjangoFilterBackend
+
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
+
+
+class ExpenseGroupViewV2(LookupFieldMixin, generics.ListCreateAPIView):
+
+    queryset = ExpenseGroup.objects.all().order_by("-updated_at").distinct()
+    serializer_class = ExpenseGroupSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = ExpenseGroupSearchFilter
+
+class ExpenseViewV2(LookupFieldMixin, generics.ListAPIView):
+    """
+    Expense view
+    """
+
+    queryset = Expense.objects.all().order_by("-updated_at").distinct()
+    serializer_class = ExpenseSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = ExpenseSearchFilter
 
 
 class ExpenseGroupView(generics.ListCreateAPIView):
@@ -280,7 +301,7 @@ class RefreshFyleDimensionView(generics.ListCreateAPIView):
         try:
             workspace = Workspace.objects.get(id=kwargs['workspace_id'])
             fyle_credentials = FyleCredential.objects.get(workspace_id=workspace.id)
-            sync_dimensions(fyle_credentials, workspace.id)
+            sync_dimensions(fyle_credentials)
 
             workspace.source_synced_at = datetime.now()
             workspace.save(update_fields=['source_synced_at'])

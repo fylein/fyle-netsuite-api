@@ -1,3 +1,4 @@
+from apps.mappings.models import GeneralMapping
 from apps.workspaces.apis.import_settings.triggers import ImportSettingsTrigger
 from rest_framework import serializers
 from fyle_accounting_mappings.models import MappingSetting
@@ -70,6 +71,19 @@ class ConfigurationsSerializer(serializers.ModelSerializer):
             'import_netsuite_employees'
         ]
 
+class GeneralMappingsSerializer(serializers.ModelSerializer):
+    default_tax_code = ReadWriteSerializerMethodField()
+
+    class Meta:
+        model = GeneralMapping
+        fields = ["default_tax_code"]
+
+    def get_default_tax_code(self, instance):
+        return {
+            "name": instance.default_tax_code_name,
+            "id": instance.default_tax_code_id,
+        }
+
 
 class ImportSettingsSerializer(serializers.ModelSerializer):
     """
@@ -77,12 +91,13 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
     """
 
     configuration = ConfigurationsSerializer()
+    general_mappings = GeneralMappingsSerializer()
     mapping_settings = MappingSettingSerializer(many=True)
     workspace_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Workspace
-        fields = ['configuration', 'mapping_settings', 'workspace_id']
+        fields = ['configuration', 'general_mappings','mapping_settings', 'workspace_id']
         read_only_fields = ['workspace_id']
 
     def get_workspace_id(self, instance):
@@ -101,6 +116,7 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
                 'auto_create_merchants': configurations.get('auto_create_merchants'),
                 'import_tax_items': configurations.get('import_tax_items'),
                 'import_vendors_as_merchants': configurations.get('import_vendors_as_merchants'),
+                'import_netsuite_employees': configurations.get('import_netsuite_employees')
             },
         )
 

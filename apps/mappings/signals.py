@@ -160,7 +160,7 @@ def run_pre_mapping_settings_triggers(sender, instance: MappingSetting, **kwargs
                 destination_field=instance.destination_field,
                 sync_after=last_successful_run_at,
                 sdk_connection=netsuite_connection,
-                destination_sync_methods=[SYNC_METHODS[instance.destination_field.upper()]]
+                destination_sync_methods=[SYNC_METHODS.get(instance.destination_field.upper(), 'custom_segments')]
             )
 
             fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)

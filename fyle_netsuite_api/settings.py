@@ -215,7 +215,7 @@ Q_CLUSTER = {
     'catch_up': False,
     # The number of tasks a worker will process before recycling.
     # Useful to release memory resources on a regular basis.
-    'recycle': 20,
+    'recycle': os.environ.get('DJANGO_Q_RECYCLE', 20),
     # The maximum resident set size in kilobytes before a worker will recycle and release resources.
     # Useful for limiting memory usage.
     'max_rss': 50000, # 50mb
@@ -293,7 +293,7 @@ FYLE_CLIENT_SECRET = os.environ.get('FYLE_CLIENT_SECRET')
 FYLE_BASE_URL = os.environ.get('FYLE_BASE_URL')
 FYLE_APP_URL = os.environ.get('APP_URL')
 FYLE_EXPENSE_URL = os.environ.get('FYLE_APP_URL')
-FYLE_NETSUITE_URL = os.environ.get('FYLE_NETSUITE_URL')
+INTEGRATIONS_APP_URL = os.environ.get('INTEGRATIONS_APP_URL')
 
 # Netsuite Settings
 NS_CONSUMER_KEY = os.environ.get('NS_CONSUMER_KEY')

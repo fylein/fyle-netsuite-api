@@ -158,7 +158,7 @@ def run_email_notification(workspace_id):
                         'year': date.today().year,
                         'export_time': export_time.date() if export_time else datetime.now(),
                         'app_url': "{0}/workspaces/{1}/expense_groups".format(settings.FYLE_APP_URL, workspace_id),
-                        'fyle_netsuite_url': settings.FYLE_NETSUITE_URL
+                        'integrations_app_url': settings.INTEGRATIONS_APP_URL
                     }
 
                     message = render_to_string("mail_template.html", context)
@@ -227,7 +227,7 @@ def post_to_integration_settings(workspace_id: int, active: bool):
 
 def async_update_fyle_credentials(fyle_org_id: str, refresh_token: str):
     fyle_credentials = FyleCredential.objects.filter(workspace__fyle_org_id=fyle_org_id).first()
-    if fyle_credentials:
+    if fyle_credentials and refresh_token:
         fyle_credentials.refresh_token = refresh_token
         fyle_credentials.save()
 
