@@ -915,7 +915,9 @@ class NetSuiteConnector:
                     if not tax_item['isInactive'] and tax_item['name'] and tax_item['taxType'] and tax_rate:
                         value = self.get_tax_code_name(tax_item['name'], tax_item['taxType']['name'], tax_rate)
                         
-                        tax_item_attributes.append(self.get_tax_item_attributes(tax_rate, tax_item, value, True))
+                        destination_attribute = self.get_tax_item_attributes(tax_rate, tax_item, value, True)
+                        if destination_attribute:
+                            tax_item_attributes.append(destination_attribute)
 
                 DestinationAttribute.bulk_create_or_update_destination_attributes(
                         tax_item_attributes, 'TAX_ITEM', self.workspace_id, True) 
@@ -927,7 +929,9 @@ class NetSuiteConnector:
                         tax_rate = float(tax_item['rate'].replace('%', ''))
                         value = self.get_tax_code_name(tax_item['itemId'], tax_item['taxType']['name'], tax_rate)
 
-                        tax_item_attributes.append(self.get_tax_item_attributes(tax_rate, tax_item, value))
+                        destination_attribute = self.get_tax_item_attributes(tax_rate, tax_item, value)
+                        if destination_attribute:
+                            tax_item_attributes.append(destination_attribute)
 
                 DestinationAttribute.bulk_create_or_update_destination_attributes(
                         tax_item_attributes, 'TAX_ITEM', self.workspace_id, True)    
