@@ -55,7 +55,7 @@ requests-toolbelt==0.9.1
 psutil==5.9.5
 sentry-sdk==1.19.1
 six==1.13.0
-sqlparse==0.3.0
+sqlparse==0.5.0
 toml==0.10.2
 Unidecode==1.1.2
 urllib3==1.26.11
