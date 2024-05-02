@@ -77,6 +77,7 @@ class Error(models.Model):
         ExpenseAttribute, on_delete=models.PROTECT,
         null=True, help_text='Reference to Expense Attribute'
     )
+    repetition_count = models.IntegerField(help_text='repetition count for the error', default=0)
     is_resolved = models.BooleanField(default=False, help_text='Is resolved')
     error_title = models.CharField(max_length=255, help_text='Error title')
     error_detail = models.TextField(help_text='Error detail')

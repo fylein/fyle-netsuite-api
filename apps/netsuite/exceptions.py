@@ -2,6 +2,8 @@ import logging
 import json
 import traceback
 
+from django.db.models import Q, F
+
 from apps.fyle.models import ExpenseGroup
 from apps.tasks.models import TaskLog, Error
 from apps.workspaces.models import Configuration, LastExportDetail, NetSuiteCredentials
@@ -13,7 +15,6 @@ from fyle_netsuite_api.exceptions import BulkError
 from .actions import update_last_export_details
 from apps.fyle.actions import update_failed_expenses
 
-from django.db.models import Q
 
 from .errors import error_matcher, get_entity_values, replace_destination_id_with_values
 
@@ -46,6 +47,7 @@ def __handle_netsuite_connection_error(expense_group: ExpenseGroup, task_log: Ta
             defaults={
                 'type': 'NETSUITE_ERROR',
                 'error_title': netsuite_error_message,
+                'repetition_count': F('repetition_count') + 1,
                 'error_detail': detail['message'],
                 'is_resolved': False
             })
@@ -141,6 +143,7 @@ def handle_netsuite_exceptions(payment=False):
                         'type': 'NETSUITE_ERROR',
                         'error_title': netsuite_error_message,
                         'error_detail': parsed_message if is_parsed else detail['message'],
+                        'repetition_count': F('repetition_count') + 1,
                         'is_resolved': False,
                         'is_parsed': is_parsed,
                         'article_link': article_link
@@ -171,6 +174,7 @@ def handle_netsuite_exceptions(payment=False):
                         'type': 'NETSUITE_ERROR',
                         'error_title': netsuite_error_message,
                         'error_detail': f'Rate limit error, workspace_id - {expense_group.workspace_id}',
+                        'repetition_count': F('repetition_count') + 1,
                         'is_resolved': False
                     }
                 )

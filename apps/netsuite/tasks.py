@@ -7,11 +7,12 @@ import base64
 from datetime import datetime, timedelta
 
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import F
+
 from django.utils.module_loading import import_string
 from apps.netsuite.exceptions import handle_netsuite_exceptions
 from django_q.models import Schedule
-from django_q.tasks import Chain, async_task
+from django_q.tasks import async_task
 from fyle_netsuite_api.utils import generate_netsuite_export_url
 
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
@@ -804,6 +805,7 @@ def __validate_tax_group_mapping(expense_group: ExpenseGroup, configuration: Con
                         'type': 'TAX_MAPPING',
                         'error_title': tax_group.value,
                         'error_detail': 'Tax mapping is missing',
+                        'repetition_count': F('repetition_count') + 1,
                         'is_resolved': False
                     }
                 )
@@ -893,6 +895,7 @@ def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Conf
                         'type': 'EMPLOYEE_MAPPING',
                         'error_title': employee.value,
                         'error_detail': 'Employee mapping is missing',
+                        'repetition_count': F('repetition_count') + 1,
                         'is_resolved': False
                     }
                 )
@@ -949,6 +952,7 @@ def __validate_category_mapping(expense_group: ExpenseGroup, configuration: Conf
                         'type': 'CATEGORY_MAPPING',
                         'error_title': category_attribute.value,
                         'error_detail': 'Category mapping is missing',
+                        'repetition_count': F('repetition_count') + 1,
                         'is_resolved': False
                     }
                 )
