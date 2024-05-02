@@ -42,16 +42,18 @@ def __handle_netsuite_connection_error(expense_group: ExpenseGroup, task_log: Ta
     }
 
     if expense_group:
-        Error.objects.update_or_create(
+        error, _ = Error.objects.update_or_create(
             workspace_id=expense_group.workspace_id,
             expense_group=expense_group,
             defaults={
                 'type': 'NETSUITE_ERROR',
                 'error_title': netsuite_error_message,
-                'repetition_count': F('repetition_count') + 1,
                 'error_detail': detail['message'],
                 'is_resolved': False
             })
+
+        error.repetition_count = error.repetition_count + 1
+        error.save(update_fields=['repetition_count'])
 
     task_log.status = 'FAILED'
     task_log.detail = detail
@@ -137,19 +139,22 @@ def handle_netsuite_exceptions(payment=False):
                     if parsed_message:
                         is_parsed = True
                         all_details[-1]['message'] = parsed_message
-                    Error.objects.update_or_create(
-                    workspace_id=expense_group.workspace_id,
-                    expense_group=expense_group,
-                    defaults={
-                        'type': 'NETSUITE_ERROR',
-                        'error_title': netsuite_error_message,
-                        'error_detail': parsed_message if is_parsed else detail['message'],
-                        'repetition_count': F('repetition_count') + 1,
-                        'is_resolved': False,
-                        'is_parsed': is_parsed,
-                        'article_link': article_link
-                    }
-                )
+                    error, _ = Error.objects.update_or_create(
+                        workspace_id=expense_group.workspace_id,
+                        expense_group=expense_group,
+                        defaults={
+                                'type': 'NETSUITE_ERROR',
+                                'error_title': netsuite_error_message,
+                                'error_detail': parsed_message if is_parsed else detail['message'],
+                                'is_resolved': False,
+                                'is_parsed': is_parsed,
+                                'article_link': article_link
+                            }
+                        )
+
+                    error.repetition_count = error.repetition_count + 1
+                    error.save(update_fields=['repetition_count'])
+
                 task_log.detail = all_details
 
                 task_log.save()
@@ -168,17 +173,20 @@ def handle_netsuite_exceptions(payment=False):
 
             except NetSuiteRateLimitError:
                 if not payment:
-                    Error.objects.update_or_create(
-                    workspace_id=expense_group.workspace_id,
-                    expense_group=expense_group,
-                    defaults={
-                        'type': 'NETSUITE_ERROR',
-                        'error_title': netsuite_error_message,
-                        'error_detail': f'Rate limit error, workspace_id - {expense_group.workspace_id}',
-                        'repetition_count': F('repetition_count') + 1,
-                        'is_resolved': False
-                    }
-                )
+                    error, _ = Error.objects.update_or_create(
+                        workspace_id=expense_group.workspace_id,
+                        expense_group=expense_group,
+                        defaults={
+                            'type': 'NETSUITE_ERROR',
+                            'error_title': netsuite_error_message,
+                            'error_detail': f'Rate limit error, workspace_id - {expense_group.workspace_id}',
+                            'repetition_count': F('repetition_count') + 1,
+                            'is_resolved': False
+                        }
+                    )
+                    error.repetition_count = error.repetition_count + 1
+                    error.save(update_fields=['repetition_count'])
+
                 logger.info('Rate limit error, workspace_id - %s', workspace_id if payment else expense_group.workspace_id)
                 task_log.status = 'FAILED'
                 task_log.detail = {
