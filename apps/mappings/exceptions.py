@@ -11,6 +11,7 @@ from fyle.platform.exceptions import (
 from apps.workspaces.models import NetSuiteCredentials
 from fyle_integrations_imports.models import ImportLog
 import requests
+import zeep.exceptions as zeep_exceptions
 
 
 logger = logging.getLogger(__name__)
@@ -105,6 +106,12 @@ def handle_import_exceptions_v2(func):
 
         except (NetSuiteLoginError, NetSuiteCredentials.DoesNotExist) as exception:
             error['message'] = 'Invalid Token or NetSuite credentials does not exist workspace_id - {0}'.format(workspace_id)
+            error['alert'] = False
+            error['response'] = exception.__dict__
+            import_log.status = 'FAILED'
+
+        except zeep_exceptions.Fault as exception:
+            error['message'] = 'Zeep Fault error'
             error['alert'] = False
             error['response'] = exception.__dict__
             import_log.status = 'FAILED'
