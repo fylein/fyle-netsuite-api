@@ -65,8 +65,7 @@ class NetSuiteConnector:
     def get_message_and_code(raw_response):
         logger.info('Charge Card Error - %s', raw_response.text)
         try:
-            code, error_message = parse_error_and_get_message(raw_response=raw_response.text, get_code=True)
-            return error_message, code
+            return parse_error_and_get_message(raw_response=raw_response.text, get_code=True)
         except Exception as e:
             logger.info('Error while parsing error message - %s', e)
             raise
@@ -2177,9 +2176,6 @@ def get_message_from_parsed_error(parsed_response):
 
 
 def get_message_and_code(parsed_response):
-    try:
-        message = get_message_from_parsed_error(parsed_response)
-        code = parsed_response['error']['code'] if 'error' in parsed_response and 'code' in parsed_response['error'] else parsed_response['code']
-        return code, message
-    except Exception:
-        raise
+    message = get_message_from_parsed_error(parsed_response)
+    code = parsed_response['error']['code'] if 'error' in parsed_response and 'code' in parsed_response['error'] else parsed_response['code']
+    return code, message
