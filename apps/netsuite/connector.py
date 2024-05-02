@@ -63,17 +63,14 @@ class NetSuiteConnector:
 
     @staticmethod
     def get_message_and_code(raw_response):
+        logger.info('Charge Card Error - %s', raw_response.text)
         try:
-            response = json.loads(eval(raw_response.text))
-        except Exception:
-            response = json.loads((raw_response.text.replace('"{', '{').replace('}"', '}').replace('\\', '').replace('"https://', "'https://").replace('.html"', ".html'")))
+            code, error_message = parse_error_and_get_message(raw_response=raw_response.text, get_code=True)
+            return error_message, code
+        except Exception as e:
+            logger.info('Error while parsing error message - %s', e)
+            raise
 
-        logger.info('Charge Card Error - %s', response)
-        code = response['error']['code'] if 'error' in response and 'code' in response['error'] else response['code']
-        message = response['error']['message']['message'] if 'error' in response and 'message' in response['error'] and 'message' in response['error']['message'] else response['message']['message']
-
-        return code, message
-    
     @staticmethod
     def get_tax_code_name(item_id, tax_type, rate):
         if tax_type:
@@ -2140,7 +2137,7 @@ class NetSuiteConnector:
         return created_vendor_payment
 
 
-def parse_error_and_get_message(raw_response):
+def parse_error_and_get_message(raw_response, get_code: bool = False):
     try:
         if raw_response == '<HTML><HEAD>' or raw_response == '<html>':
             return 'HTML bad response from NetSuite'
@@ -2149,6 +2146,8 @@ def parse_error_and_get_message(raw_response):
             .replace("True", 'true')\
             .replace("None", 'null')
         parsed_response = json.loads(raw_response)
+        if get_code:
+            return get_message_and_code(parsed_response)
         return get_message_from_parsed_error(parsed_response)
     except Exception:
         raw_response = raw_response.replace('"creditCardCharge"', 'creditCardCharge')\
@@ -2158,6 +2157,8 @@ def parse_error_and_get_message(raw_response):
             .replace('"https://', "'https://").replace('.html"', ".html'")\
             .replace('="', "=").replace('">', ">")
         parsed_response = json.loads(raw_response)
+        if get_code:
+            return get_message_and_code(parsed_response)
         return get_message_from_parsed_error(parsed_response)
 
 
@@ -2171,5 +2172,14 @@ def get_message_from_parsed_error(parsed_response):
         elif 'message' in parsed_response:
             if 'message' in parsed_response['message']:
                 return parsed_response['message']['message']
+    except Exception:
+        raise
+
+
+def get_message_and_code(parsed_response):
+    try:
+        message = get_message_from_parsed_error(parsed_response)
+        code = parsed_response['error']['code'] if 'error' in parsed_response and 'code' in parsed_response['error'] else parsed_response['code']
+        return code, message
     except Exception:
         raise
