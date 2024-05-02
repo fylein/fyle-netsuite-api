@@ -4,8 +4,7 @@ from apps.fyle.models import ExpenseGroup
 from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute
 from apps.netsuite.connector import NetSuiteConnector, NetSuiteCredentials
 from apps.workspaces.models import Configuration
-from apps.tasks.models import TaskLog
-from netsuitesdk import NetSuiteConnection, NetSuiteRequestError
+from netsuitesdk import NetSuiteRequestError
 from tests.helper import dict_compare_keys
 from .fixtures import data
 import logging

@@ -6,6 +6,8 @@ import pytest
 import random
 import string
 import logging
+import zeep.exceptions
+
 from django_q.models import Schedule
 from netsuitesdk import NetSuiteRequestError
 from fyle.platform.exceptions import InternalServerError
@@ -353,6 +355,14 @@ def test_post_expense_report(mocker, db):
 
     task_log = TaskLog.objects.get(id=task_log.id)
     assert task_log.detail['message'] == 'NetSuite Account not connected'
+
+    mock_connector = mocker.patch('apps.netsuite.tasks.NetSuiteConnector')
+    mock_call = mocker.patch.object(mock_connector, 'post_expense_report')
+
+    mock_call.side_effect = zeep.exceptions.Fault('INVALID_KEY_OR_REF', 'An error occured in a upsert request: Invalid apacct reference key 223.')
+    create_expense_report(expense_group, task_log.id, True)
+
+    mock_call.call_count == 1
 
 
 def test_post_expense_report_mapping_error(mocker, db):
