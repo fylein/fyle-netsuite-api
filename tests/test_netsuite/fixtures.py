@@ -6849,7 +6849,7 @@ data = {
             'displayName': None,
             'description': None,
             'rate': '7.25%',
-            'taxType': {'name': 'sample'},
+            'taxType': {'name': 'sample', 'internalId': 1},
             'taxAgency': {
                 'name': 'State Board of Equalization',
                 'internalId': '-100',

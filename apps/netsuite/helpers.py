@@ -4,12 +4,26 @@ import logging
 from django.utils.module_loading import import_string
 
 from apps.workspaces.models import Configuration, Workspace, NetSuiteCredentials
+from apps.netsuite.connector import NetSuiteConnector
 
 from .tasks import schedule_vendor_payment_creation, schedule_netsuite_objects_status_sync, \
     schedule_reimbursements_sync
 
 logger = logging.getLogger(__name__)
 
+
+def sync_override_tax_items(netsuite_credentials: NetSuiteCredentials, workspace_id: int):
+    try:
+        netsuite_connection = NetSuiteConnector(
+            netsuite_credentials=netsuite_credentials,
+            workspace_id=workspace_id,
+            search_body_fields_only=False
+        )
+        netsuite_connection.sync_tax_items()
+    except Exception as e:
+        logger.info("Error during sync of tax items with search body fields: workspace_id: %s", workspace_id)
+        logger.info(e)
+    
 
 def schedule_payment_sync(configuration: Configuration):
     """
