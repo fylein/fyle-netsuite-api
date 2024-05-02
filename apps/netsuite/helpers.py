@@ -3,8 +3,6 @@ import logging
 
 from django.utils.module_loading import import_string
 
-from rest_framework.exceptions import AuthenticationFailed
-
 from apps.workspaces.models import Configuration, Workspace, NetSuiteCredentials
 from apps.netsuite.connector import NetSuiteConnector
 
@@ -78,3 +76,4 @@ def sync_dimensions(ns_credentials: NetSuiteCredentials, workspace_id: int, dime
             sync()
         except Exception as exception:
             logger.info(exception)
+
