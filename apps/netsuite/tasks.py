@@ -798,7 +798,7 @@ def __validate_tax_group_mapping(expense_group: ExpenseGroup, configuration: Con
                 })
 
                 if tax_group:
-                    error, _ = Error.objects.update_or_create(
+                    error, created = Error.objects.update_or_create(
                         workspace_id=tax_group.workspace_id,
                         expense_attribute=tax_group,
                         defaults={
@@ -808,8 +808,8 @@ def __validate_tax_group_mapping(expense_group: ExpenseGroup, configuration: Con
                             'is_resolved': False
                         }
                     )
-                    error.repetition_count = error.repetition_count + 1
-                    error.save(update_fields=['repetition_count'])
+
+                    error.increase_repetition_count_by_one(created)
 
         row = row + 1
 
@@ -889,7 +889,7 @@ def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Conf
             })
 
             if employee:
-                error, _ = Error.objects.update_or_create(
+                error, created = Error.objects.update_or_create(
                     workspace_id=expense_group.workspace_id,
                     expense_attribute=employee,
                     defaults={
@@ -899,8 +899,7 @@ def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Conf
                         'is_resolved': False
                     }
                 )
-                error.repetition_count = error.repetition_count + 1
-                error.save(update_fields=['repetition_count'])
+                error.increase_repetition_count_by_one(created)
 
     return bulk_errors
 
@@ -947,7 +946,7 @@ def __validate_category_mapping(expense_group: ExpenseGroup, configuration: Conf
             })
 
             if category_attribute:
-                error, _ = Error.objects.update_or_create(
+                error, created = Error.objects.update_or_create(
                     workspace_id=expense_group.workspace_id,
                     expense_attribute=category_attribute,
                     defaults={
@@ -957,8 +956,7 @@ def __validate_category_mapping(expense_group: ExpenseGroup, configuration: Conf
                         'is_resolved': False
                     }
                 )
-                error.repetition_count = error.repetition_count + 1
-                error.save(update_fields=['repetition_count'])
+                error.increase_repetition_count_by_one(created)
 
         row = row + 1
 
