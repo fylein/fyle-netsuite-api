@@ -7,11 +7,11 @@ import base64
 from datetime import datetime, timedelta
 
 from django.db import transaction
-from django.db.models import Q
+
 from django.utils.module_loading import import_string
 from apps.netsuite.exceptions import handle_netsuite_exceptions
 from django_q.models import Schedule
-from django_q.tasks import Chain, async_task
+from django_q.tasks import async_task
 from fyle_netsuite_api.utils import generate_netsuite_export_url
 
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
@@ -797,16 +797,18 @@ def __validate_tax_group_mapping(expense_group: ExpenseGroup, configuration: Con
                 })
 
                 if tax_group:
-                    Error.objects.update_or_create(
-                    workspace_id=tax_group.workspace_id,
-                    expense_attribute=tax_group,
-                    defaults={
-                        'type': 'TAX_MAPPING',
-                        'error_title': tax_group.value,
-                        'error_detail': 'Tax mapping is missing',
-                        'is_resolved': False
-                    }
-                )
+                    error, created = Error.objects.update_or_create(
+                        workspace_id=tax_group.workspace_id,
+                        expense_attribute=tax_group,
+                        defaults={
+                            'type': 'TAX_MAPPING',
+                            'error_title': tax_group.value,
+                            'error_detail': 'Tax mapping is missing',
+                            'is_resolved': False
+                        }
+                    )
+
+                    error.increase_repetition_count_by_one(created)
 
         row = row + 1
 
@@ -886,7 +888,7 @@ def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Conf
             })
 
             if employee:
-                Error.objects.update_or_create(
+                error, created = Error.objects.update_or_create(
                     workspace_id=expense_group.workspace_id,
                     expense_attribute=employee,
                     defaults={
@@ -896,6 +898,7 @@ def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Conf
                         'is_resolved': False
                     }
                 )
+                error.increase_repetition_count_by_one(created)
 
     return bulk_errors
 
@@ -942,7 +945,7 @@ def __validate_category_mapping(expense_group: ExpenseGroup, configuration: Conf
             })
 
             if category_attribute:
-                Error.objects.update_or_create(
+                error, created = Error.objects.update_or_create(
                     workspace_id=expense_group.workspace_id,
                     expense_attribute=category_attribute,
                     defaults={
@@ -952,7 +955,7 @@ def __validate_category_mapping(expense_group: ExpenseGroup, configuration: Conf
                         'is_resolved': False
                     }
                 )
-
+                error.increase_repetition_count_by_one(created)
 
         row = row + 1
 
