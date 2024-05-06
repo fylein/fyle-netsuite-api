@@ -7,7 +7,6 @@ import base64
 from datetime import datetime, timedelta
 
 from django.db import transaction
-from django.db.models import F
 
 from django.utils.module_loading import import_string
 from apps.netsuite.exceptions import handle_netsuite_exceptions
