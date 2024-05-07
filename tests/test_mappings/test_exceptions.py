@@ -1,4 +1,4 @@
-from fyle.platform.exceptions import WrongParamsError, InvalidTokenError
+from fyle.platform.exceptions import WrongParamsError, InvalidTokenError, NoPrivilegeError
 from netsuitesdk import NetSuiteRateLimitError, NetSuiteLoginError, NetSuiteRequestError
 
 from apps.mappings.exceptions import handle_exceptions
@@ -44,4 +44,8 @@ def test_exception_decarator(db, mocker):
 
     test(1)
 
-    assert True
+    @handle_exceptions("Testing Exception Handling")
+    def test(workspace_id: int):
+        raise NoPrivilegeError('Forbidden. The user has insufficient privilege')
+
+    test(1)
