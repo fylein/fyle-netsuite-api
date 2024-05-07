@@ -57,7 +57,7 @@ def handle_exceptions(task_name):
                 error['response'] = exception.__dict__
 
             except requests.exceptions.HTTPError as exception:
-                error['message'] = ('Gateway Time-out for netsuite (HTTPError - %s)', exception.code)
+                error['message'] = ('Gateway Time-out for netsuite (HTTPError - %s)' % exception.code)
                 error['response'] = exception.__dict__
 
             except zeep_exceptions.Fault as exception:
