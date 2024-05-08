@@ -557,6 +557,7 @@ def create_credit_card_charge(expense_group, task_log_id, last_export):
 @handle_netsuite_exceptions(payment=False)
 def create_expense_report(expense_group, task_log_id, last_export):
     task_log = TaskLog.objects.get(id=task_log_id)
+    logger.info('Creating Expense Report for Expense Group %s, current state is %s', expense_group.id, task_log.status)
 
     if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
         task_log.status = 'IN_PROGRESS'
@@ -576,6 +577,8 @@ def create_expense_report(expense_group, task_log_id, last_export):
             configuration.employee_field_mapping)
 
     __validate_expense_group(expense_group, configuration)
+    logger.info('Validated Expense Group %s successfully', expense_group.id)
+
     with transaction.atomic():
         expense_report_object = ExpenseReport.create_expense_report(expense_group)
 
@@ -586,6 +589,7 @@ def create_expense_report(expense_group, task_log_id, last_export):
         created_expense_report = netsuite_connection.post_expense_report(
             expense_report_object, expense_report_lineitems_objects
         )
+        logger.info('Created Expense Report with Expense Group %s successfully', expense_group.id)
 
         task_log.detail = created_expense_report
         task_log.expense_report = expense_report_object
@@ -599,6 +603,8 @@ def create_expense_report(expense_group, task_log_id, last_export):
         expense_group.save()
         resolve_errors_for_exported_expense_group(expense_group)
         update_complete_expenses(expense_group.expenses.all(), expense_group.export_url)
+
+        logger.info('Updated Expense Group %s successfully', expense_group.id)
         async_task(
             'apps.netsuite.tasks.upload_attachments_and_update_export',
             expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
