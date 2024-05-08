@@ -769,7 +769,8 @@ CREATE TABLE public.errors (
     expense_group_id integer,
     workspace_id integer NOT NULL,
     article_link character varying(255),
-    is_parsed boolean NOT NULL
+    is_parsed boolean NOT NULL,
+    repetition_count integer NOT NULL
 );
 
 
@@ -7961,13 +7962,13 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 184	netsuite	0024_bill_override_tax_details	2024-02-23 09:02:00.124562+00
 185	mappings	0013_auto_20240229_0804	2024-02-29 10:14:58.836562+00
 186	netsuite	0025_auto_20240229_0804	2024-02-29 10:14:58.850038+00
-187	fyle_accounting_mappings	0023_auto_20230918_1316	2024-04-22 16:01:06.564302+00
-188	fyle_accounting_mappings	0024_auto_20230922_0819	2024-04-22 16:01:06.670186+00
-189	fyle_accounting_mappings	0025_expenseattributesdeletioncache	2024-04-22 16:01:06.704869+00
-190	fyle_integrations_imports	0001_initial	2024-04-22 16:01:06.803517+00
-191	tasks	0010_auto_20240422_0944	2024-04-22 16:01:06.921481+00
-192	mappings	0014_auto_20240417_0807	2024-04-17 08:10:15.113227+00
-193	tasks	0011_alter_error_article_link	2024-04-29 09:52:53.697224+00
+187	fyle_accounting_mappings	0023_auto_20230918_1316	2024-05-02 14:31:12.58466+00
+188	fyle_accounting_mappings	0024_auto_20230922_0819	2024-05-02 14:31:12.628782+00
+189	fyle_accounting_mappings	0025_expenseattributesdeletioncache	2024-05-02 14:31:12.652335+00
+190	fyle_integrations_imports	0001_initial	2024-05-02 14:31:12.67739+00
+191	mappings	0014_auto_20240417_0807	2024-05-02 14:31:12.700593+00
+192	tasks	0010_auto_20240429_1101	2024-05-02 14:31:12.726708+00
+193	tasks	0011_error_repetition_count	2024-05-02 14:31:12.771103+00
 \.
 
 
@@ -8037,7 +8038,7 @@ COPY public.employee_mappings (id, created_at, updated_at, destination_card_acco
 -- Data for Name: errors; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.errors (id, type, is_resolved, error_title, error_detail, created_at, updated_at, expense_attribute_id, expense_group_id, workspace_id, article_link, is_parsed) FROM stdin;
+COPY public.errors (id, type, is_resolved, error_title, error_detail, created_at, updated_at, expense_attribute_id, expense_group_id, workspace_id, article_link, is_parsed, repetition_count) FROM stdin;
 \.
 
 
