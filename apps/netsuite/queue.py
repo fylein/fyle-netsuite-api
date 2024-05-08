@@ -136,8 +136,8 @@ def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: L
                 in_progress_expenses.extend(expense_group.expenses.all())
 
         if len(chain_tasks) > 0:
-                fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-                __create_chain_and_run(fyle_credentials, in_progress_expenses, workspace_id, chain_tasks, fund_source)
+            fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+            __create_chain_and_run(fyle_credentials, in_progress_expenses, workspace_id, chain_tasks, fund_source)
 
 
 def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str):
