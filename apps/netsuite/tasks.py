@@ -7,11 +7,11 @@ import base64
 from datetime import datetime, timedelta
 
 from django.db import transaction
-from django.db.models import Q
+
 from django.utils.module_loading import import_string
 from apps.netsuite.exceptions import handle_netsuite_exceptions
 from django_q.models import Schedule
-from django_q.tasks import Chain, async_task
+from django_q.tasks import async_task
 from fyle_netsuite_api.utils import generate_netsuite_export_url
 
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
@@ -430,6 +430,7 @@ def resolve_errors_for_exported_expense_group(expense_group, workspace_id=None):
 @handle_netsuite_exceptions(payment=False)
 def create_bill(expense_group, task_log_id, last_export):
     task_log = TaskLog.objects.get(id=task_log_id)
+    logger.info('Creating Bill for Expense Group %s, current state is %s', expense_group.id, task_log.status)
 
     if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
         task_log.status = 'IN_PROGRESS'
@@ -458,12 +459,15 @@ def create_bill(expense_group, task_log_id, last_export):
             configuration.employee_field_mapping)
 
     __validate_expense_group(expense_group, configuration)
+    logger.info('Validated Expense Group %s successfully', expense_group.id)
+
     with transaction.atomic():
         bill_object = Bill.create_bill(expense_group)
 
         bill_lineitems_objects = BillLineitem.create_bill_lineitems(expense_group, configuration)
 
         created_bill = netsuite_connection.post_bill(bill_object, bill_lineitems_objects)
+        logger.info('Created Bill with Expense Group %s successfully', expense_group.id)
 
         task_log.detail = created_bill
         task_log.bill = bill_object
@@ -479,6 +483,8 @@ def create_bill(expense_group, task_log_id, last_export):
         
         resolve_errors_for_exported_expense_group(expense_group)
         update_complete_expenses(expense_group.expenses.all(), expense_group.export_url)
+
+        logger.info('Updated Expense Group %s successfully', expense_group.id)
         async_task(
                 'apps.netsuite.tasks.upload_attachments_and_update_export',
                 expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
@@ -488,6 +494,7 @@ def create_bill(expense_group, task_log_id, last_export):
 @handle_netsuite_exceptions(payment=False)
 def create_credit_card_charge(expense_group, task_log_id, last_export):
     task_log = TaskLog.objects.get(id=task_log_id)
+    logger.info('Creating Credit Card Charge for Expense Group %s, current state is %s', expense_group.id, task_log.status)
 
     if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
         task_log.status = 'IN_PROGRESS'
@@ -513,6 +520,8 @@ def create_credit_card_charge(expense_group, task_log_id, last_export):
     get_or_create_credit_card_vendor(expense_group, merchant, auto_create_merchants)
 
     __validate_expense_group(expense_group, configuration)
+    logger.info('Validated Expense Group %s successfully', expense_group.id)
+
     with transaction.atomic():
         credit_card_charge_object = CreditCardCharge.create_credit_card_charge(expense_group)
 
@@ -534,6 +543,7 @@ def create_credit_card_charge(expense_group, task_log_id, last_export):
         created_credit_card_charge = netsuite_connection.post_credit_card_charge(
             credit_card_charge_object, credit_card_charge_lineitems_object, attachment_links, refund
         )
+        logger.info('Created Credit Card Charge with Expense Group %s successfully', expense_group.id)
 
         if refund:
             created_credit_card_charge['type'] = 'chargeCardRefund'
@@ -552,11 +562,13 @@ def create_credit_card_charge(expense_group, task_log_id, last_export):
         expense_group.save()
         update_complete_expenses(expense_group.expenses.all(), expense_group.export_url)
         resolve_errors_for_exported_expense_group(expense_group)
+        logger.info('Updated Expense Group %s successfully', expense_group.id)
 
 
 @handle_netsuite_exceptions(payment=False)
 def create_expense_report(expense_group, task_log_id, last_export):
     task_log = TaskLog.objects.get(id=task_log_id)
+    logger.info('Creating Expense Report for Expense Group %s, current state is %s', expense_group.id, task_log.status)
 
     if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
         task_log.status = 'IN_PROGRESS'
@@ -576,6 +588,8 @@ def create_expense_report(expense_group, task_log_id, last_export):
             configuration.employee_field_mapping)
 
     __validate_expense_group(expense_group, configuration)
+    logger.info('Validated Expense Group %s successfully', expense_group.id)
+
     with transaction.atomic():
         expense_report_object = ExpenseReport.create_expense_report(expense_group)
 
@@ -586,6 +600,7 @@ def create_expense_report(expense_group, task_log_id, last_export):
         created_expense_report = netsuite_connection.post_expense_report(
             expense_report_object, expense_report_lineitems_objects
         )
+        logger.info('Created Expense Report with Expense Group %s successfully', expense_group.id)
 
         task_log.detail = created_expense_report
         task_log.expense_report = expense_report_object
@@ -599,6 +614,8 @@ def create_expense_report(expense_group, task_log_id, last_export):
         expense_group.save()
         resolve_errors_for_exported_expense_group(expense_group)
         update_complete_expenses(expense_group.expenses.all(), expense_group.export_url)
+
+        logger.info('Updated Expense Group %s successfully', expense_group.id)
         async_task(
             'apps.netsuite.tasks.upload_attachments_and_update_export',
             expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
@@ -609,6 +626,7 @@ def create_expense_report(expense_group, task_log_id, last_export):
 @handle_netsuite_exceptions(payment=False)
 def create_journal_entry(expense_group, task_log_id, last_export):
     task_log = TaskLog.objects.get(id=task_log_id)
+    logger.info('Creating Journal Entry for Expense Group %s, current state is %s', expense_group.id, task_log.status)
 
     if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
         task_log.status = 'IN_PROGRESS'
@@ -629,6 +647,8 @@ def create_journal_entry(expense_group, task_log_id, last_export):
             expense_group, netsuite_connection, configuration.auto_map_employees,
             configuration.employee_field_mapping)
     __validate_expense_group(expense_group, configuration)
+    logger.info('Validated Expense Group %s successfully', expense_group.id)
+
     with transaction.atomic():
         journal_entry_object = JournalEntry.create_journal_entry(expense_group)
 
@@ -639,6 +659,7 @@ def create_journal_entry(expense_group, task_log_id, last_export):
         created_journal_entry = netsuite_connection.post_journal_entry(
             journal_entry_object, journal_entry_lineitems_objects
         )
+        logger.info('Created Journal Entry with Expense Group %s successfully', expense_group.id)
 
         task_log.detail = created_journal_entry
         task_log.journal_entry = journal_entry_object
@@ -652,6 +673,8 @@ def create_journal_entry(expense_group, task_log_id, last_export):
         expense_group.save()
         resolve_errors_for_exported_expense_group(expense_group)
         update_complete_expenses(expense_group.expenses.all(), expense_group.export_url)
+        
+        logger.info('Updated Expense Group %s successfully', expense_group.id)
         async_task(
             'apps.netsuite.tasks.upload_attachments_and_update_export',
             expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
@@ -797,16 +820,18 @@ def __validate_tax_group_mapping(expense_group: ExpenseGroup, configuration: Con
                 })
 
                 if tax_group:
-                    Error.objects.update_or_create(
-                    workspace_id=tax_group.workspace_id,
-                    expense_attribute=tax_group,
-                    defaults={
-                        'type': 'TAX_MAPPING',
-                        'error_title': tax_group.value,
-                        'error_detail': 'Tax mapping is missing',
-                        'is_resolved': False
-                    }
-                )
+                    error, created = Error.objects.update_or_create(
+                        workspace_id=tax_group.workspace_id,
+                        expense_attribute=tax_group,
+                        defaults={
+                            'type': 'TAX_MAPPING',
+                            'error_title': tax_group.value,
+                            'error_detail': 'Tax mapping is missing',
+                            'is_resolved': False
+                        }
+                    )
+
+                    error.increase_repetition_count_by_one(created)
 
         row = row + 1
 
@@ -886,7 +911,7 @@ def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Conf
             })
 
             if employee:
-                Error.objects.update_or_create(
+                error, created = Error.objects.update_or_create(
                     workspace_id=expense_group.workspace_id,
                     expense_attribute=employee,
                     defaults={
@@ -896,6 +921,7 @@ def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Conf
                         'is_resolved': False
                     }
                 )
+                error.increase_repetition_count_by_one(created)
 
     return bulk_errors
 
@@ -942,7 +968,7 @@ def __validate_category_mapping(expense_group: ExpenseGroup, configuration: Conf
             })
 
             if category_attribute:
-                Error.objects.update_or_create(
+                error, created = Error.objects.update_or_create(
                     workspace_id=expense_group.workspace_id,
                     expense_attribute=category_attribute,
                     defaults={
@@ -952,7 +978,7 @@ def __validate_category_mapping(expense_group: ExpenseGroup, configuration: Conf
                         'is_resolved': False
                     }
                 )
-
+                error.increase_repetition_count_by_one(created)
 
         row = row + 1
 

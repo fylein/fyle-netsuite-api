@@ -98,20 +98,39 @@ def get_class_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
     return class_id
 
 
-def get_tax_item_id_or_none(expense_group: ExpenseGroup, general_mapping: GeneralMapping, lineitem: Expense = None):
-    tax_code = None
+def get_tax_group_mapping(lineitem: Expense = None, workspace_id: int = None):
     mapping: Mapping = Mapping.objects.filter(
         source_type='TAX_GROUP',
         destination_type='TAX_ITEM',
         source__source_id=lineitem.tax_group_id,
-        workspace_id=expense_group.workspace_id
+        workspace_id=workspace_id
     ).first()
+
+    return mapping
+
+
+def get_tax_item_id_or_none(expense_group: ExpenseGroup, general_mapping: GeneralMapping, lineitem: Expense = None):
+    tax_code = None
+    mapping = get_tax_group_mapping(lineitem, expense_group.workspace_id)
+
     if mapping:
         tax_code = mapping.destination.destination_id
     else:
         tax_code = general_mapping.default_tax_code_id
 
     return tax_code
+
+
+def get_tax_info(lineitem: Expense = None):
+    tax_code, tax_rate, tax_type = None, None, None
+    mapping = get_tax_group_mapping(lineitem, lineitem.workspace_id)
+
+    if mapping:
+        tax_code = mapping.destination.destination_id
+        tax_rate = mapping.destination.detail.get('tax_rate')
+        tax_type = mapping.destination.detail.get('tax_type_internal_id')
+
+    return tax_code, tax_rate, tax_type
 
 
 def get_customer_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
@@ -170,6 +189,7 @@ def get_location_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
 
 
 def get_custom_segments(expense_group: ExpenseGroup, lineitem: Expense):
+
     mapping_settings = MappingSetting.objects.filter(workspace_id=expense_group.workspace_id).all()
 
     custom_segments = []

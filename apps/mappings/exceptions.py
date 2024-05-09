@@ -6,11 +6,13 @@ from fyle.platform.exceptions import (
     WrongParamsError,
     InvalidTokenError,
     InternalServerError,
-    RetryException
+    RetryException,
+    NoPrivilegeError
 )
 from apps.workspaces.models import NetSuiteCredentials
 from fyle_integrations_imports.models import ImportLog
 import requests
+import zeep.exceptions as zeep_exceptions
 
 
 logger = logging.getLogger(__name__)
@@ -44,7 +46,7 @@ def handle_exceptions(task_name):
                 error['message'] = 'Invalid netsuite credentials'
 
             except NetSuiteRequestError as exception:
-                error['message'] = 'NetSuite request error - '.format(exception.code)
+                error['message'] = 'NetSuite request error - {0}'.format(exception.code)
                 error['response'] = exception.message
 
             except RetryException:
@@ -55,8 +57,18 @@ def handle_exceptions(task_name):
                 error['response'] = exception.__dict__
 
             except requests.exceptions.HTTPError as exception:
-                error['message'] = 'Gateway Time-out for netsuite (HTTPError - %s)'.format(exception.code)
+                error['message'] = ('Gateway Time-out for netsuite (HTTPError - %s)' % exception.code)
                 error['response'] = exception.__dict__
+
+            except zeep_exceptions.Fault as exception:
+                error['message'] = 'Zeep Fault error'
+                error['alert'] = False
+                error['response'] = exception.__dict__
+
+            except NoPrivilegeError as exception:
+                error['message'] = 'The user has insufficient privilege'
+                error['response'] = exception.__dict__
+                error['alert'] = False
 
             except Exception:
                 response = traceback.format_exc()
@@ -105,6 +117,18 @@ def handle_import_exceptions_v2(func):
 
         except (NetSuiteLoginError, NetSuiteCredentials.DoesNotExist) as exception:
             error['message'] = 'Invalid Token or NetSuite credentials does not exist workspace_id - {0}'.format(workspace_id)
+            error['alert'] = False
+            error['response'] = exception.__dict__
+            import_log.status = 'FAILED'
+
+        except zeep_exceptions.Fault as exception:
+            error['message'] = 'Zeep Fault error'
+            error['alert'] = False
+            error['response'] = exception.__dict__
+            import_log.status = 'FAILED'
+
+        except NoPrivilegeError as exception:
+            error['message'] = 'The user has insufficient privilege'
             error['alert'] = False
             error['response'] = exception.__dict__
             import_log.status = 'FAILED'
