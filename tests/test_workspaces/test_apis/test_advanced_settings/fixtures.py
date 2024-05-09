@@ -45,6 +45,7 @@ data = {
             "sync_fyle_to_netsuite_payments": True,
             "sync_netsuite_to_fyle_payments": False,
             "auto_create_destination_entity": False,
+            "auto_create_merchants": True,
             "memo_structure": ["merchant", "purpose"],
         },
         "general_mappings": {
