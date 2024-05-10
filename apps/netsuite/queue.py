@@ -29,6 +29,7 @@ def __create_chain_and_run(fyle_credentials: FyleCredential, in_progress_expense
     chain.append('apps.fyle.helpers.sync_dimensions', fyle_credentials, True)
 
     for task in chain_tasks:
+        logger.info('Chain task %s, Chain Expense Group %s, Chain Task Log %s', task['target'], task['expense_group'], task['task_log_id'])
         chain.append(task['target'], task['expense_group'], task['task_log_id'], task['last_export'])
 
     chain.append('apps.fyle.tasks.post_accounting_export_summary', fyle_credentials.workspace.fyle_org_id, workspace_id, fund_source)
@@ -43,6 +44,7 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str], is_
     :return: None
     """
     if expense_group_ids:
+        logger.info('Preparing to queue expense groups %s of fund source %s for Bill', expense_group_ids, fund_source)
         expense_groups = ExpenseGroup.objects.filter(
             Q(tasklog__id__isnull=True) | ~Q(tasklog__status__in=['IN_PROGRESS', 'COMPLETE']),
             workspace_id=workspace_id, id__in=expense_group_ids, bill__id__isnull=True, exported_at__isnull=True
@@ -92,6 +94,7 @@ def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: L
     :return: None
     """
     if expense_group_ids:
+        logger.info('Preparing to queue expense groups %s of fund source %s for Credit Card Charge', expense_group_ids, fund_source)
         expense_groups = ExpenseGroup.objects.filter(
             Q(tasklog__id__isnull=True) | ~Q(tasklog__status__in=['IN_PROGRESS', 'COMPLETE']),
             workspace_id=workspace_id, id__in=expense_group_ids,
@@ -148,6 +151,7 @@ def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List
     :return: None
     """
     if expense_group_ids:
+        logger.info('Preparing to queue expense groups %s of fund source %s for Expense Report', expense_group_ids, fund_source)
         expense_groups = ExpenseGroup.objects.filter(
             Q(tasklog__id__isnull=True) | ~Q(tasklog__status__in=['IN_PROGRESS', 'COMPLETE']),
             workspace_id=workspace_id, id__in=expense_group_ids,
@@ -199,6 +203,7 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
     :return: None
     """
     if expense_group_ids:
+        logger.info('Preparing to queue expense groups %s of fund source %s Journal Entry', expense_group_ids, fund_source)
         expense_groups = ExpenseGroup.objects.filter(
             Q(tasklog__id__isnull=True) | ~Q(tasklog__status__in=['IN_PROGRESS', 'COMPLETE']),
             workspace_id=workspace_id, id__in=expense_group_ids, journalentry__id__isnull=True, exported_at__isnull=True
