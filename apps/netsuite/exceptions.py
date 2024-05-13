@@ -195,12 +195,30 @@ def handle_netsuite_exceptions(payment=False):
                     update_failed_expenses(expense_group.expenses.all(), False)
 
             except zeep_exceptions.Fault as exception:
-                logger.info('Error while exporting: %s', exception.__dict__)
-                detail = json.dumps(exception.__dict__)
-                detail = json.loads(detail)
                 task_log.status = 'FAILED'
+                detail = 'Zeep Fault error'
+                logger.info(f'Error while exporting: {exception.__dict__}')
+                try:
+                    detail = "{0} {1}".format(exception.message, exception.code)
+                    logger.info(f'Error while exporting: {detail}')
+                except Exception:
+                    logger.info(f'Error while exporting: {detail}')
+
                 task_log.detail = detail
                 task_log.save()
+
+                error, created = Error.objects.update_or_create(
+                    workspace_id=workspace_id,
+                    expense_group=expense_group,
+                    defaults={
+                        'type': 'NETSUITE_ERROR',
+                        'error_title': 'Something unexpected has happened during export',
+                        'error_detail': f'{detail}, workspace_id - {workspace_id}',
+                        'repetition_count': F('repetition_count') + 1,
+                        'is_resolved': False
+                    }
+                )
+                error.increase_repetition_count_by_one(created)
 
             except Exception:
                 error = traceback.format_exc()

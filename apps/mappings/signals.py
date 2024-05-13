@@ -80,7 +80,7 @@ def resolve_post_employees_mapping_errors(sender, instance: Mapping, **kwargs):
 def run_post_subsidiary_mappings(sender, instance: SubsidiaryMapping, **kwargs):
 
     workspace = instance.workspace
-    workspace.onboarding_state = 'MAP_EMPLOYEES'
+    workspace.onboarding_state = 'EXPORT_SETTINGS'
     workspace.save()
 
 @receiver(post_save, sender=MappingSetting)

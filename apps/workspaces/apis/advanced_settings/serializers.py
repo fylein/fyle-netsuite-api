@@ -29,6 +29,7 @@ class ConfigurationSerializer(serializers.ModelSerializer):
             'sync_fyle_to_netsuite_payments',
             'sync_netsuite_to_fyle_payments',
             'auto_create_destination_entity',
+            'auto_create_merchants',
             'memo_structure'
         ]
 
@@ -149,6 +150,7 @@ class AdvancedSettingsSerializer(serializers.ModelSerializer):
                 'sync_fyle_to_netsuite_payments': configurations.get('sync_fyle_to_netsuite_payments'),
                 'sync_netsuite_to_fyle_payments': configurations.get('sync_netsuite_to_fyle_payments'),
                 'auto_create_destination_entity': configurations.get('auto_create_destination_entity'),
+                'auto_create_merchants': configurations.get('auto_create_merchants'),
                 'change_accounting_period': configurations.get('change_accounting_period'),
                 'memo_structure': configurations.get('memo_structure')
             }

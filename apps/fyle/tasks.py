@@ -251,6 +251,7 @@ def import_and_export_expenses(report_id: str, org_id: str) -> None:
     :param org_id: org id
     :return: None
     """
+    logger.info('Import and export expenses report_id: %s, org_id: %s', report_id, org_id)
     workspace = Workspace.objects.get(fyle_org_id=org_id)
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace.id)
     expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=workspace.id)
@@ -278,6 +279,7 @@ def import_and_export_expenses(report_id: str, org_id: str) -> None:
         expense_group_ids = [expense_group['id'] for expense_group in expense_groups]
 
         if len(expense_group_ids):
+            logger.info('Exporting to Netsuite(Direct Export Trigger) workspace_id: %s, expense_group_ids: %s', workspace.id, expense_group_ids)
             export_to_netsuite(workspace.id, None, expense_group_ids)
 
     except Configuration.DoesNotExist:
