@@ -63,7 +63,10 @@ def handle_exceptions(task_name):
             except zeep_exceptions.Fault as exception:
                 error['message'] = 'Zeep Fault error'
                 error['alert'] = False
-                error['response'] = exception.__dict__
+                try:
+                    error['response'] = "{0} {1}".format(exception.message, exception.code)
+                except Exception:
+                    error['response'] = 'Zeep Fault error'
 
             except NoPrivilegeError as exception:
                 error['message'] = 'The user has insufficient privilege'
@@ -124,8 +127,11 @@ def handle_import_exceptions_v2(func):
         except zeep_exceptions.Fault as exception:
             error['message'] = 'Zeep Fault error'
             error['alert'] = False
-            error['response'] = exception.__dict__
             import_log.status = 'FAILED'
+            try:
+                error['response'] = "{0} {1}".format(exception.message, exception.code)
+            except Exception:
+                error['response'] = 'Zeep Fault error'
 
         except NoPrivilegeError as exception:
             error['message'] = 'The user has insufficient privilege'
