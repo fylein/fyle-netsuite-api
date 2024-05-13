@@ -67,7 +67,6 @@ class ConfigurationsSerializer(serializers.ModelSerializer):
             'import_vendors_as_merchants',
             'import_items',
             'import_tax_items',
-            'auto_create_merchants',
             'import_netsuite_employees'
         ]
 
@@ -113,7 +112,6 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
             defaults={
                 'import_categories': configurations.get('import_categories'),
                 'import_items': configurations.get('import_items'),
-                'auto_create_merchants': configurations.get('auto_create_merchants'),
                 'import_tax_items': configurations.get('import_tax_items'),
                 'import_vendors_as_merchants': configurations.get('import_vendors_as_merchants'),
                 'import_netsuite_employees': configurations.get('import_netsuite_employees')
