@@ -376,6 +376,14 @@ def construct_expense_filter(expense_filter: ExpenseFilter):
             #if isnull=False
             constructed_expense_filter = ~Q(**filter2)
 
+    elif expense_filter.condition == 'category' and expense_filter.operator == 'not_in' and not expense_filter.is_custom:
+        # construct the filter
+        filter1 = {
+            f'{expense_filter.condition}__in': expense_filter.values
+        }
+        # Invert the filter using the ~Q operator and assign it to the constructed expense filter
+        constructed_expense_filter = ~Q(**filter1)
+
     else:
         #This block is for all the non-custom-fields
         filter1 = {
