@@ -346,7 +346,9 @@ def construct_expense_filter(expense_filter: ExpenseFilter):
         else:
             if expense_filter.custom_field_type == 'NUMBER':
                 expense_filter.values = [int(expense_filter_value) for expense_filter_value in expense_filter.values]
-
+            # If the expense filter is a custom field and the operator is yes or no(checkbox)
+            if expense_filter.custom_field_type == 'BOOLEAN':
+                expense_filter.values[0] = True if expense_filter.values[0] == 'true' else False
             filter1 = {
                 'custom_properties__{0}__{1}'.format(
                     expense_filter.condition,
