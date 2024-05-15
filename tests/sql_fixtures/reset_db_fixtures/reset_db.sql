@@ -946,7 +946,7 @@ CREATE TABLE public.expense_group_settings (
     id integer NOT NULL,
     reimbursable_expense_group_fields character varying(100)[] NOT NULL,
     corporate_credit_card_expense_group_fields character varying(100)[] NOT NULL,
-    expense_state character varying(100) NOT NULL,
+    expense_state character varying(100),
     reimbursable_export_date_type character varying(100) NOT NULL,
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
@@ -7969,6 +7969,8 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 191	mappings	0014_auto_20240417_0807	2024-05-02 14:31:12.700593+00
 192	tasks	0010_auto_20240429_1101	2024-05-02 14:31:12.726708+00
 193	tasks	0011_error_repetition_count	2024-05-02 14:31:12.771103+00
+194	fyle	0031_alter_expensegroupsettings_expense_state	2024-05-14 13:47:37.712292+00
+195	fyle	0032_alter_expensefilter_custom_field_type	2024-05-14 13:47:37.73285+00
 \.
 
 
@@ -11880,7 +11882,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 47, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 193, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 195, true);
 
 
 --

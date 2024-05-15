@@ -404,7 +404,7 @@ class CustomFieldView(generics.RetrieveAPIView):
             response.extend(DEFAULT_FYLE_CONDITIONS)
 
             for custom_field in custom_fields:
-                if custom_field['type'] in ('SELECT', 'NUMBER', 'TEXT'):
+                if custom_field['type'] in ('SELECT', 'NUMBER', 'TEXT', 'BOOLEAN'):
                     response.append({
                         'field_name': custom_field['field_name'],
                         'type': custom_field['type'],

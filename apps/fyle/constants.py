@@ -18,5 +18,10 @@ DEFAULT_FYLE_CONDITIONS = [
         'field_name': 'spent_at',
         'type': 'DATE',
         'is_custom': False
-    }
+    },
+    {
+        'field_name': 'category',
+        'type': 'SELECT',
+        'is_custom': False
+    },
 ]
