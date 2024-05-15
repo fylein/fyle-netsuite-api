@@ -306,6 +306,34 @@ def test_construct_expense_filter(mocker, add_fyle_credentials):
     filter_1 = {'spent_at__lte':'2020-04-20 23:59:59+00'}
     response = Q(**filter_1)
 
+    # category_in
+    expense_filter = ExpenseFilter(
+        condition = 'category',
+        operator = 'in',
+        values = ['anish'],
+        rank = 1
+    )
+    constructed_expense_filter = construct_expense_filter(expense_filter)
+
+    filter_1 = {'category__in':['anish']}
+    response = Q(**filter_1)
+
+    assert constructed_expense_filter == response
+
+    # category_not_in
+    expense_filter = ExpenseFilter(
+        condition = 'category',
+        operator = 'not_in',
+        values = ['anish', 'singh'],
+        rank = 1
+    )
+    constructed_expense_filter = construct_expense_filter(expense_filter)
+
+    filter_1 = {'category__in':['anish', 'singh']}
+    response = ~Q(**filter_1)
+
+    assert constructed_expense_filter == response
+
     assert constructed_expense_filter == response
 
     #custom-properties-number-is-equal
