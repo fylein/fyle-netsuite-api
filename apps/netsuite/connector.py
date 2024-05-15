@@ -440,7 +440,8 @@ class NetSuiteConnector:
                     'attribute_type': 'CURRENCY',
                     'display_name': 'Currency',
                     'value': currency['symbol'],
-                    'destination_id': currency['internalId']
+                    'destination_id': currency['internalId'],
+                    'active': True
                 }
             )
 
@@ -869,7 +870,8 @@ class NetSuiteConnector:
                 'destination_id': subsidiary['internalId'],
                 'detail': {
                     'country': subsidiary['country']
-                }
+                },
+                'active': True
             })
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(
