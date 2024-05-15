@@ -752,7 +752,8 @@ class NetSuiteConnector:
             'destination_id': destination_id,
             'detail': {
                 'email': email
-            }
+            },
+            'active': True
         }, self.workspace_id)
 
         return created_attribute
