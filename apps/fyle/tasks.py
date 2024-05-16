@@ -200,7 +200,7 @@ def group_expenses_and_save(expenses: List[Dict], task_log: TaskLog, workspace: 
     task_log.save()
 
 
-def post_accounting_export_summary(org_id: str, workspace_id: int, fund_source: str = None) -> None:
+def post_accounting_export_summary(org_id: str, workspace_id: int, fund_source: str = None, is_failed: bool = False) -> None:
     """
     Post accounting export summary to Fyle
     :param org_id: org id
@@ -218,6 +218,9 @@ def post_accounting_export_summary(org_id: str, workspace_id: int, fund_source: 
 
     if fund_source:
         filters['fund_source'] = fund_source
+
+    if is_failed:
+        filters['accounting_export_summary__state'] = 'ERROR'
 
     expenses_count = Expense.objects.filter(**filters).count()
 
