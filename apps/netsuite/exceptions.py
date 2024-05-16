@@ -15,6 +15,7 @@ from fyle_netsuite_api.exceptions import BulkError
 
 from .actions import update_last_export_details
 from apps.fyle.actions import update_failed_expenses
+from apps.fyle.tasks import post_accounting_export_summary
 
 
 from .errors import error_matcher, get_entity_values, replace_destination_id_with_values
@@ -158,6 +159,7 @@ def handle_netsuite_exceptions(payment=False):
                 task_log.save()
                 if not payment:
                     update_failed_expenses(expense_group.expenses.all(), False)
+                    post_accounting_export_summary(expense_group.workspace.fyle_org_id, expense_group.workspace.id, expense_group.fund_source)
 
             except BulkError as exception:
                 logger.info(exception.response)
@@ -168,6 +170,7 @@ def handle_netsuite_exceptions(payment=False):
                 task_log.save()
                 if not payment:
                     update_failed_expenses(expense_group.expenses.all(), True)
+                    post_accounting_export_summary(expense_group.workspace.fyle_org_id, expense_group.workspace.id, expense_group.fund_source)
 
             except NetSuiteRateLimitError:
                 if not payment:
@@ -193,6 +196,7 @@ def handle_netsuite_exceptions(payment=False):
                 task_log.save()
                 if not payment:
                     update_failed_expenses(expense_group.expenses.all(), False)
+                    post_accounting_export_summary(expense_group.workspace.fyle_org_id, expense_group.workspace.id, expense_group.fund_source)
 
             except zeep_exceptions.Fault as exception:
                 task_log.status = 'FAILED'
@@ -229,6 +233,7 @@ def handle_netsuite_exceptions(payment=False):
                 task_log.save()
                 if not payment:
                     update_failed_expenses(expense_group.expenses.all(), False)
+                    post_accounting_export_summary(expense_group.workspace.fyle_org_id, expense_group.workspace.id, expense_group.fund_source)
                 __log_error(task_log)
             
             if not payment and last_export is True:
