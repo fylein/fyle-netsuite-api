@@ -32,6 +32,7 @@ def __create_chain_and_run(fyle_credentials: FyleCredential, in_progress_expense
         logger.info('Chain task %s, Chain Expense Group %s, Chain Task Log %s', task['target'], task['expense_group'], task['task_log_id'])
         chain.append(task['target'], task['expense_group'], task['task_log_id'], task['last_export'])
 
+    chain.append('apps.fyle.tasks.post_accounting_export_summary', fyle_credentials.workspace.fyle_org_id, workspace_id, fund_source, True)
     chain.run()
 
 
