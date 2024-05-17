@@ -86,14 +86,12 @@ class Error(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime')
 
-    
-    def increase_repetition_count_by_one(self, is_created: bool):
+    def increase_repetition_count_by_one(self):
         """
         Increase the repetition count by 1.
         """
-        if not is_created:
-            self.repetition_count += 1
-            self.save()
+        self.repetition_count += 1
+        self.save()
 
     class Meta:
         db_table = 'errors'
