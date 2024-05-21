@@ -17,6 +17,19 @@ logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
 
+def __get_redirection_url(workspace_id: str, state: str) -> str:
+    map = {
+        'IN_PROGRESS': '{}/workspaces/{}/dashboard',
+        'ERROR': '{}/workspaces/{}/expense_groups?page_number=0&page_size=10&state=FAILED',
+        'SKIPPED': '{}/workspaces/{}/expense_groups?page_number=0&page_size=10&state=SKIP',
+        'DELETED': '{}/workspaces/{}/dashboard'
+    }
+    if settings.BRAND_ID == 'fyle':
+        map[state].format(settings.NETSUITE_INTEGRATION_APP_URL, workspace_id)
+
+    return '{}/main/dashboard'.format(settings.NETSUITE_INTEGRATION_APP_URL)
+
+
 def __bulk_update_expenses(expense_to_be_updated: List[Expense]) -> None:
     """
     Bulk update expenses
@@ -35,6 +48,8 @@ def update_expenses_in_progress(in_progress_expenses: List[Expense]) -> None:
     """
     expense_to_be_updated = []
     for expense in in_progress_expenses:
+        url = __get_redirection_url(expense.workspace_id, 'IN_PROGRESS')
+
         expense_to_be_updated.append(
             Expense(
                 id=expense.id,
@@ -42,7 +57,7 @@ def update_expenses_in_progress(in_progress_expenses: List[Expense]) -> None:
                     expense.expense_id,
                     'IN_PROGRESS',
                     None,
-                    '{}/workspaces/{}/dashboard'.format(settings.NETSUITE_INTEGRATION_APP_URL, expense.workspace_id),
+                    url,
                     False
                 )
             )
@@ -69,6 +84,8 @@ def mark_expenses_as_skipped(final_query: Q, expenses_object_ids: List, workspac
     )
 
     for expense in expenses_to_be_skipped:
+        url = __get_redirection_url(expense.workspace_id, 'SKIPPED')
+
         expense_to_be_updated.append(
             Expense(
                 id=expense.id,
@@ -77,7 +94,7 @@ def mark_expenses_as_skipped(final_query: Q, expenses_object_ids: List, workspac
                     expense.expense_id,
                     'SKIPPED',
                     None,
-                    '{}/workspaces/{}/expense_groups?page_number=0&page_size=10&state=SKIP'.format(settings.NETSUITE_INTEGRATION_APP_URL, workspace.id),
+                    url,
                     False
                 )
             )
@@ -116,7 +133,7 @@ def update_failed_expenses(failed_expenses: List[Expense], is_mapping_error: boo
     expense_to_be_updated = []
     for expense in failed_expenses:
         error_type = 'MAPPING' if is_mapping_error else 'ACCOUNTING_INTEGRATION_ERROR'
-
+        url = __get_redirection_url(expense.workspace_id, 'ERROR')
         # Skip dummy updates (if it is already in error state with the same error type)
         if not (expense.accounting_export_summary.get('state') == 'ERROR' and \
             expense.accounting_export_summary.get('error_type') == error_type):
@@ -127,7 +144,7 @@ def update_failed_expenses(failed_expenses: List[Expense], is_mapping_error: boo
                         expense.expense_id,
                         'ERROR',
                         error_type,
-                        '{}/workspaces/{}/expense_groups?page_number=0&page_size=10&state=FAILED'.format(settings.NETSUITE_INTEGRATION_APP_URL, expense.workspace_id),
+                        url,
                         False
                     )
                 )
@@ -176,6 +193,7 @@ def __handle_post_accounting_export_summary_exception(exception: Exception, work
     ):
         logger.info('Error while syncing workspace %s %s',workspace_id, error_response)
         for expense in error_response['response']['data']:
+            url = __get_redirection_url(expense.workspace_id, 'DELETED')
             if expense['message'] == 'Permission denied to perform this action.':
                 expense_instance = Expense.objects.get(expense_id=expense['key'], workspace_id=workspace_id)
                 expense_to_be_updated.append(
@@ -185,7 +203,7 @@ def __handle_post_accounting_export_summary_exception(exception: Exception, work
                             expense_instance.expense_id,
                             'DELETED',
                             None,
-                            '{}/workspaces/{}/dashboard'.format(settings.NETSUITE_INTEGRATION_APP_URL, workspace_id),
+                            url,
                             True
                         )
                     )
