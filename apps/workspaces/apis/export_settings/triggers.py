@@ -32,7 +32,8 @@ class ExportSettingsTrigger:
                 }
             )
         else:
-            mapping_setting.delete()
+            if mapping_setting:
+                mapping_setting.delete()
 
     def post_save_configurations(self):
         """
