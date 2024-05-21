@@ -25,7 +25,7 @@ def __get_redirection_url(workspace_id: str, state: str) -> str:
         'DELETED': '{}/workspaces/{}/dashboard'
     }
     if settings.BRAND_ID == 'fyle':
-        map[state].format(settings.NETSUITE_INTEGRATION_APP_URL, workspace_id)
+        return map[state].format(settings.NETSUITE_INTEGRATION_APP_URL, workspace_id)
 
     return '{}/main/dashboard'.format(settings.NETSUITE_INTEGRATION_APP_URL)
 
