@@ -115,8 +115,7 @@ class NetSuiteConnector:
                             },
                             'active': not account['isInactive']
                         })
-                    else:
-                        if accounts['acctType'] == '_creditCard':
+                    elif account['acctType'] == '_creditCard':
                             attributes['credit_card_account'].append({
                                 'attribute_type': 'CREDIT_CARD_ACCOUNT',
                                 'display_name': 'Credit Card Account',
