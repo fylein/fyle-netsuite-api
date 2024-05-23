@@ -825,7 +825,7 @@ def __validate_tax_group_mapping(expense_group: ExpenseGroup, configuration: Con
                 })
 
                 if tax_group:
-                    error, created = Error.objects.update_or_create(
+                    error, _ = Error.objects.update_or_create(
                         workspace_id=tax_group.workspace_id,
                         expense_attribute=tax_group,
                         defaults={
@@ -836,7 +836,7 @@ def __validate_tax_group_mapping(expense_group: ExpenseGroup, configuration: Con
                         }
                     )
 
-                    error.increase_repetition_count_by_one(created)
+                    error.increase_repetition_count_by_one()
 
         row = row + 1
 
@@ -916,7 +916,7 @@ def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Conf
             })
 
             if employee:
-                error, created = Error.objects.update_or_create(
+                error, _ = Error.objects.update_or_create(
                     workspace_id=expense_group.workspace_id,
                     expense_attribute=employee,
                     defaults={
@@ -926,7 +926,7 @@ def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Conf
                         'is_resolved': False
                     }
                 )
-                error.increase_repetition_count_by_one(created)
+                error.increase_repetition_count_by_one()
 
     return bulk_errors
 
@@ -973,7 +973,7 @@ def __validate_category_mapping(expense_group: ExpenseGroup, configuration: Conf
             })
 
             if category_attribute:
-                error, created = Error.objects.update_or_create(
+                error, _ = Error.objects.update_or_create(
                     workspace_id=expense_group.workspace_id,
                     expense_attribute=category_attribute,
                     defaults={
@@ -983,7 +983,7 @@ def __validate_category_mapping(expense_group: ExpenseGroup, configuration: Conf
                         'is_resolved': False
                     }
                 )
-                error.increase_repetition_count_by_one(created)
+                error.increase_repetition_count_by_one()
 
         row = row + 1
 
