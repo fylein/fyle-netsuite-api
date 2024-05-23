@@ -483,6 +483,10 @@ class BillLineitem(models.Model):
             else:
                 class_id = get_class_id_or_none(expense_group, lineitem)
 
+            if not class_id:
+                if general_mappings.class_id and general_mappings.class_level in ['TRANSACTION_LINE', 'ALL']:
+                    class_id = general_mappings.class_id
+
             department_id = get_department_id_or_none(expense_group, lineitem)
 
             if expense_group.fund_source == 'CCC' and general_mappings.use_employee_department and \
@@ -701,6 +705,10 @@ class CreditCardChargeLineItem(models.Model):
                     class_id = employee_mapping.destination_employee.detail.get('class_id')
         else:
             class_id = get_class_id_or_none(expense_group, lineitem)
+
+        if not class_id:
+            if general_mappings.class_id and general_mappings.class_level in ['TRANSACTION_LINE', 'ALL']:
+                class_id = general_mappings.class_id
 
         department_id = get_department_id_or_none(expense_group, lineitem)
 
@@ -1008,6 +1016,7 @@ class JournalEntry(models.Model):
     expense_group = models.OneToOneField(ExpenseGroup, on_delete=models.PROTECT, help_text='Expense group reference')
     currency = models.CharField(max_length=255, help_text='Journal Entry Currency')
     location_id = models.CharField(max_length=255, help_text='NetSuite Location id', null=True)
+    class_id = models.CharField(max_length=255, help_text='NetSuite Class id', null=True)
     department_id = models.CharField(max_length=255, help_text='NetSuite Department id', null=True)
     subsidiary_id = models.CharField(max_length=255, help_text='NetSuite Subsidiary ID')
     memo = models.TextField(help_text='Journal Entry Memo')
@@ -1172,6 +1181,10 @@ class JournalEntryLineItem(models.Model):
                 class_id = employee_mapping.destination_employee.detail.get('class_id')
             else:
                 class_id = get_class_id_or_none(expense_group, lineitem)
+
+            if not class_id:
+                if general_mappings.class_id and general_mappings.class_level in ['TRANSACTION_LINE', 'ALL']:
+                    class_id = general_mappings.class_id
 
             if expense_group.fund_source == 'CCC':
                 department_id = get_department_id_or_none(expense_group, lineitem)
