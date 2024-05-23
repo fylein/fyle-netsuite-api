@@ -27,6 +27,9 @@ def __get_redirection_url(workspace_id: str, state: str) -> str:
     if settings.BRAND_ID == 'fyle':
         return map[state].format(settings.NETSUITE_INTEGRATION_APP_URL, workspace_id)
 
+    if state == 'SKIPPED':
+        return '{}/main/export_log'.format(settings.NETSUITE_INTEGRATION_APP_URL)
+
     return '{}/main/dashboard'.format(settings.NETSUITE_INTEGRATION_APP_URL)
 
 
@@ -193,7 +196,8 @@ def __handle_post_accounting_export_summary_exception(exception: Exception, work
     ):
         logger.info('Error while syncing workspace %s %s',workspace_id, error_response)
         for expense in error_response['response']['data']:
-            url = __get_redirection_url(expense.workspace_id, 'DELETED')
+            url = __get_redirection_url(workspace_id, 'DELETED')
+
             if expense['message'] == 'Permission denied to perform this action.':
                 expense_instance = Expense.objects.get(expense_id=expense['key'], workspace_id=workspace_id)
                 expense_to_be_updated.append(
