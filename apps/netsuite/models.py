@@ -607,7 +607,7 @@ class CreditCardCharge(models.Model):
             vendor_id = general_mappings.default_ccc_vendor_id
         else:
             vendor_id = vendor.destination_id
-            
+
         department_id = None
         employee_mapping = EmployeeMapping.objects.filter(
             source_employee__value=description.get('employee_email'),
@@ -618,6 +618,10 @@ class CreditCardCharge(models.Model):
             'ALL', 'TRANSACTION_BODY') and employee_field_mapping == 'EMPLOYEE' and employee_mapping \
             and employee_mapping.destination_employee and employee_mapping.destination_employee.detail:
             department_id = employee_mapping.destination_employee.detail.get('department_id')
+
+        if not department_id:
+            if general_mappings.department_id and general_mappings.department_level in ['TRANSACTION_BODY', 'ALL']:
+                department_id = general_mappings.department_id
 
         credit_charge_object, _ = CreditCardCharge.objects.update_or_create(
             expense_group=expense_group,
@@ -1055,6 +1059,10 @@ class JournalEntry(models.Model):
             and employee_field_mapping == 'EMPLOYEE' and employee_mapping and employee_mapping.destination_employee:   
             location_id = employee_mapping.destination_employee.detail.get('location_id')
 
+        if not department_id:
+            if general_mappings.department_id and general_mappings.department_level in ['TRANSACTION_BODY', 'ALL']:
+                department_id = general_mappings.department_id
+
         journal_entry_object, _ = JournalEntry.objects.update_or_create(
             expense_group=expense_group,
             defaults={
@@ -1188,7 +1196,7 @@ class JournalEntryLineItem(models.Model):
                 location_id = get_location_id_or_none(expense_group, lineitem)
 
             if not location_id and general_mappings.location_id:
-                location_id = general_mappings.location_id
+                location_id = general_mappings.location_id if general_mappings.location_level in ('ALL', 'TRANSACTION_LINE') else None
 
             custom_segments = get_custom_segments(expense_group, lineitem)
 
