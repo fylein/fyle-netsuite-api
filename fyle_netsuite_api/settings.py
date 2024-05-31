@@ -231,7 +231,7 @@ Q_CLUSTER = {
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(engine='django_db_geventpool.backends.postgresql_psycopg2')
+    'default': dj_database_url.config()
 }
 
 DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True
