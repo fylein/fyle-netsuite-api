@@ -480,7 +480,7 @@ class BillLineitem(models.Model):
                 if employee_mapping and employee_mapping.destination_employee:
                     class_id = employee_mapping.destination_employee.detail.get('class_id')
 
-            else:
+            if not class_id:
                 class_id = get_class_id_or_none(expense_group, lineitem)
 
             department_id = get_department_id_or_none(expense_group, lineitem)
@@ -934,7 +934,8 @@ class ExpenseReportLineItem(models.Model):
 
             if general_mappings.use_employee_class and employee_field_mapping == 'EMPLOYEE':
                 class_id = entity.destination_employee.detail.get('class_id')
-            else:
+            
+            if not class_id:
                 class_id = get_class_id_or_none(expense_group, lineitem)
 
             if general_mappings.use_employee_department and \
@@ -1163,7 +1164,8 @@ class JournalEntryLineItem(models.Model):
 
             if general_mappings.use_employee_class and employee_field_mapping == 'EMPLOYEE' and employee_mapping and employee_mapping.destination_employee:
                 class_id = employee_mapping.destination_employee.detail.get('class_id')
-            else:
+            
+            if not class_id:
                 class_id = get_class_id_or_none(expense_group, lineitem)
 
             if expense_group.fund_source == 'CCC':
