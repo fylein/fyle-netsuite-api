@@ -1487,7 +1487,7 @@ class NetSuiteConnector:
         token_secret = self.__netsuite_credentials.ns_token_secret
         is_sandbox = False
 
-        if '_SB' in account:
+        if '-SB' in account:
             is_sandbox = True
 
         url = f"https://{account.lower()}.restlets.api.netsuite.com/app/site/hosting/restlet.nl?" \
