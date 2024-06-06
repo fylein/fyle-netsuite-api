@@ -1488,7 +1488,6 @@ class NetSuiteConnector:
         is_sandbox = False
 
         if '_SB' in account:
-            account = account.replace('_', '-')
             is_sandbox = True
 
         url = f"https://{account.lower()}.restlets.api.netsuite.com/app/site/hosting/restlet.nl?" \
@@ -1509,7 +1508,7 @@ class NetSuiteConnector:
             client_secret=consumer_secret,
             resource_owner_key=token_key,
             resource_owner_secret=token_secret,
-            realm=account.upper() if is_sandbox else account,
+            realm=self.__netsuite_credentials.ns_account_id.upper() if is_sandbox else account,
             signature_method='HMAC-SHA256'
         )
 
