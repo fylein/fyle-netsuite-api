@@ -14,6 +14,7 @@ jobs:
           submodules: recursive
       - name: push to dockerhub
         uses: fylein/docker-release-action@master
+        id: generate-and-push-tag
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -35,7 +36,7 @@ jobs:
 
       - name: Update Image Tag
         run: |
-          NEW_TAG="v$(git rev-parse --short HEAD)"
+          NEW_TAG=${{ steps.generate-and-push-tag.outputs.new_tag }}
 
           cd ${{ vars.PROD_DEPLOY_REPO }}/${{ vars.PROD_US1_DEPLOY_DIR }}/integrations
           kustomize edit set image docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api:$NEW_TAG
@@ -49,7 +50,7 @@ jobs:
           git config --global user.email "integrations@fylehq.com"
           git config --global user.name "GitHub Actions"
           git add .
-          git commit -m "Update netsuite-api image tag"
+          git commit -m "Deployed fyle_netsuite-api:$NEW_TAG to prod"
           git remote set-url origin https://x-access-token:${{ secrets.DEPLOY_GIT_ACCESS_TOKEN }}@github.com/${{ vars.PROD_DEPLOY_REPO }}
           git pull origin master
           git push origin master

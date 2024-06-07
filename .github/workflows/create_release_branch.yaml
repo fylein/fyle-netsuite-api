@@ -1,0 +1,41 @@
+name: Create Release Branch
+on:
+  schedule:
+    # Run every Friday at 11:30 AM UTC (5:00 PM IST)
+    - cron: '30 11 * * FRI'
+jobs:
+  create-release-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: master
+      - name: Get Release Branch Name
+        run: |
+          echo "release_branch=netsuite_api_release_$(date +%Y_%m_%d)" >> $GITHUB_ENV
+          echo "last_release_branch=netsuite_api_release_$(date -d 'last friday' +%Y_%m_%d)" >> $GITHUB_ENV
+      - name: Check if release branch exists
+        run: |
+          if git ls-remote --exit-code --heads origin ${{env.release_branch}}; then
+            echo "branch_exists=true" >> $GITHUB_ENV
+          else
+            echo "branch_exists=false" >> $GITHUB_ENV
+          fi
+      - name: Create release branch
+        if: ${{env.branch_exists == 'false'}}
+        run: |
+          git checkout -b ${{env.release_branch}}
+          git push origin ${{env.release_branch}}
+          echo "message=Branch `${{env.release_branch}}` created successfully." >> $GITHUB_ENV
+      - name: Branch already exists
+        if: ${{env.branch_exists == 'true'}}
+        run: echo "message=Branch `${{env.release_branch}}` already exists." >> $GITHUB_ENV
+      - name: Send message on Slack
+        uses: archive/github-actions-slack@v2.0.1
+        id: notify
+        with:
+          # Send message to #integrations slack channel
+          slack-bot-user-oauth-access-token: ${{ secrets.SLACK_BOT_INTEGRATIONS_OAUTH_ACCESS_TOKEN }}
+          slack-channel: C074E8V8EL8
+          slack-text: "${{env.message}} \nCheck diff here: https://github.com/fylein/fyle-netsuite-api/compare/${{env.last_release_branch}}...${{env.release_branch}}"
