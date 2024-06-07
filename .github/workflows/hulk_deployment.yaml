@@ -1,0 +1,57 @@
+name: Deploy to Hulk
+
+on:
+  create:
+    branches: 
+      - 'netsuite_api_release_*'
+  push:
+    branches: 
+      - 'netsuite_api_release_*'
+
+jobs:
+  hulk_deploy:
+    runs-on: ubuntu-latest
+    environment: Staging
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Push to dockerhub
+        uses: fylein/docker-release-action@master
+        id: generate-and-push-tag
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_TOKEN }}
+          IMAGE_NAME: fyle_netsuite-api
+
+      - name: Install kustomize
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
+
+      - name: Clone another repository
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ vars.STAGING_DEPLOY_REPO }}
+          ref: master
+          path: ${{ vars.STAGING_DEPLOY_REPO }}
+          persist-credentials: false
+          token: ${{ secrets.DEPLOY_GIT_ACCESS_TOKEN }}
+          
+      - name: Update Image Tag
+        run: |
+          NEW_TAG=${{ steps.generate-and-push-tag.outputs.new_tag }}
+          cd ${{ vars.STAGING_DEPLOY_REPO }}/${{ vars.STAGING_DEPLOY_DIR }}/hulk/integrations
+          kustomize edit set image docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api:$NEW_TAG
+
+      - name: Commit and push changes
+        run: |
+          NEW_TAG=${{ steps.generate-and-push-tag.outputs.new_tag }}
+          cd ${{ vars.STAGING_DEPLOY_REPO }}
+          git config --global user.email "integrations@fylehq.com"
+          git config --global user.name "GitHub Actions"
+          git add .
+          git commit -m "Deployed fyle_netsuite-api:$NEW_TAG to hulk"
+          git remote set-url origin https://x-access-token:${{ secrets.DEPLOY_GIT_ACCESS_TOKEN }}@github.com/${{ vars.STAGING_DEPLOY_REPO }}
+          git pull origin master
+          git push origin master
