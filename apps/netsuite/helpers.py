@@ -57,8 +57,13 @@ def check_interval_and_sync_dimension(workspace: Workspace, netsuite_credentials
         time_interval = datetime.now(timezone.utc) - workspace.source_synced_at
 
     if workspace.destination_synced_at is None or time_interval.days > 0:
-        sync_dimensions(netsuite_credentials, workspace.id)
-        return True
+        try:
+            sync_dimensions(netsuite_credentials, workspace.id)
+            return True
+        except Exception as e:
+            logger.info("Error during sync of dimensions: workspace_id: %s", workspace.id)
+            logger.info(e)
+            return False
 
     return False
 

@@ -7,20 +7,21 @@ from apps.workspaces.models import Workspace
 from apps.fyle.models import Expense
 from apps.fyle.tasks import post_accounting_export_summary
 
-# PLEASE RUN scripts/python/fill-accounting-export-summary.py BEFORE RUNNING THIS SCRIPT
 workspaces = Workspace.objects.filter(
     ~Q(name__icontains='fyle for') & ~Q(name__icontains='test')
 )
 
 start_time = datetime.now()
 number_of_expenses_to_be_posted = Expense.objects.filter(
-    accounting_export_summary__synced=False
+    accounting_export_summary__synced=False,
+    is_skipped=True
 ).count()
 print('Number of expenses to be posted - {}'.format(number_of_expenses_to_be_posted))
 for workspace in workspaces:
     expenses_count = Expense.objects.filter(
         accounting_export_summary__synced=False,
-        workspace_id=workspace.id
+        workspace_id=workspace.id,
+        is_skipped=True
     ).count()
     print('Updating summary from workspace - {} with ID - {}'.format(workspace.name, workspace.id))
     print('Number of expenses_count to be posted for the current workspace - {}'.format(expenses_count))
