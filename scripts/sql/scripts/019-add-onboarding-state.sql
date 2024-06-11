@@ -14,8 +14,7 @@ left join
 left join 
     general_mappings gm on gm.workspace_id = w.id
 left join 
-    subsidiary_mappings sm on sm.workspace_id = w.id
-where w.onboarding_state = 'CONNECTION';
+    subsidiary_mappings sm on sm.workspace_id = w.id;
 
 begin; -- Start Transaction Block
 
@@ -64,10 +63,10 @@ from all_settings_view
 where 
     configuration_id is null and general_mappings_id is null and netsuite_creds_id is not null and subsidiary_id is not null;
 
---- Update all of the above to have onboarding state set to 'MAP_EMPLOYEES'
+--- Update all of the above to have onboarding state set to 'EXPORT_SETTINGS'
 update workspaces 
 set 
-    onboarding_state = 'MAP_EMPLOYEES' 
+    onboarding_state = 'EXPORT_SETTINGS' 
 where id in (
     select 
         workspace_id 
