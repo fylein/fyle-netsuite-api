@@ -1,5 +1,5 @@
 # Fyle NetSuite API
-Django Rest Framework API for Fyle Netsuite Integration.
+Django Rest Framework API for Fyle Netsuite Integration
 
 
 ### Setup
