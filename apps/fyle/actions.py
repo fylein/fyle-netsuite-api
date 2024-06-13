@@ -19,10 +19,10 @@ logger.level = logging.INFO
 
 def __get_redirection_url(workspace_id: str, state: str) -> str:
     map = {
-        'IN_PROGRESS': '{}/workspaces/{}/dashboard',
-        'ERROR': '{}/workspaces/{}/expense_groups?page_number=0&page_size=10&state=FAILED',
-        'SKIPPED': '{}/workspaces/{}/expense_groups?page_number=0&page_size=10&state=SKIP',
-        'DELETED': '{}/workspaces/{}/dashboard'
+        'IN_PROGRESS': '{}/main/dashboard',
+        'ERROR': '{}/main/dashboard',
+        'SKIPPED': '{}/main/export_log',
+        'DELETED': '{}/main/dashboard'
     }
     if settings.BRAND_ID == 'fyle':
         return map[state].format(settings.NETSUITE_INTEGRATION_APP_URL, workspace_id)

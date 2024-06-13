@@ -1485,6 +1485,10 @@ class NetSuiteConnector:
         consumer_secret = self.__netsuite_credentials.ns_consumer_secret
         token_key = self.__netsuite_credentials.ns_token_id
         token_secret = self.__netsuite_credentials.ns_token_secret
+        is_sandbox = False
+
+        if '-SB' in account:
+            is_sandbox = True
 
         url = f"https://{account.lower()}.restlets.api.netsuite.com/app/site/hosting/restlet.nl?" \
             f"script=customscript_cc_charge_fyle&deploy=customdeploy_cc_charge_fyle"
@@ -1504,7 +1508,7 @@ class NetSuiteConnector:
             client_secret=consumer_secret,
             resource_owner_key=token_key,
             resource_owner_secret=token_secret,
-            realm=account,
+            realm=self.__netsuite_credentials.ns_account_id.upper() if is_sandbox else account,
             signature_method='HMAC-SHA256'
         )
 
