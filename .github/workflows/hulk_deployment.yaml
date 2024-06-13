@@ -16,7 +16,6 @@ jobs:
       - uses: actions/checkout@v2
         with:
             submodules: recursive
-
       - name: Push to dockerhub
         uses: fylein/docker-release-action@master
         id: generate-and-push-tag
