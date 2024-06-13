@@ -39,7 +39,6 @@ jobs:
         run: git branch --show-current
 
       - name: Push to dockerhub
-        if: ${{ success() }}
         uses: fylein/docker-release-action@master
         id: generate-and-push-tag
         env:
