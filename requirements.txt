@@ -1,6 +1,5 @@
 arrow==0.15.4
 asgiref==3.4.1
-astroid==2.6.6
 attrs==21.2.0
 blessed==1.16.1
 cached-property==1.5.2
