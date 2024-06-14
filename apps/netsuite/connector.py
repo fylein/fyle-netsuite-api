@@ -1082,10 +1082,28 @@ class NetSuiteConnector:
                         'value': attachment_links[expense.expense_id]
                     }
                 )
+                netsuite_custom_segments.append(
+                    {
+                        'scriptId': 'custcolfyle_receipt_link_2',
+                        'type': 'String',
+                        'value': attachment_links[expense.expense_id]
+                    }
+                )
 
             netsuite_custom_segments.append(
                 {
                     'scriptId': 'custcolfyle_expense_url',
+                    'type': 'String',
+                    'value': '{}/app/admin/#/enterprise/view_expense/{}?org_id={}'.format(
+                        settings.FYLE_EXPENSE_URL,
+                        expense.expense_id,
+                        org_id
+                    )
+                }
+            )
+            netsuite_custom_segments.append(
+                {
+                    'scriptId': 'custcolfyle_expense_url_2',
                     'type': 'String',
                     'value': '{}/app/admin/#/enterprise/view_expense/{}?org_id={}'.format(
                         settings.FYLE_EXPENSE_URL,
@@ -1378,10 +1396,27 @@ class NetSuiteConnector:
                     'value': attachment_links[expense.expense_id]
                 }
             )
+            netsuite_custom_segments.append(
+                {
+                    'scriptId': 'custcolfyle_receipt_link_2',
+                    'type': 'String',
+                    'value': attachment_links[expense.expense_id]
+                }
+            )
 
         netsuite_custom_segments.append(
             {
                 'scriptId': 'custcolfyle_expense_url',
+                'value': '{}/app/admin/#/enterprise/view_expense/{}?org_id={}'.format(
+                    settings.FYLE_EXPENSE_URL,
+                    expense.expense_id,
+                    org_id
+                )
+            }
+        )
+        netsuite_custom_segments.append(
+            {
+                'scriptId': 'custcolfyle_expense_url_2',
                 'value': '{}/app/admin/#/enterprise/view_expense/{}?org_id={}'.format(
                     settings.FYLE_EXPENSE_URL,
                     expense.expense_id,
@@ -1574,10 +1609,28 @@ class NetSuiteConnector:
                         'value': attachment_links[expense.expense_id]
                     }
                 )
+                netsuite_custom_segments.append(
+                    {
+                        'scriptId': 'custcolfyle_receipt_link_2',
+                        'type': 'String',
+                        'value': attachment_links[expense.expense_id]
+                    }
+                )
 
             netsuite_custom_segments.append(
                 {
                     'scriptId': 'custcolfyle_expense_url',
+                    'type': 'String',
+                    'value': '{}/app/admin/#/enterprise/view_expense/{}?org_id={}'.format(
+                        settings.FYLE_EXPENSE_URL,
+                        expense.expense_id,
+                        org_id
+                    )
+                }
+            )
+            netsuite_custom_segments.append(
+                {
+                    'scriptId': 'custcolfyle_expense_url_2',
                     'type': 'String',
                     'value': '{}/app/admin/#/enterprise/view_expense/{}?org_id={}'.format(
                         settings.FYLE_EXPENSE_URL,
@@ -1821,11 +1874,29 @@ class NetSuiteConnector:
                         'value': attachment_links[expense.expense_id]
                     }
                 )
+                netsuite_custom_segments.append(
+                    {
+                        'scriptId': 'custcolfyle_receipt_link_2',
+                        'type': 'String',
+                        'value': attachment_links[expense.expense_id]
+                    }
+                )
 
             if debit:
                 netsuite_custom_segments.append(
                     {
                         'scriptId': 'custcolfyle_expense_url',
+                        'type': 'String',
+                        'value': '{}/app/admin/#/enterprise/view_expense/{}?org_id={}'.format(
+                            settings.FYLE_EXPENSE_URL,
+                            expense.expense_id,
+                            org_id
+                        )
+                    }
+                )
+                netsuite_custom_segments.append(
+                    {
+                        'scriptId': 'custcolfyle_expense_url_2',
                         'type': 'String',
                         'value': '{}/app/admin/#/enterprise/view_expense/{}?org_id={}'.format(
                             settings.FYLE_EXPENSE_URL,
