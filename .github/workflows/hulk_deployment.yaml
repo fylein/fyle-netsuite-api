@@ -1,12 +1,13 @@
 name: Deploy to Hulk
 
 on:
-  create:
-    branches: 
-      - 'netsuite_api_release_*'
   push:
     branches: 
       - 'netsuite_api_release_*'
+  workflow_run:
+    workflows: ["Create Release Branch"]
+    types:
+      - completed
 
 jobs:
   hulk_deploy:
@@ -16,6 +17,26 @@ jobs:
       - uses: actions/checkout@v2
         with:
             submodules: recursive
+
+      - name: Run CI
+        id: run-ci
+        run: |
+          echo "Running ci"
+
+      - name: Get Release branch name if workflow_run
+        if: github.event_name == 'workflow_run'
+        run: |
+          echo "release_branch=netsuite_api_release_$(date +%Y_%m_%d)" >> $GITHUB_ENV
+
+      - name: Checkout to Release branch if workflow_run
+        uses: actions/checkout@v4
+        if: github.event_name == 'workflow_run'
+        with:
+          ref: ${{env.release_branch}}
+
+      - name: Verify current branch
+        run: git branch --show-current
+
       - name: Push to dockerhub
         uses: fylein/docker-release-action@master
         id: generate-and-push-tag
@@ -23,6 +44,11 @@ jobs:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_TOKEN }}
           IMAGE_NAME: fyle_netsuite-api
+
+      - name: Print docker image version
+        run: |
+          NEW_TAG=${{ steps.generate-and-push-tag.outputs.new_tag }}
+          echo "docker image version: $NEW_TAG"
 
       - name: Install kustomize
         run: |
