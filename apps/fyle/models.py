@@ -114,6 +114,7 @@ class Expense(models.Model):
     fund_source = models.CharField(max_length=255, help_text='Expense fund source')
     verified_at = models.DateTimeField(help_text='Report verified at', null=True)
     paid_on_netsuite = models.BooleanField(help_text='Expense Payment status on NetSuite', default=False)
+    paid_on_fyle = models.BooleanField(help_text='Expense Payment status on Fyle', default=False)
     custom_properties = JSONField(null=True)
     is_skipped = models.BooleanField(null=True, default=False, help_text='Expense is skipped or not')
     accounting_export_summary = JSONField(default=dict)
