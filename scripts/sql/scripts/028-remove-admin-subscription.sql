@@ -1,7 +1,4 @@
-\copy (
-    select fyle_org_id from workspaces where onboarding_state == 'COMPLETE'
-) to '/Users/hrishabh/Desktop/orgs_netsuite.csv' WITH CSV HEADER;
-
+\copy (select fyle_org_id from workspaces where onboarding_state = 'COMPLETE') to '/Users/hrishabh/Desktop/orgs_netsuite.csv' WITH CSV HEADER;
 
 
 -- Fyle DB
