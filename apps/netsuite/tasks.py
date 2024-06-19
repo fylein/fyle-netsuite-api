@@ -1346,6 +1346,7 @@ def process_reimbursements(workspace_id):
     reimbursements = Reimbursement.objects.filter(state='PENDING', workspace_id=workspace_id).all()
 
     reimbursement_ids = []
+    expenses_paid_on_fyle = []
 
     if reimbursements:
         for reimbursement in reimbursements:
@@ -1358,6 +1359,7 @@ def process_reimbursements(workspace_id):
 
             if all_expense_paid:
                 reimbursement_ids.append(reimbursement.reimbursement_id)
+                expenses_paid_on_fyle.extend(expenses)
 
     if reimbursement_ids:
         # Validating deleted reimbursements
@@ -1384,6 +1386,9 @@ def process_reimbursements(workspace_id):
                     }
                     logger.exception(error)
 
+    for expense in expenses_paid_on_fyle:
+        expense.paid_on_fyle = True
+        expense.save()
 
 def schedule_reimbursements_sync(sync_netsuite_to_fyle_payments, workspace_id):
     if sync_netsuite_to_fyle_payments:
