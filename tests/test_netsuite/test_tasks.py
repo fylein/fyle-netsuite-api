@@ -997,7 +997,7 @@ def test_schedule_reimbursements_sync(db):
 def test_process_reimbursements(db, mocker, add_fyle_credentials):
 
     mocker.patch(
-        'fyle_integrations_platform_connector.apis.Reimbursements.bulk_post_reimbursements',
+        'fyle_integrations_platform_connector.apis.Reports.bulk_mark_as_paid',
         return_value=[]
     )
 
@@ -1053,7 +1053,7 @@ def test_process_reimbursements_exception(db, mocker, add_fyle_credentials):
     reimbursement.state = 'PENDING'
     reimbursement.save()
 
-    with mock.patch('fyle_integrations_platform_connector.apis.Reimbursements.bulk_post_reimbursements') as mock_call:
+    with mock.patch('fyle_integrations_platform_connector.apis.Reports.bulk_mark_as_paid') as mock_call:
         mock_call.side_effect = InternalServerError(
             msg='internal server error',
             response='Internal server error.'
