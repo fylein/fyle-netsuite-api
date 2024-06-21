@@ -111,6 +111,11 @@ def test_trigger_payment_view(api_client, access_token, add_fyle_credentials, mo
         'fyle_integrations_platform_connector.apis.Reimbursements.sync',
         return_value=[],
     )
+   
+   mocker.patch(
+        'fyle_integrations_platform_connector.apis.Reports.bulk_mark_as_paid',
+        return_value=[],
+    )
    mocker.patch(
       'apps.netsuite.connector.NetSuiteConnector.get_bill',
       return_value=data['get_bill_response'][1]
