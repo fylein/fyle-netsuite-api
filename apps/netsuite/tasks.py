@@ -1353,18 +1353,19 @@ def process_reimbursements(workspace_id):
         if all_expense_paid:
             payloads.append({'id': report_id, 'paid_notify_at': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')})
             expenses_to_be_marked.extend(paid_expenses)
-    try:
-        platform.reports.bulk_mark_as_paid(payloads)
-    except Exception as error:
-        error = traceback.format_exc()
-        error = {
-            'error': error
-        }
-        logger.exception(error)
 
-    if expenses_to_be_marked:
-        expense_ids_to_mark = [expense.id for expense in expenses_to_be_marked]
-        Expense.objects.filter(id__in=expense_ids_to_mark).update(paid_on_fyle=True)
+    if payloads:
+        try:
+            platform.reports.bulk_mark_as_paid(payloads)
+            if expenses_to_be_marked:
+                expense_ids_to_mark = [expense.id for expense in expenses_to_be_marked]
+                Expense.objects.filter(id__in=expense_ids_to_mark).update(paid_on_fyle=True)
+        except Exception as error:
+            error = traceback.format_exc()
+            error = {
+                'error': error
+            }
+            logger.exception(error)
 
 def schedule_reimbursements_sync(sync_netsuite_to_fyle_payments, workspace_id):
     if sync_netsuite_to_fyle_payments:
