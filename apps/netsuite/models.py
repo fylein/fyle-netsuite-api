@@ -483,6 +483,10 @@ class BillLineitem(models.Model):
             if not class_id:
                 class_id = get_class_id_or_none(expense_group, lineitem)
 
+            if not class_id:
+                if general_mappings.class_id and general_mappings.class_level in ['TRANSACTION_LINE', 'ALL']:
+                    class_id = general_mappings.class_id
+
             department_id = get_department_id_or_none(expense_group, lineitem)
 
             if expense_group.fund_source == 'CCC' and general_mappings.use_employee_department and \
@@ -607,7 +611,7 @@ class CreditCardCharge(models.Model):
             vendor_id = general_mappings.default_ccc_vendor_id
         else:
             vendor_id = vendor.destination_id
-            
+
         department_id = None
         employee_mapping = EmployeeMapping.objects.filter(
             source_employee__value=description.get('employee_email'),
@@ -618,6 +622,10 @@ class CreditCardCharge(models.Model):
             'ALL', 'TRANSACTION_BODY') and employee_field_mapping == 'EMPLOYEE' and employee_mapping \
             and employee_mapping.destination_employee and employee_mapping.destination_employee.detail:
             department_id = employee_mapping.destination_employee.detail.get('department_id')
+
+        if not department_id:
+            if general_mappings.department_id and general_mappings.department_level in ['TRANSACTION_BODY', 'ALL']:
+                department_id = general_mappings.department_id
 
         credit_charge_object, _ = CreditCardCharge.objects.update_or_create(
             expense_group=expense_group,
@@ -698,6 +706,10 @@ class CreditCardChargeLineItem(models.Model):
         
         if not class_id:
             class_id = get_class_id_or_none(expense_group, lineitem)
+
+        if not class_id:
+            if general_mappings.class_id and general_mappings.class_level in ['TRANSACTION_LINE', 'ALL']:
+                class_id = general_mappings.class_id
 
         department_id = get_department_id_or_none(expense_group, lineitem)
 
@@ -1006,6 +1018,7 @@ class JournalEntry(models.Model):
     expense_group = models.OneToOneField(ExpenseGroup, on_delete=models.PROTECT, help_text='Expense group reference')
     currency = models.CharField(max_length=255, help_text='Journal Entry Currency')
     location_id = models.CharField(max_length=255, help_text='NetSuite Location id', null=True)
+    class_id = models.CharField(max_length=255, help_text='NetSuite Class id', null=True)
     department_id = models.CharField(max_length=255, help_text='NetSuite Department id', null=True)
     subsidiary_id = models.CharField(max_length=255, help_text='NetSuite Subsidiary ID')
     memo = models.TextField(help_text='Journal Entry Memo')
@@ -1056,6 +1069,10 @@ class JournalEntry(models.Model):
         if general_mappings.use_employee_location and general_mappings.location_level in ('ALL', 'TRANSACTION_BODY')\
             and employee_field_mapping == 'EMPLOYEE' and employee_mapping and employee_mapping.destination_employee:   
             location_id = employee_mapping.destination_employee.detail.get('location_id')
+
+        if not department_id:
+            if general_mappings.department_id and general_mappings.department_level in ['TRANSACTION_BODY', 'ALL']:
+                department_id = general_mappings.department_id
 
         journal_entry_object, _ = JournalEntry.objects.update_or_create(
             expense_group=expense_group,
@@ -1168,6 +1185,10 @@ class JournalEntryLineItem(models.Model):
             if not class_id:
                 class_id = get_class_id_or_none(expense_group, lineitem)
 
+            if not class_id:
+                if general_mappings.class_id and general_mappings.class_level in ['TRANSACTION_LINE', 'ALL']:
+                    class_id = general_mappings.class_id
+
             if expense_group.fund_source == 'CCC':
                 department_id = get_department_id_or_none(expense_group, lineitem)
                 location_id = get_location_id_or_none(expense_group, lineitem)
@@ -1191,7 +1212,7 @@ class JournalEntryLineItem(models.Model):
                 location_id = get_location_id_or_none(expense_group, lineitem)
 
             if not location_id and general_mappings.location_id:
-                location_id = general_mappings.location_id
+                location_id = general_mappings.location_id if general_mappings.location_level in ('ALL', 'TRANSACTION_LINE') else None
 
             custom_segments = get_custom_segments(expense_group, lineitem)
 
