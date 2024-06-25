@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django_q.tasks import async_task
 
 from apps.workspaces.models import Configuration, Workspace, WorkspaceSchedule
 from apps.mappings.models import GeneralMapping
@@ -183,6 +184,7 @@ class AdvancedSettingsSerializer(serializers.ModelSerializer):
             instance.save()
 
             AdvancedConfigurationsTriggers.post_to_integration_settings(instance.id, True)
+            async_task('apps.workspaces.tasks.async_create_admin_subcriptions', instance.id)
 
         return instance
     
