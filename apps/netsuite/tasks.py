@@ -1337,7 +1337,7 @@ def process_reimbursements(workspace_id):
 
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
-    expenses_to_be_marked = []
+    reports_to_be_marked = set()
     payloads = []
 
     report_ids = Expense.objects.filter(fund_source='PERSONAL', paid_on_fyle=False, workspace_id=workspace_id).values_list('report_id').distinct()
@@ -1352,20 +1352,45 @@ def process_reimbursements(workspace_id):
 
         if all_expense_paid:
             payloads.append({'id': report_id, 'paid_notify_at': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')})
-            expenses_to_be_marked.extend(paid_expenses)
+            reports_to_be_marked.add(report_id)
 
     if payloads:
-        try:
-            platform.reports.bulk_mark_as_paid(payloads)
-            if expenses_to_be_marked:
-                expense_ids_to_mark = [expense.id for expense in expenses_to_be_marked]
-                Expense.objects.filter(id__in=expense_ids_to_mark).update(paid_on_fyle=True)
-        except Exception as error:
-            error = traceback.format_exc()
-            error = {
-                'error': error
-            }
-            logger.exception(error)
+        mark_paid_on_fyle(platform, payloads, reports_to_be_marked, workspace_id)
+
+
+def mark_paid_on_fyle(platform, payloads:dict, reports_to_be_marked, workspace_id, retry_num=10):
+    try:
+        logger.info('Marking reports paid on fyle for report ids - %s', reports_to_be_marked)
+        platform.reports.bulk_mark_as_paid(payloads)
+        Expense.objects.filter(report_id__in=list(reports_to_be_marked), workspace_id=workspace_id, paid_on_fyle=False).update(paid_on_fyle=True)
+    except Exception as e:
+        error = traceback.format_exc()
+        target_messages = ['Report is not in APPROVED or PAYMENT_PROCESSING State', 'Permission denied to perform this action']
+        error_response = e.response
+        to_remove = set()
+
+        for item in error_response.get('data', []):
+            if item.get('message') in target_messages:
+                Expense.objects.filter(report_id=item['key'], workspace_id=workspace_id, paid_on_fyle=False).update(paid_on_fyle=True)
+                to_remove.add(item['key'])
+
+        for report_id in to_remove:
+            payloads = [payload for payload in payloads if payload['id'] != report_id]
+            reports_to_be_marked.remove(report_id)
+
+        if retry_num > 0 and payloads:
+            retry_num -= 1
+            logger.info('Retrying to mark reports paid on fyle, retry_num=%d', retry_num)
+            mark_paid_on_fyle(platform, payloads, reports_to_be_marked, retry_num)
+
+        else:
+            logger.info('Retry limit reached or no payloads left. Failed to process payloads - %s:', reports_to_be_marked)
+
+        error = {
+            'error': error
+        }
+        logger.exception(error)
+
 
 def schedule_reimbursements_sync(sync_netsuite_to_fyle_payments, workspace_id):
     if sync_netsuite_to_fyle_payments:
