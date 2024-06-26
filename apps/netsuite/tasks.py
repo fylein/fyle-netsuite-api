@@ -1366,7 +1366,7 @@ def mark_paid_on_fyle(platform, payloads:dict, reports_to_be_marked, workspace_i
         Expense.objects.filter(report_id__in=list(reports_to_be_marked), workspace_id=workspace_id, paid_on_fyle=False).update(paid_on_fyle=True)
     except Exception as e:
         error = traceback.format_exc()
-        target_messages = ['Report is not in APPROVED or PAYMENT_PROCESSING State', 'Permission denied to perform this action']
+        target_messages = ['Report is not in APPROVED or PAYMENT_PROCESSING State', 'Permission denied to perform this action.']
         error_response = e.response
         to_remove = set()
 
