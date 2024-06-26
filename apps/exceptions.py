@@ -67,7 +67,7 @@ def handle_view_exceptions():
 
             except Configuration.DoesNotExist:
                 return Response(
-                    data={'message': 'Workspace schedule does not exist in workspace'},
+                    data={'message': 'Configuration does not exist in workspace'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
