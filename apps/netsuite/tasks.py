@@ -1361,6 +1361,7 @@ def process_reimbursements(workspace_id):
 def mark_paid_on_fyle(platform, payloads:dict, reports_to_be_marked, workspace_id, retry_num=10):
     try:
         logger.info('Marking reports paid on fyle for report ids - %s', reports_to_be_marked)
+        logger.info('Payloads- %s', payloads)
         platform.reports.bulk_mark_as_paid(payloads)
         Expense.objects.filter(report_id__in=list(reports_to_be_marked), workspace_id=workspace_id, paid_on_fyle=False).update(paid_on_fyle=True)
     except Exception as e:
@@ -1381,7 +1382,7 @@ def mark_paid_on_fyle(platform, payloads:dict, reports_to_be_marked, workspace_i
         if retry_num > 0 and payloads:
             retry_num -= 1
             logger.info('Retrying to mark reports paid on fyle, retry_num=%d', retry_num)
-            mark_paid_on_fyle(platform, payloads, reports_to_be_marked, retry_num)
+            mark_paid_on_fyle(platform, payloads, reports_to_be_marked, workspace_id, retry_num)
 
         else:
             logger.info('Retry limit reached or no payloads left. Failed to process payloads - %s:', reports_to_be_marked)
