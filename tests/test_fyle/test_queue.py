@@ -1,5 +1,5 @@
 from apps.fyle.models import Expense
-from apps.workspaces.models import FyleCredential
+from apps.workspaces.models import Workspace, FyleCredential
 from apps.netsuite.queue import __create_chain_and_run
 from apps.fyle.queue import async_post_accounting_export_summary, async_import_and_export_expenses
 
@@ -37,4 +37,8 @@ def test_async_import_and_export_expenses(db):
         }
     }
 
-    async_import_and_export_expenses(body)
+    worksapce, _ = Workspace.objects.update_or_create(
+        fyle_org_id='or79Cob97KSh'
+    )
+
+    async_import_and_export_expenses(body, worksapce.id)
