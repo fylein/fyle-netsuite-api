@@ -13,7 +13,7 @@ from fyle_integrations_platform_connector import PlatformConnector
 from fyle_accounting_mappings.models import ExpenseAttribute
 from fyle_accounting_mappings.serializers import ExpenseAttributeSerializer
 
-from apps.workspaces.models import Configuration, FyleCredential, Workspace
+from apps.workspaces.models import FyleCredential, Workspace
 from fyle_netsuite_api.utils import LookupFieldMixin
 
 from .tasks import schedule_expense_group_creation, get_task_log_and_fund_source, create_expense_groups
@@ -24,8 +24,7 @@ from .serializers import ExpenseGroupSerializer, ExpenseSerializer, ExpenseField
 from .queue import async_import_and_export_expenses
 from .constants import DEFAULT_FYLE_CONDITIONS
 
-from fyle.platform import Platform
-from fyle_netsuite_api import settings
+from apps.exceptions import handle_view_exceptions
 
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -39,6 +38,7 @@ class ExpenseGroupViewV2(LookupFieldMixin, generics.ListCreateAPIView):
     serializer_class = ExpenseGroupSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = ExpenseGroupSearchFilter
+
 
 class ExpenseViewV2(LookupFieldMixin, generics.ListAPIView):
     """
@@ -281,13 +281,13 @@ class SyncFyleDimensionView(generics.ListCreateAPIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
-        except Exception : 
+        except Exception:
             return Response(
                 data={
                     'message': 'Error in syncing Dimensions'
                 },
                 status=status.HTTP_400_BAD_REQUEST
-            )    
+            )
 
 
 class RefreshFyleDimensionView(generics.ListCreateAPIView):
@@ -344,7 +344,7 @@ class ExpenseFilterView(generics.ListCreateAPIView, generics.DestroyAPIView):
 
             return Response(data={
                 'workspace_id': workspace_id,
-                'rank' : rank, 
+                'rank': rank, 
                 'message': 'Expense filter deleted'
             })
 
@@ -400,7 +400,7 @@ class CustomFieldView(generics.RetrieveAPIView):
             platform = PlatformConnector(fyle_credentails)
             custom_fields = platform.expense_custom_fields.list_all()
 
-            response = [] 
+            response = []
             response.extend(DEFAULT_FYLE_CONDITIONS)
 
             for custom_field in custom_fields:
@@ -456,7 +456,8 @@ class ExportView(generics.CreateAPIView):
     authentication_classes = []
     permission_classes = []
 
+    @handle_view_exceptions()
     def post(self, request, *args, **kwargs):
-        async_import_and_export_expenses(request.data)
+        async_import_and_export_expenses(request.data, int(kwargs['workspace_id']))
 
         return Response(data={}, status=status.HTTP_200_OK)
