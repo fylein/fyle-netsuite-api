@@ -1,12 +1,13 @@
 import json
+import logging
 import traceback
 import requests
 from datetime import datetime, timezone
 from fyle_integrations_platform_connector import PlatformConnector
-import logging
 
 from django.conf import settings
 from django.db.models import Q
+from rest_framework.exceptions import ValidationError
 from fyle_accounting_mappings.models import ExpenseAttribute
 
 from apps.fyle.models import ExpenseGroupSettings, ExpenseFilter, ExpenseGroup, Expense
@@ -395,6 +396,16 @@ def construct_expense_filter(expense_filter: ExpenseFilter):
         constructed_expense_filter = Q(**filter1)
 
     return constructed_expense_filter
+
+
+def assert_valid_request(workspace_id:int, fyle_org_id:str):
+    """
+    Assert if the request is valid by checking
+    the url_workspace_id and fyle_org_id workspace
+    """
+    workspace = Workspace.objects.get(fyle_org_id=fyle_org_id)
+    if workspace.id != workspace_id:
+        raise ValidationError('Workspace mismatch')
 
 
 class AdvanceSearchFilter(django_filters.FilterSet):

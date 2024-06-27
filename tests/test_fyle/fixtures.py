@@ -1,4 +1,270 @@
 data = {
+    "raw_expense": {
+        'accounting_export_summary': {
+            'error_type': 'ACCOUNTING_INTEGRATION_ERROR',
+            'state': 'ERROR',
+            'tpa_id': 'tpayfjPPHTDgv',
+            'url': 'https://staging1.fyle.tech/app/settings/#/integrations/native_apps?integrationIframeTarget=integrations/intacct/main/dashboard'
+        },
+        'activity_details': None,
+        'added_to_report_at': None,
+        'admin_amount': None,
+        'advance_wallet_id': None,
+        'amount': 12,
+        'approvals': [
+            {
+                'approver_user': {
+                    'email': 'admin1@fyleforimporrttest.in',
+                    'full_name': 'Theresa Brown',
+                    'id': 'usVN2WTtPqE7'
+                },
+                'approver_user_id': 'usVN2WTtPqE7',
+                'state': 'APPROVAL_DONE'
+            }
+        ],
+        'approver_comments': [],
+        'category': {
+            'code': '223',
+            'display_name': 'ABN Withholding',
+            'id': 317995,
+            'name': 'ABN Withholding',
+            'sub_category': None,
+            'system_category': None
+        },
+        'category_id': 317995,
+        'claim_amount': 12,
+        'code': None,
+        'commute_deduction': None,
+        'commute_details': None,
+        'commute_details_id': None,
+        'cost_center': {
+            'code': '96441',
+            'id': 23166,
+            'name': 'Administration'
+        },
+        'cost_center_id': 23166,
+        'created_at': '2024-05-10T07:52:10.551260+00:00',
+        'creator_user_id': 'usVN2WTtPqE7',
+        'currency': 'USD',
+        'custom_fields': [
+            {
+                'is_enabled': True,
+                'name': 'Custom Expense Field',
+                'type': 'TEXT',
+                'value': None
+            },
+            {
+                'is_enabled': True,
+                'name': 'Locationcustom',
+                'type': 'SELECT',
+                'value': None
+            },
+            {
+                'is_enabled': True,
+                'name': 'Deptcustom',
+                'type': 'SELECT',
+                'value': None
+            }
+        ],
+        'custom_fields_flattened': {
+            'custom_expense_field': None,
+            'deptcustom': None,
+            'locationcustom': None
+        },
+        'distance': None,
+        'distance_unit': None,
+        'employee': {
+            'business_unit': None,
+            'code': None,
+            'custom_fields': [],
+            'department': None,
+            'department_id': None,
+            'flattened_custom_field': {},
+            'has_accepted_invite': True,
+            'id': 'ouhC0BNdc33I',
+            'is_enabled': True,
+            'joined_at': None,
+            'level': None,
+            'location': None,
+            'mobile': None,
+            'org_id': 'orAW3T2QmroT',
+            'org_name': 'Fyle For import_test',
+            'title': None,
+            'user': {
+                'email': 'admin1@fyleforimporrttest.in',
+                'full_name': 'Theresa Brown',
+                'id': 'usVN2WTtPqE7'
+            },
+            'user_id': 'usVN2WTtPqE7'
+        },
+        'employee_id': 'ouhC0BNdc33I',
+        'ended_at': None,
+        'expense_rule_data': None,
+        'expense_rule_id': None,
+        'extracted_data': None,
+        'file_ids': [],
+        'files': [],
+        'foreign_amount': None,
+        'foreign_currency': None,
+        'hotel_is_breakfast_provided': False,
+        'id': 'txhJLOSKs1iN',
+        'invoice_number': None,
+        'is_billable': None,
+        'is_corporate_card_transaction_auto_matched': False,
+        'is_exported': None,
+        'is_manually_flagged': None,
+        'is_physical_bill_submitted': None,
+        'is_policy_flagged': None,
+        'is_receipt_mandatory': None,
+        'is_reimbursable': True,
+        'is_split': False,
+        'is_verified': True,
+        'is_weekend_spend': False,
+        'last_exported_at': None,
+        'last_settled_at': '2024-05-10T07:55:07.373278+00:00',
+        'last_verified_at': '2024-05-10T07:55:02.329280+00:00',
+        'locations': [],
+        'matched_corporate_card_transaction_ids': [],
+        'matched_corporate_card_transactions': [],
+        'merchant': None,
+        'mileage_calculated_amount': None,
+        'mileage_calculated_distance': None,
+        'mileage_is_round_trip': None,
+        'mileage_rate': None,
+        'mileage_rate_id': None,
+        'missing_mandatory_fields': {
+            'amount': False,
+            'currency': False,
+            'expense_field_ids': [],
+            'receipt': False
+        },
+        'org_id': 'orAW3T2QmroT',
+        'per_diem_num_days': None,
+        'per_diem_rate': None,
+        'per_diem_rate_id': None,
+        'physical_bill_submitted_at': None,
+        'policy_amount': None,
+        'policy_checks': {
+            'are_approvers_added': False,
+            'is_amount_limit_applied': False,
+            'is_flagged_ever': False,
+            'violations': None
+        },
+        'project': {
+            'code': 'B3DNLG7TVM',
+            'display_name': 'Project 6',
+            'id': 330241,
+            'name': 'Project 6',
+            'sub_project': None
+        },
+        'project_id': 330241,
+        'purpose': None,
+        'report': {
+            'amount': 12,
+            'approvals': [
+                {
+                    'approver_user': {
+                        'email': 'admin1@fyleforimporrttest.in',
+                        'full_name': 'Theresa Brown',
+                        'id': 'usVN2WTtPqE7'
+                    },
+                    'approver_user_id': 'usVN2WTtPqE7',
+                    'state': 'APPROVAL_DONE'
+                }
+            ],
+            'id': 'rpN41rGGnxNI',
+            'last_approved_at': '2024-05-10T07:53:25.774+00:00',
+            'last_paid_at': None,
+            'last_submitted_at': '2024-05-10T07:53:09.457+00:00',
+            'last_verified_at': '2024-05-10T07:55:02.32928+00:00',
+            'reimbursement_id': 'reimYNNUkKQiWp',
+            'reimbursement_seq_num': 'P/2024/05/T/P/2024/05/R/30',
+            'seq_num': 'C/2024/05/R/45',
+            'settlement_id': 'setUkp31alIp7',
+            'state': 'PAYMENT_PROCESSING',
+            'title': '#5:  May 2024'
+        },
+        'report_id': 'rpN41rGGnxNI',
+        'report_last_approved_at': '2024-05-10T07:53:25.774000+00:00',
+        'report_last_paid_at': None,
+        'report_settlement_id': 'setUkp31alIp7',
+        'seq_num': 'E/2024/05/T/442',
+        'source': 'WEBAPP',
+        'source_account': {
+            'id': 'accUMhoA4foa5',
+            'type': 'PERSONAL_CASH_ACCOUNT'
+        },
+        'source_account_id': 'accUMhoA4foa5',
+        'spent_at': '2024-05-10T00:00:00+00:00',
+        'split_group_amount': None,
+        'split_group_id': 'txhJLOSKs1iN',
+        'started_at': None,
+        'state': 'PAYMENT_PROCESSING',
+        'state_display_name': 'Processing',
+        'tax_amount': None,
+        'tax_group': None,
+        'tax_group_id': None,
+        'travel_classes': [],
+        'updated_at': '2024-06-10T11:41:40.779611+00:00',
+        'user': {
+            'email': 'admin1@fyleforimporrttest.in',
+            'full_name': 'Theresa Brown',
+            'id': 'usVN2WTtPqE7'
+        },
+        'user_id': 'usVN2WTtPqE7',
+        'verifications': [
+            {
+                'verifier_user': {
+                    'email': 'owner@fyleforimporrttest.in',
+                    'full_name': 'Fyle For import_test',
+                    'id': 'usbzW0rVpuWC'
+                },
+                'verifier_user_id': 'usbzW0rVpuWC'
+            }
+        ],
+        'verifier_comments': []
+    },
+    "default_raw_expense": {
+        'employee_email': 'admin1@fyleforimporrttest.in',
+        'employee_name': 'Theresa Brown',
+        'category': 'Old Category',
+        'sub_category': None,
+        'project': 'Project 6',
+        'org_id': 'orAW3T2QmroT',
+        'expense_number': 'E/2024/05/T/442',
+        'claim_number': 'C/2024/05/R/45',
+        'amount': 12.0,
+        'currency': 'USD',
+        'foreign_amount': None,
+        'foreign_currency': None,
+        'reimbursable': True,
+        'state': 'PAYMENT_PROCESSING',
+        'vendor': None,
+        'cost_center': 'Administration',
+        'corporate_card_id': None,
+        'purpose': None,
+        'report_id': 'rpN41rGGnxNI',
+        'billable': False,
+        'file_ids': [],
+        'spent_at': '2024-05-10 17:00:00',
+        'approved_at': '2024-05-10 07:53:25',
+        'posted_at': None,
+        'is_skipped': False,
+        'expense_created_at': '2024-05-10 07:52:10',
+        'expense_updated_at': '2024-05-13 05:53:25',
+        'fund_source': 'PERSONAL',
+        'verified_at': '2024-05-10 07:53:25',
+        'custom_properties': {
+            'Deptcustom': None,
+            'Locationcustom': None,
+            'Custom Expense Field': None
+        },
+        'report_title': '#5:  May 2024',
+        'tax_amount': None,
+        'tax_group_id': None,
+        'previous_export_state': None,
+        'accounting_export_summary': []
+    },
     "expenses_spent_at":[
         {
             'id': '1234',

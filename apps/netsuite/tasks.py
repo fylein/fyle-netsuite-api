@@ -4,7 +4,7 @@ import traceback
 import itertools
 from typing import List
 import base64
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from django.db import transaction
 
@@ -1335,54 +1335,62 @@ def get_valid_reimbursement_ids(reimbursement_ids: List, platform: PlatformConne
 def process_reimbursements(workspace_id):
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
 
+    platform = PlatformConnector(fyle_credentials=fyle_credentials)
+
+    reports_to_be_marked = set()
+    payloads = []
+
+    report_ids = Expense.objects.filter(fund_source='PERSONAL', paid_on_fyle=False, workspace_id=workspace_id).values_list('report_id').distinct()
+    for report_id in report_ids:
+        report_id = report_id[0]
+        expenses = Expense.objects.filter(fund_source='PERSONAL', report_id=report_id, workspace_id=workspace_id).all()
+        paid_expenses = expenses.filter(paid_on_netsuite=True)
+
+        all_expense_paid = False
+        if len(expenses):
+            all_expense_paid = len(expenses) == len(paid_expenses)
+
+        if all_expense_paid:
+            payloads.append({'id': report_id, 'paid_notify_at': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')})
+            reports_to_be_marked.add(report_id)
+
+    if payloads:
+        mark_paid_on_fyle(platform, payloads, reports_to_be_marked, workspace_id)
+
+
+def mark_paid_on_fyle(platform, payloads:dict, reports_to_be_marked, workspace_id, retry_num=10):
     try:
-        platform = PlatformConnector(fyle_credentials=fyle_credentials)
-    except InvalidTokenError:
-        logger.info('Invalid Fyle refresh token for workspace %s', workspace_id)
-        return
+        logger.info('Marking reports paid on fyle for report ids - %s', reports_to_be_marked)
+        logger.info('Payloads- %s', payloads)
+        platform.reports.bulk_mark_as_paid(payloads)
+        Expense.objects.filter(report_id__in=list(reports_to_be_marked), workspace_id=workspace_id, paid_on_fyle=False).update(paid_on_fyle=True)
+    except Exception as e:
+        error = traceback.format_exc()
+        target_messages = ['Report is not in APPROVED or PAYMENT_PROCESSING State', 'Permission denied to perform this action.']
+        error_response = e.response
+        to_remove = set()
 
-    platform.reimbursements.sync()
+        for item in error_response.get('data', []):
+            if item.get('message') in target_messages:
+                Expense.objects.filter(report_id=item['key'], workspace_id=workspace_id, paid_on_fyle=False).update(paid_on_fyle=True)
+                to_remove.add(item['key'])
 
-    reimbursements = Reimbursement.objects.filter(state='PENDING', workspace_id=workspace_id).all()
+        for report_id in to_remove:
+            payloads = [payload for payload in payloads if payload['id'] != report_id]
+            reports_to_be_marked.remove(report_id)
 
-    reimbursement_ids = []
+        if retry_num > 0 and payloads:
+            retry_num -= 1
+            logger.info('Retrying to mark reports paid on fyle, retry_num=%d', retry_num)
+            mark_paid_on_fyle(platform, payloads, reports_to_be_marked, workspace_id, retry_num)
 
-    if reimbursements:
-        for reimbursement in reimbursements:
-            expenses = Expense.objects.filter(settlement_id=reimbursement.settlement_id, fund_source='PERSONAL').all()
-            paid_expenses = expenses.filter(paid_on_netsuite=True)
+        else:
+            logger.info('Retry limit reached or no payloads left. Failed to process payloads - %s:', reports_to_be_marked)
 
-            all_expense_paid = False
-            if len(expenses):
-                all_expense_paid = len(expenses) == len(paid_expenses)
-
-            if all_expense_paid:
-                reimbursement_ids.append(reimbursement.reimbursement_id)
-
-    if reimbursement_ids:
-        # Validating deleted reimbursements
-        valid_reimbursement_ids = get_valid_reimbursement_ids(reimbursement_ids, platform)
-
-        chunk_size = 20
-
-        for index in range(0, len(valid_reimbursement_ids), chunk_size):
-            partitioned_list = valid_reimbursement_ids[index:index + chunk_size]
-
-            if partitioned_list:
-                reimbursements_list = []
-                for reimbursement_id in partitioned_list:
-                    reimbursement_object = {'id': reimbursement_id}
-                    reimbursements_list.append(reimbursement_object)
-
-                try:
-                    platform.reimbursements.bulk_post_reimbursements(reimbursements_list)
-                    platform.reimbursements.sync()
-                except Exception as error:
-                    error = traceback.format_exc()
-                    error = {
-                        'error': error
-                    }
-                    logger.exception(error)
+        error = {
+            'error': error
+        }
+        logger.exception(error)
 
 
 def schedule_reimbursements_sync(sync_netsuite_to_fyle_payments, workspace_id):
