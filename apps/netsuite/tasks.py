@@ -9,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 from django.db import transaction
 
 from django.utils.module_loading import import_string
+from apps.fyle.helpers import get_filter_credit_expenses
 from apps.netsuite.exceptions import handle_netsuite_exceptions
 from django_q.models import Schedule
 from django_q.tasks import async_task
@@ -23,7 +24,7 @@ from fyle.platform.exceptions import InternalServerError, InvalidTokenError
 
 from fyle_netsuite_api.exceptions import BulkError
 
-from apps.fyle.models import ExpenseGroup, Expense, Reimbursement
+from apps.fyle.models import ExpenseGroup, Expense, ExpenseGroupSettings, Reimbursement
 from apps.mappings.models import GeneralMapping, SubsidiaryMapping
 from apps.tasks.models import TaskLog, Error
 from apps.workspaces.models import LastExportDetail, NetSuiteCredentials, FyleCredential, Configuration, Workspace
@@ -1018,22 +1019,38 @@ def __validate_expense_group(expense_group: ExpenseGroup, configuration: Configu
         raise BulkError('Mappings are missing', bulk_errors)
 
 
-def check_expenses_reimbursement_status(expenses):
-    all_expenses_paid = True
+def check_expenses_reimbursement_status(expenses, workspace_id, platform, filter_credit_expenses):
 
-    for expense in expenses:
-        reimbursement = Reimbursement.objects.filter(settlement_id=expense.settlement_id).first()
+    if expenses.first().paid_on_fyle:
+        return True
 
-        if (reimbursement and reimbursement.state != 'COMPLETE') or not reimbursement:
-            all_expenses_paid = False
+    report_id = expenses.first().report_id
 
-    return all_expenses_paid
+    expenses = platform.expenses.get(
+        source_account_type=['PERSONAL_CASH_ACCOUNT'],
+        filter_credit_expenses=filter_credit_expenses,
+        report_id=report_id
+    )
+
+    is_paid = False
+    if expenses:
+        is_paid = expenses[0]['state'] == 'PAID'
+
+    if is_paid:
+        Expense.objects.filter(workspace_id=workspace_id, report_id=report_id, paid_on_fyle=False).update(paid_on_fyle=True)
+
+    return is_paid
 
 
 def create_netsuite_payment_objects(netsuite_objects, object_type, workspace_id):
     netsuite_payment_objects = {}
 
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+    platform = PlatformConnector(fyle_credentials)
+
+    expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=workspace_id)
+    filter_credit_expenses = get_filter_credit_expenses(expense_group_settings=expense_group_settings)
 
     try:
         netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
@@ -1048,7 +1065,7 @@ def create_netsuite_payment_objects(netsuite_objects, object_type, workspace_id)
         entity_id = netsuite_object.entity_id
 
         expense_group_reimbursement_status = check_expenses_reimbursement_status(
-            netsuite_object.expense_group.expenses.all())
+            netsuite_object.expense_group.expenses.all(), workspace_id=workspace_id, platform=platform, filter_credit_expenses=filter_credit_expenses)
 
         netsuite_object_task_log = TaskLog.objects.get(
             expense_group=netsuite_object.expense_group, status='COMPLETE')

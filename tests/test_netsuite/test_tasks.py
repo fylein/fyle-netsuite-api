@@ -11,6 +11,7 @@ import zeep.exceptions
 from django_q.models import Schedule
 from netsuitesdk import NetSuiteRequestError
 from fyle.platform.exceptions import InternalServerError
+from fyle_integrations_platform_connector import PlatformConnector
 from apps.fyle.models import ExpenseGroup, Reimbursement, Expense
 from apps.netsuite.connector import NetSuiteConnector
 from apps.netsuite.models import CreditCardCharge, ExpenseReport, Bill, JournalEntry, BillLineitem, JournalEntryLineItem, ExpenseReportLineItem
@@ -1082,6 +1083,7 @@ def test_create_vendor_payment(db, mocker):
         'fyle_integrations_platform_connector.apis.Reimbursements.sync',
         return_value=[],
     )
+
     mocker.patch(
         'apps.netsuite.connector.NetSuiteConnector.get_bill',
         return_value=data['get_bill_response'][1]
@@ -1094,6 +1096,8 @@ def test_create_vendor_payment(db, mocker):
         'apps.netsuite.connector.NetSuiteConnector.post_vendor_payment',
         return_value=data['creation_response']
     )
+
+    mocker.patch('fyle_integrations_platform_connector.apis.Expenses.get', return_value=data['expense'])
 
     workspace_id = 1
 
@@ -1144,6 +1148,12 @@ def test_create_vendor_payment_expense_report(db, mocker):
         'fyle_integrations_platform_connector.apis.Reimbursements.sync',
         return_value=[],
     )
+
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.Expenses.get',
+        return_value=[],
+    )
+    
     mocker.patch(
         'apps.netsuite.connector.NetSuiteConnector.get_bill',
         return_value=data['get_bill_response'][1]
@@ -1156,6 +1166,8 @@ def test_create_vendor_payment_expense_report(db, mocker):
         'apps.netsuite.connector.NetSuiteConnector.post_vendor_payment',
         return_value=data['creation_response']
     )
+
+    mocker.patch('fyle_integrations_platform_connector.apis.Expenses.get', return_value=data['expense'])
 
     workspace_id = 1
 
@@ -1206,6 +1218,11 @@ def test_process_vendor_payment_expense_report(mocker, db):
     mocker.patch(
         'netsuitesdk.api.expense_reports.ExpenseReports.get',
         return_value=data['get_expense_report_response'][0]
+    )
+
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.Expenses.get',
+        return_value=[],
     )
 
     entity_object = data['entity_object']
@@ -1365,12 +1382,21 @@ def test__validate_tax_group_mapping(db):
 
 
 @pytest.mark.django_db()
-def test_check_expenses_reimbursement_status(db):
+def test_check_expenses_reimbursement_status(db, mocker):
+
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.Expenses.get',
+        return_value=[],
+    )
+
+    fyle_credentials = FyleCredential.objects.get(workspace_id=1)
+    platform = PlatformConnector(fyle_credentials)
+
     expenses = Expense.objects.filter(id=1)
     expenses[0].settlement_id = 'setqi0eM6HUgZ'
     expenses[0].save()
 
-    status = check_expenses_reimbursement_status(expenses)
+    status = check_expenses_reimbursement_status(expenses, workspace_id=1, platform=platform, filter_credit_expenses=False)
     assert status == False
 
 
