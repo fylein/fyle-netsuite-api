@@ -87,7 +87,7 @@ def parse_error(message, workspace_id, expense_group):
     export_type = export_types[configuration_export_type]
 
     error_dict, article_link = error_matcher(message, export_type, configuration)
-    entities = get_entity_values(error_dict, workspace_id)
+    entities = get_entity_values(error_dict, workspace_id, configuration)
     message = replace_destination_id_with_values(message, entities)
     return message, article_link
 
