@@ -1019,23 +1019,22 @@ def __validate_expense_group(expense_group: ExpenseGroup, configuration: Configu
         raise BulkError('Mappings are missing', bulk_errors)
 
 
-def check_expenses_reimbursement_status(expenses, workspace_id, platform):
+def check_expenses_reimbursement_status(expenses, workspace_id, platform, filter_credit_expenses):
 
     if expenses.first().paid_on_fyle:
         return True
 
     report_id = expenses.first().report_id
 
-    expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=workspace_id)
-    filter_credit_expenses = get_filter_credit_expenses(expense_group_settings=expense_group_settings)
- 
     expenses = platform.expenses.get(
         source_account_type=['PERSONAL_CASH_ACCOUNT'],
         filter_credit_expenses=filter_credit_expenses,
         report_id=report_id
     )
 
-    is_paid = expenses[0]['state'] == 'PAID'
+    is_paid = False
+    if expenses:
+        is_paid = expenses[0]['state'] == 'PAID'
 
     if is_paid:
         Expense.objects.filter(workspace_id=workspace_id, report_id=report_id, paid_on_fyle=False).update(paid_on_fyle=True)
@@ -1050,6 +1049,9 @@ def create_netsuite_payment_objects(netsuite_objects, object_type, workspace_id)
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
     platform = PlatformConnector(fyle_credentials)
 
+    expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=workspace_id)
+    filter_credit_expenses = get_filter_credit_expenses(expense_group_settings=expense_group_settings)
+
     try:
         netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
     except NetSuiteRateLimitError:
@@ -1063,7 +1065,7 @@ def create_netsuite_payment_objects(netsuite_objects, object_type, workspace_id)
         entity_id = netsuite_object.entity_id
 
         expense_group_reimbursement_status = check_expenses_reimbursement_status(
-            netsuite_object.expense_group.expenses.all(), workspace_id=workspace_id, platform=platform)
+            netsuite_object.expense_group.expenses.all(), workspace_id=workspace_id, platform=platform, filter_credit_expenses=filter_credit_expenses)
 
         netsuite_object_task_log = TaskLog.objects.get(
             expense_group=netsuite_object.expense_group, status='COMPLETE')
@@ -1181,8 +1183,10 @@ def create_vendor_payment(workspace_id):
         expense_group__fund_source='PERSONAL', expense_group__exported_at__isnull=False
     ).all()
 
+    print('bills', bills)
     if bills:
         bill_entity_map = create_netsuite_payment_objects(bills, 'BILL', workspace_id)
+        print('bill_entity_map', bill_entity_map)
 
         for entity_object_key in bill_entity_map:
             entity_id = entity_object_key

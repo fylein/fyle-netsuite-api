@@ -2,6 +2,36 @@ from collections import OrderedDict
 from datetime import datetime, timezone
 
 data = {
+    'expense':[{
+    "id": 1,
+    "employee_email": "ashwin.t@fyle.in",
+    "employee_name": None,
+    "category": "Accounts Payable",
+    "sub_category": "Accounts Payable",
+    "project": None,
+    "project_id": None,
+    "org_id": "or79Cob97KSh",
+    "expense_id": "txjvDntD9ZXR",
+    "expense_number": "E/2021/11/T/11",
+    "claim_number": "C/2021/11/R/5",
+    "amount": 50.0,
+    "currency": "USD",
+    "foreign_amount": None,
+    "foreign_currency": None,
+    "tax_amount": None,
+    "tax_group_id": None,
+    "settlement_id": "set6GUp6tcEEp",
+    "reimbursable": True,
+    "billable": None,
+    "state": "PAID",
+    "vendor": None,
+    "cost_center": "Treasury",
+    "purpose": None,
+    "report_id": "rpuN3bgphxbK",
+    "report_title": None,
+    "corporate_card_id": None,
+    "file_ids": None
+}],
     "inactive_employee": {
         'user': {'email': 'sam@fyle.in', 'full_name': 'Joanna', 'id': 'usqywo0f3nBYJKH'},
         'id': 'usqywo0f3nBYJKH',
