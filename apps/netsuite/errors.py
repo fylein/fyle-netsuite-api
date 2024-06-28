@@ -83,7 +83,7 @@ def error_matcher(message, export_type, configuration: Configuration):
     return [],''
 
 
-def get_entity_values(error_dict, workspace_id):
+def get_entity_values(error_dict, workspace_id, configuration: Configuration):
 
     """
     Get the entities from DB using destination_id and attribute_type.
@@ -95,15 +95,16 @@ def get_entity_values(error_dict, workspace_id):
     Returns:
         list(dict): List of dictionatory containing destination_ids and respective attribute_types.
     """
-
     destination_attributes = []
     for errors in error_dict:
-        destination_attributes.append(
-            DestinationAttribute.objects.filter(
+        query = DestinationAttribute.objects.filter(
             destination_id=errors['destination_id'],
             attribute_type=errors['attribute_type'].upper(),
             workspace_id=workspace_id
-        ).first())
+        )
+        if not configuration.import_tax_items:
+            query = query.exclude(display_name__in=["Item"])
+        destination_attributes.append(query.first())
 
     # all the items in list should exist in our DB else we will show unparsed error.
     if all(destination_attributes):
