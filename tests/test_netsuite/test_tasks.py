@@ -1102,8 +1102,6 @@ def test_create_vendor_payment(db, mocker):
     workspace_id = 1
 
     expense_group = ExpenseGroup.objects.filter(workspace_id=workspace_id, fund_source='PERSONAL').first()
-    for expense in expense_group.expenses.all():
-        print(expense.__dict__)
     expense_group.exported_at = datetime.now()
     expense_group.save()
 
@@ -1174,8 +1172,6 @@ def test_create_vendor_payment_expense_report(db, mocker):
     workspace_id = 1
 
     expense_group = ExpenseGroup.objects.filter(workspace_id=workspace_id, fund_source='PERSONAL').first()
-    for expense in expense_group.expenses.all():
-        print(expense.__dict__)
     expense_group.exported_at = datetime.now()
     expense_group.save()
 

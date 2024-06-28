@@ -1183,10 +1183,8 @@ def create_vendor_payment(workspace_id):
         expense_group__fund_source='PERSONAL', expense_group__exported_at__isnull=False
     ).all()
 
-    print('bills', bills)
     if bills:
         bill_entity_map = create_netsuite_payment_objects(bills, 'BILL', workspace_id)
-        print('bill_entity_map', bill_entity_map)
 
         for entity_object_key in bill_entity_map:
             entity_id = entity_object_key
