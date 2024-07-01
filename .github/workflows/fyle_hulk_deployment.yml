@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-            submodules: true
+          submodules: true
 
       - name: Initialize and update submodules
         run: |
@@ -31,7 +31,7 @@ jobs:
       - name: Run CI
         id: run-ci
         run: |
-          echo "Running ci"
+          echo "Running CI"
           sleep 2
 
       - name: Get Release branch name if workflow_run
@@ -40,10 +40,10 @@ jobs:
           echo "release_branch=netsuite_api_release_$(date +%Y_%m_%d)" >> $GITHUB_ENV
 
       - name: Checkout to Release branch if workflow_run
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
         if: github.event_name == 'workflow_run'
         with:
-          ref: ${{env.release_branch}}
+          ref: ${{ env.release_branch }}
 
       - name: Verify current branch
         run: git branch --show-current
