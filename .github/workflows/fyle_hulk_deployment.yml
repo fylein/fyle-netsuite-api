@@ -26,13 +26,13 @@ jobs:
           git submodule sync --recursive
           git submodule update --init --recursive
           git submodule foreach git fetch --all
-          sleep 2
+          sleep 5
 
       - name: Run CI
         id: run-ci
         run: |
           echo "Running CI"
-          sleep 2
+          sleep 5
 
       - name: Get Release branch name if workflow_run
         if: github.event_name == 'workflow_run'
