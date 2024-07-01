@@ -8,8 +8,6 @@ on:
     workflows: ["Create Release Branch"]
     types:
       - completed
-  pull_request:
-    types: [assigned, opened, synchronize, reopened]
 
 jobs:
   hulk_deploy:
