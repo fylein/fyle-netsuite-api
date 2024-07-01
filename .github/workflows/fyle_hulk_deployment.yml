@@ -10,24 +10,26 @@ on:
       - completed
 
 jobs:
-  hulk_deploy:
+  fyle_hulk_deploy:
     runs-on: ubuntu-latest
     environment: Staging
     steps:
       - uses: actions/checkout@v2
         with:
-            submodules: true
+          submodules: true
 
       - name: Initialize and update submodules
         run: |
           git submodule sync --recursive
           git submodule update --init --recursive
           git submodule foreach git fetch --all
+          sleep 5
 
       - name: Run CI
         id: run-ci
         run: |
-          echo "Running ci"
+          echo "Running CI"
+          sleep 5
 
       - name: Get Release branch name if workflow_run
         if: github.event_name == 'workflow_run'
@@ -35,10 +37,10 @@ jobs:
           echo "release_branch=netsuite_api_release_$(date +%Y_%m_%d)" >> $GITHUB_ENV
 
       - name: Checkout to Release branch if workflow_run
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
         if: github.event_name == 'workflow_run'
         with:
-          ref: ${{env.release_branch}}
+          ref: ${{ env.release_branch }}
 
       - name: Verify current branch
         run: git branch --show-current
