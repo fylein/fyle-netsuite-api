@@ -8,6 +8,8 @@ on:
     workflows: ["Create Release Branch"]
     types:
       - completed
+  pull_request:
+    types: [assigned, opened, synchronize, reopened]
 
 jobs:
   hulk_deploy:
@@ -16,7 +18,13 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-            submodules: recursive
+            submodules: true
+
+      - name: Initialize and update submodules
+        run: |
+          git submodule sync --recursive
+          git submodule update --init --recursive
+          git submodule foreach git fetch --all
 
       - name: Run CI
         id: run-ci
