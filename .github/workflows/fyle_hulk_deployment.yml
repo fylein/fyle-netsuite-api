@@ -23,23 +23,21 @@ jobs:
 
       - name: Initialize and update submodules
         run: |
-          date
           git submodule sync --recursive
           git submodule update --init --recursive
           git submodule foreach git fetch --all
-          date
+          sleep 2
 
       - name: Run CI
         id: run-ci
         run: |
           echo "Running ci"
-          date
+          sleep 2
 
       - name: Get Release branch name if workflow_run
         if: github.event_name == 'workflow_run'
         run: |
           echo "release_branch=netsuite_api_release_$(date +%Y_%m_%d)" >> $GITHUB_ENV
-          date
 
       - name: Checkout to Release branch if workflow_run
         uses: actions/checkout@v4
