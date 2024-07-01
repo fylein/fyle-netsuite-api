@@ -1,0 +1,3 @@
+[submodule "fyle_integrations_imports"]
+	path = fyle_integrations_imports
+	url = https://github.com/fylein/fyle_integrations_imports
