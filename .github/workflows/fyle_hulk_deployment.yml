@@ -9,9 +9,6 @@ on:
     types:
       - completed
 
-  pull_request:
-    types: [assigned, opened, synchronize, reopened]
-
 jobs:
   fyle_hulk_deploy:
     runs-on: ubuntu-latest
