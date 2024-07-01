@@ -118,7 +118,4 @@ Django Rest Framework API for Fyle Netsuite Integration.
 
     OK
     Destroying test database for alias 'default'...
-
-
-
     ```
