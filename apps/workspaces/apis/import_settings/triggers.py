@@ -131,7 +131,7 @@ class ImportSettingsTrigger:
         for setting in self.__mapping_settings:
             destination_fields.append(setting['destination_field'])
 
-        MappingSetting.objects.filter(~Q(destination_field__in=destination_fields), destination_field__in=['CLASS', 'CUSTOMER', 'DEPARTMENT'], workspace_id=self.__workspace_id).delete()
+        MappingSetting.objects.filter(~Q(destination_field__in=destination_fields), destination_field__in=['CLASS', 'DEPARTMENT', 'PROJECT', 'LOCATION'], workspace_id=self.__workspace_id).delete()
 
         self.__update_expense_group_settings_for_departments()
 
