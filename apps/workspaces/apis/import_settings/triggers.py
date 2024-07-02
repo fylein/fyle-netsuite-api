@@ -130,8 +130,14 @@ class ImportSettingsTrigger:
         destination_fields = []
         for setting in self.__mapping_settings:
             destination_fields.append(setting['destination_field'])
+        
+        destination_fields_internal = ['ACCOUNT','CCC_ACCOUNT','BANK_ACCOUNT', 'CREDIT_CARD_ACCOUNT', 'CHARGE_CARD_NUMBER',
+                                        'ACCOUNTS_PAYABLE', 'VENDOR_PAYMENT_ACCOUNT', 'EMPLOYEE', 'EXPENSE_TYPE', 'TAX_DETAIL', 'VENDOR', 'CURRENCY', 'SUBSIDIARY']
+        
 
-        MappingSetting.objects.filter(~Q(destination_field__in=destination_fields), destination_field__in=['CLASS', 'CUSTOMER', 'DEPARTMENT'], workspace_id=self.__workspace_id).delete()
+        destination_fields.extend(destination_fields_internal)
+
+        MappingSetting.objects.filter(~Q(destination_field__in=destination_fields), workspace_id=self.__workspace_id).delete()
 
         self.__update_expense_group_settings_for_departments()
 
