@@ -130,6 +130,12 @@ class ImportSettingsTrigger:
         destination_fields = []
         for setting in self.__mapping_settings:
             destination_fields.append(setting['destination_field'])
+        
+        destination_fields_internal = ['ACCOUNT','CCC_ACCOUNT','BANK_ACCOUNT', 'CREDIT_CARD_ACCOUNT', 'CHARGE_CARD_NUMBER',
+                                        'ACCOUNTS_PAYABLE', 'VENDOR_PAYMENT_ACCOUNT', 'EMPLOYEE', 'EXPENSE_TYPE', 'TAX_DETAIL', 'VENDOR', 'CURRENCY', 'SUBSIDIARY']
+        
+
+        destination_fields.extend(destination_fields_internal)
 
         MappingSetting.objects.filter(~Q(destination_field__in=destination_fields), workspace_id=self.__workspace_id).delete()
 
