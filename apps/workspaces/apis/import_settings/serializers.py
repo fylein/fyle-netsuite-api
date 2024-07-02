@@ -19,11 +19,17 @@ class MappingSettingFilteredListSerializer(serializers.ListSerializer):
             destination_field__in=[
                 'ACCOUNT',
                 'CCC_ACCOUNT',
+                'BANK_ACCOUNT',
+                'CREDIT_CARD_ACCOUNT',
                 'CHARGE_CARD_NUMBER',
+                'ACCOUNTS_PAYABLE',
+                'VENDOR_PAYMENT_ACCOUNT'
                 'EMPLOYEE',
                 'EXPENSE_TYPE',
                 'TAX_DETAIL',
-                'VENDOR'
+                'VENDOR',
+                'CURRENCY',
+                'SUBSIDIARY',
             ])
         )
         return super(MappingSettingFilteredListSerializer, self).to_representation(data)
