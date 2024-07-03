@@ -1171,7 +1171,6 @@ def create_vendor_payment(workspace_id):
     except InvalidTokenError:
         logger.info('Invalid Fyle refresh token for workspace %s', workspace_id)
         return
-    platform.reimbursements.sync()
 
     bills = Bill.objects.filter(
         payment_synced=False, expense_group__workspace_id=workspace_id,
