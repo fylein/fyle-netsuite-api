@@ -364,11 +364,14 @@ class NetSuiteConnector:
             )
 
         return custom_segment_attributes
-
-    def get_custom_record_attributes(self, attribute_type: str, internal_id: str):
+    
+    def update_destination_attributes(self, attribute_type:str, custom_records: List):
+        """
+            Update internal id of destination_attributes if it has changed.
+        """
+        changed_destination_attributes = []
         custom_segment_attributes = []
-        custom_records = self.connection.custom_record_types.get_all_by_id(internal_id)
-
+        
         for field in custom_records:
             custom_segment_attributes.append(
                 {
@@ -380,21 +383,42 @@ class NetSuiteConnector:
                 }
             )
 
-        updates = []
-
         for custom_segment_attribute in custom_segment_attributes:
-            destination = DestinationAttribute.objects.filter(attribute_type=custom_segment_attribute['attribute_type'], value=custom_segment_attribute['value'], workspace_id=471).first()
-            if destination and destination.destination_id != custom_segment_attribute['destination_id']:
-                updates.append(
-                    DestinationAttribute(
-                        id=destination.id,
-                        destination_id=custom_segment_attribute['destination_id'],
-                        value=custom_segment_attribute['value']
-                    )
-                )
+            existing = DestinationAttribute.objects.filter(
+                attribute_type=custom_segment_attribute['attribute_type'],
+                value=custom_segment_attribute['value'],
+                workspace_id=self.workspace_id
+            ).first()
+            if existing and existing.destination_id != custom_segment_attribute['destination_id']:
+                changed_destination_attributes.append((existing.id, existing.destination_id, custom_segment_attribute['destination_id']))
 
-        DestinationAttribute.objects.bulk_update(updates, ['destination_id'])
+        if not changed_destination_attributes:
+            return
+
+        temp_internal_id_base = 'temp_id'
+        temp_internal_ids = {}
+        temp_internal_ids_updates = []
+
+        for i, (record_id, old_id, new_id) in enumerate(changed_destination_attributes):
+            temp_id = f"{temp_internal_id_base}_{i}"
+            temp_internal_ids[record_id] = (temp_id, new_id)
+            temp_internal_ids_updates.append(DestinationAttribute(id=record_id, destination_id=temp_id, workspace_id=self.workspace_id))
+
+        DestinationAttribute.objects.bulk_update(temp_internal_ids_updates, ['destination_id'], batch_size=100)
+
+        updated_destination_attributes = [
+            DestinationAttribute(id=record_id, destination_id=new_id, workspace_id=self.workspace_id)
+            for record_id, (temp_id, new_id) in temp_internal_ids.items()
+        ]
         
+        DestinationAttribute.objects.bulk_update(updated_destination_attributes, ['destination_id'], batch_size=100)
+
+    def get_custom_record_attributes(self, attribute_type: str, internal_id: str):
+        custom_segment_attributes = []
+        custom_records = self.connection.custom_record_types.get_all_by_id(internal_id)
+
+        self.update_destination_attributes(attribute_type=attribute_type, custom_records=custom_records)
+
         # Get all the current destination attributes
         destination_attributes = DestinationAttribute.objects.filter(
             workspace_id=self.workspace_id,
@@ -410,6 +434,16 @@ class NetSuiteConnector:
             }
 
         for field in custom_records:
+            custom_segment_attributes.append(
+                {
+                    'attribute_type': attribute_type,
+                    'display_name': custom_records[0]['recType']['name'],
+                    'value': field['name'],
+                    'destination_id': field['internalId'],
+                    'active': not field['isInactive']
+                }
+            )
+
             # Pop the value from the map if it exists
             if field['internalId'] in disabled_fields_map:
                 disabled_fields_map.pop(field['internalId'])
