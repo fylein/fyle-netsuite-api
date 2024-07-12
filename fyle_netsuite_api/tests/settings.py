@@ -172,7 +172,7 @@ Q_CLUSTER = {
     'cached': False,
     'orm': 'default',
     'ack_failures': True,
-    'poll': 1,
+    'poll': 5,
     'max_attempts': 1,
     'attempt_count': 1,
     'retry': 14400,
