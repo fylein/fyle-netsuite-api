@@ -367,7 +367,8 @@ class NetSuiteConnector:
     
     def update_destination_attributes(self, attribute_type:str, custom_records: List):
         """
-            Update internal id of destination_attributes if it has changed.
+            Sometime custom_attributes internal_id change due to some reason
+            we update destination_attributes accordingly.
         """
         changed_destination_attributes = []
         custom_segment_attributes = []
