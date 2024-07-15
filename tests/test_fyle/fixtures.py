@@ -43,7 +43,7 @@ data = {
             'name': 'Administration'
         },
         'cost_center_id': 23166,
-        'created_at': '2024-05-10T07:52:10.551260+00:00',
+        'created_at': None,
         'creator_user_id': 'usVN2WTtPqE7',
         'currency': 'USD',
         'custom_fields': [
@@ -180,7 +180,7 @@ data = {
         'tax_group': None,
         'tax_group_id': None,
         'travel_classes': [],
-        'updated_at': '2024-06-10T11:41:40.779611+00:00',
+        'updated_at': None,
         'user': {
             'email': 'admin1@fyleforimporrttest.in',
             'full_name': 'Theresa Brown',
