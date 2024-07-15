@@ -317,5 +317,5 @@ def update_non_exported_expenses(data: Dict) -> None:
             expense_obj.append(data)
             expense_objects = FyleExpenses().construct_expense_object(expense_obj, expense.workspace_id)
             Expense.create_expense_objects(
-                expense_objects, expense.workspace_id
+                expense_objects, expense.workspace_id, skip_update=True
             )
