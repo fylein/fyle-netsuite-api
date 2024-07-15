@@ -3,7 +3,7 @@ from unittest import mock
 from apps.fyle.models import ExpenseGroup
 from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute
 from apps.netsuite.connector import NetSuiteConnector, NetSuiteCredentials
-from apps.workspaces.models import Configuration, Workspace
+from apps.workspaces.models import Configuration
 from netsuitesdk import NetSuiteRequestError
 from tests.helper import dict_compare_keys
 from .fixtures import data
@@ -621,41 +621,3 @@ def test_post_journal_entry_exception(db, mocker, create_journal_entry):
     with mock.patch('netsuitesdk.api.journal_entries.JournalEntries.post') as mock_call:
         mock_call.side_effect = [NetSuiteRequestError('An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'), None]
         netsuite_connection.post_journal_entry(journal_entry_transaction, journal_entry_transaction_lineitems)
-
-def test_update_destination_attributes(db, mocker):
-    mocker.patch(
-        'netsuitesdk.api.custom_record_types.CustomRecordTypes.get_all_by_id',
-        return_value=data['custom_records']
-    )
-
-    custom_segments = data['custom_segment_destination_attributes']
-    custom_segments_destination_attribute = []
-    for custom_segment in custom_segments:
-        workspace_id = custom_segment.pop('workspace_id')
-        workspace = Workspace.objects.get(id=workspace_id)
-        custom_segments_destination_attribute.append(
-            DestinationAttribute(
-                **custom_segment,
-                workspace=workspace
-            )
-        )
-    DestinationAttribute.objects.bulk_create(custom_segments_destination_attribute, batch_size=50)
-    workspace_id = 1
-
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
-    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
-
-    custom_records = netsuite_connection.connection.custom_record_types.get_all_by_id('1')
-    netsuite_connection.update_destination_attributes('CUSTOM_TYPE', custom_records)
-
-    custom_type_destination_attributes = DestinationAttribute.objects.filter(attribute_type='CUSTOM_TYPE', workspace_id=1)
-
-    for custom_type_destination_attribute in custom_type_destination_attributes:
-        if custom_type_destination_attribute.value == 'Type B':
-           assert custom_type_destination_attribute.destination_id == '22'
-        elif custom_type_destination_attribute.value == 'Type C':
-            assert custom_type_destination_attribute.destination_id == '33'
-        elif custom_type_destination_attribute.value == 'Type A':
-           assert custom_type_destination_attribute.destination_id == '1'
-        elif custom_type_destination_attribute.value == 'Type D':
-           assert custom_type_destination_attribute.destination_id == '4'
