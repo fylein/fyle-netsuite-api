@@ -54,7 +54,7 @@ def get_department_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
             elif department_setting.source_field == 'COST_CENTER':
                 source_value = lineitem.cost_center
             else:
-                attribute = ExpenseAttribute.objects.filter(attribute_type=department_setting.source_field).first()
+                attribute = ExpenseAttribute.objects.filter(attribute_type=department_setting.source_field, workspace_id=expense_group.workspace_id).first()
                 if attribute:
                     source_value = lineitem.custom_properties.get(attribute.display_name, None)
         else:
@@ -87,7 +87,7 @@ def get_class_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
             elif class_setting.source_field == 'COST_CENTER':
                 source_value = lineitem.cost_center
             else:
-                attribute = ExpenseAttribute.objects.filter(attribute_type=class_setting.source_field).first()
+                attribute = ExpenseAttribute.objects.filter(attribute_type=class_setting.source_field, workspace_id=expense_group.workspace_id).first()
                 if attribute:
                     source_value = lineitem.custom_properties.get(attribute.display_name, None)
         else:
@@ -179,7 +179,7 @@ def get_location_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
             elif location_setting.source_field == 'COST_CENTER':
                 source_value = lineitem.cost_center
             else:
-                attribute = ExpenseAttribute.objects.filter(attribute_type=location_setting.source_field).first()
+                attribute = ExpenseAttribute.objects.filter(attribute_type=location_setting.source_field, workspace_id=expense_group.workspace_id).first()
                 if attribute:
                     source_value = lineitem.custom_properties.get(attribute.display_name, None)
         else:
