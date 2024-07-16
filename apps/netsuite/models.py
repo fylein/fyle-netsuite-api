@@ -44,6 +44,7 @@ def get_department_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
 
     department_id = None
     source_id = None
+    source_value = None
 
     if department_setting:
         if lineitem:
@@ -54,7 +55,8 @@ def get_department_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
                 source_value = lineitem.cost_center
             else:
                 attribute = ExpenseAttribute.objects.filter(attribute_type=department_setting.source_field).first()
-                source_value = lineitem.custom_properties.get(attribute.display_name, None)
+                if attribute:
+                    source_value = lineitem.custom_properties.get(attribute.display_name, None)
         else:
             source_value = expense_group.description[department_setting.source_field.lower()]
 
@@ -75,6 +77,7 @@ def get_class_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
 
     class_id = None
     source_id = None
+    source_value = None
 
     if class_setting:
         if lineitem:
@@ -85,7 +88,8 @@ def get_class_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
                 source_value = lineitem.cost_center
             else:
                 attribute = ExpenseAttribute.objects.filter(attribute_type=class_setting.source_field).first()
-                source_value = lineitem.custom_properties.get(attribute.display_name, None)
+                if attribute:
+                    source_value = lineitem.custom_properties.get(attribute.display_name, None)
         else:
             source_value = expense_group.description[class_setting.source_field.lower()]
 
@@ -165,6 +169,7 @@ def get_location_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
 
     location_id = None
     source_id = None
+    source_value = None
 
     if location_setting:
         if lineitem:
@@ -175,7 +180,8 @@ def get_location_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
                 source_value = lineitem.cost_center
             else:
                 attribute = ExpenseAttribute.objects.filter(attribute_type=location_setting.source_field).first()
-                source_value = lineitem.custom_properties.get(attribute.display_name, None)
+                if attribute:
+                    source_value = lineitem.custom_properties.get(attribute.display_name, None)
         else:
             source_value = expense_group.description[location_setting.source_field.lower()]
 
@@ -194,6 +200,7 @@ def get_custom_segments(expense_group: ExpenseGroup, lineitem: Expense):
 
     custom_segments = []
     source_id = None
+    source_value = None
     default_expense_attributes = ['CATEGORY', 'EMPLOYEE', 'TAX_GROUP', 'CORPORATE_CARD']
     default_destination_attributes = ['DEPARTMENT', 'CLASS', 'PROJECT', 'LOCATION']
 
@@ -210,7 +217,8 @@ def get_custom_segments(expense_group: ExpenseGroup, lineitem: Expense):
                     attribute_type=setting.source_field,
                     workspace_id=expense_group.workspace_id
                 ).first()
-                source_value = lineitem.custom_properties.get(attribute.display_name, None)
+                if attribute:
+                    source_value = lineitem.custom_properties.get(attribute.display_name, None)
 
             mapping: Mapping = get_filtered_mapping(
                setting.source_field, setting.destination_field, expense_group.workspace_id, source_value, source_id
