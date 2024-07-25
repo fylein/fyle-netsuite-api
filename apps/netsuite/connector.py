@@ -30,7 +30,7 @@ logger.level = logging.INFO
 
 SYNC_UPPER_LIMIT = {
     'projects': 7000,
-    'customers': 7000
+    'customers': 25000
 }
 
 
