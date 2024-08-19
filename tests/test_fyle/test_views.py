@@ -350,6 +350,16 @@ def test_expense_filters(api_client, access_token):
 
    assert dict_compare_keys(response, data['expense_filters_response']) == [], 'expense group api return diffs in keys'
 
+   url = reverse('expense-filters-delete',
+                 kwargs={
+                     'workspace_id': 1,
+                     'pk': 2
+                 })
+
+   response = api_client.delete(url)
+   assert response.status_code == 204
+
+
 @pytest.mark.django_db(databases=['default'])
 def test_custom_fields(mocker, api_client, access_token):
 
