@@ -353,10 +353,8 @@ def test_expense_filters(api_client, access_token):
    url = reverse('expense-filters-delete',
                  kwargs={
                      'workspace_id': 1,
-                     'pk': 1
+                     'pk': 2
                  })
-   
-   api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
 
    response = api_client.delete(url)
    assert response.status_code == 204
