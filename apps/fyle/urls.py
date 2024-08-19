@@ -4,7 +4,7 @@ from django.urls import path
 
 from .views import ExpenseGroupSyncView, ExpenseGroupView, ExpenseGroupByIdView, ExpenseGroupScheduleView, ExpenseGroupViewV2, ExpenseViewV2, ExportableExpenseGroupsView, FyleFieldsView, ExpenseView,\
     ExpenseAttributesView, ExpenseGroupSettingsView, SyncFyleDimensionView, RefreshFyleDimensionView,\
-    ExpenseGroupCountView, ExpenseFilterView, ExpenseGroupExpenseView, CustomFieldView, ExportView
+    ExpenseGroupCountView, ExpenseFilterView, ExpenseGroupExpenseView, CustomFieldView, ExportView, ExpenseFilterDeleteView
 
 expense_groups_paths = [
     path('expense_groups/', ExpenseGroupView.as_view(), name='expense-groups'),
@@ -28,6 +28,7 @@ other_paths = [
     path('expense_attributes/', ExpenseAttributesView.as_view(), name='expense-attributes'),
     path('fyle_fields/', FyleFieldsView.as_view(), name='fyle-fields'),
     path('fields/', FyleFieldsView.as_view(), name='fyle-fields-v2'),
+    path('expense_filters/<int:pk>/', ExpenseFilterDeleteView.as_view(), name='expense-filters'),
     path('expense_filters/', ExpenseFilterView.as_view(), name='expense-filters'),
     path('expenses/', ExpenseView.as_view(), name='expenses'),
     path('expenses/v2/', ExpenseViewV2.as_view(), name='expenses-v2'),
