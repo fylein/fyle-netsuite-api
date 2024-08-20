@@ -173,7 +173,7 @@ def test_sync_netsuite_dimensions(api_client, access_token, add_netsuite_credent
    response = api_client.post(url)
    assert response.status_code == 200
 
-   with mock.patch('apps.netsuite.views.check_interval_and_sync_dimension') as mock_call:
+   with mock.patch('apps.netsuite.views.Workspace.objects.get') as mock_call:
       mock_call.side_effect = Exception()
 
       response = api_client.post(url)
@@ -227,7 +227,7 @@ def test_refresh_netsuite_dimensions(api_client, access_token, add_netsuite_cred
    response = api_client.post(url)
    assert response.status_code == 200
 
-   with mock.patch('apps.netsuite.views.sync_dimensions') as mock_call:
+   with mock.patch('apps.netsuite.views.Workspace.objects.get') as mock_call:
       mock_call.side_effect = Exception()
 
       response = api_client.post(url)

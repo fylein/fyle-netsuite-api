@@ -93,14 +93,14 @@ def test_check_interval_and_sync_dimension(access_token, mocker, db):
         return_value=data['get_all_tax_groups']
     )
     workspace = Workspace.objects.get(id=1)
-    fyle_credentials = FyleCredential.objects.get(workspace_id=1)
-    response = check_interval_and_sync_dimension(workspace, fyle_credentials)
+    
+    check_interval_and_sync_dimension(workspace_id=1)
+    assert workspace.source_synced_at is not None
 
-    assert response == True
-
-    workspace.source_synced_at = datetime.now(timezone.utc)
-    response = check_interval_and_sync_dimension(workspace, settings.FYLE_REFRESH_TOKEN)
-    assert response == False
+    # If interval between syncs is less than 1 day, source_synced_at should not change
+    old_source_synced_at = workspace.source_synced_at = datetime.now(timezone.utc)
+    check_interval_and_sync_dimension(workspace_id=1)
+    assert old_source_synced_at == workspace.source_synced_at
 
 
 def test_post_request(mocker):

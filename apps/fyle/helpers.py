@@ -277,25 +277,26 @@ def update_use_employee_attributes_flag(workspace_id: int) -> None:
         general_mapping.save()
 
 
-def check_interval_and_sync_dimension(workspace: Workspace, fyle_credentials: FyleCredential) -> bool:
+def check_interval_and_sync_dimension(workspace_id: int):
     """
     Check sync interval and sync dimension
-    :param workspace: Workspace Instance
-    :param refresh_token: Refresh token of an org
-
-    return: True/False based on sync
+    :param workspace_id: Workspace ID
     """
+
+    workspace = Workspace.objects.get(pk=workspace_id)
+
     if workspace.source_synced_at:
         time_interval = datetime.now(timezone.utc) - workspace.source_synced_at
 
     if workspace.source_synced_at is None or time_interval.days > 0:
-        sync_dimensions(fyle_credentials)
-        return True
-
-    return False
+        sync_dimensions(workspace_id)
 
 
-def sync_dimensions(fyle_credentials: FyleCredential, is_export: bool = False) -> None:
+
+def sync_dimensions(workspace_id, is_export: bool = False) -> None:
+    workspace = Workspace.objects.get(id=workspace_id)
+    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace.id)
+
     platform = PlatformConnector(fyle_credentials)
     platform.import_fyle_dimensions(is_export=is_export)
     if is_export:
@@ -316,6 +317,9 @@ def sync_dimensions(fyle_credentials: FyleCredential, is_export: bool = False) -
 
         if projects_count != projects_expense_attribute_count:
             platform.projects.sync()
+
+    workspace.source_synced_at = datetime.now()
+    workspace.save(update_fields=['source_synced_at'])
 
 def construct_expense_filter_query(expense_filters: List[ExpenseFilter]):
     final_filter = None
