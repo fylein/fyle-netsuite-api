@@ -9,14 +9,16 @@ from .fixtures import data
 
 def test_check_interval_and_sync_dimension(db):
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=2)
     workspace = Workspace.objects.get(id=2)
-    synced = check_interval_and_sync_dimension(workspace=workspace, netsuite_credentials=netsuite_credentials)
-    assert synced == True
+    check_interval_and_sync_dimension(2)
+    assert workspace.destination_synced_at is not None
 
+    old_destination_synced_at = workspace.destination_synced_at
+
+    # If interval between syncs is less than 1 day, destination_synced_at should not change
     workspace.source_synced_at = datetime.now(timezone.utc)
-    synced = check_interval_and_sync_dimension(workspace=workspace, netsuite_credentials=netsuite_credentials)
-    assert synced == False
+    check_interval_and_sync_dimension(2)
+    assert old_destination_synced_at == workspace.destination_synced_at
 
 
 def test_sync_dimensions(mocker, db):
