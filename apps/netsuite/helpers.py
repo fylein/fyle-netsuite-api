@@ -50,7 +50,7 @@ def schedule_payment_sync(configuration: Configuration):
         workspace_id=configuration.workspace_id
     )
 
-def check_interval_and_sync_dimension(workspace_id) -> bool:
+def check_interval_and_sync_dimension(workspace_id):
     """
     Check sync interval and sync dimension
     :param workspace_id: Workspace ID

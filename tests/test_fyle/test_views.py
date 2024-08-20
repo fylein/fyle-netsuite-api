@@ -230,7 +230,7 @@ def test_fyle_refresh_dimension(api_client, access_token, mocker):
    response = api_client.post(url)
    assert response.status_code == 200
 
-   with mock.patch('apps.fyle.views.sync_dimensions') as mock_call:
+   with mock.patch('apps.fyle.views.Workspace.objects.get') as mock_call:
       mock_call.side_effect = Exception()
 
       response = api_client.post(url)
@@ -293,7 +293,7 @@ def test_fyle_sync_dimension(api_client, access_token, mocker):
    response = api_client.post(url)
    assert response.status_code == 200
 
-   with mock.patch('apps.fyle.views.check_interval_and_sync_dimension') as mock_call:
+   with mock.patch('apps.fyle.views.Workspace.objects.get') as mock_call:
       mock_call.side_effect = Exception()
 
       response = api_client.post(url)
