@@ -19,7 +19,7 @@ from django_q.tasks import async_task
 from .serializers import NetSuiteFieldSerializer, CustomSegmentSerializer
 from .tasks import create_vendor_payment, check_netsuite_object_status, process_reimbursements
 from .models import CustomSegment
-from .helpers import check_interval_and_sync_dimension, sync_dimensions
+from .helpers import check_interval_and_sync_dimension, handle_refresh_dimensions, sync_dimensions
 from apps.workspaces.actions import export_to_netsuite
 
 logger = logging.getLogger(__name__)
@@ -184,7 +184,11 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
             workspace = Workspace.objects.get(pk=kwargs['workspace_id'])
             NetSuiteCredentials.objects.get(workspace_id=workspace.id)
 
-            async_task('apps.netsuite.helpers.handle_refresh_dimensions', kwargs['workspace_id'], dimensions_to_sync)
+            # If only specified dimensions are to be synced, sync them synchronously
+            if dimensions_to_sync:
+                handle_refresh_dimensions(kwargs['workspace_id'], dimensions_to_sync)
+            else:
+                async_task('apps.netsuite.helpers.handle_refresh_dimensions', kwargs['workspace_id'], dimensions_to_sync)
 
             return Response(
                 status=status.HTTP_200_OK
