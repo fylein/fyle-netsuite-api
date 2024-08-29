@@ -1,11 +1,12 @@
 import logging
 from typing import List
+from datetime import datetime, timedelta, timezone
 
 from django.db.models import Q
 from django_q.tasks import Chain
 
 from apps.fyle.models import ExpenseGroup, Expense
-from apps.tasks.models import TaskLog
+from apps.tasks.models import TaskLog, Error
 from apps.workspaces.models import FyleCredential
 
 logger = logging.getLogger(__name__)
@@ -36,7 +37,18 @@ def __create_chain_and_run(fyle_credentials: FyleCredential, in_progress_expense
     chain.run()
 
 
-def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str):
+def validate_failing_export(is_auto_export: bool, interval_hours: int, error: Error):
+    """
+    Validate failing export
+    :param is_auto_export: Is auto export
+    :param interval_hours: Interval hours
+    :param error: Error
+    """
+    # If auto export is enabled and interval hours is set and error repetition count is greater than 100, export only once a day
+    return is_auto_export and interval_hours and error and error.repetition_count > 100 and datetime.now().replace(tzinfo=timezone.utc) - error.updated_at <= timedelta(hours=24)
+
+
+def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str, interval_hours: int):
     """
     Schedule bills creation
     :param expense_group_ids: List of expense group ids
@@ -50,10 +62,19 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str], is_
             workspace_id=workspace_id, id__in=expense_group_ids, bill__id__isnull=True, exported_at__isnull=True
         ).all()
 
+        errors = Error.objects.filter(workspace_id=workspace_id, is_resolved=False, expense_group_id__in=expense_group_ids).all()
+
         chain_tasks = []
         in_progress_expenses = []
 
         for index, expense_group in enumerate(expense_groups):
+            
+            error = errors.filter(workspace_id=workspace_id, expense_group=expense_group, is_resolved=False).first()
+            skip_export = validate_failing_export(is_auto_export, interval_hours, error)
+            if skip_export:
+                logger.info('Skipping expense group %s as it has %s errors', expense_group.id, error.repetition_count)
+                continue
+
             task_log, _ = TaskLog.objects.get_or_create(
                 workspace_id=expense_group.workspace_id,
                 expense_group=expense_group,
@@ -86,7 +107,7 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str], is_
                 __create_chain_and_run(fyle_credentials, in_progress_expenses, workspace_id, chain_tasks, fund_source)
 
 
-def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str):
+def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str, interval_hours: int):
     """
     Schedule Credit Card Charge creation
     :param expense_group_ids: List of expense group ids
@@ -101,10 +122,19 @@ def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: L
             creditcardcharge__id__isnull=True, exported_at__isnull=True
         ).all()
 
+        errors = Error.objects.filter(workspace_id=workspace_id, is_resolved=False, expense_group_id__in=expense_group_ids).all()
+
         chain_tasks = []
         in_progress_expenses = []
 
         for index, expense_group in enumerate(expense_groups):
+            
+            error = errors.filter(workspace_id=workspace_id, expense_group=expense_group, is_resolved=False).first()
+            skip_export = validate_failing_export(is_auto_export, interval_hours, error)
+            if skip_export:
+                logger.info('Skipping expense group %s as it has %s errors', expense_group.id, error.repetition_count)
+                continue
+
             expense_amount = expense_group.expenses.first().amount
             export_type = 'CREATING_CREDIT_CARD_CHARGE'
             if expense_amount < 0:
@@ -143,7 +173,7 @@ def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: L
             __create_chain_and_run(fyle_credentials, in_progress_expenses, workspace_id, chain_tasks, fund_source)
 
 
-def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str):
+def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str, interval_hours: int):
     """
     Schedule expense reports creation
     :param expense_group_ids: List of expense group ids
@@ -158,10 +188,19 @@ def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List
             expensereport__id__isnull=True, exported_at__isnull=True
         ).all()
 
+        errors = Error.objects.filter(workspace_id=workspace_id, is_resolved=False, expense_group_id__in=expense_group_ids).all()
+
         chain_tasks = []
         in_progress_expenses = []
 
         for index, expense_group in enumerate(expense_groups):
+
+            error = errors.filter(workspace_id=workspace_id, expense_group=expense_group, is_resolved=False).first()
+            skip_export = validate_failing_export(is_auto_export, interval_hours, error)
+            if skip_export:
+                logger.info('Skipping expense group %s as it has %s errors', expense_group.id, error.repetition_count)
+                continue
+
             task_log, _ = TaskLog.objects.get_or_create(
                 workspace_id=expense_group.workspace_id,
                 expense_group=expense_group,
@@ -195,7 +234,7 @@ def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List
                 __create_chain_and_run(fyle_credentials, in_progress_expenses, workspace_id, chain_tasks, fund_source)
 
 
-def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str):
+def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str, interval_hours: int):
     """
     Schedule journal entries creation
     :param expense_group_ids: List of expense group ids
@@ -209,10 +248,19 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
             workspace_id=workspace_id, id__in=expense_group_ids, journalentry__id__isnull=True, exported_at__isnull=True
         ).all()
 
+        errors = Error.objects.filter(workspace_id=workspace_id, is_resolved=False, expense_group_id__in=expense_group_ids).all()
+
         chain_tasks = []
         in_progress_expenses = []
 
         for index, expense_group in enumerate(expense_groups):
+
+            error = errors.filter(workspace_id=workspace_id, expense_group=expense_group, is_resolved=False).first()
+            skip_export = validate_failing_export(is_auto_export, interval_hours, error)
+            if skip_export:
+                logger.info('Skipping expense group %s as it has %s errors', expense_group.id, error.repetition_count)
+                continue
+            
             task_log, _ = TaskLog.objects.get_or_create(
                 workspace_id=expense_group.workspace_id,
                 expense_group=expense_group,
