@@ -1322,7 +1322,7 @@ def test_schedule_netsuite_entity_creation(db):
 
     expense_group = ExpenseGroup.objects.get(id=1)
 
-    schedule_expense_reports_creation(1, ['1'], False, 'CCC')
+    schedule_expense_reports_creation(1, ['1'], False, 'CCC', 1)
 
     task_logs = TaskLog.objects.get(workspace_id=1, expense_group=expense_group)
 
@@ -1331,7 +1331,7 @@ def test_schedule_netsuite_entity_creation(db):
 
     expense_group = ExpenseGroup.objects.get(id=3)
 
-    schedule_journal_entry_creation(2, ['3'], False, 'CCC')
+    schedule_journal_entry_creation(2, ['3'], False, 'CCC', 1)
 
     task_logs = TaskLog.objects.get(workspace_id=2, expense_group=expense_group)
 
@@ -1341,7 +1341,7 @@ def test_schedule_netsuite_entity_creation(db):
 
     expense_group = ExpenseGroup.objects.get(id=2)
 
-    schedule_bills_creation(1, ['2'], False, 'CCC')
+    schedule_bills_creation(1, ['2'], False, 'CCC', 1)
 
     task_logs = TaskLog.objects.get(workspace_id=1, expense_group=expense_group)
 
@@ -1350,7 +1350,7 @@ def test_schedule_netsuite_entity_creation(db):
 
     expense_group = ExpenseGroup.objects.get(id=48)
 
-    schedule_credit_card_charge_creation(49, ['48'], False, 'CCC')
+    schedule_credit_card_charge_creation(49, ['48'], False, 'CCC', 1)
 
     task_logs = TaskLog.objects.get(workspace_id=49, expense_group=expense_group)
 
@@ -1479,7 +1479,7 @@ def test_schedule_bills_creation(db, mocker):
     expense_group = expense_group
     task_log.save()
 
-    schedule_bills_creation(workspace_id, [1], False, 'CCC')
+    schedule_bills_creation(workspace_id, [1], False, 'CCC', 0)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
     assert task_log.type == 'CREATING_BILL'
@@ -1505,7 +1505,7 @@ def test_schedule_credit_card_charge_creation(db, mocker):
     expense_group = expense_group
     task_log.save()
 
-    schedule_credit_card_charge_creation(workspace_id, [1], False, 'CCC')
+    schedule_credit_card_charge_creation(workspace_id, [1], False, 'CCC', 0)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
     assert task_log.type == 'CREATING_CREDIT_CARD_REFUND'
@@ -1527,7 +1527,7 @@ def test_schedule_expense_reports_creation(db, mocker):
     expense_group = expense_group
     task_log.save()
 
-    schedule_expense_reports_creation(workspace_id, [1], False, 'CCC')
+    schedule_expense_reports_creation(workspace_id, [1], False, 'CCC', 0)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
     assert task_log.type == 'CREATING_EXPENSE_REPORT'
@@ -1549,7 +1549,7 @@ def test_schedule_journal_entry_creation(db, mocker):
     expense_group = expense_group
     task_log.save()
 
-    schedule_journal_entry_creation(workspace_id, [1], False, 'CCC')
+    schedule_journal_entry_creation(workspace_id, [1], False, 'CCC', 0)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
     assert task_log.type == 'CREATING_JOURNAL_ENTRY'
@@ -1693,3 +1693,159 @@ def test_upload_attachments_and_update_export(mocker, db):
     # asserting if the file is present
     lineitem = ExpenseReportLineItem.objects.get(expense_id=1)
     assert lineitem.netsuite_receipt_url == 'https://aaa.bbb.cc/x232sds'
+
+
+def test_skipping_bill_creation(db, mocker):
+    workspace_id = 1
+    mocker.patch(
+        'apps.tasks.models.TaskLog.objects.get_or_create',
+        return_value=[TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first(),None]
+    )
+
+    expense_group = ExpenseGroup.objects.get(id=1)
+    expense_group.exported_at = None
+    expense_group.save()
+
+    error = Error.objects.create(
+        workspace_id=workspace_id,
+        type='NETSUITE_ERROR',
+        error_title='NetSuite System Error',
+        error_detail='An error occured in a upsert request: Please enter value(s) for: Location',
+        expense_group=expense_group,
+        is_parsed=True,
+        repetition_count=106
+    )
+
+    task_log = TaskLog.objects.filter(workspace_id=workspace_id).first()
+    task_log.status = 'READY'
+    expense_group = expense_group
+    task_log.save()
+
+    schedule_bills_creation(workspace_id, [1], True, 'CCC', 1)
+
+    task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first()
+    assert task_log.type == 'FETCHING_EXPENSES'
+
+    Error.objects.filter(id=error.id).update(updated_at=datetime(2024, 8, 20))
+
+    schedule_bills_creation(workspace_id, [1], True, 'CCC', 1)
+
+    task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
+    assert task_log.type == 'CREATING_BILL'
+
+
+def test_skipping_journal_creation(db, mocker):
+    workspace_id = 1
+    mocker.patch(
+        'apps.tasks.models.TaskLog.objects.get_or_create',
+        return_value=[TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first(),None]
+    )
+
+    expense_group = ExpenseGroup.objects.get(id=1)
+    expense_group.exported_at = None
+    expense_group.save()
+
+    error = Error.objects.create(
+        workspace_id=workspace_id,
+        type='NETSUITE_ERROR',
+        error_title='NetSuite System Error',
+        error_detail='An error occured in a upsert request: Please enter value(s) for: Location',
+        expense_group=expense_group,
+        is_parsed=True,
+        repetition_count=106
+    )
+
+    task_log = TaskLog.objects.filter(workspace_id=workspace_id).first()
+    task_log.status = 'READY'
+    expense_group = expense_group
+    task_log.save()
+
+    schedule_journal_entry_creation(workspace_id, [1], True, 'CCC', 1)
+
+    task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first()
+    assert task_log.type == 'FETCHING_EXPENSES'
+
+    Error.objects.filter(id=error.id).update(updated_at=datetime(2024, 8, 20))
+
+    schedule_journal_entry_creation(workspace_id, [1], True, 'CCC', 1)
+
+    task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
+    assert task_log.type == 'CREATING_JOURNAL_ENTRY'
+
+
+def test_skipping_expense_group_creation(db, mocker):
+    workspace_id = 1
+    mocker.patch(
+        'apps.tasks.models.TaskLog.objects.get_or_create',
+        return_value=[TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first(),None]
+    )
+
+    expense_group = ExpenseGroup.objects.get(id=1)
+    expense_group.exported_at = None
+    expense_group.save()
+
+    error = Error.objects.create(
+        workspace_id=workspace_id,
+        type='NETSUITE_ERROR',
+        error_title='NetSuite System Error',
+        error_detail='An error occured in a upsert request: Please enter value(s) for: Location',
+        expense_group=expense_group,
+        is_parsed=True,
+        repetition_count=106
+    )
+
+    task_log = TaskLog.objects.filter(workspace_id=workspace_id).first()
+    task_log.status = 'READY'
+    expense_group = expense_group
+    task_log.save()
+
+    schedule_expense_reports_creation(workspace_id, [1], True, 'CCC', 1)
+
+    task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first()
+    assert task_log.type == 'FETCHING_EXPENSES'
+
+    Error.objects.filter(id=error.id).update(updated_at=datetime(2024, 8, 20))
+
+    schedule_expense_reports_creation(workspace_id, [1], True, 'CCC', 1)
+
+    task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
+    assert task_log.type == 'CREATING_EXPENSE_REPORT'
+
+
+def test_skipping_credit_card_charge_creation(db, mocker):
+    workspace_id = 1
+    mocker.patch(
+        'apps.tasks.models.TaskLog.objects.get_or_create',
+        return_value=[TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first(),None]
+    )
+
+    expense_group = ExpenseGroup.objects.get(id=1)
+    expense_group.exported_at = None
+    expense_group.save()
+
+    error = Error.objects.create(
+        workspace_id=workspace_id,
+        type='NETSUITE_ERROR',
+        error_title='NetSuite System Error',
+        error_detail='An error occured in a upsert request: Please enter value(s) for: Location',
+        expense_group=expense_group,
+        is_parsed=True,
+        repetition_count=106
+    )
+
+    task_log = TaskLog.objects.filter(workspace_id=workspace_id).first()
+    task_log.status = 'READY'
+    expense_group = expense_group
+    task_log.save()
+
+    schedule_credit_card_charge_creation(workspace_id, [1], True, 'CCC', 1)
+
+    task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first()
+    assert task_log.type == 'FETCHING_EXPENSES'
+
+    Error.objects.filter(id=error.id).update(updated_at=datetime(2024, 8, 20))
+
+    schedule_credit_card_charge_creation(workspace_id, [1], True, 'CCC', 1)
+
+    task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
+    assert task_log.type == 'CREATING_CREDIT_CARD_CHARGE'
