@@ -1165,13 +1165,21 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
         resolve_errors_for_exported_expense_group(expense_group_ids, workspace_id)
 
 
-def validate_for_skipping_payment(entity_object, workspace_id):
+def validate_for_skipping_payment(entity_object, workspace_id, object_type):
 
     task_log = TaskLog.objects.filter(task_id='PAYMENT_{}'.format(entity_object['unique_id']), workspace_id=workspace_id, type='CREATING_VENDOR_PAYMENT').first()
     if task_log:
         now = django_timezone.now()
 
         if now - relativedelta(months=2) > task_log.created_at:
+            unique_id = int(entity_object['unique_id'].split('-')[1])
+            if object_type == 'BILL':
+                export_module = Bill.objects.get(id=unique_id)
+            else:
+                export_module = ExpenseReport.objects.get(id=unique_id)
+
+            export_module.is_retired = True
+            export_module.save()
             return True
 
         # If created is between 2 and 1 months
@@ -1214,7 +1222,7 @@ def create_vendor_payment(workspace_id):
             entity_id = entity_object_key
             entity_object = bill_entity_map[entity_id]
 
-            skip_payment = validate_for_skipping_payment(entity_object=entity_object, workspace_id=workspace_id)
+            skip_payment = validate_for_skipping_payment(entity_object=entity_object, workspace_id=workspace_id, object_type='BILL')
             if skip_payment:
                 continue
 
@@ -1228,7 +1236,7 @@ def create_vendor_payment(workspace_id):
             entity_id = entity_object_key
             entity_object = expense_report_entity_map[entity_id]
 
-            skip_payment = validate_for_skipping_payment(entity_object=entity_object, workspace_id=workspace_id)
+            skip_payment = validate_for_skipping_payment(entity_object=entity_object, workspace_id=workspace_id, object_type='EXPENSE REPORT')
             if skip_payment:
                 continue
 
