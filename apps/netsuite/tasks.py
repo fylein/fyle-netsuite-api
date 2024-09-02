@@ -1207,12 +1207,12 @@ def create_vendor_payment(workspace_id):
 
     bills = Bill.objects.filter(
         payment_synced=False, expense_group__workspace_id=workspace_id,
-        expense_group__fund_source='PERSONAL', expense_group__exported_at__isnull=False
+        expense_group__fund_source='PERSONAL', expense_group__exported_at__isnull=False, is_retired=False
     ).all()
 
     expense_reports = ExpenseReport.objects.filter(
         payment_synced=False, expense_group__workspace_id=workspace_id,
-        expense_group__fund_source='PERSONAL', expense_group__exported_at__isnull=False
+        expense_group__fund_source='PERSONAL', expense_group__exported_at__isnull=False, is_retired=False
     ).all()
 
     if bills:
