@@ -1120,7 +1120,7 @@ def test_create_vendor_payment(db, mocker):
     reimbursement.save()
 
     create_vendor_payment(workspace_id)
-    task_log = TaskLog.objects.get(workspace_id=workspace_id, type='CREATING_VENDOR_PAYMENT' )
+    task_log = TaskLog.objects.get(workspace_id=workspace_id, type='CREATING_VENDOR_PAYMENT')
 
     assert task_log.detail == data['creation_response']
 
@@ -1849,3 +1849,74 @@ def test_skipping_credit_card_charge_creation(db, mocker):
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
     assert task_log.type == 'CREATING_CREDIT_CARD_CHARGE'
+
+
+def test_skipping_vendor_payment(mocker, db):
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.Reimbursements.sync',
+        return_value=[],
+    )
+
+    mocker.patch(
+        'apps.netsuite.connector.NetSuiteConnector.get_bill',
+        return_value=data['get_bill_response'][1]
+    )
+    mocker.patch(
+        'apps.netsuite.connector.NetSuiteConnector.get_expense_report',
+        return_value=data['get_expense_report_response'][0]
+    )
+    mocker.patch(
+        'apps.netsuite.connector.NetSuiteConnector.post_vendor_payment',
+        return_value=data['creation_response']
+    )
+
+    mocker.patch('fyle_integrations_platform_connector.apis.Expenses.get', return_value=data['expense'])
+
+    workspace_id = 1
+
+    expense_group = ExpenseGroup.objects.filter(workspace_id=workspace_id, fund_source='PERSONAL').first()
+    expense_group.exported_at = datetime.now()
+    expense_group.save()
+
+    task_log = TaskLog.objects.filter(workspace_id=workspace_id).first()
+    task_log.status = 'COMPLETE'
+    task_log.expense_group = expense_group
+    task_log.detail = {'internalId': 'sdfghjk'}
+    task_log.save()
+
+    bill = Bill.create_bill(expense_group)
+    expense = expense_group.expenses.first()
+
+    reimbursement = Reimbursement.objects.filter(workspace__id=expense_group.workspace_id).first()
+    reimbursement.settlement_id = expense.settlement_id
+    reimbursement.state = 'COMPLETE'
+    reimbursement.save()
+
+    task_log = TaskLog.objects.create(workspace_id=workspace_id, type='CREATING_VENDOR_PAYMENT', task_id='PAYMENT_{}'.format(expense_group.id), status='FAILED')
+    updated_at = task_log.updated_at
+    create_vendor_payment(workspace_id)
+    task_log = TaskLog.objects.get(workspace_id=workspace_id, type='CREATING_VENDOR_PAYMENT', task_id='PAYMENT_{}'.format(expense_group.id))
+
+    assert task_log.updated_at == updated_at
+
+    now = datetime.now().replace(tzinfo=timezone.utc)
+    TaskLog.objects.filter(workspace_id=workspace_id, type='CREATING_VENDOR_PAYMENT', task_id='PAYMENT_{}'.format(expense_group.id)).update(
+        created_at=now - timedelta(days=61),  # More than 2 months ago
+    )
+
+    create_vendor_payment(workspace_id)
+    task_log = TaskLog.objects.get(workspace_id=workspace_id, type='CREATING_VENDOR_PAYMENT', task_id='PAYMENT_{}'.format(expense_group.id))
+
+    assert task_log.updated_at == updated_at
+
+    updated_at = now - timedelta(days=25)
+    TaskLog.objects.filter(workspace_id=workspace_id, type='CREATING_VENDOR_PAYMENT', task_id='PAYMENT_{}'.format(expense_group.id)).update(
+        created_at=now - timedelta(days=45),
+        updated_at=updated_at
+    )
+
+    create_vendor_payment(workspace_id)
+    task_log = TaskLog.objects.get(workspace_id=workspace_id, type='CREATING_VENDOR_PAYMENT', task_id='PAYMENT_{}'.format(expense_group.id))
+
+    assert task_log.updated_at == updated_at
+
