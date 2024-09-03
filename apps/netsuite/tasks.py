@@ -1172,7 +1172,7 @@ def validate_for_skipping_payment(entity_object, workspace_id, object_type):
         now = django_timezone.now()
 
         if now - relativedelta(months=2) > task_log.created_at:
-            unique_id = int(entity_object['unique_id'].split('-')[1])
+            unique_id = int(entity_object['unique_id'].split('-')[2])
             if object_type == 'BILL':
                 export_module = Bill.objects.get(id=unique_id)
             else:
