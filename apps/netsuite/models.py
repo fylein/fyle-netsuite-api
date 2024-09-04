@@ -375,6 +375,7 @@ class Bill(models.Model):
     transaction_date = models.DateTimeField(help_text='Bill transaction date')
     payment_synced = models.BooleanField(help_text='Payment synced status', default=False)
     paid_on_netsuite = models.BooleanField(help_text='Payment Status in NetSuite', default=False)
+    is_retired = models.BooleanField(help_text='Is Payment sync retried', default=False)
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
@@ -792,6 +793,7 @@ class ExpenseReport(models.Model):
     transaction_date = models.DateTimeField(help_text='Expense Report transaction date')
     payment_synced = models.BooleanField(help_text='Payment synced status', default=False)
     paid_on_netsuite = models.BooleanField(help_text='Payment Status in NetSuite', default=False)
+    is_retired = models.BooleanField(help_text='Is Payment sync retried', default=False)
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
 
