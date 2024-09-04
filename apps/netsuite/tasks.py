@@ -5,6 +5,8 @@ import itertools
 from typing import List
 import base64
 from datetime import datetime, timedelta, timezone
+from dateutil.relativedelta import relativedelta
+from django.utils import timezone as django_timezone
 
 from django.db import transaction
 
@@ -1163,6 +1165,37 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
         resolve_errors_for_exported_expense_group(expense_group_ids, workspace_id)
 
 
+def validate_for_skipping_payment(entity_object, workspace_id, object_type):
+
+    task_log = TaskLog.objects.filter(task_id='PAYMENT_{}'.format(entity_object['unique_id']), workspace_id=workspace_id, type='CREATING_VENDOR_PAYMENT').first()
+    if task_log:
+        now = django_timezone.now()
+
+        if now - relativedelta(months=2) > task_log.created_at:
+            unique_id = int(entity_object['unique_id'].split('-')[2])
+            if object_type == 'BILL':
+                export_module = Bill.objects.get(id=unique_id)
+            else:
+                export_module = ExpenseReport.objects.get(id=unique_id)
+
+            export_module.is_retired = True
+            export_module.save()
+            return True
+
+        # If created is between 2 and 1 months
+        elif now - relativedelta(months=1) > task_log.created_at and now - relativedelta(months=2) < task_log.created_at:
+            # if updated_at is within 1 months will be skipped
+            if task_log.updated_at > now - relativedelta(months=1):
+                return True
+        
+        # If created is within 1 month
+        elif now - relativedelta(months=1) < task_log.created_at:
+            # Skip if updated within the last week
+            if task_log.updated_at > now - relativedelta(weeks=1):
+                return True
+    
+    return False
+
 def create_vendor_payment(workspace_id):
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
 
@@ -1174,12 +1207,12 @@ def create_vendor_payment(workspace_id):
 
     bills = Bill.objects.filter(
         payment_synced=False, expense_group__workspace_id=workspace_id,
-        expense_group__fund_source='PERSONAL', expense_group__exported_at__isnull=False
+        expense_group__fund_source='PERSONAL', expense_group__exported_at__isnull=False, is_retired=False
     ).all()
 
     expense_reports = ExpenseReport.objects.filter(
         payment_synced=False, expense_group__workspace_id=workspace_id,
-        expense_group__fund_source='PERSONAL', expense_group__exported_at__isnull=False
+        expense_group__fund_source='PERSONAL', expense_group__exported_at__isnull=False, is_retired=False
     ).all()
 
     if bills:
@@ -1188,6 +1221,10 @@ def create_vendor_payment(workspace_id):
         for entity_object_key in bill_entity_map:
             entity_id = entity_object_key
             entity_object = bill_entity_map[entity_id]
+
+            skip_payment = validate_for_skipping_payment(entity_object=entity_object, workspace_id=workspace_id, object_type='BILL')
+            if skip_payment:
+                continue
 
             process_vendor_payment(entity_object, workspace_id, 'BILL')
 
@@ -1198,6 +1235,10 @@ def create_vendor_payment(workspace_id):
         for entity_object_key in expense_report_entity_map:
             entity_id = entity_object_key
             entity_object = expense_report_entity_map[entity_id]
+
+            skip_payment = validate_for_skipping_payment(entity_object=entity_object, workspace_id=workspace_id, object_type='EXPENSE REPORT')
+            if skip_payment:
+                continue
 
             process_vendor_payment(entity_object, workspace_id, 'EXPENSE REPORT')
 
