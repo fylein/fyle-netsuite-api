@@ -325,7 +325,7 @@ def test_sync_subsidiaries(mocker, db):
 
 def test_sync_locations(mocker, db):
     mocker.patch(
-        'netsuitesdk.api.locations.Locations.get_all',
+        'netsuitesdk.api.locations.Locations.get_all_generator',
         return_value=data['get_all_locations']
     )
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)
@@ -360,7 +360,7 @@ def test_sync_departments(mocker, db):
 def test_sync_customers(mocker, db):
     mocker.patch(
         'netsuitesdk.api.customers.Customers.get_all_generator',
-        return_value=data['get_all_projects']    
+        return_value=data['get_all_projects']  
     )
 
     mocker.patch(
@@ -405,7 +405,7 @@ def test_sync_tax_items(mocker, db):
 
 def test_sync_currencies(mocker, db):
     mocker.patch(
-        'netsuitesdk.api.currencies.Currencies.get_all',
+        'netsuitesdk.api.currencies.Currencies.get_all_generator',
         return_value=data['get_all_currencies'][0]
     )
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)

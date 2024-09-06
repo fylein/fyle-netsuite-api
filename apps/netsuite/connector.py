@@ -497,8 +497,7 @@ class NetSuiteConnector:
 
         currency_attributes = []
 
-        for currencies in currencies_generator:
-            for currency in currencies:
+        for currency in currencies_generator:
                 currency_attributes.append(
                     {
                         'attribute_type': 'CURRENCY',
@@ -521,7 +520,6 @@ class NetSuiteConnector:
         subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
 
         location_generator = self.connection.locations.get_all_generator()
-
 
         location_attributes = []
 
