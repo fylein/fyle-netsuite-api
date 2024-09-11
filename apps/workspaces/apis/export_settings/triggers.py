@@ -14,7 +14,9 @@ class ExportSettingsTrigger:
         self.__configuration = configuration
 
     def __delete_or_create_card_mapping_setting(self):
-        enable_card_mapping = self.__configuration.corporate_credit_card_expenses_object != 'BILL'
+        enable_card_mapping = False
+        if self.__configuration.corporate_credit_card_expenses_object in ['CREDIT CARD CHARGE', 'JOURNAL ENTRY']:
+            enable_card_mapping = True
 
         mapping_setting = MappingSetting.objects.filter(
             source_field='CORPORATE_CARD',
@@ -31,9 +33,8 @@ class ExportSettingsTrigger:
                     'is_custom': False
                 }
             )
-        else:
-            if mapping_setting:
-                mapping_setting.delete()
+        elif not enable_card_mapping and mapping_setting:
+            mapping_setting.delete()
 
     def post_save_configurations(self):
         """
