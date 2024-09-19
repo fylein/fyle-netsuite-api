@@ -14,17 +14,13 @@ from fyle_accounting_mappings.serializers import DestinationAttributeSerializer
 
 from apps.workspaces.models import NetSuiteCredentials, Workspace, Configuration
 
-from django_q.tasks import Chain
+from django_q.tasks import async_task
 
 from .serializers import NetSuiteFieldSerializer, CustomSegmentSerializer
 from .tasks import create_vendor_payment, check_netsuite_object_status, process_reimbursements
 from .models import CustomSegment
-from .helpers import check_interval_and_sync_dimension, sync_dimensions
+from .helpers import check_interval_and_sync_dimension, handle_refresh_dimensions, sync_dimensions
 from apps.workspaces.actions import export_to_netsuite
-from apps.mappings.constants import SYNC_METHODS
-from apps.mappings.helpers import is_auto_sync_allowed
-from apps.mappings.queue import get_import_categories_settings
-from apps.mappings.models import GeneralMapping
 
 logger = logging.getLogger(__name__)
 
@@ -151,13 +147,10 @@ class SyncNetSuiteDimensionView(generics.ListCreateAPIView):
         """
         try:
             workspace = Workspace.objects.get(pk=kwargs['workspace_id'])
-            netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace.id)
+            NetSuiteCredentials.objects.get(workspace_id=workspace.id)
 
-            synced = check_interval_and_sync_dimension(workspace, netsuite_credentials)
+            async_task('apps.netsuite.helpers.check_interval_and_sync_dimension', kwargs['workspace_id'])
 
-            if synced:
-                workspace.destination_synced_at = datetime.now()
-                workspace.save(update_fields=['destination_synced_at'])
 
             return Response(
                 status=status.HTTP_200_OK
@@ -189,136 +182,13 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
         try:
             dimensions_to_sync = request.data.get('dimensions_to_sync', [])
             workspace = Workspace.objects.get(pk=kwargs['workspace_id'])
+            NetSuiteCredentials.objects.get(workspace_id=workspace.id)
 
-            netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace.id)
-
-            mapping_settings = MappingSetting.objects.filter(workspace_id=workspace.id, import_to_fyle=True)
-            configurations = Configuration.objects.filter(workspace_id=workspace.id).first()
-            general_mappings = GeneralMapping.objects.filter(workspace_id=workspace.id).first()
-            workspace_id = workspace.id
-
-            chain = Chain()
-
-            ALLOWED_SOURCE_FIELDS = [
-                "PROJECT",
-                "COST_CENTER",
-            ]
-
-            for mapping_setting in mapping_settings:
-                if mapping_setting.source_field in ALLOWED_SOURCE_FIELDS or mapping_setting.is_custom:
-                    # run new_schedule_or_delete_fyle_import_tasks
-                    destination_sync_methods = [SYNC_METHODS.get(mapping_setting.destination_field.upper(), 'custom_segments')]
-
-                    if mapping_setting.destination_field == 'PROJECT':
-                        destination_sync_methods.append(SYNC_METHODS['CUSTOMER'])
-
-                    chain.append(
-                        'fyle_integrations_imports.tasks.trigger_import_via_schedule',
-                        workspace_id,
-                        mapping_setting.destination_field,
-                        mapping_setting.source_field,
-                        'apps.netsuite.connector.NetSuiteConnector',
-                        netsuite_credentials,
-                        destination_sync_methods,
-                        is_auto_sync_allowed(configuration=configurations, mapping_setting=mapping_setting),
-                        False,
-                        None,
-                        mapping_setting.is_custom,
-                        q_options={
-                            'cluster': 'import'
-                        }
-                    )
-
-            if configurations:
-                if configurations.import_vendors_as_merchants:
-                    chain.append(
-                        'fyle_integrations_imports.tasks.trigger_import_via_schedule',
-                        workspace_id,
-                        'VENDOR',
-                        'MERCHANT',
-                        'apps.netsuite.connector.NetSuiteConnector',
-                        netsuite_credentials,
-                        [SYNC_METHODS['VENDOR']],
-                        False,
-                        False,
-                        None,
-                        False,
-                        q_options={
-                            'cluster': 'import'
-                        }
-                    )
-
-                if configurations.import_categories:
-                    # get import categories settings
-                    is_3d_mapping_enabled, destination_field, destination_sync_methods = get_import_categories_settings(configurations)
-                    chain.append(
-                        'fyle_integrations_imports.tasks.trigger_import_via_schedule',
-                        workspace_id,
-                        destination_field,
-                        'CATEGORY',
-                        'apps.netsuite.connector.NetSuiteConnector',
-                        netsuite_credentials,
-                        destination_sync_methods,
-                        True,
-                        is_3d_mapping_enabled,
-                        None,
-                        False,
-                        False,
-                        q_options={
-                            'cluster': 'import'
-                        }
-                    )
-
-                if configurations.import_tax_items and general_mappings.override_tax_details:
-                    chain.append(
-                        'apps.netsuite.helpers.sync_override_tax_items',
-                        netsuite_credentials,
-                        workspace_id,
-                        q_options={'cluster': 'import'}
-                    )
-                    chain.append(
-                        'fyle_integrations_imports.tasks.trigger_import_via_schedule',
-                        workspace_id,
-                        'TAX_ITEM',
-                        'TAX_GROUP',
-                        'apps.netsuite.connector.NetSuiteConnector',
-                        netsuite_credentials,
-                        [],
-                        False,
-                        False,
-                        None,
-                        False,
-                        q_options={
-                            'cluster': 'import'
-                        }
-                    )
-                elif configurations.import_tax_items:
-                    chain.append(
-                        'fyle_integrations_imports.tasks.trigger_import_via_schedule',
-                        workspace_id,
-                        'TAX_ITEM',
-                        'TAX_GROUP',
-                        'apps.netsuite.connector.NetSuiteConnector',
-                        netsuite_credentials,
-                        [SYNC_METHODS['TAX_ITEM']],
-                        False,
-                        False,
-                        None,
-                        False,
-                        q_options={
-                            'cluster': 'import'
-                        }
-                    )
-
-            if chain.length() > 0:
-                chain.run()
-
-            sync_dimensions(netsuite_credentials, workspace.id, dimensions_to_sync)
-
-            # Update destination_synced_at to current time only when full refresh happens
-            if not dimensions_to_sync:
-                workspace.destination_synced_at = datetime.now()
-                workspace.save(update_fields=['destination_synced_at'])
+            # If only specified dimensions are to be synced, sync them synchronously
+            if dimensions_to_sync:
+                handle_refresh_dimensions(kwargs['workspace_id'], dimensions_to_sync)
+            else:
+                async_task('apps.netsuite.helpers.handle_refresh_dimensions', kwargs['workspace_id'], dimensions_to_sync)
 
             return Response(
                 status=status.HTTP_200_OK

@@ -17,7 +17,7 @@ from apps.workspaces.models import FyleCredential, Workspace
 from fyle_netsuite_api.utils import LookupFieldMixin
 
 from .tasks import schedule_expense_group_creation, get_task_log_and_fund_source, create_expense_groups
-from .helpers import ExpenseGroupSearchFilter, ExpenseSearchFilter, check_interval_and_sync_dimension, sync_dimensions
+from .helpers import ExpenseGroupSearchFilter, ExpenseSearchFilter, check_interval_and_sync_dimension
 from .models import Expense, ExpenseGroup, ExpenseGroupSettings, ExpenseFilter
 from .serializers import ExpenseGroupSerializer, ExpenseSerializer, ExpenseFieldSerializer, \
     ExpenseGroupSettingsSerializer, ExpenseFilterSerializer, ExpenseGroupExpenseSerializer
@@ -27,6 +27,7 @@ from .constants import DEFAULT_FYLE_CONDITIONS
 from apps.exceptions import handle_view_exceptions
 
 from django_filters.rest_framework import DjangoFilterBackend
+from django_q.tasks import async_task
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -264,12 +265,9 @@ class SyncFyleDimensionView(generics.ListCreateAPIView):
         """
         try:
             workspace = Workspace.objects.get(pk=kwargs['workspace_id'])
-            fyle_credentials = FyleCredential.objects.get(workspace_id=workspace.id)
+            FyleCredential.objects.get(workspace_id=workspace.id)
 
-            synced = check_interval_and_sync_dimension(workspace, fyle_credentials)
-            if synced:
-                workspace.source_synced_at = datetime.now()
-                workspace.save(update_fields=['source_synced_at'])
+            async_task('apps.fyle.helpers.check_interval_and_sync_dimension', kwargs['workspace_id'])
 
             return Response(
                 status=status.HTTP_200_OK
@@ -300,11 +298,9 @@ class RefreshFyleDimensionView(generics.ListCreateAPIView):
         """
         try:
             workspace = Workspace.objects.get(id=kwargs['workspace_id'])
-            fyle_credentials = FyleCredential.objects.get(workspace_id=workspace.id)
-            sync_dimensions(fyle_credentials)
+            FyleCredential.objects.get(workspace_id=workspace.id)
 
-            workspace.source_synced_at = datetime.now()
-            workspace.save(update_fields=['source_synced_at'])
+            async_task('apps.fyle.helpers.sync_dimensions', kwargs['workspace_id'])
 
             return Response(
                 status=status.HTTP_200_OK
@@ -326,7 +322,16 @@ class RefreshFyleDimensionView(generics.ListCreateAPIView):
             )
 
 
-class ExpenseFilterView(generics.ListCreateAPIView, generics.DestroyAPIView):
+class ExpenseFilterDeleteView(generics.DestroyAPIView):
+    """
+    Expense Filter view
+    """
+
+    queryset = ExpenseFilter.objects.all()
+    serializer_class = ExpenseFilterSerializer
+
+
+class ExpenseFilterView(generics.ListCreateAPIView):
     """
     Expense Filter view
     """
@@ -335,30 +340,6 @@ class ExpenseFilterView(generics.ListCreateAPIView, generics.DestroyAPIView):
     def get_queryset(self):
         queryset = ExpenseFilter.objects.filter(workspace_id=self.kwargs['workspace_id']).order_by('rank')
         return queryset
-
-    def delete(self, request, *args, **kwargs):
-        try:
-            workspace_id = self.kwargs['workspace_id']
-            rank = self.request.query_params.get('rank').split(',')
-            ExpenseFilter.objects.filter(workspace_id=workspace_id, rank__in=rank).delete()
-
-            return Response(data={
-                'workspace_id': workspace_id,
-                'rank': rank, 
-                'message': 'Expense filter deleted'
-            })
-
-        except Exception as exception:
-            logger.error(
-                'Something went wrong - %s in Fyle %s %s',
-                workspace_id, exception.message, {'error': exception.response}
-            )
-            return Response(
-                data={
-                    'message': 'Something went wrong'
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
 
 
 class ExpenseView(generics.ListAPIView):
