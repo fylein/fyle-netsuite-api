@@ -291,6 +291,7 @@ FYLE_BASE_URL = os.environ.get('FYLE_BASE_URL')
 FYLE_APP_URL = os.environ.get('APP_URL')
 FYLE_EXPENSE_URL = os.environ.get('FYLE_APP_URL')
 INTEGRATIONS_APP_URL = os.environ.get('INTEGRATIONS_APP_URL')
+HELP_ARTICLE_DOMAIN = os.environ.get('HELP_ARTICLE_DOMAIN')
 
 # Netsuite Settings
 NS_CONSUMER_KEY = os.environ.get('NS_CONSUMER_KEY')

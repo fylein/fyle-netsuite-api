@@ -1,3 +1,4 @@
+from django.conf import settings
 
 errors_with_two_fields = [
             r"An error occured in a upsert request: Invalid (\w+) reference key (-?\d+) for (\w+) (-?\d+).?$",
@@ -32,7 +33,7 @@ error_reference = {
         'project_reference_error': {
             'regex': r"An error occured in a upsert request: Invalid customer reference key -?\d+ for entity -?\d+.?$", 
             'keys': ['project', 'employee'],
-            'article_link': ''
+            'article_link': '{}/en/articles/9784864-field-value-related-errors-netsuite#h_af66f0841c'.format(settings.HELP_ARTICLE_DOMAIN)
         },
         'location_reference_error': {
             'regex': r"An error occured in a upsert request: Invalid location reference key -?\d+ for subsidiary -?\d+.?$", 
@@ -42,7 +43,7 @@ error_reference = {
         'department_reference_error': {
             'regex':r"An error occured in a upsert request: Invalid department reference key -?\d+ for subsidiary -?\d+.?$" , 
             'keys': ['department', 'subsidiary'],
-            'article_link': ''
+            'article_link': '{}/en/articles/9784864-field-value-related-errors-netsuite#h_d075ab4119'.format(settings.HELP_ARTICLE_DOMAIN)
         },
         'currency_reference_error': {
             'regex': r"An error occured in a upsert request: Invalid currency reference key -?\d+ for subsidiary -?\d+.?$", 
@@ -57,7 +58,7 @@ error_reference = {
         'tax_code_reference_error': {
             'regex': r"An error occured in a upsert request: Invalid taxcode reference key -?\d+ for subsidiary -?\d+.?$",
             'keys': ['TAX_ITEM', 'subsidiary'],
-            'article_link': ''
+            'article_link': '{}/en/articles/9784864-field-value-related-errors-netsuite#h_06dce67392'.format(settings.HELP_ARTICLE_DOMAIN)
         }
     },
     "bills": {
@@ -74,7 +75,7 @@ error_reference = {
         'department_reference_error': {
             'regex':r"An error occured in a upsert request: Invalid department reference key -?\d+ for subsidiary -?\d+.?$" , 
             'keys': ['department', 'subsidiary'],
-            'article_link': ''
+            'article_link': '{}/en/articles/9784864-field-value-related-errors-netsuite#h_d075ab4119'.format(settings.HELP_ARTICLE_DOMAIN)
         },
         'currency_reference_error': {
             'regex': r"An error occured in a upsert request: Invalid currency reference key -?\d+ for subsidiary -?\d+.?$", 
@@ -95,7 +96,7 @@ error_reference = {
         'tax_code_reference_error': {
             'regex': r"An error occured in a upsert request: Invalid taxcode reference key -?\d+ for subsidiary -?\d+.?$",
             'keys': ['TAX_ITEM', 'subsidiary'],
-            'article_link': ''
+            'article_link': '{}/en/articles/9784864-field-value-related-errors-netsuite#h_06dce67392'.format(settings.HELP_ARTICLE_DOMAIN)
         },
 
         'currency_entity_reference_error':{
@@ -113,7 +114,7 @@ error_reference = {
         'department_reference_error': {
             'regex':r"An error occured in a upsert request: Invalid department reference key -?\d+ for subsidiary -?\d+.?$" , 
             'keys': ['department', 'subsidiary'],
-            'article_link': ''
+            'article_link': '{}/en/articles/9784864-field-value-related-errors-netsuite#h_d075ab4119'.format(settings.HELP_ARTICLE_DOMAIN)
         },
         'account_reference_error': {
             'regex': r"An error occured in a upsert request: Invalid account reference key -?\d+ for subsidiary -?\d+.?$", 
@@ -128,7 +129,7 @@ error_reference = {
         'project_reference_error': {
             'regex': r"An error occured in a upsert request: Invalid customer reference key -?\d+ for entity -?\d+.?$", 
             'keys': ['project', 'employee'],
-            'article_link': ''
+            'article_link': '{}/en/articles/9784864-field-value-related-errors-netsuite#h_af66f0841c'.format(settings.HELP_ARTICLE_DOMAIN)
         },
         'class_reference_error':{
             'regex': r"An error occured in a upsert request: Invalid class reference key -?\d+ for subsidiary -?\d+.?$",
@@ -139,7 +140,7 @@ error_reference = {
         'tax_code_reference_error': {
             'regex': r"An error occured in a upsert request: Invalid taxcode reference key -?\d+ for subsidiary -?\d+.?$",
             'keys': ['TAX_ITEM', 'subsidiary'],
-            'article_link': ''
+            'article_link': '{}/en/articles/9784864-field-value-related-errors-netsuite#h_06dce67392'.format(settings.HELP_ARTICLE_DOMAIN)
         },
         'currency_entity_reference_error':{
             'regex': r"An error occured in a upsert request: Invalid currency reference key -?\d+ for entity -?\d+.?$",
@@ -166,7 +167,7 @@ error_reference = {
         'project_reference_error': {
             'regex': r"An error occured in a upsert request: Invalid customer reference key -?\d+ for entity -?\d+.?$", 
             'keys': ['project', 'employee'],
-            'article_link': ''
+            'article_link': '{}/en/articles/9784864-field-value-related-errors-netsuite#h_af66f0841c'.format(settings.HELP_ARTICLE_DOMAIN)
         },
         'location_reference_error': {
             'regex': r"An error occured in a upsert request: Invalid location reference key -?\d+ for subsidiary -?\d+.?$", 
@@ -176,7 +177,7 @@ error_reference = {
         'department_reference_error': {
             'regex':r"An error occured in a upsert request: Invalid department reference key -?\d+ for subsidiary -?\d+.?$" , 
             'keys': ['department', 'subsidiary'],
-            'article_link': ''
+            'article_link': '{}/en/articles/9784864-field-value-related-errors-netsuite#h_d075ab4119'.format(settings.HELP_ARTICLE_DOMAIN)
         },
         'currency_reference_error': {
             'regex': r"An error occured in a upsert request: Invalid currency reference key -?\d+ for subsidiary -?\d+.?$", 
@@ -192,7 +193,7 @@ error_reference = {
         'tax_code_reference_error': {
             'regex': r"An error occured in a upsert request: Invalid taxcode reference key -?\d+ for subsidiary -?\d+.?$",
             'keys': ['TAX_ITEM', 'subsidiary'],
-            'article_link': ''
+            'article_link': '{}/en/articles/9784864-field-value-related-errors-netsuite#h_06dce67392'.format(settings.HELP_ARTICLE_DOMAIN)
         }
     }
 }
