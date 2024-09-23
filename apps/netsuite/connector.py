@@ -1654,8 +1654,17 @@ class NetSuiteConnector:
         lines = []
 
         for line in expense_report_lineitems:
-            expense = Expense.objects.get(pk=line.expense_id)
+            expense: Expense = Expense.objects.get(pk=line.expense_id)
             netsuite_custom_segments = line.netsuite_custom_segments
+
+            if expense.foreign_amount:
+                if expense.amount == 0:
+                    foreign_amount = 0
+                else:
+                    foreign_amount = expense.foreign_amount
+            else:
+                foreign_amount = None
+
             if attachment_links and expense.expense_id in attachment_links:
                 netsuite_custom_segments.append(
                     {
@@ -1738,7 +1747,7 @@ class NetSuiteConnector:
                 'exchangeRate': None,
                 'expenseDate': line.transaction_date,
                 'expMediaItem': None,
-                'foreignAmount': expense.foreign_amount if expense.foreign_amount else None,
+                'foreignAmount': foreign_amount,
                 'grossAmt': line.amount,
                 'isBillable': line.billable,
                 'isNonReimbursable': None,
