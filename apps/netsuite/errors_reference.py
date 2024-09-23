@@ -6,12 +6,41 @@ errors_with_two_fields = [
 ]
 
 errors_with_single_fields = [
-    {'regex': r"You have entered an Invalid Field Value (-?\d+) for the following field: (\w+).?$",
-     'inverse': False, 'article_link': ''},
-    {'regex': r"An error occured in a upsert request: Invalid (\w+) reference key (-?\d+).?$",
-    'inverse': True, 'article_link': ''},
-    {'regex': r"Invalid (\w+) reference key (-?\d+).?$",
-    'inverse': True, 'article_link': ''},   
+    {
+        'regex': r"You have entered an Invalid Field Value (-?\d+) for the following field: account",
+        'inverse': False,
+        'article_link': '/en/articles/9784864-field-value-related-errors-netsuite#h_a4568071c3'.format(settings.HELP_ARTICLE_DOMAIN)
+    },
+    {
+        'regex': r"You have entered an Invalid Field Value (-?\d+) for the following field: location",
+        'inverse': False,
+        'article_link': '/en/articles/9784864-field-value-related-errors-netsuite#h_633ea074e6'.format(settings.HELP_ARTICLE_DOMAIN)
+    },
+    {
+        'regex': r"You have entered an Invalid Field Value (-?\d+) for the following field: class",
+        'inverse': False,
+        'article_link': '/en/articles/9784864-field-value-related-errors-netsuite#h_380818cefc'.format(settings.HELP_ARTICLE_DOMAIN)
+    },
+    {
+        'regex': r"You have entered an Invalid Field Value (-?\d+) for the following field: subsidiary",
+        'inverse': False,
+        'article_link': '/en/articles/9784864-field-value-related-errors-netsuite#h_5aae723749'.format(settings.HELP_ARTICLE_DOMAIN)
+    },
+    {
+        'regex': r"You have entered an Invalid Field Value (-?\d+) for the following field: (\w+).?$",
+        'inverse': False,
+        'article_link': ''
+    },
+    {
+        'regex': r"An error occured in a upsert request: Invalid (\w+) reference key (-?\d+).?$",
+        'inverse': True,
+        'article_link': ''
+    },
+    {
+        'regex': r"Invalid (\w+) reference key (-?\d+).?$",
+        'inverse': True,
+        'article_link': ''
+    }
 ]
 
 error_mappings = {
