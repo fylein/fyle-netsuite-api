@@ -556,7 +556,7 @@ def create_credit_card_charge(expense_group, task_log_id, last_export):
         if expense.amount < 0:
             refund = True
 
-        attachment_link = load_attachments(netsuite_connection, expense, expense_group)
+        attachment_link = load_attachments(netsuite_connection, expense, expense_group, credit_card_charge_object)
 
         if attachment_link:
             attachment_links[expense.expense_id] = attachment_link
