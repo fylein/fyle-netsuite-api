@@ -225,7 +225,8 @@ CREATE TABLE public.bills (
     department_id character varying(255),
     override_tax_details boolean NOT NULL,
     class_id character varying(255),
-    is_retired boolean NOT NULL
+    is_retired boolean NOT NULL,
+    is_attachment_upload_failed boolean NOT NULL
 );
 
 
@@ -347,7 +348,8 @@ CREATE TABLE public.credit_card_charge_lineitems (
     credit_card_charge_id integer NOT NULL,
     expense_id integer NOT NULL,
     tax_amount double precision,
-    tax_item_id character varying(255)
+    tax_item_id character varying(255),
+    netsuite_receipt_url text
 );
 
 
@@ -394,7 +396,8 @@ CREATE TABLE public.credit_card_charges (
     expense_group_id integer NOT NULL,
     reference_number character varying(255),
     department_id character varying(255),
-    class_id character varying(255)
+    class_id character varying(255),
+    is_attachment_upload_failed boolean NOT NULL
 );
 
 
@@ -1066,7 +1069,8 @@ CREATE TABLE public.expense_reports (
     payment_synced boolean NOT NULL,
     paid_on_netsuite boolean NOT NULL,
     credit_card_account_id character varying(255),
-    is_retired boolean NOT NULL
+    is_retired boolean NOT NULL,
+    is_attachment_upload_failed boolean NOT NULL
 );
 
 
@@ -1520,7 +1524,8 @@ CREATE TABLE public.journal_entries (
     location_id character varying(255),
     payment_synced boolean NOT NULL,
     paid_on_netsuite boolean NOT NULL,
-    department_id character varying(255)
+    department_id character varying(255),
+    is_attachment_upload_failed boolean NOT NULL
 );
 
 
@@ -2664,7 +2669,7 @@ COPY public.bill_lineitems (id, account_id, location_id, department_id, class_id
 -- Data for Name: bills; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.bills (id, entity_id, accounts_payable_id, subsidiary_id, location_id, currency, memo, external_id, created_at, updated_at, expense_group_id, transaction_date, payment_synced, paid_on_netsuite, reference_number, department_id, override_tax_details, class_id, is_retired) FROM stdin;
+COPY public.bills (id, entity_id, accounts_payable_id, subsidiary_id, location_id, currency, memo, external_id, created_at, updated_at, expense_group_id, transaction_date, payment_synced, paid_on_netsuite, reference_number, department_id, override_tax_details, class_id, is_retired, is_attachment_upload_failed) FROM stdin;
 \.
 
 
@@ -2696,7 +2701,7 @@ COPY public.configurations (id, reimbursable_expenses_object, corporate_credit_c
 -- Data for Name: credit_card_charge_lineitems; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.credit_card_charge_lineitems (id, account_id, location_id, department_id, class_id, customer_id, amount, billable, memo, netsuite_custom_segments, created_at, updated_at, credit_card_charge_id, expense_id, tax_amount, tax_item_id) FROM stdin;
+COPY public.credit_card_charge_lineitems (id, account_id, location_id, department_id, class_id, customer_id, amount, billable, memo, netsuite_custom_segments, created_at, updated_at, credit_card_charge_id, expense_id, tax_amount, tax_item_id, netsuite_receipt_url) FROM stdin;
 \.
 
 
@@ -2704,7 +2709,7 @@ COPY public.credit_card_charge_lineitems (id, account_id, location_id, departmen
 -- Data for Name: credit_card_charges; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.credit_card_charges (id, credit_card_account_id, entity_id, subsidiary_id, location_id, currency, memo, external_id, transaction_date, created_at, updated_at, expense_group_id, reference_number, department_id, class_id) FROM stdin;
+COPY public.credit_card_charges (id, credit_card_account_id, entity_id, subsidiary_id, location_id, currency, memo, external_id, transaction_date, created_at, updated_at, expense_group_id, reference_number, department_id, class_id, is_attachment_upload_failed) FROM stdin;
 \.
 
 
@@ -7976,6 +7981,7 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 195	fyle	0032_alter_expensefilter_custom_field_type	2024-05-14 13:47:37.73285+00
 196	fyle	0033_expense_paid_on_fyle	2024-06-18 16:52:33.560638+00
 197	netsuite	0026_auto_20240902_1650	2024-09-02 16:50:55.770274+00
+198	netsuite	0027_auto_20240924_0820	2024-09-24 08:24:35.223017+00
 \.
 
 
@@ -11609,7 +11615,7 @@ COPY public.expense_report_lineitems (id, amount, category, class_id, customer_i
 -- Data for Name: expense_reports; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.expense_reports (id, account_id, entity_id, currency, department_id, class_id, location_id, subsidiary_id, memo, external_id, created_at, updated_at, expense_group_id, transaction_date, payment_synced, paid_on_netsuite, credit_card_account_id, is_retired) FROM stdin;
+COPY public.expense_reports (id, account_id, entity_id, currency, department_id, class_id, location_id, subsidiary_id, memo, external_id, created_at, updated_at, expense_group_id, transaction_date, payment_synced, paid_on_netsuite, credit_card_account_id, is_retired, is_attachment_upload_failed) FROM stdin;
 \.
 
 
@@ -11660,7 +11666,7 @@ COPY public.import_logs (id, attribute_type, status, error_log, total_batches_co
 -- Data for Name: journal_entries; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.journal_entries (id, currency, subsidiary_id, memo, external_id, created_at, updated_at, expense_group_id, transaction_date, location_id, payment_synced, paid_on_netsuite, department_id) FROM stdin;
+COPY public.journal_entries (id, currency, subsidiary_id, memo, external_id, created_at, updated_at, expense_group_id, transaction_date, location_id, payment_synced, paid_on_netsuite, department_id, is_attachment_upload_failed) FROM stdin;
 \.
 
 
@@ -11887,7 +11893,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 47, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 197, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 198, true);
 
 
 --

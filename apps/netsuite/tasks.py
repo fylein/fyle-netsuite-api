@@ -50,6 +50,12 @@ TASK_TYPE_CONSTRUCT_LINE_FUNC_MAP = {
     'CREATING_CREDIT_CARD_CHARGE': 'construct_credit_card_charge_lineitems'
 }
 
+TASK_TYPE_MODEL_MAP = {
+    'CREATING_EXPENSE_REPORT': ExpenseReport,
+    'CREATING_BILL': Bill,
+    'CREATING_JOURNAL_ENTRY': JournalEntry
+}
+
 TASK_TYPE_EXPORT_COL_MAP = {
     'CREATING_EXPENSE_REPORT': 'expense_report',
     'CREATING_BILL': 'bill',
@@ -90,7 +96,7 @@ def update_expense_and_post_summary(in_progress_expenses: List[Expense], workspa
     post_accounting_export_summary(fyle_org_id, workspace_id, fund_source)
 
 
-def load_attachments(netsuite_connection: NetSuiteConnector, expense: Expense, expense_group: ExpenseGroup):
+def load_attachments(netsuite_connection: NetSuiteConnector, expense: Expense, expense_group: ExpenseGroup, credit_card_charge_object: CreditCardCharge):
     """
     Get attachments from Fyle
     :param netsuite_connection: NetSuite Connection
@@ -145,6 +151,8 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense: Expense, e
 
     except InvalidTokenError:
         logger.info('Invalid Fyle refresh token for workspace %s', workspace_id)
+        credit_card_charge_object.is_attachment_upload_failed = True
+        credit_card_charge_object.save()
 
     except Exception:
         error = traceback.format_exc()
@@ -152,6 +160,8 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense: Expense, e
             'Attachment failed for expense group id %s / workspace id %s Error: %s',
             expense.expense_id, workspace_id, {'error': error}
         )
+        credit_card_charge_object.is_attachment_upload_failed = True
+        credit_card_charge_object.save()
 
 
 def get_or_create_credit_card_vendor(expense_group: ExpenseGroup, merchant: str, auto_create_merchants: bool):
@@ -368,6 +378,9 @@ def upload_attachments_and_update_export(expenses: List[Expense], task_log: Task
         netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
         workspace = netsuite_credentials.workspace
 
+        task_model = TASK_TYPE_MODEL_MAP[task_log.type]
+        task_model = task_model.objects.get(expense_group_id=task_log.expense_group_id, expense_group__workspace_id=workspace_id)
+
         platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
         expense_id_receipt_url_map = {}
@@ -411,12 +424,16 @@ def upload_attachments_and_update_export(expenses: List[Expense], task_log: Task
 
     except (NetSuiteRateLimitError, NetSuiteRequestError, NetSuiteLoginError, InvalidTokenError) as exception:
         logger.info('Error while uploading attachments to netsuite workspace_id - %s %s', workspace_id, exception.__dict__)
+        task_model.is_attachment_upload_failed = True
+        task_model.save()
 
     except Exception as exception:
         logger.error(
             'Error while uploading attachments to netsuite workspace_id - %s %s %s',
             workspace_id, exception, traceback.format_exc()
         )
+        task_model.is_attachment_upload_failed = True
+        task_model.save()
 
 
 def resolve_errors_for_exported_expense_group(expense_group, workspace_id=None):
@@ -569,6 +586,9 @@ def create_credit_card_charge(expense_group, task_log_id, last_export):
 
         resolve_errors_for_exported_expense_group(expense_group)
         logger.info('Updated Expense Group %s successfully', expense_group.id)
+
+        credit_card_charge_lineitems_object.netsuite_receipt_url = attachment_links.get(credit_card_charge_lineitems_object.expense.expense_id, None)
+        credit_card_charge_lineitems_object.save()
 
 
 @handle_netsuite_exceptions(payment=False)
