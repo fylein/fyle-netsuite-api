@@ -379,7 +379,7 @@ def upload_attachments_and_update_export(expenses: List[Expense], task_log: Task
         workspace = netsuite_credentials.workspace
 
         task_model = TASK_TYPE_MODEL_MAP[task_log.type]
-        task_model = task_model.objects.get(expense_group_id=task_log.expense_group_id)
+        task_model = task_model.objects.get(expense_group_id=task_log.expense_group_id, expense_group__workspace_id=workspace_id)
 
         platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
@@ -421,7 +421,7 @@ def upload_attachments_and_update_export(expenses: List[Expense], task_log: Task
                     expense_id_receipt_url_map[expense.expense_id] = receipt_url
 
         construct_payload_and_update_export(expense_id_receipt_url_map, task_log, workspace, fyle_credentials.cluster_domain, netsuite_connection)
-        task_model.receipt_urls = json.dumps(expense_id_receipt_url_map)
+        task_model.receipt_urls = expense_id_receipt_url_map
         task_model.save()
 
     except (NetSuiteRateLimitError, NetSuiteRequestError, NetSuiteLoginError, InvalidTokenError) as exception:
@@ -563,7 +563,7 @@ def create_credit_card_charge(expense_group, task_log_id, last_export):
         if attachment_link:
             attachment_links[expense.expense_id] = attachment_link
 
-        credit_card_charge_object.receipt_urls = json.dumps(attachment_links)
+        credit_card_charge_object.receipt_urls = attachment_links
         credit_card_charge_object.save()
 
         created_credit_card_charge = netsuite_connection.post_credit_card_charge(

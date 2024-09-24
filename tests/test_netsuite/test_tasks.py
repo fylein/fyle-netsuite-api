@@ -635,6 +635,7 @@ def test_create_credit_card_charge(mocker, db):
     assert credit_card_charge.currency == '1'
     assert credit_card_charge.credit_card_account_id == '10'
     assert credit_card_charge.external_id == 'cc-charge 2 - ashwin.t@fyle.in'
+    assert credit_card_charge.receipt_urls == {'txy6folbrG2j': 'https://aaa.bbb.cc/x232sds'}
 
     task_log.status = 'READY'
     task_log.save()
@@ -823,7 +824,7 @@ def test_check_netsuite_object_status_exception(create_bill_task, create_expense
         check_netsuite_object_status(1)
 
 
-def test_load_attachments(db, add_netsuite_credentials, add_fyle_credentials, mocker):
+def test_load_attachments(db, add_netsuite_credentials, add_fyle_credentials, create_credit_card_charge, mocker):
     mocker.patch(
         'netsuitesdk.api.folders.Folders.post',
         return_value={'internalId': 'qwertyui', 'externalId': 'sdfghjk'}
@@ -859,10 +860,12 @@ def test_load_attachments(db, add_netsuite_credentials, add_fyle_credentials, mo
     expense.file_ids = ['sdfghjk']
     expense.save()
 
+    credit_card_charge_object = CreditCardCharge.objects.filter().first()
+
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
-    attachment = load_attachments(netsuite_connection, expense_group.expenses.first(), expense_group)
+    attachment = load_attachments(netsuite_connection, expense_group.expenses.first(), expense_group, credit_card_charge_object)
     assert attachment == 'https://aaa.bbb.cc/x232sds'
 
     mocker.patch(
@@ -876,12 +879,13 @@ def test_load_attachments(db, add_netsuite_credentials, add_fyle_credentials, mo
         }]
     )
 
-    attachment = load_attachments(netsuite_connection, expense_group.expenses.first(), expense_group)
+    attachment = load_attachments(netsuite_connection, expense_group.expenses.first(), expense_group, credit_card_charge_object)
     assert attachment == None
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=1)
     fyle_credentials.delete()
-    attachment = load_attachments(netsuite_connection, expense_group.expenses.first(), expense_group)
+    attachment = load_attachments(netsuite_connection, expense_group.expenses.first(), expense_group, credit_card_charge_object)
+    assert credit_card_charge_object.is_attachment_upload_failed == True
 
 
 def test_create_or_update_employee_mapping(mocker, db):
@@ -1621,6 +1625,8 @@ def test_upload_attachments_and_update_export(mocker, db):
     # asserting if the file is present
     lineitem = BillLineitem.objects.get(expense_id=1)
     assert lineitem.netsuite_receipt_url == 'https://aaa.bbb.cc/x232sds'
+    bill_object = Bill.objects.get(expense_group=expense_group)
+    assert bill_object.receipt_urls == {'txjvDntD9ZXR': 'https://aaa.bbb.cc/x232sds'}
 
 
     # mocking journal entry creation with the file being present
@@ -1657,6 +1663,8 @@ def test_upload_attachments_and_update_export(mocker, db):
     # asserting if the file is present
     lineitem = JournalEntryLineItem.objects.get(expense_id=1)
     assert lineitem.netsuite_receipt_url == 'https://aaa.bbb.cc/x232sds'
+    journal_entry_object = JournalEntry.objects.get(expense_group=expense_group)
+    assert journal_entry_object.receipt_urls == {'txjvDntD9ZXR': 'https://aaa.bbb.cc/x232sds'}
 
 
     #mocking expense report creation with the file being present
@@ -1693,6 +1701,8 @@ def test_upload_attachments_and_update_export(mocker, db):
     # asserting if the file is present
     lineitem = ExpenseReportLineItem.objects.get(expense_id=1)
     assert lineitem.netsuite_receipt_url == 'https://aaa.bbb.cc/x232sds'
+    expense_report_object = ExpenseReport.objects.get(expense_group=expense_group)
+    assert expense_report_object.receipt_urls == {'txjvDntD9ZXR': 'https://aaa.bbb.cc/x232sds'}
 
 
 def test_skipping_bill_creation(db, mocker):
