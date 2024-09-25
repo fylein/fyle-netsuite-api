@@ -502,8 +502,11 @@ def create_bill(expense_group: ExpenseGroup, task_log_id, last_export):
         expense_group.save()
         
         resolve_errors_for_exported_expense_group(expense_group)
-    update_complete_expenses(expense_group.expenses.all(), expense_group.export_url)
-    post_accounting_export_summary(expense_group.workspace.fyle_org_id, expense_group.workspace.id, expense_group.fund_source)
+    try:
+        update_complete_expenses(expense_group.expenses.all(), expense_group.export_url)
+        post_accounting_export_summary(expense_group.workspace.fyle_org_id, expense_group.workspace.id, expense_group.fund_source)
+    except Exception as e:
+        logger.error('Error while updating expenses for expense_group_id: %s and posting accounting export summary %s', expense_group.id, e)
 
     logger.info('Updated Expense Group %s successfully', expense_group.id)
     async_task(
@@ -584,8 +587,11 @@ def create_credit_card_charge(expense_group, task_log_id, last_export):
         resolve_errors_for_exported_expense_group(expense_group)
         logger.info('Updated Expense Group %s successfully', expense_group.id)
 
-    update_complete_expenses(expense_group.expenses.all(), expense_group.export_url)
-    post_accounting_export_summary(expense_group.workspace.fyle_org_id, expense_group.workspace.id, expense_group.fund_source)
+    try:
+        update_complete_expenses(expense_group.expenses.all(), expense_group.export_url)
+        post_accounting_export_summary(expense_group.workspace.fyle_org_id, expense_group.workspace.id, expense_group.fund_source)
+    except Exception as e:
+        logger.error('Error while updating expenses for expense_group_id: %s and posting accounting export summary %s', expense_group.id, e)
 
     credit_card_charge_lineitems_object.netsuite_receipt_url = attachment_links.get(credit_card_charge_lineitems_object.expense.expense_id, None)
     credit_card_charge_lineitems_object.save()
@@ -640,8 +646,11 @@ def create_expense_report(expense_group, task_log_id, last_export):
         expense_group.save()
         resolve_errors_for_exported_expense_group(expense_group)
 
-    update_complete_expenses(expense_group.expenses.all(), expense_group.export_url)
-    post_accounting_export_summary(expense_group.workspace.fyle_org_id, expense_group.workspace.id, expense_group.fund_source)
+    try:
+        update_complete_expenses(expense_group.expenses.all(), expense_group.export_url)
+        post_accounting_export_summary(expense_group.workspace.fyle_org_id, expense_group.workspace.id, expense_group.fund_source)
+    except Exception as e:
+        logger.error('Error while updating expenses for expense_group_id: %s and posting accounting export summary %s', expense_group.id, e)
 
     logger.info('Updated Expense Group %s successfully', expense_group.id)
     async_task(
@@ -700,10 +709,12 @@ def create_journal_entry(expense_group, task_log_id, last_export):
         expense_group.export_url = generate_netsuite_export_url(response_logs=created_journal_entry, netsuite_credentials=netsuite_credentials)      
         expense_group.save()
         resolve_errors_for_exported_expense_group(expense_group)
+    try:
+        update_complete_expenses(expense_group.expenses.all(), expense_group.export_url)
+        post_accounting_export_summary(expense_group.workspace.fyle_org_id, expense_group.workspace.id, expense_group.fund_source)
+    except Exception as e:
+        logger.error('Error while updating expenses for expense_group_id: %s and posting accounting export summary %s', expense_group.id, e)
 
-    update_complete_expenses(expense_group.expenses.all(), expense_group.export_url)
-    post_accounting_export_summary(expense_group.workspace.fyle_org_id, expense_group.workspace.id, expense_group.fund_source)
-    
     logger.info('Updated Expense Group %s successfully', expense_group.id)
     async_task(
         'apps.netsuite.tasks.upload_attachments_and_update_export',
