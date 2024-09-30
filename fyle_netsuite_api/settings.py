@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'apps.netsuite',
     'django_q',
     'django_filters',
+    'apps.internal'
 ]
 
 MIDDLEWARE = [

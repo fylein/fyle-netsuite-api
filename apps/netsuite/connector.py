@@ -1106,6 +1106,16 @@ class NetSuiteConnector:
 
         return []
 
+    def get_accounting_fields(self, resource_type: str):
+        method = getattr(self.connection, resource_type)
+        generator = method.get_all_generator()
+        fields = []
+        for resources in generator:
+            for resource in resources:
+                fields.append(resource)
+
+        return json.loads(json.dumps(fields, default=str).replace('\\n', ''))
+
     def construct_bill_lineitems(
             self,
             bill_lineitems: List[BillLineitem],
