@@ -547,8 +547,8 @@ class NetSuiteConnector:
                             'active': not location['isInactive']
                         })
 
-        DestinationAttribute.bulk_create_or_update_destination_attributes(
-            location_attributes, 'LOCATION', self.workspace_id, True)
+            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                location_attributes, 'LOCATION', self.workspace_id, True)
 
         return []
 
@@ -571,8 +571,8 @@ class NetSuiteConnector:
                         'active': not classification['isInactive']
                     })
 
-        DestinationAttribute.bulk_create_or_update_destination_attributes(
-            classification_attributes, 'CLASS', self.workspace_id, True)
+            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                classification_attributes, 'CLASS', self.workspace_id, True)
 
         return []
 
@@ -595,8 +595,8 @@ class NetSuiteConnector:
                         'active': not department['isInactive']
                     })
 
-        DestinationAttribute.bulk_create_or_update_destination_attributes(
-            department_attributes, 'DEPARTMENT', self.workspace_id, True)
+            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                department_attributes, 'DEPARTMENT', self.workspace_id, True)
 
         return []
 
@@ -942,8 +942,8 @@ class NetSuiteConnector:
                     'active': True
                 })
 
-        DestinationAttribute.bulk_create_or_update_destination_attributes(
-            subsidiary_attributes, 'SUBSIDIARY', self.workspace_id, True)
+            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                subsidiary_attributes, 'SUBSIDIARY', self.workspace_id, True)
 
         return []
     
