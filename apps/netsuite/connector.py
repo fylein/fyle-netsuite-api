@@ -1,6 +1,7 @@
 import re
 import json
 from datetime import datetime, timedelta
+from django.utils import timezone
 from typing import List, Dict
 import logging
 
@@ -29,8 +30,15 @@ logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
 SYNC_UPPER_LIMIT = {
-    'projects': 25000,
-    'customers': 25000
+    'projects': 10000,
+    'customers': 25000,
+    'classes': 2000,
+    'accounts': 2000,
+    'expense_category': 2000,
+    'locations': 2000,
+    'departments': 2000,
+    'vendors': 20000,
+    'tax_items': 15000,
 }
 
 
@@ -76,11 +84,28 @@ class NetSuiteConnector:
             return '{0}: {1} @{2}%'.format(tax_type, item_id, rate)
         else:
             return '{0} @{1}%'.format(item_id, rate)
+        
+    def is_sync_allowed(self, attribute_type: str, attribute_count: int):
+        """
+        Checks if the sync is allowed
+
+        Returns:
+            bool: True
+        """
+        workspace_created_at = Workspace.objects.get(id=self.workspace_id).created_at
+        if workspace_created_at > timezone.make_aware(datetime(2024, 10, 1), timezone.get_current_timezone()) and attribute_count > SYNC_UPPER_LIMIT[attribute_type]:
+            return False
+
+        return True
 
     def sync_accounts(self):
         """
         Sync accounts
         """
+        attribute_count = self.connection.accounts.count()
+        if not self.is_sync_allowed(attribute_type = 'accounts', attribute_count=attribute_count):
+            logger.info('Skipping sync of accounts for workspace %s as it has %s counts which is over the limit', self.workspace_id, attribute_count)
+            return
         accounts_generator = self.connection.accounts.get_all_generator()
         for accounts in accounts_generator:
             attributes = {
@@ -517,6 +542,11 @@ class NetSuiteConnector:
         """
         Sync locations
         """
+        attribute_count = self.connection.locations.count()
+        if not self.is_sync_allowed(attribute_type = 'locations', attribute_count = attribute_count):
+            logger.info('Skipping sync of locations for workspace %s as it has %s counts which is over the limit', self.workspace_id, attribute_count)
+            return
+        
         subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
 
         location_generator = self.connection.locations.get_all_generator()
@@ -556,6 +586,11 @@ class NetSuiteConnector:
         """
         Sync classification
         """
+        attribute_count = self.connection.classifications.count()
+        if not self.is_sync_allowed(attribute_type = 'classes', attribute_count = attribute_count):
+            logger.info('Skipping sync of classes for workspace %s as it has %s counts which is over the limit', self.workspace_id, attribute_count)
+            return
+        
         classification_generator = self.connection.classifications.get_all_generator()
 
         classification_attributes = []
@@ -580,6 +615,10 @@ class NetSuiteConnector:
         """
         Sync departments
         """
+        attribute_count = self.connection.departments.count()
+        if not self.is_sync_allowed(attribute_type = 'departments', attribute_count = attribute_count):
+            logger.info('Skipping sync of department for workspace %s as it has %s counts which is over the limit', self.workspace_id, attribute_count)
+            return
         department_generator = self.connection.departments.get_all_generator()
 
         department_attributes = []
@@ -1036,40 +1075,41 @@ class NetSuiteConnector:
         """
         Sync projects
         """
-        projects_count = self.connection.projects.count()
+        attribute_count = self.connection.projects.count()
+        if not self.is_sync_allowed(attribute_type = 'projects', attribute_count = attribute_count):
+            logger.info('Skipping sync of projects for workspace %s as it has %s counts which is over the limit', self.workspace_id, attribute_count)
+            return
+        
+        projects_generator = self.connection.projects.get_all_generator()
+        for projects in projects_generator:
+            attributes = []
+            destination_ids = DestinationAttribute.objects.filter(
+                workspace_id=self.workspace_id,
+                attribute_type= 'PROJECT',
+                display_name='Project'
+            ).values_list('destination_id', flat=True)
 
-        if projects_count <= SYNC_UPPER_LIMIT['projects']:
-            projects_generator = self.connection.projects.get_all_generator()
+            for project in projects:
+                value = self.__decode_project_or_customer_name(project['entityId'])
 
-            for projects in projects_generator:
-                attributes = []
-                destination_ids = DestinationAttribute.objects.filter(
-                    workspace_id=self.workspace_id,
-                    attribute_type= 'PROJECT',
-                    display_name='Project'
-                ).values_list('destination_id', flat=True)
-
-                for project in projects:
-                    value = self.__decode_project_or_customer_name(project['entityId'])
-
-                    if project['internalId'] in destination_ids :
-                        attributes.append({
-                            'attribute_type': 'PROJECT',
-                            'display_name': 'Project',
-                            'value': value,
-                            'destination_id': project['internalId'],
-                            'active': not project['isInactive']
-	                    })
-                    elif not project['isInactive']:
-                        attributes.append({
-                            'attribute_type': 'PROJECT',
-                            'display_name': 'Project',
-                            'value': value,
-                            'destination_id': project['internalId'],
-                            'active': True
-                        })
-                DestinationAttribute.bulk_create_or_update_destination_attributes(
-                    attributes, 'PROJECT', self.workspace_id, True)
+                if project['internalId'] in destination_ids :
+                    attributes.append({
+                        'attribute_type': 'PROJECT',
+                        'display_name': 'Project',
+                        'value': value,
+                        'destination_id': project['internalId'],
+                        'active': not project['isInactive']
+                    })
+                elif not project['isInactive']:
+                    attributes.append({
+                        'attribute_type': 'PROJECT',
+                        'display_name': 'Project',
+                        'value': value,
+                        'destination_id': project['internalId'],
+                        'active': True
+                    })
+            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                attributes, 'PROJECT', self.workspace_id, True)
 
         return []
 
@@ -1077,36 +1117,38 @@ class NetSuiteConnector:
         """
         Sync customers
         """
-        customers_count = self.connection.customers.count()
+        attribute_count = self.connection.customers.count()
+        if not self.is_sync_allowed(attribute_type = 'customers', attribute_count = attribute_count):
+            logger.info('Skipping sync of customers for workspace %s as it has %s counts which is over the limit', self.workspace_id, attribute_count)
+            return
+        
+        customers_generator = self.connection.customers.get_all_generator()
 
-        if customers_count <= SYNC_UPPER_LIMIT['customers']:
-            customers_generator = self.connection.customers.get_all_generator()
+        for customers in customers_generator:
+            attributes = []
+            destination_ids = DestinationAttribute.objects.filter(workspace_id=self.workspace_id,\
+                attribute_type= 'PROJECT', display_name='Customer').values_list('destination_id', flat=True)
+            for customer in customers:
+                value = self.__decode_project_or_customer_name(customer['entityId'])
+                if customer['internalId'] in destination_ids :
+                    attributes.append({
+                        'attribute_type': 'PROJECT',
+                        'display_name': 'Customer',
+                        'value': value,
+                        'destination_id': customer['internalId'],
+                        'active': not customer['isInactive']
+                    })
+                elif not customer['isInactive']:
+                    attributes.append({
+                        'attribute_type': 'PROJECT',
+                        'display_name': 'Customer',
+                        'value': value,
+                        'destination_id': customer['internalId'],
+                        'active': True
+                    })
 
-            for customers in customers_generator:
-                attributes = []
-                destination_ids = DestinationAttribute.objects.filter(workspace_id=self.workspace_id,\
-                    attribute_type= 'PROJECT', display_name='Customer').values_list('destination_id', flat=True)
-                for customer in customers:
-                    value = self.__decode_project_or_customer_name(customer['entityId'])
-                    if customer['internalId'] in destination_ids :
-                        attributes.append({
-                            'attribute_type': 'PROJECT',
-                            'display_name': 'Customer',
-                            'value': value,
-                            'destination_id': customer['internalId'],
-                            'active': not customer['isInactive']
-	                    })
-                    elif not customer['isInactive']:
-                        attributes.append({
-                            'attribute_type': 'PROJECT',
-                            'display_name': 'Customer',
-                            'value': value,
-                            'destination_id': customer['internalId'],
-                            'active': True
-                        })
-
-                DestinationAttribute.bulk_create_or_update_destination_attributes(
-                    attributes, 'PROJECT', self.workspace_id, True)
+            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                attributes, 'PROJECT', self.workspace_id, True)
 
         return []
 

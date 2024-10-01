@@ -194,6 +194,10 @@ def test_sync_employees(mocker, db):
 @pytest.mark.django_db()
 def test_sync_accounts(mocker, db):
     mocker.patch(
+        'netsuitesdk.api.accounts.Accounts.count',
+        return_value=5 
+    )
+    mocker.patch(
         'netsuitesdk.api.accounts.Accounts.get_all_generator',
         return_value=data['get_all_accounts']    
     )
@@ -325,6 +329,10 @@ def test_sync_subsidiaries(mocker, db):
 
 def test_sync_locations(mocker, db):
     mocker.patch(
+        'netsuitesdk.api.locations.Locations.count',
+        return_value=5
+    )
+    mocker.patch(
         'netsuitesdk.api.locations.Locations.get_all_generator',
         return_value=data['get_all_locations']
     )
@@ -341,6 +349,10 @@ def test_sync_locations(mocker, db):
 
 
 def test_sync_departments(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.departments.Departments.count',
+        return_value=5
+    )
     mocker.patch(
         'netsuitesdk.api.departments.Departments.get_all_generator',
         return_value=data['get_all_departments']
@@ -421,6 +433,10 @@ def test_sync_currencies(mocker, db):
 
 
 def test_sync_classifications(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.classifications.Classifications.count',
+        return_value=5
+    )
     mocker.patch(
         'netsuitesdk.api.classifications.Classifications.get_all_generator',
         return_value=data['get_all_classifications']
