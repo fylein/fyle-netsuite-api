@@ -493,20 +493,20 @@ class NetSuiteConnector:
         """
         Sync Currencies
         """
-        currencies = self.connection.currencies.get_all()
+        currencies_generator = self.connection.currencies.get_all_generator()
 
         currency_attributes = []
 
-        for currency in currencies:
-            currency_attributes.append(
-                {
-                    'attribute_type': 'CURRENCY',
-                    'display_name': 'Currency',
-                    'value': currency['symbol'],
-                    'destination_id': currency['internalId'],
-                    'active': True
-                }
-            )
+        for currency in currencies_generator:
+                currency_attributes.append(
+                    {
+                        'attribute_type': 'CURRENCY',
+                        'display_name': 'Currency',
+                        'value': currency['symbol'],
+                        'destination_id': currency['internalId'],
+                        'active': True
+                    }
+                )
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(
             currency_attributes, 'CURRENCY', self.workspace_id, True)
@@ -519,17 +519,26 @@ class NetSuiteConnector:
         """
         subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
 
-        locations = self.connection.locations.get_all()
+        location_generator = self.connection.locations.get_all_generator()
 
         location_attributes = []
 
-        for location in locations:
-            if not location['isInactive']:
-                if 'subsidiaryList' in location and location['subsidiaryList']:
-                    subsidiaries = location['subsidiaryList']['recordRef']
-                    counter = 0
-                    if subsidiaries[counter]['internalId'] == subsidiary_mapping.internal_id:
-                        counter += 1
+        for locations in location_generator:
+            for location in locations:
+                if not location['isInactive']:
+                    if 'subsidiaryList' in location and location['subsidiaryList']:
+                        subsidiaries = location['subsidiaryList']['recordRef']
+                        counter = 0
+                        if subsidiaries[counter]['internalId'] == subsidiary_mapping.internal_id:
+                            counter += 1
+                            location_attributes.append({
+                                'attribute_type': 'LOCATION',
+                                'display_name': 'Location',
+                                'value': location['name'],
+                                'destination_id': location['internalId'],
+                                'active': not location['isInactive']
+                            })
+                    else:
                         location_attributes.append({
                             'attribute_type': 'LOCATION',
                             'display_name': 'Location',
@@ -537,17 +546,9 @@ class NetSuiteConnector:
                             'destination_id': location['internalId'],
                             'active': not location['isInactive']
                         })
-                else:
-                    location_attributes.append({
-                        'attribute_type': 'LOCATION',
-                        'display_name': 'Location',
-                        'value': location['name'],
-                        'destination_id': location['internalId'],
-                        'active': not location['isInactive']
-                    })
 
-        DestinationAttribute.bulk_create_or_update_destination_attributes(
-            location_attributes, 'LOCATION', self.workspace_id, True)
+            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                location_attributes, 'LOCATION', self.workspace_id, True)
 
         return []
 
@@ -555,22 +556,23 @@ class NetSuiteConnector:
         """
         Sync classification
         """
-        classifications = self.connection.classifications.get_all()
+        classification_generator = self.connection.classifications.get_all_generator()
 
         classification_attributes = []
 
-        for classification in classifications:
-            if not classification['isInactive']:
-                classification_attributes.append({
-                    'attribute_type': 'CLASS',
-                    'display_name': 'Class',
-                    'value': classification['name'],
-                    'destination_id': classification['internalId'],
-                    'active': not classification['isInactive']
-                })
+        for classifications in classification_generator:
+            for classification in classifications:
+                if not classification['isInactive']:
+                    classification_attributes.append({
+                        'attribute_type': 'CLASS',
+                        'display_name': 'Class',
+                        'value': classification['name'],
+                        'destination_id': classification['internalId'],
+                        'active': not classification['isInactive']
+                    })
 
-        DestinationAttribute.bulk_create_or_update_destination_attributes(
-            classification_attributes, 'CLASS', self.workspace_id, True)
+            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                classification_attributes, 'CLASS', self.workspace_id, True)
 
         return []
 
@@ -578,22 +580,23 @@ class NetSuiteConnector:
         """
         Sync departments
         """
-        departments = self.connection.departments.get_all()
+        department_generator = self.connection.departments.get_all_generator()
 
         department_attributes = []
 
-        for department in departments:
-            if not department['isInactive']:
-                department_attributes.append({
-                    'attribute_type': 'DEPARTMENT',
-                    'display_name': 'Department',
-                    'value': department['name'],
-                    'destination_id': department['internalId'],
-                    'active': not department['isInactive']
-                })
+        for departments in department_generator:
+            for department in departments:
+                if not department['isInactive']:
+                    department_attributes.append({
+                        'attribute_type': 'DEPARTMENT',
+                        'display_name': 'Department',
+                        'value': department['name'],
+                        'destination_id': department['internalId'],
+                        'active': not department['isInactive']
+                    })
 
-        DestinationAttribute.bulk_create_or_update_destination_attributes(
-            department_attributes, 'DEPARTMENT', self.workspace_id, True)
+            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                department_attributes, 'DEPARTMENT', self.workspace_id, True)
 
         return []
 
@@ -923,23 +926,24 @@ class NetSuiteConnector:
         """
         Sync subsidiaries
         """
-        subsidiaries = self.connection.subsidiaries.get_all()
+        subsidiary_generator = self.connection.subsidiaries.get_all_generator()
         subsidiary_attributes = []
 
-        for subsidiary in subsidiaries:
-            subsidiary_attributes.append({
-                'attribute_type': 'SUBSIDIARY',
-                'display_name': 'Subsidiary',
-                'value': subsidiary['name'],
-                'destination_id': subsidiary['internalId'],
-                'detail': {
-                    'country': subsidiary['country']
-                },
-                'active': True
-            })
+        for subsidiaries in subsidiary_generator:
+            for subsidiary in subsidiaries:
+                subsidiary_attributes.append({
+                    'attribute_type': 'SUBSIDIARY',
+                    'display_name': 'Subsidiary',
+                    'value': subsidiary['name'],
+                    'destination_id': subsidiary['internalId'],
+                    'detail': {
+                        'country': subsidiary['country']
+                    },
+                    'active': True
+                })
 
-        DestinationAttribute.bulk_create_or_update_destination_attributes(
-            subsidiary_attributes, 'SUBSIDIARY', self.workspace_id, True)
+            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                subsidiary_attributes, 'SUBSIDIARY', self.workspace_id, True)
 
         return []
     

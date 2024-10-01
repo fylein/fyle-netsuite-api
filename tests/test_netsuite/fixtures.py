@@ -6554,7 +6554,7 @@ data = {
         "externalId": "report 1057 - user2@fylefornscurrency.in-255",
         "internalId": "76115"
     },
-    'get_all_locations': [
+    'get_all_locations': [[
         {
             'nullFieldList': None,
             'name': '02: Boston Gaon',
@@ -6757,7 +6757,7 @@ data = {
             'customFieldList': None,
             'internalId': '5',
             'externalId': None
-    }],
+    }]],
     'get_all_currencies': [
         [OrderedDict([('nullFieldList', None),
                       ('name', 'USA PEW S A'),
