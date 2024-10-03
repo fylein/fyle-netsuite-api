@@ -682,7 +682,7 @@ def test_update_destination_attributes(db, mocker):
            assert custom_type_destination_attribute.destination_id == '4'
 
 
-def test_sync_limit(mocker, db):
+def test_skip_sync_attributes(mocker, db):
     mocker.patch(
         'netsuitesdk.api.projects.Projects.count',
         return_value=10001
