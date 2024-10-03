@@ -1,4 +1,5 @@
 import pytest
+from datetime import datetime
 from unittest import mock
 from apps.fyle.models import ExpenseGroup
 from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute
@@ -675,3 +676,36 @@ def test_update_destination_attributes(db, mocker):
            assert custom_type_destination_attribute.destination_id == '1'
         elif custom_type_destination_attribute.value == 'Type D':
            assert custom_type_destination_attribute.destination_id == '4'
+
+
+def test_sync_projects(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.projects.Projects.count',
+        return_value=30000
+    )
+
+    mocker.patch(
+        'netsuitesdk.api.classifications.Classifications.count',
+        return_value=3000
+    )
+
+    today = datetime.today()
+    Workspace.objects.filter(id=1).update(created_at=today)
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
+
+    project_count = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='PROJECT').count()
+    assert project_count == 1086
+
+    netsuite_connection.sync_projects()
+
+    new_project_count = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='PROJECT').count()
+    assert new_project_count == 1086
+
+    classifications = DestinationAttribute.objects.filter(attribute_type='CLASS', workspace_id=49).count()
+    assert classifications == 18
+
+    netsuite_connection.sync_classifications()
+
+    classifications = DestinationAttribute.objects.filter(attribute_type='CLASS', workspace_id=49).count()
+    assert classifications == 18

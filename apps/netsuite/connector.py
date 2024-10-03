@@ -92,9 +92,12 @@ class NetSuiteConnector:
         Returns:
             bool: True
         """
-        workspace_created_at = Workspace.objects.get(id=self.workspace_id).created_at
-        if workspace_created_at > timezone.make_aware(datetime(2024, 10, 1), timezone.get_current_timezone()) and attribute_count > SYNC_UPPER_LIMIT[attribute_type]:
-            return False
+        if attribute_count > SYNC_UPPER_LIMIT[attribute_type]:
+            workspace_created_at = Workspace.objects.get(id=self.workspace_id).created_at
+            if workspace_created_at > timezone.make_aware(datetime(2024, 10, 1), timezone.get_current_timezone()):
+                return False
+            else:
+                return True
 
         return True
 
