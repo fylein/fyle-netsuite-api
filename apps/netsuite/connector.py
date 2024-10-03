@@ -34,11 +34,9 @@ SYNC_UPPER_LIMIT = {
     'customers': 25000,
     'classes': 2000,
     'accounts': 2000,
-    'expense_category': 2000,
     'locations': 2000,
     'departments': 2000,
     'vendors': 20000,
-    'tax_items': 15000,
 }
 
 
@@ -646,6 +644,11 @@ class NetSuiteConnector:
         """
         Sync vendors
         """
+        attribute_count = self.connection.vendors.count()
+        if not self.is_sync_allowed(attribute_type = 'vendors', attribute_count=attribute_count):
+            logger.info('Skipping sync of vendors for workspace %s as it has %s counts which is over the limit', self.workspace_id, attribute_count)
+            return
+
         subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
         configuration = Configuration.objects.filter(workspace_id=self.workspace_id).first()
         if not configuration:
