@@ -1,4 +1,5 @@
 import logging
+import json
 import traceback
 import os
 import random
@@ -56,3 +57,19 @@ class WorkerIDFilter(logging.Filter):
         worker_id = getattr(record, 'worker_id', '')
         record.worker_id = worker_id
         return True
+
+class LogPostRequestMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if request.method in ['POST', 'PUT'] :
+            try:
+                body_unicode = request.body.decode('utf-8')
+                request_body = json.loads(body_unicode)
+                logger.info("POST request to %s: %s", request.path, request_body)
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                logger.warning("Failed to decode POST request body for %s", request.path)
+
+        response = self.get_response(request)
+        return response
