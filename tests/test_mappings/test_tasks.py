@@ -94,6 +94,11 @@ def test_remove_duplicates(db):
 
 def test_async_auto_map_employees(mocker, db):
     mocker.patch(
+        'netsuitesdk.api.vendors.Vendors.count',
+        return_value=5
+    )
+
+    mocker.patch(
         'netsuitesdk.api.vendors.Vendors.get_all_generator',
         return_value=netsuite_data['get_all_vendors']    
     )
