@@ -70,6 +70,8 @@ class LogPostRequestMiddleware:
                 logger.info("POST request to %s: %s", request.path, request_body)
             except (json.JSONDecodeError, UnicodeDecodeError):
                 logger.warning("Failed to decode POST request body for %s", request.path)
+            except Exception as e:
+                logger.info('Something went wrong when logging post call - %s', e)
 
         response = self.get_response(request)
         return response
