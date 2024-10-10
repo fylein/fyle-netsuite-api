@@ -322,7 +322,7 @@ def _group_expenses(expenses, group_fields, workspace_id):
 
     for field in group_fields:
         if field.lower() not in ALLOWED_FIELDS:
-            group_fields.pop(group_fields.index(field))
+            group_fields[group_fields.index(field)] = ''
             field = ExpenseAttribute.objects.filter(workspace_id=workspace_id,
                                                     attribute_type=field.upper()).first()
             if field:
