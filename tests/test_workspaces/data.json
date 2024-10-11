@@ -24,7 +24,8 @@
         "import_netsuite_employees": true,
         "is_simplify_report_closure_enabled": true,
         "name_in_journal_entry": "MERCHANT",
-        "allow_intercompany_vendors": false
+        "allow_intercompany_vendors": false,
+        "je_single_credit_line": false
     },
     "workspace": {
         "id":1,
