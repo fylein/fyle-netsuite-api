@@ -66,6 +66,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'request_logging.middleware.LoggingMiddleware',
+    'fyle_netsuite_api.logging_middleware.LogPostRequestMiddleware',
     'fyle_netsuite_api.logging_middleware.ErrorHandlerMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
