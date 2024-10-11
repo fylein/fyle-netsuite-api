@@ -185,7 +185,6 @@ class Expense(models.Model):
                 defaults.update(expense_data_to_append)
 
 
-            print('defaultsdefaultsdefaults',defaults)
             expense_object, _ = Expense.objects.update_or_create(
                 expense_id=expense['id'],
                 defaults=defaults

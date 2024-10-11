@@ -111,6 +111,7 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
 
         configurations = validated_data.pop('configuration')
+        general_mappings = validated_data.pop('general_mappings')
         mapping_settings = validated_data.pop('mapping_settings')
 
         configurations_instance, _ = Configuration.objects.update_or_create(
@@ -123,6 +124,8 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
                 'import_netsuite_employees': configurations.get('import_netsuite_employees')
             },
         )
+        
+        GeneralMapping.objects.update_or_create(workspace=instance, defaults={'default_tax_code_name': general_mappings.get('default_tax_code').get('name'), 'default_tax_code_id': general_mappings.get('default_tax_code').get('id')})
 
         trigger: ImportSettingsTrigger = ImportSettingsTrigger(configurations=configurations, mapping_settings=mapping_settings, workspace_id=instance.id)
 
