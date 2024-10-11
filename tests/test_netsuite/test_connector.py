@@ -64,9 +64,10 @@ def test_construct_bill_item_and_account_based(create_bill_item_and_account_base
 def test_construct_journal_entry(create_journal_entry):
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
+    configuration = Configuration.objects.get(workspace_id=1)
 
     journal_entry, journal_entry_lineitem = create_journal_entry
-    journal_entry_object = netsuite_connection._NetSuiteConnector__construct_journal_entry(journal_entry, journal_entry_lineitem)
+    journal_entry_object = netsuite_connection._NetSuiteConnector__construct_journal_entry(journal_entry, journal_entry_lineitem, configuration)
 
     journal_entry_object['tranDate'] = data['journal_entry_without_single_line'][0]['tranDate']
 
@@ -635,13 +636,15 @@ def test_post_journal_entry_exception(db, mocker, create_journal_entry):
 
     journal_entry_transaction, journal_entry_transaction_lineitems = create_journal_entry
 
+    configuration = Configuration.objects.get(workspace_id=workspace_id)
+
     workspace_general_setting = Configuration.objects.get(workspace_id=workspace_id)
     workspace_general_setting.change_accounting_period = True
     workspace_general_setting.save()
 
     with mock.patch('netsuitesdk.api.journal_entries.JournalEntries.post') as mock_call:
         mock_call.side_effect = [NetSuiteRequestError('An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'), None]
-        netsuite_connection.post_journal_entry(journal_entry_transaction, journal_entry_transaction_lineitems)
+        netsuite_connection.post_journal_entry(journal_entry_transaction, journal_entry_transaction_lineitems, configuration)
 
 def test_update_destination_attributes(db, mocker):
     mocker.patch(

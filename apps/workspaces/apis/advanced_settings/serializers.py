@@ -31,7 +31,8 @@ class ConfigurationSerializer(serializers.ModelSerializer):
             'sync_netsuite_to_fyle_payments',
             'auto_create_destination_entity',
             'auto_create_merchants',
-            'memo_structure'
+            'memo_structure',
+            'je_single_credit_line'
         ]
 
 

@@ -1134,8 +1134,6 @@ class JournalEntryLineItem(models.Model):
         configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
         employee_field_mapping = configuration.employee_field_mapping
 
-        debit_account_id = None
-
         journal_entry_lineitem_objects = []
 
         for lineitem in expenses:

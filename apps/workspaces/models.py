@@ -180,6 +180,7 @@ class Configuration(models.Model):
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
     name_in_journal_entry = models.CharField(max_length=100, help_text='Name in jounral entry for ccc expense only', default='MERCHANT',choices=NAME_IN_JOURNAL_ENTRY)
     allow_intercompany_vendors = models.BooleanField(default=False, help_text='Allow intercompany vendors')
+    je_single_credit_line = models.BooleanField(default=False, help_text='Journal Entry Single Credit Line')
 
     class Meta:
         db_table = 'configurations'
