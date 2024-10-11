@@ -2085,7 +2085,8 @@ class NetSuiteConnector:
 
         return lines
 
-    def construct_single_itemized_credit_line(self, journal_entry_lineitems: List[JournalEntryLineItem]):
+    @staticmethod
+    def __construct_single_itemized_credit_line(journal_entry_lineitems: List[JournalEntryLineItem]):
         """
         Create journal entry line items for single credit line
         :return: constructed line items
@@ -2178,7 +2179,7 @@ class NetSuiteConnector:
         org_id = Workspace.objects.get(id=journal_entry.expense_group.workspace_id).fyle_org_id
 
         if configuration.je_single_credit_line:
-            credit_line = self.construct_single_itemized_credit_line(journal_entry_lineitems)
+            credit_line = self.__construct_single_itemized_credit_line(journal_entry_lineitems)
         else:
             credit_line = self.construct_journal_entry_lineitems(journal_entry_lineitems, credit='Credit', org_id=org_id)
 
