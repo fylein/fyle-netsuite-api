@@ -7,6 +7,7 @@ data = {
             "auto_create_destination_entity": False,
             "auto_create_merchants": True,
             "memo_structure": ["merchant", "purpose"],
+            "je_single_credit_line": False,
         },
         "general_mappings": {
             "vendor_payment_account": {
@@ -47,6 +48,7 @@ data = {
             "auto_create_destination_entity": False,
             "auto_create_merchants": True,
             "memo_structure": ["merchant", "purpose"],
+            "je_single_credit_line": False,
         },
         "general_mappings": {
             "vendor_payment_account": {
