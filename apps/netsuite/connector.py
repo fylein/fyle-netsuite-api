@@ -2085,8 +2085,90 @@ class NetSuiteConnector:
 
         return lines
 
+    @staticmethod
+    def __construct_single_itemized_credit_line(journal_entry_lineitems: List[JournalEntryLineItem]):
+        """
+        Create journal entry line items for single credit line
+        :return: constructed line items
+        """
+        lines = []
+        distinct_line_ids = {}
+
+        for line in journal_entry_lineitems:
+            account_ref = line.debit_account_id
+            entity_id = line.entity_id
+            line_id = '{account_ref}::::{entity_id}'.format(account_ref=account_ref, entity_id=entity_id)
+
+            if line_id in distinct_line_ids:
+                distinct_line_ids[line_id] += line.amount
+            else:
+                distinct_line_ids[line_id] = line.amount
+
+        for line_id, amount in distinct_line_ids.items():
+            account_ref, entity_id = line_id.split('::::')
+            lineitem = {
+                'account': {
+                    'name': None,
+                    'internalId': account_ref,
+                    'externalId': None,
+                    'type': 'account'
+                },
+                'department': {
+                    'name': None,
+                    'internalId': None,
+                    'externalId': None,
+                    'type': 'department'
+                },
+                'location': {
+                    'name': None,
+                    'internalId': None,
+                    'externalId': None,
+                    'type': 'location'
+                },
+                'class': {
+                    'name': None,
+                    'internalId': None,
+                    'externalId': None,
+                    'type': 'classification'
+                },
+                'entity': {
+                    'name': None,
+                    'internalId': entity_id,
+                    'externalId': None,
+                    'type': 'vendor'
+                },
+                'credit': amount,
+                'creditTax': None,
+                'customFieldList': [],
+                'debit': None,
+                'debitTax': None,
+                'eliminate': None,
+                'endDate': None,
+                'grossAmt': None,
+                'line': None,
+                'lineTaxCode': None,
+                'lineTaxRate': None,
+                'memo': 'Total Amount',
+                'residual': None,
+                'revenueRecognitionRule': None,
+                'schedule': None,
+                'scheduleNum': None,
+                'startDate': None,
+                'tax1Acct': None,
+                'taxAccount': None,
+                'taxBasis': None,
+                'tax1Amt': None,
+                'taxCode': None,
+                'taxRate1': None,
+                'totalAmount': None,
+            }
+
+            lines.append(lineitem)
+
+        return lines
+
     def __construct_journal_entry(self, journal_entry: JournalEntry,
-                                  journal_entry_lineitems: List[JournalEntryLineItem]) -> Dict:
+                                  journal_entry_lineitems: List[JournalEntryLineItem], configuration: Configuration) -> Dict:
         """
         Create a journal entry report
         :return: constructed journal entry
@@ -2096,7 +2178,11 @@ class NetSuiteConnector:
         cluster_domain = fyle_credentials.cluster_domain
         org_id = Workspace.objects.get(id=journal_entry.expense_group.workspace_id).fyle_org_id
 
-        credit_line = self.construct_journal_entry_lineitems(journal_entry_lineitems, credit='Credit', org_id=org_id)
+        if configuration.je_single_credit_line:
+            credit_line = self.__construct_single_itemized_credit_line(journal_entry_lineitems)
+        else:
+            credit_line = self.construct_journal_entry_lineitems(journal_entry_lineitems, credit='Credit', org_id=org_id)
+
         debit_line = self.construct_journal_entry_lineitems(
             journal_entry_lineitems,
             debit='Debit', attachment_links={},
@@ -2166,13 +2252,13 @@ class NetSuiteConnector:
         return journal_entry_payload
 
     def post_journal_entry(self, journal_entry: JournalEntry,
-                           journal_entry_lineitems: List[JournalEntryLineItem]):
+                           journal_entry_lineitems: List[JournalEntryLineItem], configuration: Configuration):
         """
         Post journal entries to NetSuite
         """
         configuration = Configuration.objects.get(workspace_id=self.workspace_id)
         try:
-            journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems)
+            journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems, configuration)
 
             logger.info("| Payload for Journal Entry creation | Content: {{WORKSPACE_ID: {} EXPENSE_GROUP_ID: {} JOURNAL_ENTRY_PAYLOAD: {}}}".format(self.workspace_id, journal_entry.expense_group.id, journal_entry_payload))
 
@@ -2186,7 +2272,7 @@ class NetSuiteConnector:
 
             if configuration.change_accounting_period and detail['message'] == message:
                 first_day_of_month = datetime.today().date().replace(day=1)
-                journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems)
+                journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems, configuration)
                 journal_entry_payload['tranDate'] = first_day_of_month
                 created_journal_entry = self.connection.journal_entries.post(journal_entry_payload)
                 

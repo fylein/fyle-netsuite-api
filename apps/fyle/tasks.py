@@ -46,7 +46,7 @@ def get_task_log_and_fund_source(workspace_id: int):
 
     configuration = Configuration.objects.get(workspace_id=workspace_id)
     fund_source = []
-    
+
     if configuration.reimbursable_expenses_object:
         fund_source.append('PERSONAL')
     if configuration.corporate_credit_card_expenses_object:

@@ -698,7 +698,7 @@ def create_journal_entry(expense_group, task_log_id, last_export):
         )
 
         created_journal_entry = netsuite_connection.post_journal_entry(
-            journal_entry_object, journal_entry_lineitems_objects
+            journal_entry_object, journal_entry_lineitems_objects, configuration
         )
         worker_logger.info('Created Journal Entry with Expense Group %s successfully', expense_group.id)
 

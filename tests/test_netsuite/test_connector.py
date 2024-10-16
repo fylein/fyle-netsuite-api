@@ -1,4 +1,5 @@
 import pytest
+from copy import deepcopy
 from datetime import datetime
 from unittest import mock
 from apps.fyle.models import ExpenseGroup
@@ -64,13 +65,76 @@ def test_construct_bill_item_and_account_based(create_bill_item_and_account_base
 def test_construct_journal_entry(create_journal_entry):
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
+    configuration = Configuration.objects.get(workspace_id=1)
 
     journal_entry, journal_entry_lineitem = create_journal_entry
-    journal_entry_object = netsuite_connection._NetSuiteConnector__construct_journal_entry(journal_entry, journal_entry_lineitem)
+    journal_entry_object = netsuite_connection._NetSuiteConnector__construct_journal_entry(journal_entry, journal_entry_lineitem, configuration)
 
     journal_entry_object['tranDate'] = data['journal_entry_without_single_line'][0]['tranDate']
 
-    assert journal_entry_object == data['journal_entry_without_single_line'][0] 
+    assert journal_entry_object == data['journal_entry_without_single_line'][0]
+
+    configuration.je_single_credit_line = True
+    configuration.save()
+
+    journal_entry_object = netsuite_connection._NetSuiteConnector__construct_journal_entry(journal_entry, journal_entry_lineitem, configuration)
+
+    # With flag being different, the output should be different
+    assert journal_entry_object != data['journal_entry_without_single_line'][0] 
+
+
+def test_construct_single_itemized_credit_line(create_journal_entry):
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_connection = NetSuiteConnector(
+        netsuite_credentials=netsuite_credentials, workspace_id=1
+    )
+
+    _, journal_entry_lineitems = create_journal_entry
+
+    # Single line item
+    constructed_lines = netsuite_connection._NetSuiteConnector__construct_single_itemized_credit_line(
+        journal_entry_lineitems
+    )
+    assert constructed_lines == data['journal_entry_clubbed_lines']
+
+    # Double line item with same ids
+    journal_entry_lineitems_2 = journal_entry_lineitems.copy() + journal_entry_lineitems.copy()
+    constructed_lines = netsuite_connection._NetSuiteConnector__construct_single_itemized_credit_line(
+        journal_entry_lineitems_2
+    )
+
+    expected_lines = deepcopy(data['journal_entry_clubbed_lines'][0])
+    expected_lines['credit'] = 2 * expected_lines['credit']
+    expected_lines = [expected_lines]
+
+    assert constructed_lines == expected_lines
+
+    # Multiple line items with different ids
+    journal_entry_lineitems_3 = []
+    for i in range(4):
+        instance = deepcopy(journal_entry_lineitems[0])
+        instance.id = None
+        journal_entry_lineitems_3.append(instance)
+
+    journal_entry_lineitems_3[1].entity_id = '111'
+    journal_entry_lineitems_3[2].debit_account_id = '222'
+
+    constructed_lines = netsuite_connection._NetSuiteConnector__construct_single_itemized_credit_line(
+        journal_entry_lineitems_3
+    )
+
+    line_1 = deepcopy(data['journal_entry_clubbed_lines'][0])
+    line_2 = deepcopy(data['journal_entry_clubbed_lines'][0])
+    line_3 = deepcopy(data['journal_entry_clubbed_lines'][0])
+
+    line_2['entity']['internalId'] = '111'
+    line_3['account']['internalId'] = '222'
+
+    line_1['credit'] = 2 * line_1['credit']
+
+    expected_lines = [line_1, line_2, line_3]
+
+    assert constructed_lines == expected_lines
 
 
 def test_contruct_credit_card_charge(create_credit_card_charge):
@@ -635,13 +699,15 @@ def test_post_journal_entry_exception(db, mocker, create_journal_entry):
 
     journal_entry_transaction, journal_entry_transaction_lineitems = create_journal_entry
 
+    configuration = Configuration.objects.get(workspace_id=workspace_id)
+
     workspace_general_setting = Configuration.objects.get(workspace_id=workspace_id)
     workspace_general_setting.change_accounting_period = True
     workspace_general_setting.save()
 
     with mock.patch('netsuitesdk.api.journal_entries.JournalEntries.post') as mock_call:
         mock_call.side_effect = [NetSuiteRequestError('An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'), None]
-        netsuite_connection.post_journal_entry(journal_entry_transaction, journal_entry_transaction_lineitems)
+        netsuite_connection.post_journal_entry(journal_entry_transaction, journal_entry_transaction_lineitems, configuration)
 
 def test_update_destination_attributes(db, mocker):
     mocker.patch(
