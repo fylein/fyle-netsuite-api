@@ -1097,7 +1097,7 @@ data = {
         'line': None,
         'lineTaxCode': None,
         'lineTaxRate': None,
-        'memo': 'Total Credit Amount',
+        'memo': 'Total Amount',
         'residual': None,
         'revenueRecognitionRule': None,
         'schedule': None,
