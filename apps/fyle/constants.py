@@ -10,7 +10,7 @@ DEFAULT_FYLE_CONDITIONS = [
         'is_custom': False
     },
     {
-        'field_name': 'report_title',
+        'field_name': 'report_name',
         'type': 'TEXT',
         'is_custom': False
     },
