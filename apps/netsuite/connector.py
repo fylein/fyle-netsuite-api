@@ -1,6 +1,7 @@
 import re
 import json
 from datetime import datetime, timedelta
+from django.utils import timezone
 from typing import List, Dict
 import logging
 
@@ -29,8 +30,13 @@ logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
 SYNC_UPPER_LIMIT = {
-    'projects': 25000,
-    'customers': 25000
+    'projects': 10000,
+    'customers': 25000,
+    'classes': 2000,
+    'accounts': 2000,
+    'locations': 2000,
+    'departments': 2000,
+    'vendors': 20000,
 }
 
 
@@ -76,11 +82,31 @@ class NetSuiteConnector:
             return '{0}: {1} @{2}%'.format(tax_type, item_id, rate)
         else:
             return '{0} @{1}%'.format(item_id, rate)
+        
+    def is_sync_allowed(self, attribute_type: str, attribute_count: int):
+        """
+        Checks if the sync is allowed
+
+        Returns:
+            bool: True
+        """
+        if attribute_count > SYNC_UPPER_LIMIT[attribute_type]:
+            workspace_created_at = Workspace.objects.get(id=self.workspace_id).created_at
+            if workspace_created_at > timezone.make_aware(datetime(2024, 10, 1), timezone.get_current_timezone()):
+                return False
+            else:
+                return True
+
+        return True
 
     def sync_accounts(self):
         """
         Sync accounts
         """
+        attribute_count = self.connection.accounts.count()
+        if not self.is_sync_allowed(attribute_type = 'accounts', attribute_count=attribute_count):
+            logger.info('Skipping sync of accounts for workspace %s as it has %s counts which is over the limit', self.workspace_id, attribute_count)
+            return
         accounts_generator = self.connection.accounts.get_all_generator()
         for accounts in accounts_generator:
             attributes = {
@@ -493,20 +519,20 @@ class NetSuiteConnector:
         """
         Sync Currencies
         """
-        currencies = self.connection.currencies.get_all()
+        currencies_generator = self.connection.currencies.get_all_generator()
 
         currency_attributes = []
 
-        for currency in currencies:
-            currency_attributes.append(
-                {
-                    'attribute_type': 'CURRENCY',
-                    'display_name': 'Currency',
-                    'value': currency['symbol'],
-                    'destination_id': currency['internalId'],
-                    'active': True
-                }
-            )
+        for currency in currencies_generator:
+                currency_attributes.append(
+                    {
+                        'attribute_type': 'CURRENCY',
+                        'display_name': 'Currency',
+                        'value': currency['symbol'],
+                        'destination_id': currency['internalId'],
+                        'active': True
+                    }
+                )
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(
             currency_attributes, 'CURRENCY', self.workspace_id, True)
@@ -517,19 +543,33 @@ class NetSuiteConnector:
         """
         Sync locations
         """
+        attribute_count = self.connection.locations.count()
+        if not self.is_sync_allowed(attribute_type = 'locations', attribute_count = attribute_count):
+            logger.info('Skipping sync of locations for workspace %s as it has %s counts which is over the limit', self.workspace_id, attribute_count)
+            return
+        
         subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
 
-        locations = self.connection.locations.get_all()
+        location_generator = self.connection.locations.get_all_generator()
 
         location_attributes = []
 
-        for location in locations:
-            if not location['isInactive']:
-                if 'subsidiaryList' in location and location['subsidiaryList']:
-                    subsidiaries = location['subsidiaryList']['recordRef']
-                    counter = 0
-                    if subsidiaries[counter]['internalId'] == subsidiary_mapping.internal_id:
-                        counter += 1
+        for locations in location_generator:
+            for location in locations:
+                if not location['isInactive']:
+                    if 'subsidiaryList' in location and location['subsidiaryList']:
+                        subsidiaries = location['subsidiaryList']['recordRef']
+                        counter = 0
+                        if subsidiaries[counter]['internalId'] == subsidiary_mapping.internal_id:
+                            counter += 1
+                            location_attributes.append({
+                                'attribute_type': 'LOCATION',
+                                'display_name': 'Location',
+                                'value': location['name'],
+                                'destination_id': location['internalId'],
+                                'active': not location['isInactive']
+                            })
+                    else:
                         location_attributes.append({
                             'attribute_type': 'LOCATION',
                             'display_name': 'Location',
@@ -537,17 +577,9 @@ class NetSuiteConnector:
                             'destination_id': location['internalId'],
                             'active': not location['isInactive']
                         })
-                else:
-                    location_attributes.append({
-                        'attribute_type': 'LOCATION',
-                        'display_name': 'Location',
-                        'value': location['name'],
-                        'destination_id': location['internalId'],
-                        'active': not location['isInactive']
-                    })
 
-        DestinationAttribute.bulk_create_or_update_destination_attributes(
-            location_attributes, 'LOCATION', self.workspace_id, True)
+            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                location_attributes, 'LOCATION', self.workspace_id, True)
 
         return []
 
@@ -555,22 +587,28 @@ class NetSuiteConnector:
         """
         Sync classification
         """
-        classifications = self.connection.classifications.get_all()
+        attribute_count = self.connection.classifications.count()
+        if not self.is_sync_allowed(attribute_type = 'classes', attribute_count = attribute_count):
+            logger.info('Skipping sync of classes for workspace %s as it has %s counts which is over the limit', self.workspace_id, attribute_count)
+            return
+        
+        classification_generator = self.connection.classifications.get_all_generator()
 
         classification_attributes = []
 
-        for classification in classifications:
-            if not classification['isInactive']:
-                classification_attributes.append({
-                    'attribute_type': 'CLASS',
-                    'display_name': 'Class',
-                    'value': classification['name'],
-                    'destination_id': classification['internalId'],
-                    'active': not classification['isInactive']
-                })
+        for classifications in classification_generator:
+            for classification in classifications:
+                if not classification['isInactive']:
+                    classification_attributes.append({
+                        'attribute_type': 'CLASS',
+                        'display_name': 'Class',
+                        'value': classification['name'],
+                        'destination_id': classification['internalId'],
+                        'active': not classification['isInactive']
+                    })
 
-        DestinationAttribute.bulk_create_or_update_destination_attributes(
-            classification_attributes, 'CLASS', self.workspace_id, True)
+            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                classification_attributes, 'CLASS', self.workspace_id, True)
 
         return []
 
@@ -578,22 +616,27 @@ class NetSuiteConnector:
         """
         Sync departments
         """
-        departments = self.connection.departments.get_all()
+        attribute_count = self.connection.departments.count()
+        if not self.is_sync_allowed(attribute_type = 'departments', attribute_count = attribute_count):
+            logger.info('Skipping sync of department for workspace %s as it has %s counts which is over the limit', self.workspace_id, attribute_count)
+            return
+        department_generator = self.connection.departments.get_all_generator()
 
         department_attributes = []
 
-        for department in departments:
-            if not department['isInactive']:
-                department_attributes.append({
-                    'attribute_type': 'DEPARTMENT',
-                    'display_name': 'Department',
-                    'value': department['name'],
-                    'destination_id': department['internalId'],
-                    'active': not department['isInactive']
-                })
+        for departments in department_generator:
+            for department in departments:
+                if not department['isInactive']:
+                    department_attributes.append({
+                        'attribute_type': 'DEPARTMENT',
+                        'display_name': 'Department',
+                        'value': department['name'],
+                        'destination_id': department['internalId'],
+                        'active': not department['isInactive']
+                    })
 
-        DestinationAttribute.bulk_create_or_update_destination_attributes(
-            department_attributes, 'DEPARTMENT', self.workspace_id, True)
+            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                department_attributes, 'DEPARTMENT', self.workspace_id, True)
 
         return []
 
@@ -601,6 +644,11 @@ class NetSuiteConnector:
         """
         Sync vendors
         """
+        attribute_count = self.connection.vendors.count()
+        if not self.is_sync_allowed(attribute_type = 'vendors', attribute_count=attribute_count):
+            logger.info('Skipping sync of vendors for workspace %s as it has %s counts which is over the limit', self.workspace_id, attribute_count)
+            return
+
         subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
         configuration = Configuration.objects.filter(workspace_id=self.workspace_id).first()
         if not configuration:
@@ -923,23 +971,24 @@ class NetSuiteConnector:
         """
         Sync subsidiaries
         """
-        subsidiaries = self.connection.subsidiaries.get_all()
+        subsidiary_generator = self.connection.subsidiaries.get_all_generator()
         subsidiary_attributes = []
 
-        for subsidiary in subsidiaries:
-            subsidiary_attributes.append({
-                'attribute_type': 'SUBSIDIARY',
-                'display_name': 'Subsidiary',
-                'value': subsidiary['name'],
-                'destination_id': subsidiary['internalId'],
-                'detail': {
-                    'country': subsidiary['country']
-                },
-                'active': True
-            })
+        for subsidiaries in subsidiary_generator:
+            for subsidiary in subsidiaries:
+                subsidiary_attributes.append({
+                    'attribute_type': 'SUBSIDIARY',
+                    'display_name': 'Subsidiary',
+                    'value': subsidiary['name'],
+                    'destination_id': subsidiary['internalId'],
+                    'detail': {
+                        'country': subsidiary['country']
+                    },
+                    'active': True
+                })
 
-        DestinationAttribute.bulk_create_or_update_destination_attributes(
-            subsidiary_attributes, 'SUBSIDIARY', self.workspace_id, True)
+            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                subsidiary_attributes, 'SUBSIDIARY', self.workspace_id, True)
 
         return []
     
@@ -1032,40 +1081,41 @@ class NetSuiteConnector:
         """
         Sync projects
         """
-        projects_count = self.connection.projects.count()
+        attribute_count = self.connection.projects.count()
+        if not self.is_sync_allowed(attribute_type = 'projects', attribute_count = attribute_count):
+            logger.info('Skipping sync of projects for workspace %s as it has %s counts which is over the limit', self.workspace_id, attribute_count)
+            return
+        
+        projects_generator = self.connection.projects.get_all_generator()
+        for projects in projects_generator:
+            attributes = []
+            destination_ids = DestinationAttribute.objects.filter(
+                workspace_id=self.workspace_id,
+                attribute_type= 'PROJECT',
+                display_name='Project'
+            ).values_list('destination_id', flat=True)
 
-        if projects_count <= SYNC_UPPER_LIMIT['projects']:
-            projects_generator = self.connection.projects.get_all_generator()
+            for project in projects:
+                value = self.__decode_project_or_customer_name(project['entityId'])
 
-            for projects in projects_generator:
-                attributes = []
-                destination_ids = DestinationAttribute.objects.filter(
-                    workspace_id=self.workspace_id,
-                    attribute_type= 'PROJECT',
-                    display_name='Project'
-                ).values_list('destination_id', flat=True)
-
-                for project in projects:
-                    value = self.__decode_project_or_customer_name(project['entityId'])
-
-                    if project['internalId'] in destination_ids :
-                        attributes.append({
-                            'attribute_type': 'PROJECT',
-                            'display_name': 'Project',
-                            'value': value,
-                            'destination_id': project['internalId'],
-                            'active': not project['isInactive']
-	                    })
-                    elif not project['isInactive']:
-                        attributes.append({
-                            'attribute_type': 'PROJECT',
-                            'display_name': 'Project',
-                            'value': value,
-                            'destination_id': project['internalId'],
-                            'active': True
-                        })
-                DestinationAttribute.bulk_create_or_update_destination_attributes(
-                    attributes, 'PROJECT', self.workspace_id, True)
+                if project['internalId'] in destination_ids :
+                    attributes.append({
+                        'attribute_type': 'PROJECT',
+                        'display_name': 'Project',
+                        'value': value,
+                        'destination_id': project['internalId'],
+                        'active': not project['isInactive']
+                    })
+                elif not project['isInactive']:
+                    attributes.append({
+                        'attribute_type': 'PROJECT',
+                        'display_name': 'Project',
+                        'value': value,
+                        'destination_id': project['internalId'],
+                        'active': True
+                    })
+            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                attributes, 'PROJECT', self.workspace_id, True)
 
         return []
 
@@ -1073,36 +1123,38 @@ class NetSuiteConnector:
         """
         Sync customers
         """
-        customers_count = self.connection.customers.count()
+        attribute_count = self.connection.customers.count()
+        if not self.is_sync_allowed(attribute_type = 'customers', attribute_count = attribute_count):
+            logger.info('Skipping sync of customers for workspace %s as it has %s counts which is over the limit', self.workspace_id, attribute_count)
+            return
+        
+        customers_generator = self.connection.customers.get_all_generator()
 
-        if customers_count <= SYNC_UPPER_LIMIT['customers']:
-            customers_generator = self.connection.customers.get_all_generator()
+        for customers in customers_generator:
+            attributes = []
+            destination_ids = DestinationAttribute.objects.filter(workspace_id=self.workspace_id,\
+                attribute_type= 'PROJECT', display_name='Customer').values_list('destination_id', flat=True)
+            for customer in customers:
+                value = self.__decode_project_or_customer_name(customer['entityId'])
+                if customer['internalId'] in destination_ids :
+                    attributes.append({
+                        'attribute_type': 'PROJECT',
+                        'display_name': 'Customer',
+                        'value': value,
+                        'destination_id': customer['internalId'],
+                        'active': not customer['isInactive']
+                    })
+                elif not customer['isInactive']:
+                    attributes.append({
+                        'attribute_type': 'PROJECT',
+                        'display_name': 'Customer',
+                        'value': value,
+                        'destination_id': customer['internalId'],
+                        'active': True
+                    })
 
-            for customers in customers_generator:
-                attributes = []
-                destination_ids = DestinationAttribute.objects.filter(workspace_id=self.workspace_id,\
-                    attribute_type= 'PROJECT', display_name='Customer').values_list('destination_id', flat=True)
-                for customer in customers:
-                    value = self.__decode_project_or_customer_name(customer['entityId'])
-                    if customer['internalId'] in destination_ids :
-                        attributes.append({
-                            'attribute_type': 'PROJECT',
-                            'display_name': 'Customer',
-                            'value': value,
-                            'destination_id': customer['internalId'],
-                            'active': not customer['isInactive']
-	                    })
-                    elif not customer['isInactive']:
-                        attributes.append({
-                            'attribute_type': 'PROJECT',
-                            'display_name': 'Customer',
-                            'value': value,
-                            'destination_id': customer['internalId'],
-                            'active': True
-                        })
-
-                DestinationAttribute.bulk_create_or_update_destination_attributes(
-                    attributes, 'PROJECT', self.workspace_id, True)
+            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                attributes, 'PROJECT', self.workspace_id, True)
 
         return []
 
@@ -2043,8 +2095,90 @@ class NetSuiteConnector:
 
         return lines
 
+    @staticmethod
+    def __construct_single_itemized_credit_line(journal_entry_lineitems: List[JournalEntryLineItem]):
+        """
+        Create journal entry line items for single credit line
+        :return: constructed line items
+        """
+        lines = []
+        distinct_line_ids = {}
+
+        for line in journal_entry_lineitems:
+            account_ref = line.debit_account_id
+            entity_id = line.entity_id
+            line_id = '{account_ref}::::{entity_id}'.format(account_ref=account_ref, entity_id=entity_id)
+
+            if line_id in distinct_line_ids:
+                distinct_line_ids[line_id] += line.amount
+            else:
+                distinct_line_ids[line_id] = line.amount
+
+        for line_id, amount in distinct_line_ids.items():
+            account_ref, entity_id = line_id.split('::::')
+            lineitem = {
+                'account': {
+                    'name': None,
+                    'internalId': account_ref,
+                    'externalId': None,
+                    'type': 'account'
+                },
+                'department': {
+                    'name': None,
+                    'internalId': None,
+                    'externalId': None,
+                    'type': 'department'
+                },
+                'location': {
+                    'name': None,
+                    'internalId': None,
+                    'externalId': None,
+                    'type': 'location'
+                },
+                'class': {
+                    'name': None,
+                    'internalId': None,
+                    'externalId': None,
+                    'type': 'classification'
+                },
+                'entity': {
+                    'name': None,
+                    'internalId': entity_id,
+                    'externalId': None,
+                    'type': 'vendor'
+                },
+                'credit': amount,
+                'creditTax': None,
+                'customFieldList': [],
+                'debit': None,
+                'debitTax': None,
+                'eliminate': None,
+                'endDate': None,
+                'grossAmt': None,
+                'line': None,
+                'lineTaxCode': None,
+                'lineTaxRate': None,
+                'memo': 'Total Amount',
+                'residual': None,
+                'revenueRecognitionRule': None,
+                'schedule': None,
+                'scheduleNum': None,
+                'startDate': None,
+                'tax1Acct': None,
+                'taxAccount': None,
+                'taxBasis': None,
+                'tax1Amt': None,
+                'taxCode': None,
+                'taxRate1': None,
+                'totalAmount': None,
+            }
+
+            lines.append(lineitem)
+
+        return lines
+
     def __construct_journal_entry(self, journal_entry: JournalEntry,
-                                  journal_entry_lineitems: List[JournalEntryLineItem]) -> Dict:
+                                  journal_entry_lineitems: List[JournalEntryLineItem], configuration: Configuration) -> Dict:
         """
         Create a journal entry report
         :return: constructed journal entry
@@ -2054,7 +2188,11 @@ class NetSuiteConnector:
         cluster_domain = fyle_credentials.cluster_domain
         org_id = Workspace.objects.get(id=journal_entry.expense_group.workspace_id).fyle_org_id
 
-        credit_line = self.construct_journal_entry_lineitems(journal_entry_lineitems, credit='Credit', org_id=org_id)
+        if configuration.je_single_credit_line:
+            credit_line = self.__construct_single_itemized_credit_line(journal_entry_lineitems)
+        else:
+            credit_line = self.construct_journal_entry_lineitems(journal_entry_lineitems, credit='Credit', org_id=org_id)
+
         debit_line = self.construct_journal_entry_lineitems(
             journal_entry_lineitems,
             debit='Debit', attachment_links={},
@@ -2124,13 +2262,13 @@ class NetSuiteConnector:
         return journal_entry_payload
 
     def post_journal_entry(self, journal_entry: JournalEntry,
-                           journal_entry_lineitems: List[JournalEntryLineItem]):
+                           journal_entry_lineitems: List[JournalEntryLineItem], configuration: Configuration):
         """
         Post journal entries to NetSuite
         """
         configuration = Configuration.objects.get(workspace_id=self.workspace_id)
         try:
-            journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems)
+            journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems, configuration)
 
             logger.info("| Payload for Journal Entry creation | Content: {{WORKSPACE_ID: {} EXPENSE_GROUP_ID: {} JOURNAL_ENTRY_PAYLOAD: {}}}".format(self.workspace_id, journal_entry.expense_group.id, journal_entry_payload))
 
@@ -2144,7 +2282,7 @@ class NetSuiteConnector:
 
             if configuration.change_accounting_period and detail['message'] == message:
                 first_day_of_month = datetime.today().date().replace(day=1)
-                journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems)
+                journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems, configuration)
                 journal_entry_payload['tranDate'] = first_day_of_month
                 created_journal_entry = self.connection.journal_entries.post(journal_entry_payload)
                 

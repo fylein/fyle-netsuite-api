@@ -1,7 +1,9 @@
 import pytest
+from copy import deepcopy
+from datetime import datetime
 from unittest import mock
 from apps.fyle.models import ExpenseGroup
-from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute
+from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute, Mapping, CategoryMapping
 from apps.netsuite.connector import NetSuiteConnector, NetSuiteCredentials
 from apps.workspaces.models import Configuration, Workspace
 from netsuitesdk import NetSuiteRequestError
@@ -63,13 +65,76 @@ def test_construct_bill_item_and_account_based(create_bill_item_and_account_base
 def test_construct_journal_entry(create_journal_entry):
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
+    configuration = Configuration.objects.get(workspace_id=1)
 
     journal_entry, journal_entry_lineitem = create_journal_entry
-    journal_entry_object = netsuite_connection._NetSuiteConnector__construct_journal_entry(journal_entry, journal_entry_lineitem)
+    journal_entry_object = netsuite_connection._NetSuiteConnector__construct_journal_entry(journal_entry, journal_entry_lineitem, configuration)
 
     journal_entry_object['tranDate'] = data['journal_entry_without_single_line'][0]['tranDate']
 
-    assert journal_entry_object == data['journal_entry_without_single_line'][0] 
+    assert journal_entry_object == data['journal_entry_without_single_line'][0]
+
+    configuration.je_single_credit_line = True
+    configuration.save()
+
+    journal_entry_object = netsuite_connection._NetSuiteConnector__construct_journal_entry(journal_entry, journal_entry_lineitem, configuration)
+
+    # With flag being different, the output should be different
+    assert journal_entry_object != data['journal_entry_without_single_line'][0] 
+
+
+def test_construct_single_itemized_credit_line(create_journal_entry):
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_connection = NetSuiteConnector(
+        netsuite_credentials=netsuite_credentials, workspace_id=1
+    )
+
+    _, journal_entry_lineitems = create_journal_entry
+
+    # Single line item
+    constructed_lines = netsuite_connection._NetSuiteConnector__construct_single_itemized_credit_line(
+        journal_entry_lineitems
+    )
+    assert constructed_lines == data['journal_entry_clubbed_lines']
+
+    # Double line item with same ids
+    journal_entry_lineitems_2 = journal_entry_lineitems.copy() + journal_entry_lineitems.copy()
+    constructed_lines = netsuite_connection._NetSuiteConnector__construct_single_itemized_credit_line(
+        journal_entry_lineitems_2
+    )
+
+    expected_lines = deepcopy(data['journal_entry_clubbed_lines'][0])
+    expected_lines['credit'] = 2 * expected_lines['credit']
+    expected_lines = [expected_lines]
+
+    assert constructed_lines == expected_lines
+
+    # Multiple line items with different ids
+    journal_entry_lineitems_3 = []
+    for i in range(4):
+        instance = deepcopy(journal_entry_lineitems[0])
+        instance.id = None
+        journal_entry_lineitems_3.append(instance)
+
+    journal_entry_lineitems_3[1].entity_id = '111'
+    journal_entry_lineitems_3[2].debit_account_id = '222'
+
+    constructed_lines = netsuite_connection._NetSuiteConnector__construct_single_itemized_credit_line(
+        journal_entry_lineitems_3
+    )
+
+    line_1 = deepcopy(data['journal_entry_clubbed_lines'][0])
+    line_2 = deepcopy(data['journal_entry_clubbed_lines'][0])
+    line_3 = deepcopy(data['journal_entry_clubbed_lines'][0])
+
+    line_2['entity']['internalId'] = '111'
+    line_3['account']['internalId'] = '222'
+
+    line_1['credit'] = 2 * line_1['credit']
+
+    expected_lines = [line_1, line_2, line_3]
+
+    assert constructed_lines == expected_lines
 
 
 def test_contruct_credit_card_charge(create_credit_card_charge):
@@ -133,8 +198,12 @@ def test_get_expense_report(mocker, db):
 
 def test_sync_vendors(mocker, db):
     mocker.patch(
+        'netsuitesdk.api.vendors.Vendors.count',
+        return_value=0
+    )
+    mocker.patch(
         'netsuitesdk.api.vendors.Vendors.get_all_generator',
-        return_value=data['get_all_vendors']    
+        return_value=data['get_all_vendors']   
     )
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
@@ -193,6 +262,10 @@ def test_sync_employees(mocker, db):
 
 @pytest.mark.django_db()
 def test_sync_accounts(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.accounts.Accounts.count',
+        return_value=5 
+    )
     mocker.patch(
         'netsuitesdk.api.accounts.Accounts.get_all_generator',
         return_value=data['get_all_accounts']    
@@ -325,7 +398,11 @@ def test_sync_subsidiaries(mocker, db):
 
 def test_sync_locations(mocker, db):
     mocker.patch(
-        'netsuitesdk.api.locations.Locations.get_all',
+        'netsuitesdk.api.locations.Locations.count',
+        return_value=5
+    )
+    mocker.patch(
+        'netsuitesdk.api.locations.Locations.get_all_generator',
         return_value=data['get_all_locations']
     )
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)
@@ -341,6 +418,10 @@ def test_sync_locations(mocker, db):
 
 
 def test_sync_departments(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.departments.Departments.count',
+        return_value=5
+    )
     mocker.patch(
         'netsuitesdk.api.departments.Departments.get_all_generator',
         return_value=data['get_all_departments']
@@ -360,7 +441,7 @@ def test_sync_departments(mocker, db):
 def test_sync_customers(mocker, db):
     mocker.patch(
         'netsuitesdk.api.customers.Customers.get_all_generator',
-        return_value=data['get_all_projects']    
+        return_value=data['get_all_projects']  
     )
 
     mocker.patch(
@@ -405,7 +486,7 @@ def test_sync_tax_items(mocker, db):
 
 def test_sync_currencies(mocker, db):
     mocker.patch(
-        'netsuitesdk.api.currencies.Currencies.get_all',
+        'netsuitesdk.api.currencies.Currencies.get_all_generator',
         return_value=data['get_all_currencies'][0]
     )
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)
@@ -421,6 +502,10 @@ def test_sync_currencies(mocker, db):
 
 
 def test_sync_classifications(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.classifications.Classifications.count',
+        return_value=5
+    )
     mocker.patch(
         'netsuitesdk.api.classifications.Classifications.get_all_generator',
         return_value=data['get_all_classifications']
@@ -614,13 +699,15 @@ def test_post_journal_entry_exception(db, mocker, create_journal_entry):
 
     journal_entry_transaction, journal_entry_transaction_lineitems = create_journal_entry
 
+    configuration = Configuration.objects.get(workspace_id=workspace_id)
+
     workspace_general_setting = Configuration.objects.get(workspace_id=workspace_id)
     workspace_general_setting.change_accounting_period = True
     workspace_general_setting.save()
 
     with mock.patch('netsuitesdk.api.journal_entries.JournalEntries.post') as mock_call:
         mock_call.side_effect = [NetSuiteRequestError('An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'), None]
-        netsuite_connection.post_journal_entry(journal_entry_transaction, journal_entry_transaction_lineitems)
+        netsuite_connection.post_journal_entry(journal_entry_transaction, journal_entry_transaction_lineitems, configuration)
 
 def test_update_destination_attributes(db, mocker):
     mocker.patch(
@@ -659,3 +746,86 @@ def test_update_destination_attributes(db, mocker):
            assert custom_type_destination_attribute.destination_id == '1'
         elif custom_type_destination_attribute.value == 'Type D':
            assert custom_type_destination_attribute.destination_id == '4'
+
+
+def test_skip_sync_attributes(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.projects.Projects.count',
+        return_value=10001
+    )
+
+    mocker.patch(
+        'netsuitesdk.api.classifications.Classifications.count',
+        return_value=2001
+    )
+    mocker.patch(
+        'netsuitesdk.api.accounts.Accounts.count',
+        return_value=2001
+    )
+    mocker.patch(
+        'netsuitesdk.api.locations.Locations.count',
+        return_value=2001
+    )
+    mocker.patch(
+        'netsuitesdk.api.departments.Departments.count',
+        return_value=2001
+    )
+    mocker.patch(
+        'netsuitesdk.api.customers.Customers.count',
+        return_value=25001
+    )
+    mocker.patch(
+        'netsuitesdk.api.vendors.Vendors.count',
+        return_value=20001
+    )
+
+    today = datetime.today()
+    Workspace.objects.filter(id=1).update(created_at=today)
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
+
+    Mapping.objects.filter(workspace_id=1).delete()
+    CategoryMapping.objects.filter(workspace_id=1).delete()
+
+    DestinationAttribute.objects.filter(workspace_id=1, attribute_type='PROJECT').delete()
+
+    netsuite_connection.sync_projects()
+
+    new_project_count = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='PROJECT').count()
+    assert new_project_count == 0
+
+    DestinationAttribute.objects.filter(workspace_id=1, attribute_type='CLASS').delete()
+
+    netsuite_connection.sync_classifications()
+
+    classifications = DestinationAttribute.objects.filter(attribute_type='CLASS', workspace_id=1).count()
+    assert classifications == 0
+
+    DestinationAttribute.objects.filter(workspace_id=1, attribute_type='ACCOUNT').delete()
+
+    netsuite_connection.sync_accounts()
+
+    new_project_count = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='ACCOUNT').count()
+    assert new_project_count == 0
+
+    DestinationAttribute.objects.filter(workspace_id=1, attribute_type='LOCATION').delete()
+
+    netsuite_connection.sync_locations()
+
+    new_project_count = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='LOCATION').count()
+    assert new_project_count == 0
+
+    DestinationAttribute.objects.filter(workspace_id=1, attribute_type='DEPARTMENT').delete()
+
+    netsuite_connection.sync_departments()
+
+    new_project_count = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='DEPARTMENT').count()
+    assert new_project_count == 0
+
+    DestinationAttribute.objects.filter(workspace_id=1, attribute_type='CUSTOMER').delete()
+
+    netsuite_connection.sync_customers()
+
+    new_project_count = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='CUSTOMER').count()
+    assert new_project_count == 0
+    

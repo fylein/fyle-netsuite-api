@@ -1053,8 +1053,64 @@ data = {
             'tranDate': '2021-12-08T10:33:44',
             'tranId': None,
             'externalId': 'journal 47 - admin1@fyleforintacct.in',
-        }
+        },
     ],
+    'journal_entry_clubbed_lines': [{
+        'account': {
+            'name': None,
+            'internalId': '228',
+            'externalId': None,
+            'type': 'account',
+        },
+        'department': {
+            'name': None,
+            'internalId': None,
+            'externalId': None,
+            'type': 'department',
+        },
+        'location': {
+            'name': None,
+            'internalId': None,
+            'externalId': None,
+            'type': 'location',
+        },
+        'class': {
+            'name': None,
+            'internalId': None,
+            'externalId': None,
+            'type': 'classification',
+        },
+        'entity': {
+            'name': None,
+            'internalId': '10491',
+            'externalId': None,
+            'type': 'vendor',
+        },
+        'credit': 120.0,
+        'creditTax': None,
+        'customFieldList': [],
+        'debit': None,
+        'debitTax': None,
+        'eliminate': None,
+        'endDate': None,
+        'grossAmt': None,
+        'line': None,
+        'lineTaxCode': None,
+        'lineTaxRate': None,
+        'memo': 'Total Amount',
+        'residual': None,
+        'revenueRecognitionRule': None,
+        'schedule': None,
+        'scheduleNum': None,
+        'startDate': None,
+        'tax1Acct': None,
+        'taxAccount': None,
+        'taxBasis': None,
+        'tax1Amt': None,
+        'taxCode': None,
+        'taxRate1': None,
+        'totalAmount': None,
+    }],
     'credit_card_charge': [
         {
             'account': {'internalId': '228'},
@@ -1778,6 +1834,7 @@ data = {
             'created_at': '2021-11-15T08:55:21.801436Z',
             'updated_at': '2021-11-15T08:55:21.801455Z',
             'workspace': 1,
+            'code': None
         },
         {
             'id': 4,
@@ -1791,6 +1848,7 @@ data = {
             'created_at': '2021-11-15T08:55:21.801252Z',
             'updated_at': '2021-11-15T08:55:21.801272Z',
             'workspace': 1,
+            'code': None
         },
         {
             'id': 7,
@@ -1804,6 +1862,7 @@ data = {
             'created_at': '2021-11-15T08:55:21.801527Z',
             'updated_at': '2021-11-15T08:55:21.801547Z',
             'workspace': 1,
+            'code': None
         },
         {
             'id': 2,
@@ -1817,6 +1876,7 @@ data = {
             'created_at': '2021-11-15T08:55:21.801054Z',
             'updated_at': '2021-11-15T08:55:21.801077Z',
             'workspace': 1,
+            'code': None
         },
         {
             'id': 1,
@@ -1830,6 +1890,7 @@ data = {
             'created_at': '2021-11-15T08:55:21.800920Z',
             'updated_at': '2021-11-15T08:55:21.800962Z',
             'workspace': 1,
+            'code': None
         },
         {
             'id': 5,
@@ -1843,6 +1904,7 @@ data = {
             'created_at': '2021-11-15T08:55:21.801341Z',
             'updated_at': '2021-11-15T08:55:21.801360Z',
             'workspace': 1,
+            'code': None
         },
         {
             'id': 3,
@@ -1856,6 +1918,7 @@ data = {
             'created_at': '2021-11-15T08:55:21.801155Z',
             'updated_at': '2021-11-15T08:55:21.801176Z',
             'workspace': 1,
+            'code': None
         },
     ],
     'entity_object': {
@@ -6554,7 +6617,7 @@ data = {
         "externalId": "report 1057 - user2@fylefornscurrency.in-255",
         "internalId": "76115"
     },
-    'get_all_locations': [
+    'get_all_locations': [[
         {
             'nullFieldList': None,
             'name': '02: Boston Gaon',
@@ -6757,7 +6820,7 @@ data = {
             'customFieldList': None,
             'internalId': '5',
             'externalId': None
-    }],
+    }]],
     'get_all_currencies': [
         [OrderedDict([('nullFieldList', None),
                       ('name', 'USA PEW S A'),
