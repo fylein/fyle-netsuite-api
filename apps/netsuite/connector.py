@@ -1,7 +1,10 @@
 import re
 import json
 from datetime import datetime, timedelta
+
 from django.utils import timezone
+from django.db import transaction
+
 from typing import List, Dict
 import logging
 
@@ -431,14 +434,15 @@ class NetSuiteConnector:
             temp_internal_ids[record_id] = (temp_id, new_id)
             destination_attributes_to_be_updated.append(DestinationAttribute(id=record_id, destination_id=temp_id, workspace_id=self.workspace_id))
 
-        DestinationAttribute.objects.bulk_update(destination_attributes_to_be_updated, ['destination_id'], batch_size=100)
+        with transaction.atomic():
+            DestinationAttribute.objects.bulk_update(destination_attributes_to_be_updated, ['destination_id'], batch_size=100)
 
-        updated_destination_attributes = [
-            DestinationAttribute(id=record_id, destination_id=new_id, workspace_id=self.workspace_id)
-            for record_id, (temp_id, new_id) in temp_internal_ids.items()
-        ]
-        
-        DestinationAttribute.objects.bulk_update(updated_destination_attributes, ['destination_id'], batch_size=100)
+            updated_destination_attributes = [
+                DestinationAttribute(id=record_id, destination_id=new_id, workspace_id=self.workspace_id)
+                for record_id, (temp_id, new_id) in temp_internal_ids.items()
+            ]
+            
+            DestinationAttribute.objects.bulk_update(updated_destination_attributes, ['destination_id'], batch_size=100)
 
     def get_custom_record_attributes(self, attribute_type: str, internal_id: str):
         custom_segment_attributes = []
