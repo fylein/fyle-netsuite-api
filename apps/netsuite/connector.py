@@ -1206,7 +1206,7 @@ class NetSuiteConnector:
                 untaxed_line['debit'] = untaxed_amount
                 untaxed_line.pop('amount', None)
             
-            if export_module not in ('CREDIT_CARD_CHARGE', 'BILL'):
+            if export_module in ('EXPENSE_REPORT', 'JOURNAL_ENTRY'):
                 taxable_line['tax1Amt'] = round(line.tax_amount, 2)  # Tax is applied to this line
 
             if export_module == 'BILL' and taxable_line.get('rate'):
@@ -1219,7 +1219,7 @@ class NetSuiteConnector:
             base_line['amount'] = round(original_amount - line.tax_amount, 2)
             base_line['taxCode']['internalId'] = line.tax_item_id
             
-            if export_module not in ('CREDIT_CARD_CHARGE', 'BILL'):
+            if export_module in ('EXPENSE_REPORT', 'JOURNAL_ENTRY'):
                 base_line['tax1Amt'] = round(line.tax_amount, 2)  # Tax is applied to this line
 
             if export_module == 'BILL' and base_line.get('rate'):
