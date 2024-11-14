@@ -57,16 +57,6 @@ class ImportSettingsTrigger:
 
         expense_group_settings.save()
 
-    def __update_expense_group_settings_for_departments(self):
-        """
-        Should group expenses by department source field in case the export is journal entries
-        """
-        department_setting = list(filter(lambda setting: setting['destination_field'] == 'DEPARTMENT', self.__mapping_settings))
-
-        if department_setting:
-            department_setting = department_setting[0]
-
-            self.add_department_grouping(department_setting['source_field'])
 
     def post_save_configurations(self, configurations_instance: Configuration):
         """
@@ -77,16 +67,6 @@ class ImportSettingsTrigger:
             mapping_settings=self.__mapping_settings
         )
 
-    def __remove_old_department_source_field(self, current_mappings_settings: List[MappingSetting], new_mappings_settings: List[Dict]):
-        """
-        Should remove Department Source field from Reimbursable settings in case of deletion and updation
-        """
-        old_department_setting = current_mappings_settings.filter(destination_field='DEPARTMENT').first()
-
-        new_department_setting = list(filter(lambda setting: setting['destination_field'] == 'DEPARTMENT', new_mappings_settings))
-
-        if old_department_setting and new_department_setting and old_department_setting.source_field != new_department_setting[0]['source_field']:
-            self.remove_department_grouping(old_department_setting.source_field.lower())
 
     def __unset_auto_mapped_flag(self, current_mapping_settings: List[MappingSetting], new_mappings_settings: List[Dict]):
         """
@@ -119,8 +99,6 @@ class ImportSettingsTrigger:
 
         # Update department mapping to some other Fyle field
         current_mapping_settings = MappingSetting.objects.filter(workspace_id=self.__workspace_id).all()
-
-        self.__remove_old_department_source_field(current_mappings_settings=current_mapping_settings, new_mappings_settings=mapping_settings)
         self.__unset_auto_mapped_flag(current_mapping_settings=current_mapping_settings, new_mappings_settings=mapping_settings)
 
     def post_save_mapping_settings(self, configurations_instance: Configuration):
@@ -138,8 +116,6 @@ class ImportSettingsTrigger:
         destination_fields.extend(destination_fields_internal)
 
         MappingSetting.objects.filter(~Q(destination_field__in=destination_fields), workspace_id=self.__workspace_id).delete()
-
-        self.__update_expense_group_settings_for_departments()
 
         new_schedule_or_delete_fyle_import_tasks(
             configuration_instance=configurations_instance,
