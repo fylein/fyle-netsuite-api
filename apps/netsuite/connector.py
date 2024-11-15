@@ -1198,10 +1198,10 @@ class NetSuiteConnector:
             untaxed_line['taxCode']['internalId'] = general_mapping.default_tax_code_id  # Use default for untaxed items
 
             if export_module == 'JOURNAL_ENTRY':
-                taxable_line['grossAmt'] = None
+                taxable_line['grossAmt'] = round(recalculated_net_amount + line.tax_amount, 2)
                 taxable_line['debit'] = recalculated_net_amount
                 taxable_line.pop('amount', None)
-                untaxed_line['grossAmt'] = None
+                untaxed_line['grossAmt'] = round(untaxed_amount, 2)
                 untaxed_line['debit'] = untaxed_amount
                 untaxed_line.pop('amount', None)
             
