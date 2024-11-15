@@ -290,3 +290,19 @@ def add_custom_segment(db):
         custom_segments[i] = CustomSegment(**custom_segments[i])
 
     CustomSegment.objects.bulk_create(custom_segments)
+
+@pytest.fixture
+def add_tax_destination_attributes(db):
+    DestinationAttribute.objects.create(
+        id = 98765,
+        attribute_type='TAX_ITEM',
+        value='Rushikesh',
+        destination_id = '1035',
+        active = True,
+        detail = {
+            'tax_rate': '5'
+        },
+        workspace_id = 2,
+        created_at = datetime.now(),
+        updated_at = datetime.now(),
+    )

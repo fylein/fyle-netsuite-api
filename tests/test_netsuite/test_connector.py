@@ -6,6 +6,7 @@ from apps.fyle.models import ExpenseGroup
 from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute, Mapping, CategoryMapping
 from apps.netsuite.connector import NetSuiteConnector, NetSuiteCredentials
 from apps.workspaces.models import Configuration, Workspace
+from apps.mappings.models import GeneralMapping
 from netsuitesdk import NetSuiteRequestError
 from tests.helper import dict_compare_keys
 from .fixtures import data
@@ -18,10 +19,11 @@ logger.level = logging.INFO
 def test_construct_expense_report(create_expense_report):
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
+    general_mapping = GeneralMapping.objects.get(workspace_id=1)
 
     expense_report, expense_report_lineitem = create_expense_report
 
-    expense_report = netsuite_connection._NetSuiteConnector__construct_expense_report(expense_report, expense_report_lineitem)
+    expense_report = netsuite_connection._NetSuiteConnector__construct_expense_report(expense_report, expense_report_lineitem, general_mapping)
 
     data['expense_report_payload'][0]['tranDate'] = expense_report['tranDate']
     data['expense_report_payload'][0]['expenseList'][0]['expenseDate'] = expense_report['expenseList'][0]['expenseDate']
@@ -31,9 +33,10 @@ def test_construct_expense_report(create_expense_report):
 def test_construct_bill_account_based(create_bill_account_based):
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
+    general_mapping = GeneralMapping.objects.get(workspace_id=1)
 
     bill, bill_lineitem = create_bill_account_based
-    bill_object = netsuite_connection._NetSuiteConnector__construct_bill(bill, bill_lineitem)
+    bill_object = netsuite_connection._NetSuiteConnector__construct_bill(bill, bill_lineitem, general_mapping)
 
     data['bill_payload_account_based'][0]['tranDate'] = bill_object['tranDate']
     data['bill_payload_account_based'][0]['tranId'] = bill_object['tranId']
@@ -44,9 +47,10 @@ def test_construct_bill_account_based(create_bill_account_based):
 def test_construct_bill_item_based(create_bill_item_based):
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
+    general_mapping = GeneralMapping.objects.get(workspace_id=1)
 
     bill, bill_lineitem = create_bill_item_based
-    bill_object = netsuite_connection._NetSuiteConnector__construct_bill(bill, bill_lineitem)
+    bill_object = netsuite_connection._NetSuiteConnector__construct_bill(bill, bill_lineitem, general_mapping)
 
     assert data['bill_payload_item_based']['expenseList'] == None
     assert dict_compare_keys(bill_object, data['bill_payload_item_based']) == [], 'construct bill_payload entry api return diffs in keys'
@@ -55,9 +59,10 @@ def test_construct_bill_item_based(create_bill_item_based):
 def test_construct_bill_item_and_account_based(create_bill_item_and_account_based):
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
+    general_mapping = GeneralMapping.objects.get(workspace_id=1)
 
     bill, bill_lineitem = create_bill_item_and_account_based
-    bill_object = netsuite_connection._NetSuiteConnector__construct_bill(bill, bill_lineitem)
+    bill_object = netsuite_connection._NetSuiteConnector__construct_bill(bill, bill_lineitem, general_mapping)
 
     assert dict_compare_keys(bill_object, data['bill_payload_item_and_account_based']) == [], 'construct bill_payload entry api return diffs in keys'
 
@@ -66,9 +71,10 @@ def test_construct_journal_entry(create_journal_entry):
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
     configuration = Configuration.objects.get(workspace_id=1)
+    general_mapping = GeneralMapping.objects.get(workspace_id=1)
 
     journal_entry, journal_entry_lineitem = create_journal_entry
-    journal_entry_object = netsuite_connection._NetSuiteConnector__construct_journal_entry(journal_entry, journal_entry_lineitem, configuration)
+    journal_entry_object = netsuite_connection._NetSuiteConnector__construct_journal_entry(journal_entry, journal_entry_lineitem, configuration, general_mapping)
 
     journal_entry_object['tranDate'] = data['journal_entry_without_single_line'][0]['tranDate']
 
@@ -77,7 +83,7 @@ def test_construct_journal_entry(create_journal_entry):
     configuration.je_single_credit_line = True
     configuration.save()
 
-    journal_entry_object = netsuite_connection._NetSuiteConnector__construct_journal_entry(journal_entry, journal_entry_lineitem, configuration)
+    journal_entry_object = netsuite_connection._NetSuiteConnector__construct_journal_entry(journal_entry, journal_entry_lineitem, configuration, general_mapping)
 
     # With flag being different, the output should be different
     assert journal_entry_object != data['journal_entry_without_single_line'][0] 
@@ -140,10 +146,11 @@ def test_construct_single_itemized_credit_line(create_journal_entry):
 def test_contruct_credit_card_charge(create_credit_card_charge):
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=49)
+    general_mapping = GeneralMapping.objects.get(workspace_id=49)
 
 
     credit_card_charge, credit_card_charge_lineitem = create_credit_card_charge
-    credit_card_charge_object = netsuite_connection._NetSuiteConnector__construct_credit_card_charge(credit_card_charge, credit_card_charge_lineitem, [])
+    credit_card_charge_object = netsuite_connection._NetSuiteConnector__construct_credit_card_charge(credit_card_charge, credit_card_charge_lineitem, general_mapping, [])
     
     credit_card_charge_object['tranDate'] = data['credit_card_charge'][0]['tranDate']
     credit_card_charge_object['tranid'] = data['credit_card_charge'][0]['tranid']
@@ -662,6 +669,7 @@ def test_post_bill_exception(db, mocker, create_bill_account_based):
 
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
+    general_mapping = GeneralMapping.objects.get(workspace_id=workspace_id)
 
     bill_transaction, bill_transaction_lineitems = create_bill_account_based
 
@@ -671,7 +679,7 @@ def test_post_bill_exception(db, mocker, create_bill_account_based):
 
     with mock.patch('netsuitesdk.api.vendor_bills.VendorBills.post') as mock_call:
         mock_call.side_effect = [NetSuiteRequestError('An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'), None]
-        netsuite_connection.post_bill(bill_transaction, bill_transaction_lineitems)
+        netsuite_connection.post_bill(bill_transaction, bill_transaction_lineitems, general_mapping)
 
 
 def test_post_expense_report_exception(db, mocker, create_expense_report):
@@ -679,6 +687,7 @@ def test_post_expense_report_exception(db, mocker, create_expense_report):
 
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
+    general_mapping = GeneralMapping.objects.get(workspace_id=workspace_id)
 
     expense_report_transaction, expense_report_transaction_lineitems = create_expense_report
 
@@ -688,7 +697,7 @@ def test_post_expense_report_exception(db, mocker, create_expense_report):
 
     with mock.patch('netsuitesdk.api.expense_reports.ExpenseReports.post') as mock_call:
         mock_call.side_effect = [NetSuiteRequestError('An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'), None]
-        netsuite_connection.post_expense_report(expense_report_transaction, expense_report_transaction_lineitems)
+        netsuite_connection.post_expense_report(expense_report_transaction, expense_report_transaction_lineitems, general_mapping)
 
 
 def test_post_journal_entry_exception(db, mocker, create_journal_entry):
@@ -696,6 +705,7 @@ def test_post_journal_entry_exception(db, mocker, create_journal_entry):
 
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
+    general_mapping = GeneralMapping.objects.get(workspace_id=workspace_id)
 
     journal_entry_transaction, journal_entry_transaction_lineitems = create_journal_entry
 
@@ -707,7 +717,7 @@ def test_post_journal_entry_exception(db, mocker, create_journal_entry):
 
     with mock.patch('netsuitesdk.api.journal_entries.JournalEntries.post') as mock_call:
         mock_call.side_effect = [NetSuiteRequestError('An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'), None]
-        netsuite_connection.post_journal_entry(journal_entry_transaction, journal_entry_transaction_lineitems, configuration)
+        netsuite_connection.post_journal_entry(journal_entry_transaction, journal_entry_transaction_lineitems, configuration, general_mapping)
 
 def test_update_destination_attributes(db, mocker):
     mocker.patch(
