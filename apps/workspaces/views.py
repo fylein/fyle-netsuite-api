@@ -33,7 +33,7 @@ from apps.workspaces.tasks import schedule_sync
 from apps.workspaces.actions import export_to_netsuite
 from .serializers import LastExportDetailSerializer, WorkspaceSerializer, FyleCredentialSerializer, NetSuiteCredentialSerializer, \
     ConfigurationSerializer, WorkspaceScheduleSerializer
-from .permissions import IsAuthenticatedForTest
+from .permissions import IsAuthenticatedForInternalAPI
 
 
 logger = logging.getLogger(__name__)
@@ -484,7 +484,7 @@ class SetupE2ETestView(viewsets.ViewSet):
     NetSuite Workspace
     """
     authentication_classes = []
-    permission_classes = [IsAuthenticatedForTest]
+    permission_classes = [IsAuthenticatedForInternalAPI]
 
     def post(self, request, **kwargs):
         """

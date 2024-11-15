@@ -4,6 +4,8 @@ from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework import status
 
+from apps.workspaces.permissions import IsAuthenticatedForInternalAPI
+
 from .actions import get_accounting_fields
 
 logger = logging.getLogger(__name__)
@@ -12,7 +14,7 @@ logger.setLevel(logging.INFO)
 
 class AccountingFieldsView(generics.GenericAPIView):
     authentication_classes = []
-    permission_classes = []
+    permission_classes = [IsAuthenticatedForInternalAPI]
 
     def get(self, request, *args, **kwargs):
         try:
