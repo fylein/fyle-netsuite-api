@@ -76,6 +76,9 @@ def create_expense_report(db, add_netsuite_credentials, add_fyle_credentials):
     )
 
     expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
+    for expense in expense_group.expenses.all():
+        expense.workspace_id = 1
+        expense.save()
     configuration = Configuration.objects.get(workspace_id=1)
     expense_report = ExpenseReport.create_expense_report(expense_group)
     expense_report_lineitems = ExpenseReportLineItem.create_expense_report_lineitems(expense_group, configuration)
@@ -87,6 +90,9 @@ def create_expense_report(db, add_netsuite_credentials, add_fyle_credentials):
 def create_bill_account_based(db, add_netsuite_credentials, add_fyle_credentials):
 
     expense_group = ExpenseGroup.objects.get(id=2)
+    for expense in expense_group.expenses.all():
+        expense.workspace_id = 1
+        expense.save()
     configuration = Configuration.objects.get(workspace_id=1)
     bill = Bill.create_bill(expense_group)
     bill_lineitem  = BillLineitem.create_bill_lineitems(expense_group, configuration)
@@ -241,6 +247,9 @@ def create_bill_task(db, add_netsuite_credentials, add_fyle_credentials):
 def create_journal_entry(db, add_netsuite_credentials, add_fyle_credentials):
 
     expense_group = ExpenseGroup.objects.filter(workspace_id=49).first()
+    for expense in expense_group.expenses.all():
+        expense.workspace_id = 1
+        expense.save()
     configuration = Configuration.objects.get(workspace_id=1)
     journal_entry = JournalEntry.create_journal_entry(expense_group)
     journal_entry_lineitem = JournalEntryLineItem.create_journal_entry_lineitems(expense_group, configuration)
@@ -252,6 +261,9 @@ def create_journal_entry(db, add_netsuite_credentials, add_fyle_credentials):
 def create_credit_card_charge(db, add_netsuite_credentials, add_fyle_credentials):
 
     expense_group = ExpenseGroup.objects.filter(workspace_id=49).last()
+    for expense in expense_group.expenses.all():
+        expense.workspace_id = 49
+        expense.save()
     configuration = Configuration.objects.get(workspace_id=1)
     credit_card_charge_object = CreditCardCharge.create_credit_card_charge(expense_group)
 
@@ -293,16 +305,18 @@ def add_custom_segment(db):
 
 @pytest.fixture
 def add_tax_destination_attributes(db):
-    DestinationAttribute.objects.create(
-        id = 98765,
-        attribute_type='TAX_ITEM',
-        value='Rushikesh',
-        destination_id = '1035',
-        active = True,
-        detail = {
-            'tax_rate': '5'
-        },
-        workspace_id = 2,
-        created_at = datetime.now(),
-        updated_at = datetime.now(),
-    )
+
+    for i in(1, 2, 49):
+        DestinationAttribute.objects.create(
+            id = 98765+i,
+            attribute_type='TAX_ITEM',
+            value='Rushikesh',
+            destination_id = '103578',
+            active = True,
+            detail = {
+                'tax_rate': 5.0
+            },
+            workspace_id = i,
+            created_at = datetime.now(),
+            updated_at = datetime.now(),
+        )

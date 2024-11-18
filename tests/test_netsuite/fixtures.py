@@ -2,6 +2,33 @@ from collections import OrderedDict
 from datetime import datetime, timezone
 
 data = {
+    'tax_list_detail' : {
+        'taxDetails': [
+            {
+                'taxType': {
+                    'internalId': 'tax_type_1'
+                }, 
+                'taxCode': {
+                    'internalId': 'tax_code_1'
+                }, 
+                'taxRate': 'tax_type_1', 
+                'taxBasis': 90.0, 
+                'taxAmount': 10.0, 
+                'taxDetailsReference': 'EXP001'
+            }, 
+            {
+                'taxType': {
+                    'internalId': 'tax_type_1'
+                }, 
+                'taxCode': {
+                    'internalId': 'tax_code_1'
+                }, 
+                'taxRate': 'tax_type_1', 'taxBasis': 180.0, 
+                'taxAmount': 20.0, 
+                'taxDetailsReference': 'EXP002'
+            }
+        ]
+    },
     'expense':[{
     "id": 1,
     "employee_email": "ashwin.t@fyle.in",
