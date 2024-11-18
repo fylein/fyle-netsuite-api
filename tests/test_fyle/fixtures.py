@@ -700,7 +700,6 @@ data = {
             'tax_group_id': None,
             'vendor': 'Dominos Pizza',
             'verified_at': None,
-            'bank_transaction_id': 'btxnQe02cfpD9n'
         },
         {
             'amount': 2,
@@ -740,7 +739,6 @@ data = {
             'tax_group_id': None,
             'vendor': 'Dominos Pizza',
             'verified_at': None,
-            'bank_transaction_id': 'btxnQe02cfpD9n'
         },
         {
             'amount': 3,
@@ -780,7 +778,6 @@ data = {
             'tax_group_id': None,
             'vendor': 'Dominos Pizza',
             'verified_at': None,
-            'bank_transaction_id': 'btxnQe02cfpD9n'
         },
         {
             'amount': 4,
@@ -820,7 +817,6 @@ data = {
             'tax_group_id': None,
             'vendor': 'Dominos Pizza',
             'verified_at': None,
-            'bank_transaction_id': 'btxnQe02cfpD9n'
         },
     ],
     "expenses": [
