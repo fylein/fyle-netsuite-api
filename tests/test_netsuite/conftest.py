@@ -62,7 +62,9 @@ def create_task_logs(db):
 
 @pytest.fixture
 def create_expense_report(db, add_netsuite_credentials, add_fyle_credentials):
-
+    # Clear existing TaskLogs for this expense group
+    TaskLog.objects.filter(expense_group_id=1).delete()
+    
     TaskLog.objects.update_or_create(
         workspace_id=2,
         expense_group_id=1,
