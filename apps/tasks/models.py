@@ -43,7 +43,7 @@ class TaskLog(models.Model):
     type = models.CharField(max_length=50, choices=TASK_TYPE, help_text='Task type (FETCH_EXPENSES / CREATE_BILL)')
     task_id = models.CharField(max_length=255, null=True, help_text='Django Q task reference')
     expense_group = models.ForeignKey(ExpenseGroup, on_delete=models.PROTECT,
-        null=True, help_text='Reference to Expense group')
+        null=True, help_text='Reference to Expense group', unique=True)
     bill = models.ForeignKey(Bill, on_delete=models.PROTECT, help_text='Reference to Bill', null=True)
     expense_report = models.ForeignKey(ExpenseReport, on_delete=models.PROTECT, help_text='Reference to Expense Report',
         null=True)
