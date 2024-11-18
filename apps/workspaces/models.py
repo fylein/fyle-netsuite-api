@@ -155,7 +155,7 @@ class Configuration(models.Model):
     import_projects = models.BooleanField(default=False, help_text='Auto import projects to Fyle')
     import_vendors_as_merchants = models.BooleanField(default=False, help_text='Auto import vendors from netsuite as merchants to Fyle')
     import_netsuite_employees = models.BooleanField(default=False, help_text='Auto import employees from netsuite as employees to Fyle')
-    change_accounting_period = models.BooleanField(default=False, help_text='Change the accounting period')
+    change_accounting_period = models.BooleanField(default=True, help_text='Change the accounting period')
     sync_fyle_to_netsuite_payments = models.BooleanField(
         default=False, help_text='Auto Sync Payments from Fyle to Netsuite'
     )
