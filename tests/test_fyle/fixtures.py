@@ -246,6 +246,7 @@ data = {
     "expenses_spent_at":[
         {
             'id': '1234',
+            'bank_transaction_id': 'btxnqmATEEBkJ4',
             'employee_email': 'jhonsnow@fyle.in',
             'category': 'Accounts Payable',
             'sub_category': 'Accounts Payable',
@@ -287,6 +288,7 @@ data = {
         },
         {
             'id': '1235',
+            'bank_transaction_id': 'btxnqmATEEBkJ4',
             'employee_email': 'jhonsnow@fyle.in',
             'category': 'Accounts Payable',
             'sub_category': 'Accounts Payable',
@@ -328,6 +330,7 @@ data = {
         },
         {
             'id': '1236',
+            'bank_transaction_id': 'btxnqmATEEBkJ4',
             'employee_email': 'jhonsnow@fyle.in',
             'category': 'Accounts Payable',
             'sub_category': 'Accounts Payable',
@@ -860,6 +863,7 @@ data = {
                 'Vehicle Type': '',
                 'Fyle Categories': '',
             },
+            'bank_transaction_id': 'btxnqmATEEBkJ4',
             "is_posted_at_null": True
         },
         {
@@ -902,6 +906,7 @@ data = {
                 'Vehicle Type': '',
                 'Fyle Categories': '',
             },
+            'bank_transaction_id': 'btxnqmATEEBkJ4',
             "is_posted_at_null": False
         },
     ],
@@ -1002,7 +1007,8 @@ data = {
         "import_card_credits": "False",
         "created_at": "2021-11-15T08:46:16.069944Z",
         "updated_at": "2021-11-15T08:46:16.069986Z",
-        "workspace": 1
+        "workspace": 1,
+        "split_expense_grouping": "MULTIPLE_LINE_ITEM",
     },
     "fyle_orgs": [
         {
@@ -1106,7 +1112,8 @@ data = {
         'expense_state': 'PAYMENT_PROCESSING',
         'reimbursable_export_date_type': 'spent_at',
         'ccc_export_date_type': 'spent_at',
-        'ccc_expense_state': 'PAID'
+        'ccc_expense_state': 'PAID',
+        'split_expense_grouping': 'MULTIPLE_LINE_ITEM',
     },
     'get_my_profile': {
         'data': {
