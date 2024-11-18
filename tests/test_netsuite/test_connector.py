@@ -1019,4 +1019,52 @@ def test_skip_sync_attributes(mocker, db):
 
     new_project_count = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='CUSTOMER').count()
     assert new_project_count == 0
+
+def test_constructs_tax_details_list_for_multiple_items(mocker, db):
+    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
+
+    # Create a more complete mock Mapping object
+    mock_mapping = mocker.Mock()
+    mock_mapping.destination.destination_id = 'tax_code_1'
+    mock_mapping.destination.detail.get.return_value = 'tax_type_1'
+    mock_mapping.destination.detail.all.return_value = [mocker.Mock(value=10.0)]
+
+    # Mock get_tax_group_mapping to return our complete mock mapping
+    mocker.patch(
+        'apps.netsuite.models.get_tax_group_mapping',
+        return_value=mock_mapping
+    )
+
+    # Creating mock expense objects with workspace_id and tax_group_id
+    expense1 = mocker.Mock(
+        amount=100.0,
+        tax_amount=10.0,
+        expense_number='EXP001',
+        workspace_id=1,
+        tax_group_id=1
+    )
     
+    expense2 = mocker.Mock(
+        amount=200.0,
+        tax_amount=20.0,
+        expense_number='EXP002',
+        workspace_id=1,
+        tax_group_id=1
+    )
+
+    # Creating mock bill line items with expense attribute and workspace_id
+    bill_lineitem1 = mocker.Mock(
+        expense=expense1,
+        workspace_id=1
+    )
+    bill_lineitem2 = mocker.Mock(
+        expense=expense2,
+        workspace_id=1
+    )
+
+    bill_lineitems = [bill_lineitem1, bill_lineitem2]
+
+    result = netsuite_connection.construct_tax_details_list(bill_lineitems)
+
+    assert result == data['tax_list_detail']
