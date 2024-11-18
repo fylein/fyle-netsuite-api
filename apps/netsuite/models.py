@@ -115,10 +115,12 @@ def get_tax_group_mapping(lineitem: Expense = None, workspace_id: int = None):
 
 def get_tax_item_id_or_none(expense_group: ExpenseGroup, general_mapping: GeneralMapping, lineitem: Expense = None):
     tax_code = None
-    mapping_settings: MappingSetting = MappingSetting.objects.filter(
-        expense_group.workspace_id, destination_field='TAX_ITEM').first()
+    tax_setting: MappingSetting = MappingSetting.objects.filter(
+        workspace_id=expense_group.workspace_id,
+        destination_field='TAX_ITEM'
+    ).first()
     
-    if mapping_settings:
+    if tax_setting:
         mapping = get_tax_group_mapping(lineitem, expense_group.workspace_id)
 
         if mapping:
