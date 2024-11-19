@@ -1,5 +1,6 @@
 import re
 import json
+import copy
 from datetime import datetime, timedelta
 
 from django.utils import timezone
@@ -1161,42 +1162,100 @@ class NetSuiteConnector:
                 attributes, 'PROJECT', self.workspace_id, True)
 
         return []
-
-    def construct_bill_lineitems(
-            self,
-            bill_lineitems: List[BillLineitem],
-            attachment_links: Dict,
-            cluster_domain: str, org_id: str,
-            override_tax_details: bool
-        ) -> List[Dict]:
+    
+    def handle_taxed_line_items(self, base_line, line, workspace_id, export_module, general_mapping: GeneralMapping):
         """
-        Create bill line items
-        :return: constructed line items
+        Handle line items where tax is applied or modified by the user.
+        :param base_line: The base line item template that will be modified.
+        :param line: The original line with tax and amount information.
+        :param is_credit_card_charge: Boolean flag to differentiate between credit card charges and other transactions.
+        :return: List of lines (taxed and/or untaxed).
         """
-        expense_list = []
-        item_list = []
+        tax_item = DestinationAttribute.objects.filter(
+            workspace_id=workspace_id,
+            attribute_type='TAX_ITEM',
+            destination_id=str(line.tax_item_id)
+        ).first()
+        tax_item_rate = tax_item.detail['tax_rate']
 
-        for line in bill_lineitems:
-            expense: Expense = Expense.objects.get(pk=line.expense_id)
+        lines = []
+        original_amount = round(line.amount, 2)
+        expected_tax_amount = round((line.amount * (tax_item_rate / 100)) / (1 + (tax_item_rate / 100)), 2)
 
-            netsuite_custom_segments = line.netsuite_custom_segments
+        if general_mapping.is_tax_balancing_enabled and round(line.tax_amount, 2) != expected_tax_amount:
+            # Recalculate the net amount based on the modified tax
+            recalculated_net_amount = round((line.tax_amount * 100) / tax_item_rate, 2)
+            untaxed_amount = round(original_amount - recalculated_net_amount - line.tax_amount, 2)
 
-            if attachment_links and expense.expense_id in attachment_links:
-                netsuite_custom_segments.append(
-                    {
-                        'scriptId': 'custcolfyle_receipt_link',
-                        'type': 'String',
-                        'value': attachment_links[expense.expense_id]
-                    }
-                )
-                netsuite_custom_segments.append(
-                    {
-                        'scriptId': 'custcolfyle_receipt_link_2',
-                        'type': 'String',
-                        'value': attachment_links[expense.expense_id]
-                    }
-                )
+            # Create a taxable line item
+            taxable_line = copy.deepcopy(base_line)
+            taxable_line['amount'] = recalculated_net_amount
+            taxable_line['taxCode']['internalId'] = line.tax_item_id
 
+            # Create an untaxed line item
+            untaxed_line = copy.deepcopy(base_line)
+            untaxed_line['amount'] = untaxed_amount
+            untaxed_line['taxCode']['internalId'] = general_mapping.default_tax_code_id  # Use default for untaxed items
+
+            if export_module == 'JOURNAL_ENTRY':
+                taxable_line['grossAmt'] = round(recalculated_net_amount + line.tax_amount, 2)
+                taxable_line['debit'] = recalculated_net_amount
+                taxable_line.pop('amount', None)
+                untaxed_line['grossAmt'] = round(untaxed_amount, 2)
+                untaxed_line['debit'] = untaxed_amount
+                untaxed_line.pop('amount', None)
+            
+            if export_module in ('EXPENSE_REPORT', 'JOURNAL_ENTRY'):
+                taxable_line['tax1Amt'] = round(line.tax_amount, 2)  # Tax is applied to this line
+
+            if export_module == 'BILL' and taxable_line.get('rate'):
+                taxable_line['rate'] = str(round(line.amount - line.tax_amount, 2))
+
+            lines.append(taxable_line)
+            lines.append(untaxed_line)
+        else:
+            # When the tax is not modified, just subtract the tax and apply it directly
+            base_line['amount'] = round(original_amount - line.tax_amount, 2)
+            base_line['taxCode']['internalId'] = line.tax_item_id
+            
+            if export_module in ('EXPENSE_REPORT', 'JOURNAL_ENTRY'):
+                base_line['tax1Amt'] = round(line.tax_amount, 2)  # Tax is applied to this line
+
+            if export_module == 'BILL' and base_line.get('rate'):
+                base_line['rate'] = str(round(line.amount - line.tax_amount, 2))
+
+            if export_module == 'JOURNAL_ENTRY':
+                base_line['grossAmt'] = original_amount
+                base_line['debit'] = round(original_amount - line.tax_amount, 2)
+                base_line.pop('amount', None)
+
+            lines.append(base_line)
+
+        return lines
+    
+    def prepare_custom_segments(self, line_netsuite_custom_segments, attachment_links, expense, org_id, is_credit=False):
+        """
+        Prepare custom segments for line items.
+        """
+        netsuite_custom_segments = line_netsuite_custom_segments
+
+        if attachment_links and expense.expense_id in attachment_links:
+            netsuite_custom_segments.append(
+                {
+                    'scriptId': 'custcolfyle_receipt_link',
+                    'type': 'String',
+                    'value': attachment_links[expense.expense_id]
+                }
+            )
+            netsuite_custom_segments.append(
+                {
+                    'scriptId': 'custcolfyle_receipt_link_2',
+                    'type': 'String',
+                    'value': attachment_links[expense.expense_id]
+                }
+            )
+
+        if not is_credit:
             netsuite_custom_segments.append(
                 {
                     'scriptId': 'custcolfyle_expense_url',
@@ -1220,13 +1279,35 @@ class NetSuiteConnector:
                 }
             )
 
-            lineitem = {
+        return netsuite_custom_segments
+
+    def construct_bill_lineitems(
+            self,
+            bill_lineitems: List[BillLineitem],
+            attachment_links: Dict,
+            cluster_domain: str, org_id: str,
+            override_tax_details: bool,
+            general_mapping: GeneralMapping
+        ) -> List[Dict]:
+        """
+        Create bill line items
+        :return: constructed line items
+        """
+        expense_list = []
+        item_list = []
+
+        for line in bill_lineitems:
+            expense: Expense = Expense.objects.get(pk=line.expense_id)
+
+            netsuite_custom_segments = self.prepare_custom_segments(line.netsuite_custom_segments, attachment_links, expense, org_id)
+
+            base_line = {
                 'orderDoc': None,
                 'orderLine': None,
                 'line': None,
-                'amount': line.amount - line.tax_amount if (line.tax_item_id and line.tax_amount is not None) else line.amount,
-                'grossAmt': None if override_tax_details else line.amount,
-                'taxDetailsReference': expense.expense_number if override_tax_details else None,
+                'amount': line.amount,
+                'grossAmt': line.amount,
+                'taxDetailsReference': None,
                 'department': {
                     'name': None,
                     'internalId': line.department_id,
@@ -1254,10 +1335,10 @@ class NetSuiteConnector:
                 'customFieldList': netsuite_custom_segments,
                 'isBillable': line.billable,
                 'tax1Amt': None,
-                'taxAmount': line.tax_amount if (line.tax_item_id and line.tax_amount is not None and not override_tax_details) else None,
+                'taxAmount': None,
                 'taxCode':{
                     'name': None,
-                    'internalId': line.tax_item_id if (line.tax_item_id and line.tax_amount is not None and not override_tax_details) else None,
+                    'internalId': None,
                     'externalId': None,
                     'type': 'taxGroup'
                 },
@@ -1270,41 +1351,59 @@ class NetSuiteConnector:
             }
 
             if line.detail_type == 'AccountBasedExpenseLineDetail':
-                lineitem['account'] = {
+                base_line['account'] = {
                     'name': None,
                     'internalId': line.account_id,
                     'externalId': None,
                     'type': 'account'
                 }
-                lineitem['category'] = None
-                lineitem['memo'] = line.memo
-                lineitem['projectTask'] = None
+                base_line['category'] = None
+                base_line['memo'] = line.memo
+                base_line['projectTask'] = None
 
-                expense_list.append(lineitem)
+                if line.tax_item_id is None or line.tax_amount is None:
+                    expense_list.append(base_line)
+                else:
+                    if override_tax_details:
+                        base_line['grossAmt'] = None
+                        base_line['taxDetailsReference'] = expense.expense_number
+                        base_line['amount'] = line.amount - line.tax_amount
+                        expense_list.append(base_line)
+                    else:
+                        expense_list += self.handle_taxed_line_items(base_line, line, expense.workspace_id, 'BILL', general_mapping)
 
             else:
-                lineitem['item'] = {
+                base_line['item'] = {
                     'name': None,
                     'internalId': line.item_id,
                     'externalId': None,
                     'type': None
                 }
-                lineitem['vendorName'] = None
-                lineitem['quantity'] = 1.0
-                lineitem['units'] = None
-                lineitem['inventoryDetail'] = None
-                lineitem['description'] = line.memo
-                lineitem['serialNumbers'] = None
-                lineitem['binNumbers'] = None
-                lineitem['expirationDate'] = None
-                lineitem['rate'] = str(line.amount - line.tax_amount if (line.tax_item_id and line.tax_amount is not None) else line.amount)
-                lineitem['options'] = None
-                lineitem['landedCostCategory'] = None
-                lineitem['billVarianceStatus'] = None
-                lineitem['billreceiptsList'] = None
-                lineitem['landedCost'] = None
+                base_line['vendorName'] = None
+                base_line['quantity'] = 1.0
+                base_line['units'] = None
+                base_line['inventoryDetail'] = None
+                base_line['description'] = line.memo
+                base_line['serialNumbers'] = None
+                base_line['binNumbers'] = None
+                base_line['expirationDate'] = None
+                base_line['rate'] = str(line.amount)
+                base_line['options'] = None
+                base_line['landedCostCategory'] = None
+                base_line['billVarianceStatus'] = None
+                base_line['billreceiptsList'] = None
+                base_line['landedCost'] = None
 
-                item_list.append(lineitem)
+                if line.tax_item_id is None or line.tax_amount is None:
+                    item_list.append(base_line)
+                else:
+                    if override_tax_details:
+                        base_line['grossAmt'] = None
+                        base_line['taxDetailsReference'] = expense.expense_number
+                        base_line['amount'] = line.amount - line.tax_amount
+                        item_list.append(base_line)
+                    else:
+                        item_list += self.handle_taxed_line_items(base_line, line, expense.workspace_id, 'BILL', general_mapping)
 
         return expense_list, item_list
     
@@ -1339,7 +1438,7 @@ class NetSuiteConnector:
         return tax_details_list
 
 
-    def __construct_bill(self, bill: Bill, bill_lineitems: List[BillLineitem]) -> Dict:
+    def __construct_bill(self, bill: Bill, bill_lineitems: List[BillLineitem], general_mappings: GeneralMapping) -> Dict:
         """
         Create a bill
         :return: constructed bill
@@ -1351,7 +1450,7 @@ class NetSuiteConnector:
         org_id = Workspace.objects.get(id=bill.expense_group.workspace_id).fyle_org_id
 
         tax_details_list =  None
-        expense_list, item_list = self.construct_bill_lineitems(bill_lineitems, {}, cluster_domain, org_id, bill.override_tax_details)
+        expense_list, item_list = self.construct_bill_lineitems(bill_lineitems, {}, cluster_domain, org_id, bill.override_tax_details, general_mappings)
 
         if bill.override_tax_details:
             tax_details_list = self.construct_tax_details_list(bill_lineitems)
@@ -1447,13 +1546,13 @@ class NetSuiteConnector:
 
         return bill_payload
 
-    def post_bill(self, bill: Bill, bill_lineitems: List[BillLineitem]):
+    def post_bill(self, bill: Bill, bill_lineitems: List[BillLineitem], general_mappings: GeneralMapping):
         """
         Post vendor bills to NetSuite
         """
         configuration = Configuration.objects.get(workspace_id=self.workspace_id)
         try:
-            bills_payload = self.__construct_bill(bill, bill_lineitems)
+            bills_payload = self.__construct_bill(bill, bill_lineitems, general_mappings)
 
             logger.info("| Payload for Bill creation | Content: {{WORKSPACE_ID: {} EXPENSE_GROUP_ID: {} BILL_PAYLOAD: {}}}".format(self.workspace_id, bill.expense_group.id, bills_payload))
             created_bill = self.connection.vendor_bills.post(bills_payload)
@@ -1465,7 +1564,7 @@ class NetSuiteConnector:
             message = 'An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'
             if configuration.change_accounting_period and detail['message'] == message:
                 first_day_of_month = datetime.today().date().replace(day=1)
-                bills_payload = self.__construct_bill(bill, bill_lineitems)
+                bills_payload = self.__construct_bill(bill, bill_lineitems, general_mappings)
                 bills_payload['tranDate'] = first_day_of_month
                 created_bill = self.connection.vendor_bills.post(bills_payload)
                 
@@ -1482,7 +1581,7 @@ class NetSuiteConnector:
         return bill
 
     def construct_credit_card_charge_lineitems(
-            self, credit_card_charge_lineitem: CreditCardChargeLineItem,
+            self, credit_card_charge_lineitem: CreditCardChargeLineItem, general_mapping: GeneralMapping,
             attachment_links: Dict, cluster_domain: str, org_id: str) -> List[Dict]:
         """
         Create credit_card_charge line items
@@ -1494,80 +1593,39 @@ class NetSuiteConnector:
 
         expense = Expense.objects.get(pk=line.expense_id)
 
-        netsuite_custom_segments = line.netsuite_custom_segments
+        netsuite_custom_segments = self.prepare_custom_segments(line.netsuite_custom_segments, attachment_links, expense, org_id)
 
-        if attachment_links and expense.expense_id in attachment_links:
-            netsuite_custom_segments.append(
-                {
-                    'scriptId': 'custcolfyle_receipt_link',
-                    'value': attachment_links[expense.expense_id]
-                }
-            )
-            netsuite_custom_segments.append(
-                {
-                    'scriptId': 'custcolfyle_receipt_link_2',
-                    'type': 'String',
-                    'value': attachment_links[expense.expense_id]
-                }
-            )
-
-        netsuite_custom_segments.append(
-            {
-                'scriptId': 'custcolfyle_expense_url',
-                'value': '{}/app/admin/#/enterprise/view_expense/{}?org_id={}'.format(
-                    settings.FYLE_EXPENSE_URL,
-                    expense.expense_id,
-                    org_id
-                )
-            }
-        )
-        netsuite_custom_segments.append(
-            {
-                'scriptId': 'custcolfyle_expense_url_2',
-                'value': '{}/app/admin/#/enterprise/view_expense/{}?org_id={}'.format(
-                    settings.FYLE_EXPENSE_URL,
-                    expense.expense_id,
-                    org_id
-                )
-            }
-        )
-
-        line = {
-            'account': {
-                'internalId': line.account_id
-            },
-            'amount': line.amount - line.tax_amount if (line.tax_item_id and line.tax_amount is not None) else line.amount,
+        base_line = {
+            'account': {'internalId': line.account_id},
+            'amount': line.amount,
             'memo': line.memo,
             'grossAmt': line.amount,
-            'department': {
-                'internalId': line.department_id
-            },
-            'class': {
-                'internalId': line.class_id
-            },
-            'location': {
-                'internalId': line.location_id
-            },
-            'customer': {
-                'internalId': line.customer_id
-            },
+            'department': {'internalId': line.department_id},
+            'class': {'internalId': line.class_id},
+            'location': {'internalId': line.location_id},
+            'customer': {'internalId': line.customer_id},
             'customFieldList': netsuite_custom_segments,
             'isBillable': line.billable,
             'taxAmount': None,
             'taxCode': {
-                'name': None,
-                'internalId': line.tax_item_id if (line.tax_item_id and line.tax_amount is not None) else None,
                 'externalId': None,
+                'internalId': None,
+                'name': None,
                 'type': 'taxGroup'
             },
         }
-        lines.append(line)
+
+        # Handle cases where no tax is applied first
+        if line.tax_item_id is None or line.tax_amount is None:
+            lines.append(base_line)
+        else:
+            lines += self.handle_taxed_line_items(base_line, line, expense.workspace_id, 'CREDIT_CARD_CHARGE', general_mapping)
 
         return lines
 
     def __construct_credit_card_charge(
             self, credit_card_charge: CreditCardCharge,
-            credit_card_charge_lineitem: CreditCardChargeLineItem, attachment_links: Dict) -> Dict:
+            credit_card_charge_lineitem: CreditCardChargeLineItem, general_mapping: GeneralMapping, attachment_links: Dict) -> Dict:
         """
         Create a credit_card_charge
         :return: constructed credit_card_charge
@@ -1606,7 +1664,7 @@ class NetSuiteConnector:
             'memo': credit_card_charge.memo,
             'tranid': credit_card_charge.reference_number,
             'expenses': self.construct_credit_card_charge_lineitems(
-                credit_card_charge_lineitem, attachment_links, cluster_domain, org_id
+                credit_card_charge_lineitem, general_mapping, attachment_links, cluster_domain, org_id
             ),
             'externalId': credit_card_charge.external_id
         }
@@ -1614,7 +1672,7 @@ class NetSuiteConnector:
         return credit_card_charge_payload
 
     def post_credit_card_charge(self, credit_card_charge: CreditCardCharge,
-                                credit_card_charge_lineitem: CreditCardChargeLineItem, attachment_links: Dict,
+                                credit_card_charge_lineitem: CreditCardChargeLineItem, general_mapping: GeneralMapping, attachment_links: Dict,
                                 refund: bool):
         """
         Post vendor credit_card_charges to NetSuite
@@ -1641,7 +1699,7 @@ class NetSuiteConnector:
                   f"script=customscript_cc_refund_fyle&deploy=customdeploy_cc_refund_fyle"
 
         credit_card_charges_payload = self.__construct_credit_card_charge(
-            credit_card_charge, credit_card_charge_lineitem, attachment_links)
+            credit_card_charge, credit_card_charge_lineitem, general_mapping, attachment_links)
 
         logger.info("| Payload for Credit Card Charge creation | Content: {{WORKSPACE_ID: {} EXPENSE_GROUP_ID: {} CREDIT_CARD_CHARGE_PAYLOAD: {}}}".format(self.workspace_id, credit_card_charge.expense_group.id, credit_card_charges_payload))        
 
@@ -1696,7 +1754,7 @@ class NetSuiteConnector:
         raise NetSuiteRequestError(code=code, message=message)
 
     def construct_expense_report_lineitems(
-            self, expense_report_lineitems: List[ExpenseReportLineItem], attachment_links: Dict, cluster_domain: str,
+            self, expense_report_lineitems: List[ExpenseReportLineItem], general_mapping: GeneralMapping, attachment_links: Dict, cluster_domain: str,
             org_id: str
     ) -> List[Dict]:
         """
@@ -1707,7 +1765,7 @@ class NetSuiteConnector:
 
         for line in expense_report_lineitems:
             expense: Expense = Expense.objects.get(pk=line.expense_id)
-            netsuite_custom_segments = line.netsuite_custom_segments
+            netsuite_custom_segments = self.prepare_custom_segments(line.netsuite_custom_segments, attachment_links, expense, org_id)
 
             if expense.foreign_amount:
                 if expense.amount == 0:
@@ -1717,47 +1775,8 @@ class NetSuiteConnector:
             else:
                 foreign_amount = None
 
-            if attachment_links and expense.expense_id in attachment_links:
-                netsuite_custom_segments.append(
-                    {
-                        'scriptId': 'custcolfyle_receipt_link',
-                        'type': 'String',
-                        'value': attachment_links[expense.expense_id]
-                    }
-                )
-                netsuite_custom_segments.append(
-                    {
-                        'scriptId': 'custcolfyle_receipt_link_2',
-                        'type': 'String',
-                        'value': attachment_links[expense.expense_id]
-                    }
-                )
-
-            netsuite_custom_segments.append(
-                {
-                    'scriptId': 'custcolfyle_expense_url',
-                    'type': 'String',
-                    'value': '{}/app/admin/#/enterprise/view_expense/{}?org_id={}'.format(
-                        settings.FYLE_EXPENSE_URL,
-                        expense.expense_id,
-                        org_id
-                    )
-                }
-            )
-            netsuite_custom_segments.append(
-                {
-                    'scriptId': 'custcolfyle_expense_url_2',
-                    'type': 'String',
-                    'value': '{}/app/admin/#/enterprise/view_expense/{}?org_id={}'.format(
-                        settings.FYLE_EXPENSE_URL,
-                        expense.expense_id,
-                        org_id
-                    )
-                }
-            )
-
-            lineitem = {
-                'amount': line.amount - line.tax_amount if (line.tax_item_id and line.tax_amount is not None) else line.amount,
+            base_line = {
+                'amount': line.amount,
                 'category': {
                     'name': None,
                     'internalId': line.category,
@@ -1809,10 +1828,10 @@ class NetSuiteConnector:
                 'rate': None,
                 'receipt': None,
                 'refNumber': None,
-                'tax1Amt': line.tax_amount if (line.tax_item_id and line.tax_amount is not None) else None,
+                'tax1Amt': None,
                 'taxCode': {
                     'name': None,
-                    'internalId': line.tax_item_id if (line.tax_item_id and line.tax_amount is not None) else None,
+                    'internalId': None,
                     'externalId': None,
                     'type': 'taxGroup'
                 },
@@ -1820,12 +1839,16 @@ class NetSuiteConnector:
                 'taxRate2': None
             }
 
-            lines.append(lineitem)
+            # Handle cases where no tax is applied first
+            if line.tax_item_id is None or line.tax_amount is None:
+                lines.append(base_line)
+            else:
+                lines += self.handle_taxed_line_items(base_line, line, expense.workspace_id, 'EXPENSE_REPORT', general_mapping)
 
         return lines
 
     def __construct_expense_report(self, expense_report: ExpenseReport,
-                                   expense_report_lineitems: List[ExpenseReportLineItem]) -> Dict:
+                                   expense_report_lineitems: List[ExpenseReportLineItem], general_mapping: GeneralMapping) -> Dict:
         """
         Create a expense report
         :return: constructed expense report
@@ -1909,7 +1932,7 @@ class NetSuiteConnector:
                 'type': 'location'
             },
             'expenseList': self.construct_expense_report_lineitems(
-                expense_report_lineitems, {}, cluster_domain, org_id
+                expense_report_lineitems, general_mapping, {}, cluster_domain, org_id
             ),
             'accountingBookDetailList': None,
             'customFieldList': None,
@@ -1921,14 +1944,14 @@ class NetSuiteConnector:
 
     def post_expense_report(
             self, expense_report: ExpenseReport,
-            expense_report_lineitems: List[ExpenseReportLineItem]):
+            expense_report_lineitems: List[ExpenseReportLineItem], general_mapping: GeneralMapping):
         """
         Post expense reports to NetSuite
         """
         configuration = Configuration.objects.get(workspace_id=self.workspace_id)
         try:
             expense_report_payload = self.__construct_expense_report(expense_report,
-                                                                    expense_report_lineitems)
+                                                                    expense_report_lineitems, general_mapping)
            
             logger.info("| Payload for Expense Report creation | Content: {{WORKSPACE_ID: {} EXPENSE_GROUP_ID: {} EXPENSE_REPORT_PAYLOAD: {}}}".format(self.workspace_id, expense_report.expense_group.id, expense_report_payload))
 
@@ -1942,7 +1965,7 @@ class NetSuiteConnector:
 
             if configuration.change_accounting_period and detail['message'] == message:
                 expense_report_payload = self.__construct_expense_report(expense_report,
-                                                                    expense_report_lineitems)
+                                                                    expense_report_lineitems, general_mapping)
 
                 first_day_of_month = datetime.today().date().replace(day=1)
                 expense_report_payload['tranDate'] = first_day_of_month.strftime('%Y-%m-%dT%H:%M:%S')
@@ -1962,7 +1985,7 @@ class NetSuiteConnector:
         return expense_report
 
 
-    def construct_journal_entry_lineitems(self, journal_entry_lineitems: List[JournalEntryLineItem], org_id: str,
+    def construct_journal_entry_lineitems(self, journal_entry_lineitems: List[JournalEntryLineItem], general_mapping: GeneralMapping, org_id: str,
                                             credit=None, debit=None, attachment_links: Dict = None,
                                             cluster_domain: str = None) -> List[Dict]:
         """
@@ -1980,50 +2003,9 @@ class NetSuiteConnector:
             if debit is None:
                 account_ref = line.debit_account_id
 
-            netsuite_custom_segments = line.netsuite_custom_segments
+            netsuite_custom_segments = self.prepare_custom_segments(line.netsuite_custom_segments, attachment_links, expense, org_id, credit)
 
-            if attachment_links and expense.expense_id in attachment_links:
-                netsuite_custom_segments.append(
-                    {
-                        'scriptId': 'custcolfyle_receipt_link',
-                        'type': 'String',
-                        'value': attachment_links[expense.expense_id]
-                    }
-                )
-                netsuite_custom_segments.append(
-                    {
-                        'scriptId': 'custcolfyle_receipt_link_2',
-                        'type': 'String',
-                        'value': attachment_links[expense.expense_id]
-                    }
-                )
-
-            if debit:
-                netsuite_custom_segments.append(
-                    {
-                        'scriptId': 'custcolfyle_expense_url',
-                        'type': 'String',
-                        'value': '{}/app/admin/#/enterprise/view_expense/{}?org_id={}'.format(
-                            settings.FYLE_EXPENSE_URL,
-                            expense.expense_id,
-                            org_id
-                        )
-                    }
-                )
-                netsuite_custom_segments.append(
-                    {
-                        'scriptId': 'custcolfyle_expense_url_2',
-                        'type': 'String',
-                        'value': '{}/app/admin/#/enterprise/view_expense/{}?org_id={}'.format(
-                            settings.FYLE_EXPENSE_URL,
-                            expense.expense_id,
-                            org_id
-                        )
-                    }
-                )
-
-            tax_inclusive_amount = round((line.amount - line.tax_amount), 2) if (line.tax_amount is not None and line.tax_item_id ) else line.amount
-            lineitem = {
+            base_line = {
                 'account': {
                     'name': None,
                     'internalId': account_ref,
@@ -2054,14 +2036,14 @@ class NetSuiteConnector:
                     'externalId': None,
                     'type': 'vendor'
                 },
-                'credit': line.amount if credit is not None else None,
+                'credit': None,
                 'creditTax': None,
                 'customFieldList': netsuite_custom_segments,
-                'debit': tax_inclusive_amount if debit is not None else None,
+                'debit': line.amount,
                 'debitTax': None,
                 'eliminate': None,
                 'endDate': None,
-                'grossAmt': line.amount if (line.tax_amount is not None and line.tax_item_id and debit is not None) else None,
+                'grossAmt': None,
                 'line': None,
                 'lineTaxCode': None,
                 'lineTaxRate': None,
@@ -2074,18 +2056,28 @@ class NetSuiteConnector:
                 'tax1Acct': None,
                 'taxAccount': None,
                 'taxBasis': None,
-                'tax1Amt': line.tax_amount if (line.tax_amount is not None and line.tax_item_id and debit is not None) else None,
+                'tax1Amt': None,
                 'taxCode': {
                     'name': None,
-                    'internalId': line.tax_item_id if (line.tax_amount is not None and line.tax_item_id ) else None,
+                    'internalId': None,
                     'externalId': None,
                     'type': 'taxGroup'
-                } if debit is not None else None,
+                },
                 'taxRate1': None,
                 'totalAmount': None,
             }
 
-            lines.append(lineitem)
+
+            if debit:
+                if line.tax_item_id is None or line.tax_amount is None:
+                    lines.append(base_line)
+                else:
+                    lines += self.handle_taxed_line_items(base_line, line, expense.workspace_id, 'JOURNAL_ENTRY', general_mapping)
+            elif credit:
+                base_line['credit'] = line.amount
+                base_line['debit'] = None
+                lines.append(base_line)
+        
 
         return lines
 
@@ -2172,7 +2164,7 @@ class NetSuiteConnector:
         return lines
 
     def __construct_journal_entry(self, journal_entry: JournalEntry,
-                                  journal_entry_lineitems: List[JournalEntryLineItem], configuration: Configuration) -> Dict:
+                                  journal_entry_lineitems: List[JournalEntryLineItem], configuration: Configuration, general_mapping: GeneralMapping) -> Dict:
         """
         Create a journal entry report
         :return: constructed journal entry
@@ -2185,12 +2177,12 @@ class NetSuiteConnector:
         if configuration.je_single_credit_line:
             credit_line = self.__construct_single_itemized_credit_line(journal_entry_lineitems)
         else:
-            credit_line = self.construct_journal_entry_lineitems(journal_entry_lineitems, credit='Credit', org_id=org_id)
+            credit_line = self.construct_journal_entry_lineitems(journal_entry_lineitems, credit='Credit', org_id=org_id, general_mapping=general_mapping)
 
         debit_line = self.construct_journal_entry_lineitems(
             journal_entry_lineitems,
             debit='Debit', attachment_links={},
-            cluster_domain=cluster_domain, org_id=org_id
+            cluster_domain=cluster_domain, org_id=org_id, general_mapping=general_mapping
         )
         lines = []
         lines.extend(credit_line)
@@ -2256,13 +2248,13 @@ class NetSuiteConnector:
         return journal_entry_payload
 
     def post_journal_entry(self, journal_entry: JournalEntry,
-                           journal_entry_lineitems: List[JournalEntryLineItem], configuration: Configuration):
+                           journal_entry_lineitems: List[JournalEntryLineItem], configuration: Configuration, general_mapping: GeneralMapping):
         """
         Post journal entries to NetSuite
         """
         configuration = Configuration.objects.get(workspace_id=self.workspace_id)
         try:
-            journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems, configuration)
+            journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems, configuration, general_mapping)
 
             logger.info("| Payload for Journal Entry creation | Content: {{WORKSPACE_ID: {} EXPENSE_GROUP_ID: {} JOURNAL_ENTRY_PAYLOAD: {}}}".format(self.workspace_id, journal_entry.expense_group.id, journal_entry_payload))
 
@@ -2276,7 +2268,7 @@ class NetSuiteConnector:
 
             if configuration.change_accounting_period and detail['message'] == message:
                 first_day_of_month = datetime.today().date().replace(day=1)
-                journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems, configuration)
+                journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems, configuration, general_mapping)
                 journal_entry_payload['tranDate'] = first_day_of_month
                 created_journal_entry = self.connection.journal_entries.post(journal_entry_payload)
                 
