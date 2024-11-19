@@ -1440,7 +1440,8 @@ CREATE TABLE public.general_mappings (
     class_level character varying(255),
     class_name character varying(255),
     default_tax_code_id character varying(255),
-    default_tax_code_name character varying(255)
+    default_tax_code_name character varying(255),
+    is_tax_balancing_enabled boolean NOT NULL
 );
 
 
@@ -7987,9 +7988,10 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 198	netsuite	0027_auto_20240924_0820	2024-09-24 08:24:35.223017+00
 199	fyle_accounting_mappings	0026_destinationattribute_code	2024-10-01 08:54:06.770864+00
 200	workspaces	0039_configuration_je_single_credit_line	2024-10-11 13:43:49.169823+00
-201	fyle	0034_expense_is_posted_at_null	2024-11-17 20:37:53.17847+00
-202	tasks	0012_alter_tasklog_expense_group	2024-11-17 20:37:53.213044+00
-203	workspaces	0040_alter_configuration_change_accounting_period	2024-11-18 04:28:36.094429+00
+201	mappings	0015_generalmapping_is_tax_balancing_enabled	2024-11-11 18:30:21.068097+00
+202	fyle	0034_expense_is_posted_at_null	2024-11-17 20:37:53.17847+00
+203	tasks	0012_alter_tasklog_expense_group	2024-11-17 20:37:53.213044+00
+204	workspaces	0040_alter_configuration_change_accounting_period	2024-11-18 04:28:36.094429+00
 \.
 
 
@@ -11655,10 +11657,10 @@ COPY public.fyle_credentials (id, refresh_token, created_at, updated_at, workspa
 -- Data for Name: general_mappings; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.general_mappings (id, location_name, location_id, accounts_payable_name, accounts_payable_id, created_at, updated_at, workspace_id, default_ccc_account_id, default_ccc_account_name, reimbursable_account_id, reimbursable_account_name, default_ccc_vendor_id, default_ccc_vendor_name, vendor_payment_account_id, vendor_payment_account_name, location_level, department_level, use_employee_department, use_employee_class, use_employee_location, department_id, department_name, override_tax_details, class_id, class_level, class_name, default_tax_code_id, default_tax_code_name) FROM stdin;
-1	hubajuba	8	Accounts Payable	25	2021-11-15 08:56:31.432106+00	2021-11-15 13:21:26.113427+00	1	\N	\N	118	Unapproved Expense Reports	1674	Ashwin Vendor	\N	\N	TRANSACTION_BODY	\N	f	f	f	\N	\N	f	\N	\N	\N	\N	\N
-2	\N	\N	Accounts Payable	25	2021-11-16 04:18:39.195287+00	2021-11-16 04:18:39.195312+00	2	228	Aus Account	118	Unapproved Expense Reports	12104	Nilesh Aus Vendor	\N	\N	\N	\N	f	f	f	\N	\N	f	\N	\N	\N	\N	\N
-3	hukiju	10	\N	\N	2021-12-03 11:24:17.962764+00	2021-12-03 11:24:17.962809+00	49	228	Aus Account	228	Aus Account	12104	Nilesh Aus Vendor	\N	\N	TRANSACTION_BODY	\N	f	f	f	\N	\N	f	\N	\N	\N	\N	\N
+COPY public.general_mappings (id, location_name, location_id, accounts_payable_name, accounts_payable_id, created_at, updated_at, workspace_id, default_ccc_account_id, default_ccc_account_name, reimbursable_account_id, reimbursable_account_name, default_ccc_vendor_id, default_ccc_vendor_name, vendor_payment_account_id, vendor_payment_account_name, location_level, department_level, use_employee_department, use_employee_class, use_employee_location, department_id, department_name, override_tax_details, class_id, class_level, class_name, default_tax_code_id, default_tax_code_name, is_tax_balancing_enabled) FROM stdin;
+1	hubajuba	8	Accounts Payable	25	2021-11-15 08:56:31.432106+00	2021-11-15 13:21:26.113427+00	1	\N	\N	118	Unapproved Expense Reports	1674	Ashwin Vendor	\N	\N	TRANSACTION_BODY	\N	f	f	f	\N	\N	f	\N	\N	\N	\N	\N	f
+2	\N	\N	Accounts Payable	25	2021-11-16 04:18:39.195287+00	2021-11-16 04:18:39.195312+00	2	228	Aus Account	118	Unapproved Expense Reports	12104	Nilesh Aus Vendor	\N	\N	\N	\N	f	f	f	\N	\N	f	\N	\N	\N	\N	\N	f
+3	hukiju	10	\N	\N	2021-12-03 11:24:17.962764+00	2021-12-03 11:24:17.962809+00	49	228	Aus Account	228	Aus Account	12104	Nilesh Aus Vendor	\N	\N	TRANSACTION_BODY	\N	f	f	f	\N	\N	f	\N	\N	\N	\N	\N	f
 \.
 
 
@@ -11901,6 +11903,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 47, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 201, true);
 SELECT pg_catalog.setval('public.django_migrations_id_seq', 203, true);
 
 

@@ -175,7 +175,7 @@ def test_get_or_create_credit_card_vendor_create_false(mocker, db):
     assert created_vendor == None
 
 @pytest.mark.django_db()
-def test_post_bill_success(mocker, db):
+def test_post_bill_success(add_tax_destination_attributes, mocker, db):
     mocker.patch(
         'netsuitesdk.api.vendor_bills.VendorBills.post',
         return_value=data['creation_response']
@@ -207,6 +207,9 @@ def test_post_bill_success(mocker, db):
     created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
 
     expense_group = ExpenseGroup.objects.filter(workspace_id=workspace_id, fund_source='PERSONAL').first()
+    for expenses in expense_group.expenses.all():
+        expenses.workspace_id = 2
+        expenses.save()
     create_bill(expense_group, task_log.id, True)
     
     task_log = TaskLog.objects.get(pk=task_log.id)

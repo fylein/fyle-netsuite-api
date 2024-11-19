@@ -68,6 +68,7 @@ class GeneralMapping(models.Model):
     )
 
     override_tax_details = models.BooleanField(default=False, help_text='Override tax details')
+    is_tax_balancing_enabled = models.BooleanField(default=False, help_text='Is tax balancing enabled')
     
     workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model', related_name='general_mappings')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')

@@ -326,9 +326,9 @@ def construct_payload_and_update_export(expense_id_receipt_url_map: dict, task_l
             construct_lines = getattr(netsuite_connection, func)
 
             # calling the target construct payload function with credit and debit
-            credit_line = construct_lines(export_line_items, credit='Credit', org_id=workspace.fyle_org_id)
+            credit_line = construct_lines(export_line_items, general_mappings, credit='Credit', org_id=workspace.fyle_org_id)
             debit_line = construct_lines(
-                export_line_items, debit='Debit', attachment_links=expense_id_receipt_url_map,
+                export_line_items, general_mappings, debit='Debit', attachment_links=expense_id_receipt_url_map,
                 cluster_domain=cluster_domain, org_id=workspace.fyle_org_id
             )
             lines.extend(credit_line)
@@ -337,11 +337,11 @@ def construct_payload_and_update_export(expense_id_receipt_url_map: dict, task_l
         elif task_log.type == 'CREATING_BILL':
             construct_lines = getattr(netsuite_connection, func)
             # calling the target construct payload function
-            expense_list, item_list = construct_lines(export_line_items, expense_id_receipt_url_map, cluster_domain, workspace.fyle_org_id, general_mappings.override_tax_details)
+            expense_list, item_list = construct_lines(export_line_items, expense_id_receipt_url_map, cluster_domain, workspace.fyle_org_id, general_mappings.override_tax_details, general_mappings)
         else:
             construct_lines = getattr(netsuite_connection, func)
             # calling the target construct payload function
-            lines = construct_lines(export_line_items, expense_id_receipt_url_map, cluster_domain, workspace.fyle_org_id)
+            lines = construct_lines(export_line_items, general_mappings, expense_id_receipt_url_map, cluster_domain, workspace.fyle_org_id)
 
         # final payload to be sent to netsuite, since this is an update operation, we need to pass the external id
         if task_log.type == 'CREATING_BILL':
@@ -487,7 +487,7 @@ def create_bill(expense_group: ExpenseGroup, task_log_id, last_export):
 
         bill_lineitems_objects = BillLineitem.create_bill_lineitems(expense_group, configuration)
 
-        created_bill = netsuite_connection.post_bill(bill_object, bill_lineitems_objects)
+        created_bill = netsuite_connection.post_bill(bill_object, bill_lineitems_objects, general_mappings)
         logger.info('Created Bill with Expense Group %s successfully', expense_group.id)
 
         task_log.detail = created_bill
@@ -567,7 +567,7 @@ def create_credit_card_charge(expense_group, task_log_id, last_export):
             attachment_links[expense.expense_id] = attachment_link
 
         created_credit_card_charge = netsuite_connection.post_credit_card_charge(
-            credit_card_charge_object, credit_card_charge_lineitems_object, attachment_links, refund
+            credit_card_charge_object, credit_card_charge_lineitems_object, general_mappings, attachment_links, refund
         )
         worker_logger.info('Created Credit Card Charge with Expense Group %s successfully', expense_group.id)
 
@@ -612,6 +612,7 @@ def create_expense_report(expense_group, task_log_id, last_export):
         return
 
     configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
+    general_mapping = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=expense_group.workspace_id)
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
@@ -633,7 +634,7 @@ def create_expense_report(expense_group, task_log_id, last_export):
         )
 
         created_expense_report = netsuite_connection.post_expense_report(
-            expense_report_object, expense_report_lineitems_objects
+            expense_report_object, expense_report_lineitems_objects, general_mapping
         )
         worker_logger.info('Created Expense Report with Expense Group %s successfully', expense_group.id)
 
@@ -676,6 +677,7 @@ def create_journal_entry(expense_group, task_log_id, last_export):
         return
 
     configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
+    general_mapping = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=expense_group.workspace_id)
@@ -698,7 +700,7 @@ def create_journal_entry(expense_group, task_log_id, last_export):
         )
 
         created_journal_entry = netsuite_connection.post_journal_entry(
-            journal_entry_object, journal_entry_lineitems_objects, configuration
+            journal_entry_object, journal_entry_lineitems_objects, configuration, general_mapping
         )
         worker_logger.info('Created Journal Entry with Expense Group %s successfully', expense_group.id)
 
