@@ -25,7 +25,8 @@ logger.level = logging.INFO
 ALLOWED_FIELDS = [
     'employee_email', 'report_id', 'claim_number', 'settlement_id',
     'fund_source', 'vendor', 'category', 'project', 'cost_center',
-    'verified_at', 'approved_at', 'spent_at', 'expense_id', 'posted_at'
+    'verified_at', 'approved_at', 'spent_at', 'expense_id', 'posted_at',
+    'bank_transaction_id'
 ]
 
 
@@ -375,6 +376,7 @@ class ExpenseGroup(models.Model):
         """
         expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=workspace_id)
 
+        # Group Reimbursable Expenses
         reimbursable_expense_group_fields = expense_group_settings.reimbursable_expense_group_fields
 
         reimbursable_expenses = list(filter(lambda expense: expense.fund_source == 'PERSONAL', expense_objects))
@@ -405,6 +407,8 @@ class ExpenseGroup(models.Model):
             reimbursable_expenses = list(filter(lambda expense: expense.amount > 0, reimbursable_expenses))
 
         expense_groups = _group_expenses(reimbursable_expenses, reimbursable_expense_group_fields, workspace_id)
+
+        # Group CCC Expenses
         corporate_credit_card_expense_group_field = expense_group_settings.corporate_credit_card_expense_group_fields
 
         corporate_credit_card_expenses = list(filter(lambda expense: expense.fund_source == 'CCC', expense_objects))
@@ -414,10 +418,45 @@ class ExpenseGroup(models.Model):
                 filter(lambda expense: expense.amount > 0, corporate_credit_card_expenses)
             )
 
-        corporate_credit_card_expense_groups = _group_expenses(
-            corporate_credit_card_expenses, corporate_credit_card_expense_group_field, workspace_id)
+        if corporate_credit_card_expenses:
+            # Group split Credit Card Charges by `bank_transaction_id`
+            if (
+                configuration.corporate_credit_card_expenses_object == 'CREDIT CARD CHARGE' and
+                expense_group_settings.split_expense_grouping == 'MULTIPLE_LINE_ITEM'
+            ):
+                ccc_expenses_without_bank_transaction_id = list(
+                    filter(lambda expense: not expense.bank_transaction_id, corporate_credit_card_expenses)
+                )
 
-        expense_groups.extend(corporate_credit_card_expense_groups)
+                ccc_expenses_with_bank_transaction_id = list(
+                    filter(lambda expense: expense.bank_transaction_id, corporate_credit_card_expenses)
+                )
+
+                if ccc_expenses_without_bank_transaction_id:
+                    groups_without_bank_transaction_id = _group_expenses(
+                        ccc_expenses_without_bank_transaction_id, corporate_credit_card_expense_group_field, workspace_id
+                    )
+
+                    expense_groups.extend(groups_without_bank_transaction_id)
+
+                if ccc_expenses_with_bank_transaction_id:
+                    split_expense_group_fields = [
+                        field for field in corporate_credit_card_expense_group_field
+                        if field not in ('expense_id', 'expense_number')
+                    ]
+                    split_expense_group_fields.append('bank_transaction_id')
+
+                    groups_with_bank_transaction_id = _group_expenses(
+                        ccc_expenses_with_bank_transaction_id, split_expense_group_fields, workspace_id
+                    )
+                    expense_groups.extend(groups_with_bank_transaction_id)
+
+            else:
+                corporate_credit_card_expense_groups = _group_expenses(
+                    corporate_credit_card_expenses, corporate_credit_card_expense_group_field, workspace_id)
+
+                expense_groups.extend(corporate_credit_card_expense_groups)
+
         for expense_group in expense_groups:
             if expense_group_settings.reimbursable_export_date_type == 'last_spent_at':
                 expense_group['last_spent_at'] = Expense.objects.filter(
