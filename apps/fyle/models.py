@@ -176,6 +176,7 @@ class Expense(models.Model):
                 'file_ids': expense['file_ids'],
                 'spent_at': expense['spent_at'],
                 'posted_at': expense['posted_at'],
+                'is_posted_at_null': expense['is_posted_at_null'],
                 'fund_source': SOURCE_ACCOUNT_MAP[expense['source_account_type']],
                 'verified_at': expense['verified_at'],
                 'custom_properties': expense['custom_properties'],
