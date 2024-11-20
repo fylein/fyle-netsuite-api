@@ -619,6 +619,7 @@ data = {
                 'Vehicle Type': '',
                 'Fyle Categories': '',
             },
+            'bank_transaction_id': 'btxnqmATEEBkJ4',
             'is_posted_at_null': True
         },
         {
@@ -661,6 +662,7 @@ data = {
                 'Vehicle Type': '',
                 'Fyle Categories': '',
             },
+            'bank_transaction_id': 'btxnqmATEEBkJ4',
             'is_posted_at_null': True
         },
     ],
