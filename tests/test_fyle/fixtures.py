@@ -280,6 +280,7 @@ data = {
                 'Vehicle Type': '',
                 'Fyle Categories': '',
             },
+            "is_posted_at_null": True
         },
         {
             'id': '1235',
@@ -320,6 +321,7 @@ data = {
                 'Vehicle Type': '',
                 'Fyle Categories': '',
             },
+            "is_posted_at_null": True
         },
         {
             'id': '1236',
@@ -360,6 +362,7 @@ data = {
                 'Vehicle Type': '',
                 'Fyle Categories': '',
             },
+            "is_posted_at_null": True
         },
     ],
     "skipped_expenses":{
@@ -379,14 +382,16 @@ data = {
                 'amount': 101.0,
                 'report_id': 'dummy_report_id',
                 'settlement_id': 'dummy_settlement_id',
-                'expense_id': 'dummy_expense_id'
+                'expense_id': 'dummy_expense_id',
+                "is_posted_at_null": True
             },
             {
                 'updated_at': '2021-12-03T11:26:58.702209Z',
                 'claim_number': '    C/2021/12/R/199',
                 'employee_email': 'jhonsnow@fyle.in',
                 'employee_name': None,
-                'fund_source': 'CCC'
+                'fund_source': 'CCC',
+                "is_posted_at_null": True
             }
         ]
     },
@@ -608,6 +613,7 @@ data = {
                 'Vehicle Type': '',
                 'Fyle Categories': '',
             },
+            'is_posted_at_null': True
         },
         {
             'id': 'tx6wOnBVaumklol',
@@ -649,6 +655,7 @@ data = {
                 'Vehicle Type': '',
                 'Fyle Categories': '',
             },
+            'is_posted_at_null': True
         },
     ],
     "expenses": [
@@ -692,6 +699,7 @@ data = {
                 'Vehicle Type': '',
                 'Fyle Categories': '',
             },
+            "is_posted_at_null": True
         },
         {
             'id': 'tx6wOnBVaumk',
@@ -733,6 +741,7 @@ data = {
                 'Vehicle Type': '',
                 'Fyle Categories': '',
             },
+            "is_posted_at_null": False
         },
     ],
     "expense_group_expenses": [
@@ -807,7 +816,8 @@ data = {
                     "amount": 6377.0,
                     "report_id": "rp0kaXoqkJle",
                     "settlement_id": "setPzkM7eyQFd",
-                    "expense_id": "txyZ1zJDQfiK"
+                    "expense_id": "txyZ1zJDQfiK",
+                    "is_posted_at_null": True
                 }],
     },
     "expense_group_setting_response": {
