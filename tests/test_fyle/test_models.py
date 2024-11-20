@@ -163,7 +163,7 @@ def test_split_expense_grouping_with_no_bank_transaction_id(db, update_config_fo
     expense_group_settings.save()
 
     ExpenseGroup.create_expense_groups_by_report_id_fund_source(expense_objects, configuration, workspace_id)
-    groups = ExpenseGroup.objects.filter(expenses__expense_id__in=[expense['id'] for expense in expenses])
+    groups = ExpenseGroup.objects.filter(expenses__expense_id__in=[expense['id'] for expense in expenses]).distinct()
     assert len(groups) - old_count == 2, f'Expected 2 groups, got {len(groups) - old_count}'
 
 
@@ -201,7 +201,7 @@ def test_split_expense_grouping_with_same_and_different_ids(db, update_config_fo
     expense_group_settings.save()
 
     ExpenseGroup.create_expense_groups_by_report_id_fund_source(expense_objects, configuration, workspace_id)
-    groups = ExpenseGroup.objects.filter(expenses__expense_id__in=[expense['id'] for expense in expenses])
+    groups = ExpenseGroup.objects.filter(expenses__expense_id__in=[expense['id'] for expense in expenses]).distinct()
 
     assert len(groups) - old_count == 2, f'Expected 2 groups, got {len(groups) - old_count}'
 
@@ -240,6 +240,6 @@ def test_split_expense_grouping_pairs_of_same_ids(db, update_config_for_split_ex
     expense_group_settings.save()
 
     ExpenseGroup.create_expense_groups_by_report_id_fund_source(expense_objects, configuration, workspace_id)
-    groups = ExpenseGroup.objects.filter(expenses__expense_id__in=[expense['id'] for expense in expenses])
+    groups = ExpenseGroup.objects.filter(expenses__expense_id__in=[expense['id'] for expense in expenses]).distinct()
 
     assert len(groups) - old_count== 2, f'Expected 2 groups, got {len(groups) - old_count}'

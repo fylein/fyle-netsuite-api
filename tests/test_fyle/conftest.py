@@ -31,7 +31,7 @@ def create_temp_workspace(db):
 @pytest.fixture
 def update_config_for_split_expense_grouping(db):
     def _update_config_for_split_expense_grouping(general_settings, expense_group_settings):
-        general_settings.corporate_credit_card_expenses_object = 'BANK TRANSACTION'
+        general_settings.corporate_credit_card_expenses_object = 'CREDIT CARD CHARGE'
         general_settings.save()
         expense_group_settings.split_expense_grouping = 'SINGLE_LINE_ITEM'
         expense_group_settings.corporate_credit_card_expense_group_fields = [
