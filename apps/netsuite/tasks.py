@@ -551,7 +551,7 @@ def create_credit_card_charge(expense_group, task_log_id, last_export):
     with transaction.atomic():
         credit_card_charge_object = CreditCardCharge.create_credit_card_charge(expense_group)
 
-        credit_card_charge_lineitems_objects = CreditCardChargeLineItem.create_credit_card_charge_lineitem(
+        credit_card_charge_lineitems_objects = CreditCardChargeLineItem.create_credit_card_charge_lineitems(
             expense_group, configuration
         )
         attachment_links = {}

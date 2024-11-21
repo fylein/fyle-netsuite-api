@@ -684,7 +684,7 @@ class CreditCardChargeLineItem(models.Model):
         db_table = 'credit_card_charge_lineitems'
 
     @staticmethod
-    def create_credit_card_charge_lineitem(expense_group: ExpenseGroup, configuration: Configuration):
+    def create_credit_card_charge_lineitems(expense_group: ExpenseGroup, configuration: Configuration):
         """
         Create credit card charge lineitems
         :param expense_group: expense group

@@ -289,8 +289,8 @@ def test_contruct_credit_card_charge(create_credit_card_charge):
     general_mapping = GeneralMapping.objects.get(workspace_id=49)
 
 
-    credit_card_charge, credit_card_charge_lineitem = create_credit_card_charge
-    credit_card_charge_object = netsuite_connection._NetSuiteConnector__construct_credit_card_charge(credit_card_charge, credit_card_charge_lineitem, general_mapping, [])
+    credit_card_charge, credit_card_charge_lineitems = create_credit_card_charge
+    credit_card_charge_object = netsuite_connection._NetSuiteConnector__construct_credit_card_charge(credit_card_charge, credit_card_charge_lineitems, general_mapping, [])
     
     credit_card_charge_object['tranDate'] = data['credit_card_charge'][0]['tranDate']
     credit_card_charge_object['tranid'] = data['credit_card_charge'][0]['tranid']
