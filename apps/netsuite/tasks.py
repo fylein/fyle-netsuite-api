@@ -551,7 +551,7 @@ def create_credit_card_charge(expense_group, task_log_id, last_export):
     with transaction.atomic():
         credit_card_charge_object = CreditCardCharge.create_credit_card_charge(expense_group)
 
-        credit_card_charge_lineitems_object = CreditCardChargeLineItem.create_credit_card_charge_lineitem(
+        credit_card_charge_lineitems_objects = CreditCardChargeLineItem.create_credit_card_charge_lineitem(
             expense_group, configuration
         )
         attachment_links = {}
@@ -567,7 +567,7 @@ def create_credit_card_charge(expense_group, task_log_id, last_export):
             attachment_links[expense.expense_id] = attachment_link
 
         created_credit_card_charge = netsuite_connection.post_credit_card_charge(
-            credit_card_charge_object, credit_card_charge_lineitems_object, general_mappings, attachment_links, refund
+            credit_card_charge_object, credit_card_charge_lineitems_objects, general_mappings, attachment_links, refund
         )
         worker_logger.info('Created Credit Card Charge with Expense Group %s successfully', expense_group.id)
 
@@ -595,8 +595,9 @@ def create_credit_card_charge(expense_group, task_log_id, last_export):
     except Exception as e:
         logger.error('Error while updating expenses for expense_group_id: %s and posting accounting export summary %s', expense_group.id, e)
 
-    credit_card_charge_lineitems_object.netsuite_receipt_url = attachment_links.get(credit_card_charge_lineitems_object.expense.expense_id, None)
-    credit_card_charge_lineitems_object.save()
+    for credit_card_charge_lineitems_object in credit_card_charge_lineitems_objects:
+        credit_card_charge_lineitems_object.netsuite_receipt_url = attachment_links.get(credit_card_charge_lineitems_object.expense.expense_id, None)
+        credit_card_charge_lineitems_object.save()
 
 
 @handle_netsuite_exceptions(payment=False)
