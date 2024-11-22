@@ -304,12 +304,14 @@ def test_contruct_credit_card_charge_with_tax_balancing(create_credit_card_charg
     general_mapping = GeneralMapping.objects.get(workspace_id=49)
 
     # without tax balancing
-    credit_card_charge, credit_card_charge_lineitem = create_credit_card_charge
-    credit_card_charge_lineitem.amount = 100
-    credit_card_charge_lineitem.tax_amount = 3
-    credit_card_charge_lineitem.tax_item_id = '103578'
+    credit_card_charge, credit_card_charge_lineitems = create_credit_card_charge
 
-    credit_card_charge_object = netsuite_connection._NetSuiteConnector__construct_credit_card_charge(credit_card_charge, credit_card_charge_lineitem, general_mapping, [])
+    item = credit_card_charge_lineitems[0]
+    item.amount = 100
+    item.tax_amount = 3
+    item.tax_item_id = '103578'
+
+    credit_card_charge_object = netsuite_connection._NetSuiteConnector__construct_credit_card_charge(credit_card_charge, credit_card_charge_lineitems, general_mapping, [])
     
     assert len(credit_card_charge_object['expenses']) == 1
     assert credit_card_charge_object['expenses'][0]['amount'] == 97
@@ -319,7 +321,7 @@ def test_contruct_credit_card_charge_with_tax_balancing(create_credit_card_charg
     general_mapping.is_tax_balancing_enabled = True
     general_mapping.save()
 
-    credit_card_charge_object = netsuite_connection._NetSuiteConnector__construct_credit_card_charge(credit_card_charge, credit_card_charge_lineitem, general_mapping, [])
+    credit_card_charge_object = netsuite_connection._NetSuiteConnector__construct_credit_card_charge(credit_card_charge, credit_card_charge_lineitems, general_mapping, [])
 
     assert len(credit_card_charge_object['expenses']) == 2
     assert credit_card_charge_object['expenses'][0]['amount'] == 60
@@ -328,11 +330,11 @@ def test_contruct_credit_card_charge_with_tax_balancing(create_credit_card_charg
     assert credit_card_charge_object['expenses'][1]['taxCode']['internalId'] == general_mapping.default_tax_code_id
 
     # with tax balancing enabled and right tax amount
-    credit_card_charge_lineitem.amount = 100
-    credit_card_charge_lineitem.tax_amount = 4.76
-    credit_card_charge_lineitem.tax_item_id = '103578'
+    item.amount = 100
+    item.tax_amount = 4.76
+    item.tax_item_id = '103578'
 
-    credit_card_charge_object = netsuite_connection._NetSuiteConnector__construct_credit_card_charge(credit_card_charge, credit_card_charge_lineitem, general_mapping, [])
+    credit_card_charge_object = netsuite_connection._NetSuiteConnector__construct_credit_card_charge(credit_card_charge, credit_card_charge_lineitems, general_mapping, [])
 
     assert len(credit_card_charge_object['expenses']) == 1
     assert credit_card_charge_object['expenses'][0]['amount'] == 95.24
