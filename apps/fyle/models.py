@@ -107,6 +107,7 @@ class Expense(models.Model):
     spent_at = models.DateTimeField(null=True, help_text='Expense spent at')
     approved_at = models.DateTimeField(null=True, help_text='Expense approved at')
     posted_at = models.DateTimeField(null=True, help_text='Date when the money is taken from the bank')
+    is_posted_at_null = models.BooleanField(default=False, help_text='Flag check if posted at is null or not')
     expense_created_at = models.DateTimeField(help_text='Expense created at')
     expense_updated_at = models.DateTimeField(help_text='Expense created at')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
@@ -175,6 +176,7 @@ class Expense(models.Model):
                 'file_ids': expense['file_ids'],
                 'spent_at': expense['spent_at'],
                 'posted_at': expense['posted_at'],
+                'is_posted_at_null': expense['is_posted_at_null'],
                 'fund_source': SOURCE_ACCOUNT_MAP[expense['source_account_type']],
                 'verified_at': expense['verified_at'],
                 'custom_properties': expense['custom_properties'],

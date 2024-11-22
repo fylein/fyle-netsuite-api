@@ -2,6 +2,33 @@ from collections import OrderedDict
 from datetime import datetime, timezone
 
 data = {
+    'tax_list_detail' : {
+        'taxDetails': [
+            {
+                'taxType': {
+                    'internalId': 'tax_type_1'
+                }, 
+                'taxCode': {
+                    'internalId': 'tax_code_1'
+                }, 
+                'taxRate': 'tax_type_1', 
+                'taxBasis': 90.0, 
+                'taxAmount': 10.0, 
+                'taxDetailsReference': 'EXP001'
+            }, 
+            {
+                'taxType': {
+                    'internalId': 'tax_type_1'
+                }, 
+                'taxCode': {
+                    'internalId': 'tax_code_1'
+                }, 
+                'taxRate': 'tax_type_1', 'taxBasis': 180.0, 
+                'taxAmount': 20.0, 
+                'taxDetailsReference': 'EXP002'
+            }
+        ]
+    },
     'expense':[{
     "id": 1,
     "employee_email": "ashwin.t@fyle.in",
@@ -964,7 +991,12 @@ data = {
                 'taxAccount': None,
                 'taxBasis': None,
                 'tax1Amt': None,
-                'taxCode': None,
+                'taxCode': {
+                    'externalId': None,
+                    'internalId': None,
+                    'name': None,
+                    'type': 'taxGroup'
+                },
                 'taxRate1': None,
                 'totalAmount': None,
             }, {
@@ -1170,17 +1202,19 @@ data = {
                 'location': {'internalId': None},
                 'customer': {'internalId': None},
                 'customFieldList': [{'scriptId': 'custcolfyle_expense_url',
+                                     'type': 'String',
                                      'value': 'None/app/admin/#/enterprise/view_expense/txcKVVELn1Vl?org_id=orHe8CpW2hyN'
                                      },{'scriptId': 'custcolfyle_expense_url_2',
+                                        'type': 'String',
                                      'value': 'None/app/admin/#/enterprise/view_expense/txcKVVELn1Vl?org_id=orHe8CpW2hyN'
                                      }],
                 'isBillable': False,
                 'taxAmount': None,
                 'taxCode': {
-                    'name': None,
-                    'internalId': None,
                     'externalId': None,
-                    'type': 'taxGroup',
+                    'internalId': None,
+                    'name': None,
+                    'type': 'taxGroup'
                 },
             }],
             'externalId': 'cc-charge 48 - admin1@fyleforintacct.in',
