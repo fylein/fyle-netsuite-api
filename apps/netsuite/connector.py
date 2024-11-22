@@ -1158,15 +1158,35 @@ class NetSuiteConnector:
 
         return []
 
-    def get_accounting_fields(self, resource_type: str):
-        method = getattr(self.connection, resource_type)
-        generator = method.get_all_generator()
-        fields = []
-        for resources in generator:
-            for resource in resources:
-                fields.append(resource)
+    def get_accounting_fields(self, resource_type: str, internal_id: str):
+        """
+        Retrieve accounting fields for a specific resource type and internal ID.
 
-        return json.loads(json.dumps(fields, default=str).replace('\\n', ''))
+        Args:
+            resource_type (str): The type of resource to fetch.
+            internal_id (str): The internal ID of the resource.
+
+        Returns:
+            list or dict: Parsed JSON representation of the resource data.
+        """
+        module = getattr(self.connection, resource_type)
+        method_map = {
+            'currencies': 'get_all',
+            'custom_segments': 'get',
+            'custom_lists': 'get',
+            'custom_record_types': 'get_all_by_id',
+        }
+        method = method_map.get(resource_type, 'get_all_generator')
+
+        if method in ('get', 'get_all_by_id'):
+            response = getattr(module, method)(internal_id)
+        else:
+            response = getattr(module, method)()
+
+        if method == 'get_all_generator':
+            response = [row for responses in response for row in responses]
+
+        return json.loads(json.dumps(response, default=str))
 
     def construct_bill_lineitems(
             self,
