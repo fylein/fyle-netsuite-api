@@ -36,3 +36,26 @@ def test_netsutie_fields_view(db, api_client, mocker):
 
     response = api_client.get(url, {'org_id': 'or79Cob97KSh', 'resource_type': 'employees'})
     assert response.status_code == 200
+
+
+@pytest.mark.django_db(databases=['default'])
+@patch.object(IsAuthenticatedForInternalAPI, 'has_permission', return_value=True)
+def test_exported_entry_view(db, api_client, mocker):
+    url = reverse('exported-entry')
+
+    response = api_client.get(url)
+    assert response.status_code == 400
+
+    response = api_client.get(url, {'org_id': 'or79Cob97KSh'})
+    assert response.status_code == 400
+
+    response = api_client.get(url, {'org_id': 'or79Cob97KSh', 'resource_type': 'vendor_bills'})
+    assert response.status_code == 400
+
+    mocker.patch(
+        'netsuitesdk.api.vendor_bills.VendorBills.get',
+        return_value={'summa': 'hehe'}
+    )
+
+    response = api_client.get(url, {'org_id': 'or79Cob97KSh', 'resource_type': 'vendor_bills', 'internal_id': '1'})
+    assert response.status_code == 200
