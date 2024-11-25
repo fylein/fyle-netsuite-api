@@ -619,6 +619,7 @@ data = {
                 'Vehicle Type': '',
                 'Fyle Categories': '',
             },
+            'bank_transaction_id': 'btxnqmATEEBkJ4',
             'is_posted_at_null': True
         },
         {
@@ -661,6 +662,7 @@ data = {
                 'Vehicle Type': '',
                 'Fyle Categories': '',
             },
+            'bank_transaction_id': 'btxnqmATEEBkJ4',
             'is_posted_at_null': True
         },
     ],
@@ -703,6 +705,7 @@ data = {
             'tax_group_id': None,
             'vendor': 'Dominos Pizza',
             'verified_at': None,
+            'is_posted_at_null': True
         },
         {
             'amount': 2,
@@ -742,6 +745,7 @@ data = {
             'tax_group_id': None,
             'vendor': 'Dominos Pizza',
             'verified_at': None,
+            'is_posted_at_null': True
         },
         {
             'amount': 3,
@@ -781,6 +785,7 @@ data = {
             'tax_group_id': None,
             'vendor': 'Dominos Pizza',
             'verified_at': None,
+            'is_posted_at_null': True
         },
         {
             'amount': 4,
@@ -820,6 +825,7 @@ data = {
             'tax_group_id': None,
             'vendor': 'Dominos Pizza',
             'verified_at': None,
+            'is_posted_at_null': True
         },
     ],
     "expenses": [
