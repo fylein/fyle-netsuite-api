@@ -561,10 +561,11 @@ def create_credit_card_charge(expense_group, task_log_id, last_export):
         if expense.amount < 0:
             refund = True
 
-        attachment_link = load_attachments(netsuite_connection, expense, expense_group, credit_card_charge_object)
+        for expense in expense_group.expenses.all():
+            attachment_link = load_attachments(netsuite_connection, expense, expense_group, credit_card_charge_object)
 
-        if attachment_link:
-            attachment_links[expense.expense_id] = attachment_link
+            if attachment_link:
+                attachment_links[expense.expense_id] = attachment_link
 
         created_credit_card_charge = netsuite_connection.post_credit_card_charge(
             credit_card_charge_object, credit_card_charge_lineitems_objects, general_mappings, attachment_links, refund
