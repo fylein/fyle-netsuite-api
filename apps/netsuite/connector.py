@@ -1696,8 +1696,9 @@ class NetSuiteConnector:
             for credit_card_charge_lineitem in credit_card_charge_lineitems:    
                 credit_card_charge_lineitem.amount = abs(credit_card_charge_lineitem.amount)
                 credit_card_charge_lineitem.save()
-                url = f"https://{account.lower()}.restlets.api.netsuite.com/app/site/hosting/restlet.nl?" \
-                    f"script=customscript_cc_refund_fyle&deploy=customdeploy_cc_refund_fyle"
+
+            url = f"https://{account.lower()}.restlets.api.netsuite.com/app/site/hosting/restlet.nl?" \
+                f"script=customscript_cc_refund_fyle&deploy=customdeploy_cc_refund_fyle"
 
         credit_card_charges_payload = self.__construct_credit_card_charge(
             credit_card_charge, credit_card_charge_lineitems, general_mapping, attachment_links)
