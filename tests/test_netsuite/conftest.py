@@ -269,7 +269,7 @@ def create_credit_card_charge(db, add_netsuite_credentials, add_fyle_credentials
     configuration = Configuration.objects.get(workspace_id=1)
     credit_card_charge_object = CreditCardCharge.create_credit_card_charge(expense_group)
 
-    credit_card_charge_lineitems_object = CreditCardChargeLineItem.create_credit_card_charge_lineitem(
+    credit_card_charge_lineitems_object = CreditCardChargeLineItem.create_credit_card_charge_lineitems(
         expense_group, configuration
     )
 

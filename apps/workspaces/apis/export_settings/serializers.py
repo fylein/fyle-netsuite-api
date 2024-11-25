@@ -85,6 +85,7 @@ class ExpenseGroupSettingsSerializer(serializers.ModelSerializer):
     corporate_credit_card_expense_group_fields = serializers.ListField(allow_null=True, required=False)
     ccc_export_date_type = serializers.CharField(allow_null=True, allow_blank=True, required=False) 
     ccc_expense_state = serializers.CharField(allow_null=True, allow_blank=True, required=False)
+    split_expense_grouping = serializers.CharField(allow_null=False, allow_blank=False, required=True)
 
     class Meta:
         model = ExpenseGroupSettings
@@ -94,7 +95,8 @@ class ExpenseGroupSettingsSerializer(serializers.ModelSerializer):
             'expense_state',
             'corporate_credit_card_expense_group_fields',
             'ccc_export_date_type',
-            'ccc_expense_state'
+            'ccc_expense_state',
+            'split_expense_grouping'
         ]
 
 
