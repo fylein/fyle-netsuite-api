@@ -1,3 +1,6 @@
+import datetime
+
+
 data = {
     "raw_expense": {
         'accounting_export_summary': {
@@ -243,6 +246,7 @@ data = {
     "expenses_spent_at":[
         {
             'id': '1234',
+            'bank_transaction_id': 'btxnqmATEEBkJ4',
             'employee_email': 'jhonsnow@fyle.in',
             'category': 'Accounts Payable',
             'sub_category': 'Accounts Payable',
@@ -280,9 +284,11 @@ data = {
                 'Vehicle Type': '',
                 'Fyle Categories': '',
             },
+            "is_posted_at_null": True
         },
         {
             'id': '1235',
+            'bank_transaction_id': 'btxnqmATEEBkJ4',
             'employee_email': 'jhonsnow@fyle.in',
             'category': 'Accounts Payable',
             'sub_category': 'Accounts Payable',
@@ -320,9 +326,11 @@ data = {
                 'Vehicle Type': '',
                 'Fyle Categories': '',
             },
+            "is_posted_at_null": True
         },
         {
             'id': '1236',
+            'bank_transaction_id': 'btxnqmATEEBkJ4',
             'employee_email': 'jhonsnow@fyle.in',
             'category': 'Accounts Payable',
             'sub_category': 'Accounts Payable',
@@ -360,6 +368,7 @@ data = {
                 'Vehicle Type': '',
                 'Fyle Categories': '',
             },
+            "is_posted_at_null": True
         },
     ],
     "skipped_expenses":{
@@ -379,14 +388,16 @@ data = {
                 'amount': 101.0,
                 'report_id': 'dummy_report_id',
                 'settlement_id': 'dummy_settlement_id',
-                'expense_id': 'dummy_expense_id'
+                'expense_id': 'dummy_expense_id',
+                "is_posted_at_null": True
             },
             {
                 'updated_at': '2021-12-03T11:26:58.702209Z',
                 'claim_number': '    C/2021/12/R/199',
                 'employee_email': 'jhonsnow@fyle.in',
                 'employee_name': None,
-                'fund_source': 'CCC'
+                'fund_source': 'CCC',
+                "is_posted_at_null": True
             }
         ]
     },
@@ -608,6 +619,8 @@ data = {
                 'Vehicle Type': '',
                 'Fyle Categories': '',
             },
+            'bank_transaction_id': 'btxnqmATEEBkJ4',
+            'is_posted_at_null': True
         },
         {
             'id': 'tx6wOnBVaumklol',
@@ -649,6 +662,170 @@ data = {
                 'Vehicle Type': '',
                 'Fyle Categories': '',
             },
+            'bank_transaction_id': 'btxnqmATEEBkJ4',
+            'is_posted_at_null': True
+        },
+    ],
+    "ccc_split_expenses": [
+        {
+            'amount': 1,
+            'approved_at': datetime.datetime(2024, 11, 18, 11, 53, 1, 659759),
+            'bank_transaction_id': 'btxnqmATEEBkJ4',
+            'billable': None,
+            'category': 'Food',
+            'claim_number': 'C/2024/11/R/64',
+            'corporate_card_id': 'baccHSRxUbjMHP',
+            'cost_center': None,
+            'currency': 'USD',
+            'custom_properties': {'Custom Expense Field': None},
+            'employee_email': 'admin1@fylefordemocctransactions.org',
+            'employee_name': 'Theresa Brown',
+            'expense_created_at': '2024-11-18T11:41:10.776706+00:00',
+            'expense_number': 'E/2024/11/T/522',
+            'expense_updated_at': '2024-11-18T11:53:26.212150+00:00',
+            'file_ids': [],
+            'foreign_amount': None,
+            'foreign_currency': None,
+            'id': 'tx182ajKkiZ5',
+            'org_id': 'orT192eaSf2q',
+            'payment_number': 'P/2024/11/T/P/2024/11/R/44',
+            'posted_at': None,
+            'project': 'Project 9',
+            'project_id': 336200,
+            'purpose': None,
+            'reimbursable': False,
+            'report_id': 'rpQE6alQtnM1',
+            'report_title': '4 same: multiple line items',
+            'settled_at': None,
+            'source_account_type': 'PERSONAL_CORPORATE_CREDIT_CARD_ACCOUNT',
+            'spent_at': datetime.datetime(2024, 11, 15, 0, 0),
+            'state': 'APPROVED',
+            'sub_category': None,
+            'tax_amount': None,
+            'tax_group_id': None,
+            'vendor': 'Dominos Pizza',
+            'verified_at': None,
+            'is_posted_at_null': True
+        },
+        {
+            'amount': 2,
+            'approved_at': datetime.datetime(2024, 11, 18, 11, 53, 1, 659759),
+            'bank_transaction_id': 'btxnqmATEEBkJ4',
+            'billable': None,
+            'category': 'Food',
+            'claim_number': 'C/2024/11/R/64',
+            'corporate_card_id': 'baccHSRxUbjMHP',
+            'cost_center': None,
+            'currency': 'USD',
+            'custom_properties': {'Custom Expense Field': None},
+            'employee_email': 'admin1@fylefordemocctransactions.org',
+            'employee_name': 'Theresa Brown',
+            'expense_created_at': '2024-11-18T11:41:10.776706+00:00',
+            'expense_number': 'E/2024/11/T/522',
+            'expense_updated_at': '2024-11-18T11:53:26.212150+00:00',
+            'file_ids': [],
+            'foreign_amount': None,
+            'foreign_currency': None,
+            'id': 'txjb4Y0nTcEV',
+            'org_id': 'orT192eaSf2q',
+            'payment_number': 'P/2024/11/T/P/2024/11/R/44',
+            'posted_at': None,
+            'project': 'Project 9',
+            'project_id': 336200,
+            'purpose': None,
+            'reimbursable': False,
+            'report_id': 'rpQE6alQtnM1',
+            'report_title': '4 same: multiple line items',
+            'settled_at': None,
+            'source_account_type': 'PERSONAL_CORPORATE_CREDIT_CARD_ACCOUNT',
+            'spent_at': datetime.datetime(2024, 11, 15, 0, 0),
+            'state': 'APPROVED',
+            'sub_category': None,
+            'tax_amount': None,
+            'tax_group_id': None,
+            'vendor': 'Dominos Pizza',
+            'verified_at': None,
+            'is_posted_at_null': True
+        },
+        {
+            'amount': 3,
+            'approved_at': datetime.datetime(2024, 11, 18, 11, 53, 1, 659759),
+            'bank_transaction_id': 'btxnqmATEEBkJ4',
+            'billable': None,
+            'category': 'Food',
+            'claim_number': 'C/2024/11/R/64',
+            'corporate_card_id': 'baccHSRxUbjMHP',
+            'cost_center': None,
+            'currency': 'USD',
+            'custom_properties': {'Custom Expense Field': None},
+            'employee_email': 'admin1@fylefordemocctransactions.org',
+            'employee_name': 'Theresa Brown',
+            'expense_created_at': '2024-11-18T11:41:10.776706+00:00',
+            'expense_number': 'E/2024/11/T/522',
+            'expense_updated_at': '2024-11-18T11:53:26.212150+00:00',
+            'file_ids': [],
+            'foreign_amount': None,
+            'foreign_currency': None,
+            'id': 'txjkbAv4SC2w',
+            'org_id': 'orT192eaSf2q',
+            'payment_number': 'P/2024/11/T/P/2024/11/R/44',
+            'posted_at': None,
+            'project': 'Project 9',
+            'project_id': 336200,
+            'purpose': None,
+            'reimbursable': False,
+            'report_id': 'rpQE6alQtnM1',
+            'report_title': '4 same: multiple line items',
+            'settled_at': None,
+            'source_account_type': 'PERSONAL_CORPORATE_CREDIT_CARD_ACCOUNT',
+            'spent_at': datetime.datetime(2024, 11, 15, 0, 0),
+            'state': 'APPROVED',
+            'sub_category': None,
+            'tax_amount': None,
+            'tax_group_id': None,
+            'vendor': 'Dominos Pizza',
+            'verified_at': None,
+            'is_posted_at_null': True
+        },
+        {
+            'amount': 4,
+            'approved_at': datetime.datetime(2024, 11, 18, 11, 53, 1, 659759),
+            'bank_transaction_id': 'btxnqmATEEBkJ4',
+            'billable': None,
+            'category': 'Food',
+            'claim_number': 'C/2024/11/R/64',
+            'corporate_card_id': 'baccHSRxUbjMHP',
+            'cost_center': None,
+            'currency': 'USD',
+            'custom_properties': {'Custom Expense Field': None},
+            'employee_email': 'admin1@fylefordemocctransactions.org',
+            'employee_name': 'Theresa Brown',
+            'expense_created_at': '2024-11-18T11:41:10.776706+00:00',
+            'expense_number': 'E/2024/11/T/522',
+            'expense_updated_at': '2024-11-18T11:53:26.212150+00:00',
+            'file_ids': [],
+            'foreign_amount': None,
+            'foreign_currency': None,
+            'id': 'txrFFC6McUw0',
+            'org_id': 'orT192eaSf2q',
+            'payment_number': 'P/2024/11/T/P/2024/11/R/44',
+            'posted_at': None,
+            'project': 'Project 9',
+            'project_id': 336200,
+            'purpose': None,
+            'reimbursable': False,
+            'report_id': 'rpQE6alQtnM1',
+            'report_title': '4 same: multiple line items',
+            'settled_at': None,
+            'source_account_type': 'PERSONAL_CORPORATE_CREDIT_CARD_ACCOUNT',
+            'spent_at': datetime.datetime(2024, 11, 15, 0, 0),
+            'state': 'APPROVED',
+            'sub_category': None,
+            'tax_amount': None,
+            'tax_group_id': None,
+            'vendor': 'Dominos Pizza',
+            'verified_at': None,
+            'is_posted_at_null': True
         },
     ],
     "expenses": [
@@ -692,6 +869,8 @@ data = {
                 'Vehicle Type': '',
                 'Fyle Categories': '',
             },
+            'bank_transaction_id': 'btxnqmATEEBkJ4',
+            "is_posted_at_null": True
         },
         {
             'id': 'tx6wOnBVaumk',
@@ -733,6 +912,8 @@ data = {
                 'Vehicle Type': '',
                 'Fyle Categories': '',
             },
+            'bank_transaction_id': 'btxnqmATEEBkJ4',
+            "is_posted_at_null": False
         },
     ],
     "expense_group_expenses": [
@@ -807,7 +988,8 @@ data = {
                     "amount": 6377.0,
                     "report_id": "rp0kaXoqkJle",
                     "settlement_id": "setPzkM7eyQFd",
-                    "expense_id": "txyZ1zJDQfiK"
+                    "expense_id": "txyZ1zJDQfiK",
+                    "is_posted_at_null": True
                 }],
     },
     "expense_group_setting_response": {
@@ -831,7 +1013,8 @@ data = {
         "import_card_credits": "False",
         "created_at": "2021-11-15T08:46:16.069944Z",
         "updated_at": "2021-11-15T08:46:16.069986Z",
-        "workspace": 1
+        "workspace": 1,
+        "split_expense_grouping": "MULTIPLE_LINE_ITEM",
     },
     "fyle_orgs": [
         {
@@ -935,7 +1118,8 @@ data = {
         'expense_state': 'PAYMENT_PROCESSING',
         'reimbursable_export_date_type': 'spent_at',
         'ccc_export_date_type': 'spent_at',
-        'ccc_expense_state': 'PAID'
+        'ccc_expense_state': 'PAID',
+        'split_expense_grouping': 'MULTIPLE_LINE_ITEM',
     },
     'get_my_profile': {
         'data': {

@@ -1162,7 +1162,42 @@ class NetSuiteConnector:
                 attributes, 'PROJECT', self.workspace_id, True)
 
         return []
-    
+
+    def get_accounting_fields(self, resource_type: str, internal_id: str):
+        """
+        Retrieve accounting fields for a specific resource type and internal ID.
+
+        Args:
+            resource_type (str): The type of resource to fetch.
+            internal_id (str): The internal ID of the resource.
+
+        Returns:
+            list or dict: Parsed JSON representation of the resource data.
+        """
+        module = getattr(self.connection, resource_type)
+        method_map = {
+            'currencies': 'get_all',
+            'custom_segments': 'get',
+            'custom_lists': 'get',
+            'custom_record_types': 'get_all_by_id',
+        }
+        method = method_map.get(resource_type, 'get_all_generator')
+
+        if method in ('get', 'get_all_by_id'):
+            response = getattr(module, method)(internal_id)
+        else:
+            response = getattr(module, method)()
+
+        if method == 'get_all_generator':
+            response = [row for responses in response for row in responses]
+
+        return json.loads(json.dumps(response, default=str))
+
+    def get_exported_entry(self, resource_type: str, export_id: str):
+        module = getattr(self.connection, resource_type)
+        response = getattr(module, 'get')(export_id)
+        return json.loads(json.dumps(response, default=str))
+
     def handle_taxed_line_items(self, base_line, line, workspace_id, export_module, general_mapping: GeneralMapping):
         """
         Handle line items where tax is applied or modified by the user.
@@ -1581,51 +1616,50 @@ class NetSuiteConnector:
         return bill
 
     def construct_credit_card_charge_lineitems(
-            self, credit_card_charge_lineitem: CreditCardChargeLineItem, general_mapping: GeneralMapping,
+            self, credit_card_charge_lineitems: List[CreditCardChargeLineItem], general_mapping: GeneralMapping,
             attachment_links: Dict, cluster_domain: str, org_id: str) -> List[Dict]:
         """
         Create credit_card_charge line items
         :return: constructed line items
         """
-        line = credit_card_charge_lineitem
-
         lines = []
 
-        expense = Expense.objects.get(pk=line.expense_id)
+        for line in credit_card_charge_lineitems:
+            expense = Expense.objects.get(pk=line.expense_id)
 
-        netsuite_custom_segments = self.prepare_custom_segments(line.netsuite_custom_segments, attachment_links, expense, org_id)
+            netsuite_custom_segments = self.prepare_custom_segments(line.netsuite_custom_segments, attachment_links, expense, org_id)
 
-        base_line = {
-            'account': {'internalId': line.account_id},
-            'amount': line.amount,
-            'memo': line.memo,
-            'grossAmt': line.amount,
-            'department': {'internalId': line.department_id},
-            'class': {'internalId': line.class_id},
-            'location': {'internalId': line.location_id},
-            'customer': {'internalId': line.customer_id},
-            'customFieldList': netsuite_custom_segments,
-            'isBillable': line.billable,
-            'taxAmount': None,
-            'taxCode': {
-                'externalId': None,
-                'internalId': None,
-                'name': None,
-                'type': 'taxGroup'
-            },
-        }
+            base_line = {
+                'account': {'internalId': line.account_id},
+                'amount': line.amount,
+                'memo': line.memo,
+                'grossAmt': line.amount,
+                'department': {'internalId': line.department_id},
+                'class': {'internalId': line.class_id},
+                'location': {'internalId': line.location_id},
+                'customer': {'internalId': line.customer_id},
+                'customFieldList': netsuite_custom_segments,
+                'isBillable': line.billable,
+                'taxAmount': None,
+                'taxCode': {
+                    'externalId': None,
+                    'internalId': None,
+                    'name': None,
+                    'type': 'taxGroup'
+                },
+            }
 
-        # Handle cases where no tax is applied first
-        if line.tax_item_id is None or line.tax_amount is None:
-            lines.append(base_line)
-        else:
-            lines += self.handle_taxed_line_items(base_line, line, expense.workspace_id, 'CREDIT_CARD_CHARGE', general_mapping)
+            # Handle cases where no tax is applied first
+            if line.tax_item_id is None or line.tax_amount is None:
+                lines.append(base_line)
+            else:
+                lines += self.handle_taxed_line_items(base_line, line, expense.workspace_id, 'CREDIT_CARD_CHARGE', general_mapping)
 
         return lines
 
     def __construct_credit_card_charge(
             self, credit_card_charge: CreditCardCharge,
-            credit_card_charge_lineitem: CreditCardChargeLineItem, general_mapping: GeneralMapping, attachment_links: Dict) -> Dict:
+            credit_card_charge_lineitems: List[CreditCardChargeLineItem], general_mapping: GeneralMapping, attachment_links: Dict) -> Dict:
         """
         Create a credit_card_charge
         :return: constructed credit_card_charge
@@ -1664,7 +1698,7 @@ class NetSuiteConnector:
             'memo': credit_card_charge.memo,
             'tranid': credit_card_charge.reference_number,
             'expenses': self.construct_credit_card_charge_lineitems(
-                credit_card_charge_lineitem, general_mapping, attachment_links, cluster_domain, org_id
+                credit_card_charge_lineitems, general_mapping, attachment_links, cluster_domain, org_id
             ),
             'externalId': credit_card_charge.external_id
         }
@@ -1672,7 +1706,7 @@ class NetSuiteConnector:
         return credit_card_charge_payload
 
     def post_credit_card_charge(self, credit_card_charge: CreditCardCharge,
-                                credit_card_charge_lineitem: CreditCardChargeLineItem, general_mapping: GeneralMapping, attachment_links: Dict,
+                                credit_card_charge_lineitems: List[CreditCardChargeLineItem], general_mapping: GeneralMapping, attachment_links: Dict,
                                 refund: bool):
         """
         Post vendor credit_card_charges to NetSuite
@@ -1694,12 +1728,15 @@ class NetSuiteConnector:
             f"script=customscript_cc_charge_fyle&deploy=customdeploy_cc_charge_fyle"
 
         if refund:
-            credit_card_charge_lineitem.amount = abs(credit_card_charge_lineitem.amount)
+            for credit_card_charge_lineitem in credit_card_charge_lineitems:    
+                credit_card_charge_lineitem.amount = abs(credit_card_charge_lineitem.amount)
+                credit_card_charge_lineitem.save()
+
             url = f"https://{account.lower()}.restlets.api.netsuite.com/app/site/hosting/restlet.nl?" \
-                  f"script=customscript_cc_refund_fyle&deploy=customdeploy_cc_refund_fyle"
+                f"script=customscript_cc_refund_fyle&deploy=customdeploy_cc_refund_fyle"
 
         credit_card_charges_payload = self.__construct_credit_card_charge(
-            credit_card_charge, credit_card_charge_lineitem, general_mapping, attachment_links)
+            credit_card_charge, credit_card_charge_lineitems, general_mapping, attachment_links)
 
         logger.info("| Payload for Credit Card Charge creation | Content: {{WORKSPACE_ID: {} EXPENSE_GROUP_ID: {} CREDIT_CARD_CHARGE_PAYLOAD: {}}}".format(self.workspace_id, credit_card_charge.expense_group.id, credit_card_charges_payload))        
 

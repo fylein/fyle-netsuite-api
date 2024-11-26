@@ -686,103 +686,103 @@ class CreditCardChargeLineItem(models.Model):
         db_table = 'credit_card_charge_lineitems'
 
     @staticmethod
-    def create_credit_card_charge_lineitem(expense_group: ExpenseGroup, configuration: Configuration):
+    def create_credit_card_charge_lineitems(expense_group: ExpenseGroup, configuration: Configuration):
         """
         Create credit card charge lineitems
         :param expense_group: expense group
         :param configuration: Workspace Configuration Settings
         :return: credit card charge lineitems objects
         """
-        lineitem = expense_group.expenses.first()
         credit_card_charge = CreditCardCharge.objects.get(expense_group=expense_group)
         general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
         credit_card_charge_lineitem_objects = []
+        for lineitem in expense_group.expenses.all():
 
-        category = lineitem.category if (lineitem.category == lineitem.sub_category or lineitem.sub_category == None) else '{0} / {1}'.format(
-            lineitem.category, lineitem.sub_category)
+            category = lineitem.category if (lineitem.category == lineitem.sub_category or lineitem.sub_category == None) else '{0} / {1}'.format(
+                lineitem.category, lineitem.sub_category)
 
-        account = CategoryMapping.objects.filter(
-            source_category__value=category,
-            workspace_id=expense_group.workspace_id
-        ).first()
-
-        class_id = None
-        if expense_group.fund_source == 'CCC' and general_mappings.use_employee_class:
-            employee_mapping = EmployeeMapping.objects.filter(
-                source_employee__value=expense_group.description.get('employee_email'),
+            account = CategoryMapping.objects.filter(
+                source_category__value=category,
                 workspace_id=expense_group.workspace_id
             ).first()
-            if employee_mapping and employee_mapping.destination_employee:
-                class_id = employee_mapping.destination_employee.detail.get('class_id')
-        
-        if not class_id:
-            class_id = get_class_id_or_none(expense_group, lineitem)
 
-        department_id = get_department_id_or_none(expense_group, lineitem)
-
-        if expense_group.fund_source == 'CCC' and general_mappings.use_employee_department and \
-            general_mappings.department_level in ('ALL', 'TRANSACTION_LINE'):
-            employee_mapping = EmployeeMapping.objects.filter(
-                source_employee__value=expense_group.description.get('employee_email'),
-                workspace_id=expense_group.workspace_id
-            ).first()
-            if employee_mapping and employee_mapping.destination_employee:
-                if employee_mapping.destination_employee.detail.get('department_id'):
-                    department_id = employee_mapping.destination_employee.detail.get('department_id')
-
-        if not department_id:
-            if general_mappings.department_id and general_mappings.department_level in ['TRANSACTION_LINE', 'ALL']:
-                department_id = general_mappings.department_id
-
-        location_id = get_location_id_or_none(expense_group, lineitem)
-
-        if expense_group.fund_source == 'CCC' and general_mappings.use_employee_location and\
-                    general_mappings.location_level in ('ALL', 'TRANSACTION_LINE'):
+            class_id = None
+            if expense_group.fund_source == 'CCC' and general_mappings.use_employee_class:
                 employee_mapping = EmployeeMapping.objects.filter(
                     source_employee__value=expense_group.description.get('employee_email'),
                     workspace_id=expense_group.workspace_id
                 ).first()
                 if employee_mapping and employee_mapping.destination_employee:
-                    location_id = employee_mapping.destination_employee.detail.get('location_id')
+                    class_id = employee_mapping.destination_employee.detail.get('class_id')
+            
+            if not class_id:
+                class_id = get_class_id_or_none(expense_group, lineitem)
 
-        if not location_id:
-            if general_mappings.location_id and general_mappings.location_level in ['TRANSACTION_LINE', 'ALL']:
-                location_id = general_mappings.location_id
+            department_id = get_department_id_or_none(expense_group, lineitem)
 
-        custom_segments = get_custom_segments(expense_group, lineitem)
+            if expense_group.fund_source == 'CCC' and general_mappings.use_employee_department and \
+                general_mappings.department_level in ('ALL', 'TRANSACTION_LINE'):
+                employee_mapping = EmployeeMapping.objects.filter(
+                    source_employee__value=expense_group.description.get('employee_email'),
+                    workspace_id=expense_group.workspace_id
+                ).first()
+                if employee_mapping and employee_mapping.destination_employee:
+                    if employee_mapping.destination_employee.detail.get('department_id'):
+                        department_id = employee_mapping.destination_employee.detail.get('department_id')
 
-        customer_id = get_customer_id_or_none(expense_group, lineitem)
+            if not department_id:
+                if general_mappings.department_id and general_mappings.department_level in ['TRANSACTION_LINE', 'ALL']:
+                    department_id = general_mappings.department_id
 
-        billable = lineitem.billable
-        if customer_id:
-            if not billable:
+            location_id = get_location_id_or_none(expense_group, lineitem)
+
+            if expense_group.fund_source == 'CCC' and general_mappings.use_employee_location and\
+                        general_mappings.location_level in ('ALL', 'TRANSACTION_LINE'):
+                    employee_mapping = EmployeeMapping.objects.filter(
+                        source_employee__value=expense_group.description.get('employee_email'),
+                        workspace_id=expense_group.workspace_id
+                    ).first()
+                    if employee_mapping and employee_mapping.destination_employee:
+                        location_id = employee_mapping.destination_employee.detail.get('location_id')
+
+            if not location_id:
+                if general_mappings.location_id and general_mappings.location_level in ['TRANSACTION_LINE', 'ALL']:
+                    location_id = general_mappings.location_id
+
+            custom_segments = get_custom_segments(expense_group, lineitem)
+
+            customer_id = get_customer_id_or_none(expense_group, lineitem)
+
+            billable = lineitem.billable
+            if customer_id:
+                if not billable:
+                    billable = False
+            else:
                 billable = False
-        else:
-            billable = False
 
-        credit_card_charge_lineitem_object, _ = CreditCardChargeLineItem.objects.update_or_create(
-            credit_card_charge=credit_card_charge,
-            expense_id=lineitem.id,
-            defaults={
-                'account_id': account.destination_account.destination_id \
-                    if account and account.destination_account else None,
-                'location_id': location_id,
-                'class_id': class_id,
-                'department_id': department_id,
-                'customer_id': customer_id,
-                'amount': lineitem.amount,
-                'tax_item_id': get_tax_item_id_or_none(expense_group, general_mappings,lineitem),
-                'tax_amount': lineitem.tax_amount,
-                'billable': billable,
-                'memo': get_expense_purpose(lineitem, category, configuration),
-                'netsuite_custom_segments': custom_segments
-            }
-        )
+            credit_card_charge_lineitem_object, _ = CreditCardChargeLineItem.objects.update_or_create(
+                credit_card_charge=credit_card_charge,
+                expense_id=lineitem.id,
+                defaults={
+                    'account_id': account.destination_account.destination_id \
+                        if account and account.destination_account else None,
+                    'location_id': location_id,
+                    'class_id': class_id,
+                    'department_id': department_id,
+                    'customer_id': customer_id,
+                    'amount': lineitem.amount,
+                    'tax_item_id': get_tax_item_id_or_none(expense_group, general_mappings,lineitem),
+                    'tax_amount': lineitem.tax_amount,
+                    'billable': billable,
+                    'memo': get_expense_purpose(lineitem, category, configuration),
+                    'netsuite_custom_segments': custom_segments
+                }
+            )
 
-        credit_card_charge_lineitem_objects.append(credit_card_charge_lineitem_object)
+            credit_card_charge_lineitem_objects.append(credit_card_charge_lineitem_object)
 
-        return credit_card_charge_lineitem_object
+        return credit_card_charge_lineitem_objects
 
 
 class ExpenseReport(models.Model):
