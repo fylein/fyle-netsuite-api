@@ -1193,6 +1193,11 @@ class NetSuiteConnector:
 
         return json.loads(json.dumps(response, default=str))
 
+    def get_exported_entry(self, resource_type: str, export_id: str):
+        module = getattr(self.connection, resource_type)
+        response = getattr(module, 'get')(export_id)
+        return json.loads(json.dumps(response, default=str))
+
     def handle_taxed_line_items(self, base_line, line, workspace_id, export_module, general_mapping: GeneralMapping):
         """
         Handle line items where tax is applied or modified by the user.
