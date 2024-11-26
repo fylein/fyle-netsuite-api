@@ -340,11 +340,12 @@ def test_create_credit_card_charge(db):
     expense_group = ExpenseGroup.objects.get(id=4)
     credit_card = CreditCardCharge.create_credit_card_charge(expense_group)
     configuration = Configuration.objects.get(workspace_id=2)
-    credit_card_charge_lineitem = CreditCardChargeLineItem.create_credit_card_charge_lineitem(expense_group, configuration)
+    credit_card_charge_lineitems = CreditCardChargeLineItem.create_credit_card_charge_lineitems(expense_group, configuration)
 
-    assert credit_card_charge_lineitem.amount == 100.00
-    assert credit_card_charge_lineitem.memo == 'ashwin.t@fyle.in - Accounts Payable - 2021-11-16 - C/2021/11/R/1 - '
-    assert credit_card_charge_lineitem.billable == False
+    line = credit_card_charge_lineitems[0]
+    assert line.amount == 100.00
+    assert line.memo == 'ashwin.t@fyle.in - Accounts Payable - 2021-11-16 - C/2021/11/R/1 - '
+    assert line.billable == False
 
     assert credit_card.currency == '1'
     assert credit_card.transaction_date <= datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
@@ -363,11 +364,12 @@ def test_create_credit_card_charge(db):
 
     credit_card = CreditCardCharge.create_credit_card_charge(expense_group)
     configuration = Configuration.objects.get(workspace_id=1)
-    credit_card_charge_lineitem = CreditCardChargeLineItem.create_credit_card_charge_lineitem(expense_group, configuration)
+    credit_card_charge_lineitems = CreditCardChargeLineItem.create_credit_card_charge_lineitems(expense_group, configuration)
 
-    assert credit_card_charge_lineitem.amount == 100.00
-    assert credit_card_charge_lineitem.memo == 'ashwin.t@fyle.in - Accounts Payable - 2021-11-15 - C/2021/11/R/6 - '
-    assert credit_card_charge_lineitem.billable == False
+    line = credit_card_charge_lineitems[0]
+    assert line.amount == 100.00
+    assert line.memo == 'ashwin.t@fyle.in - Accounts Payable - 2021-11-15 - C/2021/11/R/6 - '
+    assert line.billable == False
 
     assert credit_card.currency == '1'
     assert credit_card.transaction_date <= datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
