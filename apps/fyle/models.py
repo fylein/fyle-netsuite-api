@@ -123,6 +123,7 @@ class Expense(models.Model):
     custom_properties = JSONField(null=True)
     is_skipped = models.BooleanField(null=True, default=False, help_text='Expense is skipped or not')
     accounting_export_summary = JSONField(default=dict)
+    masked_corporate_card_number = models.CharField(max_length=255, help_text='Masked Corporate Card Number', null=True)
     previous_export_state = models.CharField(max_length=255, help_text='Previous export state', null=True)
     workspace = models.ForeignKey(
             Workspace, on_delete=models.PROTECT, help_text='To which workspace this expense belongs to', null=True
