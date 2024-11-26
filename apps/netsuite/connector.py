@@ -1162,7 +1162,42 @@ class NetSuiteConnector:
                 attributes, 'PROJECT', self.workspace_id, True)
 
         return []
-    
+
+    def get_accounting_fields(self, resource_type: str, internal_id: str):
+        """
+        Retrieve accounting fields for a specific resource type and internal ID.
+
+        Args:
+            resource_type (str): The type of resource to fetch.
+            internal_id (str): The internal ID of the resource.
+
+        Returns:
+            list or dict: Parsed JSON representation of the resource data.
+        """
+        module = getattr(self.connection, resource_type)
+        method_map = {
+            'currencies': 'get_all',
+            'custom_segments': 'get',
+            'custom_lists': 'get',
+            'custom_record_types': 'get_all_by_id',
+        }
+        method = method_map.get(resource_type, 'get_all_generator')
+
+        if method in ('get', 'get_all_by_id'):
+            response = getattr(module, method)(internal_id)
+        else:
+            response = getattr(module, method)()
+
+        if method == 'get_all_generator':
+            response = [row for responses in response for row in responses]
+
+        return json.loads(json.dumps(response, default=str))
+
+    def get_exported_entry(self, resource_type: str, export_id: str):
+        module = getattr(self.connection, resource_type)
+        response = getattr(module, 'get')(export_id)
+        return json.loads(json.dumps(response, default=str))
+
     def handle_taxed_line_items(self, base_line, line, workspace_id, export_module, general_mapping: GeneralMapping):
         """
         Handle line items where tax is applied or modified by the user.
