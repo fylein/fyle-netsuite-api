@@ -843,11 +843,11 @@ def __validate_tax_group_mapping(expense_group: ExpenseGroup, configuration: Con
 
     for lineitem in expenses:
         if configuration.import_tax_items and lineitem.tax_group_id:
-            tax_group  = ExpenseAttribute.objects.get(
+            tax_group  = ExpenseAttribute.objects.filter(
                 workspace_id=expense_group.workspace_id,
                 attribute_type='TAX_GROUP',
                 source_id=lineitem.tax_group_id
-            )
+            ).order_by('-updated_at').first()
 
             tax_code = Mapping.objects.filter(
                 source_type='TAX_GROUP',
