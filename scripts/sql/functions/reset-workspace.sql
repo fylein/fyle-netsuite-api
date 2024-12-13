@@ -253,6 +253,12 @@ BEGIN
     -- GET DIAGNOSTICS rcount = ROW_COUNT;
     -- RAISE NOTICE 'Deleted % workspaces', rcount;
 
+    DELETE
+    FROM expense_attributes_deletion_cache
+    WHERE workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % expense_attributes_deletion_cache', rcount;
+
     UPDATE workspaces
     SET last_synced_at = null, ns_account_id = ''
     WHERE id = _workspace_id;
