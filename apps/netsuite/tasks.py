@@ -510,10 +510,11 @@ def create_bill(expense_group: ExpenseGroup, task_log_id, last_export):
         logger.error('Error while updating expenses for expense_group_id: %s and posting accounting export summary %s', expense_group.id, e)
 
     logger.info('Updated Expense Group %s successfully', expense_group.id)
-    async_task(
-            'apps.netsuite.tasks.upload_attachments_and_update_export',
-            expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
-        )
+    if configuration.is_attachment_upload_enabled:
+        async_task(
+                'apps.netsuite.tasks.upload_attachments_and_update_export',
+                expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
+            )
         
 
 @handle_netsuite_exceptions(payment=False)
@@ -561,11 +562,12 @@ def create_credit_card_charge(expense_group, task_log_id, last_export):
         if expense.amount < 0:
             refund = True
 
-        for expense in expense_group.expenses.all():
-            attachment_link = load_attachments(netsuite_connection, expense, expense_group, credit_card_charge_object)
+        if configuration.is_attachment_upload_enabled:
+            for expense in expense_group.expenses.all():
+                attachment_link = load_attachments(netsuite_connection, expense, expense_group, credit_card_charge_object)
 
-            if attachment_link:
-                attachment_links[expense.expense_id] = attachment_link
+                if attachment_link:
+                    attachment_links[expense.expense_id] = attachment_link
 
         created_credit_card_charge = netsuite_connection.post_credit_card_charge(
             credit_card_charge_object, credit_card_charge_lineitems_objects, general_mappings, attachment_links, refund
@@ -659,10 +661,11 @@ def create_expense_report(expense_group, task_log_id, last_export):
         logger.error('Error while updating expenses for expense_group_id: %s and posting accounting export summary %s', expense_group.id, e)
 
     worker_logger.info('Updated Expense Group %s successfully', expense_group.id)
-    async_task(
-        'apps.netsuite.tasks.upload_attachments_and_update_export',
-        expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
-    )
+    if configuration.is_attachment_upload_enabled:
+        async_task(
+            'apps.netsuite.tasks.upload_attachments_and_update_export',
+            expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
+        )
 
 
 
@@ -724,10 +727,11 @@ def create_journal_entry(expense_group, task_log_id, last_export):
         logger.error('Error while updating expenses for expense_group_id: %s and posting accounting export summary %s', expense_group.id, e)
 
     worker_logger.info('Updated Expense Group %s successfully', expense_group.id)
-    async_task(
-        'apps.netsuite.tasks.upload_attachments_and_update_export',
-        expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
-    )
+    if configuration.is_attachment_upload_enabled:
+        async_task(
+            'apps.netsuite.tasks.upload_attachments_and_update_export',
+            expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
+        )
         
 
 def __validate_general_mapping(expense_group: ExpenseGroup, configuration: Configuration) -> List[BulkError]:
