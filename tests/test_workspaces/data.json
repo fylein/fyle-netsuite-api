@@ -25,7 +25,8 @@
         "is_simplify_report_closure_enabled": true,
         "name_in_journal_entry": "MERCHANT",
         "allow_intercompany_vendors": false,
-        "je_single_credit_line": false
+        "je_single_credit_line": false,
+        "is_attachment_upload_enabled": true
     },
     "workspace": {
         "id":1,

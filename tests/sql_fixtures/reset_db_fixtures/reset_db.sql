@@ -3,7 +3,7 @@
 --
 
 -- Dumped from database version 15.10 (Debian 15.10-1.pgdg120+1)
--- Dumped by pg_dump version 15.9 (Debian 15.9-1.pgdg120+1)
+-- Dumped by pg_dump version 15.10 (Debian 15.10-1.pgdg120+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -323,7 +323,8 @@ CREATE TABLE public.configurations (
     import_items boolean NOT NULL,
     name_in_journal_entry character varying(100) NOT NULL,
     allow_intercompany_vendors boolean NOT NULL,
-    je_single_credit_line boolean NOT NULL
+    je_single_credit_line boolean NOT NULL,
+    is_attachment_upload_enabled boolean NOT NULL
 );
 
 
@@ -2697,10 +2698,10 @@ COPY public.category_mappings (id, created_at, updated_at, destination_account_i
 -- Data for Name: configurations; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.configurations (id, reimbursable_expenses_object, corporate_credit_card_expenses_object, created_at, updated_at, workspace_id, sync_fyle_to_netsuite_payments, sync_netsuite_to_fyle_payments, import_projects, auto_map_employees, import_categories, auto_create_destination_entity, auto_create_merchants, employee_field_mapping, import_tax_items, change_accounting_period, memo_structure, map_fyle_cards_netsuite_account, skip_cards_mapping, import_vendors_as_merchants, import_netsuite_employees, is_simplify_report_closure_enabled, import_items, name_in_journal_entry, allow_intercompany_vendors, je_single_credit_line) FROM stdin;
-1	EXPENSE REPORT	BILL	2021-11-15 08:56:07.193743+00	2021-11-15 08:56:07.193795+00	1	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f	MERCHANT	f	f
-2	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-11-16 04:18:15.836271+00	2021-11-16 04:20:09.969589+00	2	f	f	f	\N	f	f	f	EMPLOYEE	t	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f	MERCHANT	f	f
-3	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-12-03 11:04:00.194287+00	2021-12-03 11:04:00.1943+00	49	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f	MERCHANT	f	f
+COPY public.configurations (id, reimbursable_expenses_object, corporate_credit_card_expenses_object, created_at, updated_at, workspace_id, sync_fyle_to_netsuite_payments, sync_netsuite_to_fyle_payments, import_projects, auto_map_employees, import_categories, auto_create_destination_entity, auto_create_merchants, employee_field_mapping, import_tax_items, change_accounting_period, memo_structure, map_fyle_cards_netsuite_account, skip_cards_mapping, import_vendors_as_merchants, import_netsuite_employees, is_simplify_report_closure_enabled, import_items, name_in_journal_entry, allow_intercompany_vendors, je_single_credit_line, is_attachment_upload_enabled) FROM stdin;
+1	EXPENSE REPORT	BILL	2021-11-15 08:56:07.193743+00	2021-11-15 08:56:07.193795+00	1	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f	MERCHANT	f	f	t
+2	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-11-16 04:18:15.836271+00	2021-11-16 04:20:09.969589+00	2	f	f	f	\N	f	f	f	EMPLOYEE	t	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f	MERCHANT	f	f	t
+3	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-12-03 11:04:00.194287+00	2021-12-03 11:04:00.1943+00	49	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f	MERCHANT	f	f	t
 \.
 
 
@@ -7997,6 +7998,8 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 204	workspaces	0040_alter_configuration_change_accounting_period	2024-11-18 04:28:36.094429+00
 205	fyle	0035_support_split_expense_grouping	2024-11-22 10:40:59.441051+00
 206	fyle	0036_expense_masked_corporate_card_number	2024-11-26 09:24:50.240658+00
+207	fyle_accounting_mappings	0027_alter_employeemapping_source_employee	2024-12-18 05:34:34.929303+00
+208	workspaces	0041_configuration_is_attachment_upload_enabled	2024-12-18 05:34:34.968096+00
 \.
 
 
@@ -11908,7 +11911,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 47, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 206, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 208, true);
 
 
 --
@@ -12394,6 +12397,14 @@ ALTER TABLE ONLY public.django_session
 
 ALTER TABLE ONLY public.employee_mappings
     ADD CONSTRAINT employee_mappings_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: employee_mappings employee_mappings_source_employee_id_dd9948ba_uniq; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.employee_mappings
+    ADD CONSTRAINT employee_mappings_source_employee_id_dd9948ba_uniq UNIQUE (source_employee_id);
 
 
 --
@@ -13052,13 +13063,6 @@ CREATE INDEX employee_mappings_destination_employee_id_b6764819 ON public.employ
 --
 
 CREATE INDEX employee_mappings_destination_vendor_id_c4bd73df ON public.employee_mappings USING btree (destination_vendor_id);
-
-
---
--- Name: employee_mappings_source_employee_id_dd9948ba; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX employee_mappings_source_employee_id_dd9948ba ON public.employee_mappings USING btree (source_employee_id);
 
 
 --
