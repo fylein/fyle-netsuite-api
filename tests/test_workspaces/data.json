@@ -55,6 +55,8 @@
         "schedule": null,
         "additional_email_options": [],
         "emails_selected": null,
-        "error_count": null
+        "error_count": null,
+        "created_at": "2021-11-10T20:41:37.151696Z",
+        "updated_at": "2021-11-10T20:41:37.151696Z"
     }
 }
