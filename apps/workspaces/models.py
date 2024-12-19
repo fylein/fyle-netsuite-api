@@ -26,13 +26,22 @@ ONBOARDING_STATE_CHOICES = (
 def get_default_onboarding_state():
     return 'CONNECTION'
 
+class WorkspaceUser(models.Model):
+    workspace = models.ForeignKey('Workspace', on_delete=models.CASCADE)
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, help_text='Created at datetime')
+    updated_at = models.DateTimeField(auto_now=True, null=True, help_text='Updated at datetime')
+
+    class Meta:
+        db_table = 'workspaces_user'
+
 class Workspace(models.Model):
     """
     Workspace model
     """
     id = models.AutoField(primary_key=True, help_text='Unique Id to identify a workspace')
     name = models.CharField(max_length=255, help_text='Name of the workspace')
-    user = models.ManyToManyField(User, help_text='Reference to users table', through='users.WorkspaceUser')
+    user = models.ManyToManyField(User, help_text='Reference to users table', through=WorkspaceUser)
     fyle_org_id = models.CharField(max_length=255, help_text='org id', unique=True)
     cluster_domain = models.CharField(max_length=255, help_text='Fyle Cluster Domain', null=True)
     ns_account_id = models.CharField(max_length=255, help_text='NetSuite account id')
@@ -95,8 +104,8 @@ class WorkspaceSchedule(models.Model):
     additional_email_options = JSONField(default=list, help_text='Email and Name of person to send email', null=True)
     emails_selected = ArrayField(base_field=models.CharField(max_length=255), null=True, help_text='File IDs')
     schedule = models.OneToOneField(Schedule, on_delete=models.PROTECT, null=True)
-    created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')
-    updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime')
+    created_at = models.DateTimeField(auto_now_add=True, null=True, help_text='Created at datetime')
+    updated_at = models.DateTimeField(auto_now=True, null=True, help_text='Updated at datetime')
 
     class Meta:
         db_table = 'workspace_schedules'
