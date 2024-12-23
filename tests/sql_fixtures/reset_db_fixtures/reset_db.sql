@@ -1932,7 +1932,9 @@ CREATE TABLE public.workspace_schedules (
     schedule_id integer,
     additional_email_options jsonb,
     emails_selected character varying(255)[],
-    error_count integer
+    error_count integer,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone
 );
 
 
@@ -2012,7 +2014,8 @@ ALTER SEQUENCE public.workspaces_netsuitecredentials_id_seq OWNED BY public.nets
 CREATE TABLE public.workspaces_user (
     id integer NOT NULL,
     workspace_id integer NOT NULL,
-    user_id integer NOT NULL
+    user_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -8000,6 +8003,7 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 206	fyle	0036_expense_masked_corporate_card_number	2024-11-26 09:24:50.240658+00
 207	fyle_accounting_mappings	0027_alter_employeemapping_source_employee	2024-12-18 05:34:34.929303+00
 208	workspaces	0041_configuration_is_attachment_upload_enabled	2024-12-18 05:34:34.968096+00
+209	workspaces	0042_auto_20241219_1808	2024-12-23 09:56:48.057086+00
 \.
 
 
@@ -11803,8 +11807,8 @@ COPY public.vendor_payments (id, accounts_payable_id, account_id, entity_id, cur
 -- Data for Name: workspace_schedules; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.workspace_schedules (id, enabled, start_datetime, interval_hours, workspace_id, schedule_id, additional_email_options, emails_selected, error_count) FROM stdin;
-1	t	2022-05-10 11:54:10.795285+00	1	49	\N	\N	{owner@fyleforintacct.in}	\N
+COPY public.workspace_schedules (id, enabled, start_datetime, interval_hours, workspace_id, schedule_id, additional_email_options, emails_selected, error_count, created_at, updated_at) FROM stdin;
+1	t	2022-05-10 11:54:10.795285+00	1	49	\N	\N	{owner@fyleforintacct.in}	\N	2024-12-23 09:56:48.04448+00	2024-12-23 09:56:48.055509+00
 \.
 
 
@@ -11823,10 +11827,10 @@ COPY public.workspaces (id, name, fyle_org_id, ns_account_id, last_synced_at, cr
 -- Data for Name: workspaces_user; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.workspaces_user (id, workspace_id, user_id) FROM stdin;
-1	1	1
-2	2	1
-66	49	30
+COPY public.workspaces_user (id, workspace_id, user_id, created_at) FROM stdin;
+1	1	1	2024-12-23 09:56:48.044698+00
+2	2	1	2024-12-23 09:56:48.044698+00
+66	49	30	2024-12-23 09:56:48.044698+00
 \.
 
 
@@ -11911,7 +11915,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 47, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 208, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 209, true);
 
 
 --
