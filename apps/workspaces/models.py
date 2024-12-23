@@ -26,22 +26,13 @@ ONBOARDING_STATE_CHOICES = (
 def get_default_onboarding_state():
     return 'CONNECTION'
 
-class WorkspacesUser(models.Model):
-    workspace = models.ForeignKey('Workspace', models.DO_NOTHING)
-    user = models.ForeignKey('users.User', models.DO_NOTHING)
-    created_at = models.DateTimeField(auto_now_add=True, null=True, help_text='Created at datetime')
-    updated_at = models.DateTimeField(auto_now=True, null=True, help_text='Updated at datetime')
-    class Meta:
-        db_table = 'workspaces_user'
-        unique_together = (('workspace', 'user'),)
-
 class Workspace(models.Model):
     """
     Workspace model
     """
     id = models.AutoField(primary_key=True, help_text='Unique Id to identify a workspace')
     name = models.CharField(max_length=255, help_text='Name of the workspace')
-    user = models.ManyToManyField(User, help_text='Reference to users table', through='WorkspacesUser')
+    user = models.ManyToManyField(User, help_text='Reference to users table')
     fyle_org_id = models.CharField(max_length=255, help_text='org id', unique=True)
     cluster_domain = models.CharField(max_length=255, help_text='Fyle Cluster Domain', null=True)
     ns_account_id = models.CharField(max_length=255, help_text='NetSuite account id')

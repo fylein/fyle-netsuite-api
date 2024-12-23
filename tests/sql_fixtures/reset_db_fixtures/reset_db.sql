@@ -2015,8 +2015,7 @@ CREATE TABLE public.workspaces_user (
     id integer NOT NULL,
     workspace_id integer NOT NULL,
     user_id integer NOT NULL,
-    created_at timestamp with time zone,
-    updated_at timestamp with time zone
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -2656,10 +2655,6 @@ COPY public.auth_permission (id, name, content_type_id, codename) FROM stdin;
 186	Can change import log	47	change_importlog
 187	Can delete import log	47	delete_importlog
 188	Can view import log	47	view_importlog
-189	Can add workspaces user	48	add_workspacesuser
-190	Can change workspaces user	48	change_workspacesuser
-191	Can delete workspaces user	48	delete_workspacesuser
-192	Can view workspaces user	48	view_workspacesuser
 \.
 
 
@@ -7793,7 +7788,6 @@ COPY public.django_content_type (id, app_label, model) FROM stdin;
 45	tasks	error
 46	fyle_accounting_mappings	expenseattributesdeletioncache
 47	fyle_integrations_imports	importlog
-48	workspaces	workspacesuser
 \.
 
 
@@ -8009,7 +8003,7 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 206	fyle	0036_expense_masked_corporate_card_number	2024-11-26 09:24:50.240658+00
 207	fyle_accounting_mappings	0027_alter_employeemapping_source_employee	2024-12-18 05:34:34.929303+00
 208	workspaces	0041_configuration_is_attachment_upload_enabled	2024-12-18 05:34:34.968096+00
-209	workspaces	0042_auto_20241219_1808	2024-12-19 18:13:18.332929+00
+209	workspaces	0042_auto_20241219_1808	2024-12-23 09:56:48.057086+00
 \.
 
 
@@ -11814,7 +11808,7 @@ COPY public.vendor_payments (id, accounts_payable_id, account_id, entity_id, cur
 --
 
 COPY public.workspace_schedules (id, enabled, start_datetime, interval_hours, workspace_id, schedule_id, additional_email_options, emails_selected, error_count, created_at, updated_at) FROM stdin;
-1	t	2022-05-10 11:54:10.795285+00	1	49	\N	\N	{owner@fyleforintacct.in}	\N	2024-12-19 18:13:18.289872+00	2024-12-19 18:13:18.304007+00
+1	t	2022-05-10 11:54:10.795285+00	1	49	\N	\N	{owner@fyleforintacct.in}	\N	2024-12-23 09:56:48.04448+00	2024-12-23 09:56:48.055509+00
 \.
 
 
@@ -11833,10 +11827,10 @@ COPY public.workspaces (id, name, fyle_org_id, ns_account_id, last_synced_at, cr
 -- Data for Name: workspaces_user; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.workspaces_user (id, workspace_id, user_id, created_at, updated_at) FROM stdin;
-1	1	1	2024-12-19 18:13:18.316061+00	2024-12-19 18:13:18.331022+00
-2	2	1	2024-12-19 18:13:18.316061+00	2024-12-19 18:13:18.331022+00
-66	49	30	2024-12-19 18:13:18.316061+00	2024-12-19 18:13:18.331022+00
+COPY public.workspaces_user (id, workspace_id, user_id, created_at) FROM stdin;
+1	1	1	2024-12-23 09:56:48.044698+00
+2	2	1	2024-12-23 09:56:48.044698+00
+66	49	30	2024-12-23 09:56:48.044698+00
 \.
 
 
@@ -11858,7 +11852,7 @@ SELECT pg_catalog.setval('public.auth_group_permissions_id_seq', 1, false);
 -- Name: auth_permission_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.auth_permission_id_seq', 192, true);
+SELECT pg_catalog.setval('public.auth_permission_id_seq', 188, true);
 
 
 --
@@ -11914,7 +11908,7 @@ SELECT pg_catalog.setval('public.django_admin_log_id_seq', 1, false);
 -- Name: django_content_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_content_type_id_seq', 48, true);
+SELECT pg_catalog.setval('public.django_content_type_id_seq', 47, true);
 
 
 --

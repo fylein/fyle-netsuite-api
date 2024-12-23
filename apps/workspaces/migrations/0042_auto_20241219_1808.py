@@ -20,14 +20,15 @@ class Migration(migrations.Migration):
             name='updated_at',
             field=models.DateTimeField(auto_now=True, help_text='Updated at datetime', null=True),
         ),
-        migrations.AddField(
-            model_name='workspacesuser',
-            name='created_at',
-            field=models.DateTimeField(auto_now_add=True, help_text='Created at datetime', null=True),
+        migrations.RunSQL(
+            sql="""
+                ALTER TABLE workspaces_user
+                ADD COLUMN created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW();
+            """,
+            reverse_sql="""
+                ALTER TABLE workspaces_user
+                DROP COLUMN created_at;
+            """,
         ),
-        migrations.AddField(
-            model_name='workspacesuser',
-            name='updated_at',
-            field=models.DateTimeField(auto_now=True, help_text='Updated at datetime', null=True),
-        ),
+
     ]

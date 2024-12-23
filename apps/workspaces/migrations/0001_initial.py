@@ -38,6 +38,7 @@ class Migration(migrations.Migration):
                 ('created_at', models.DateTimeField(auto_now_add=True, help_text='Created at datetime')),
                 ('updated_at', models.DateTimeField(auto_now=True, help_text='Updated at datetime')),
                 ('workspace', models.OneToOneField(help_text='Reference to Workspace model', on_delete=django.db.models.deletion.PROTECT, to='workspaces.Workspace')),
+                ('user', models.ManyToManyField(help_text='Reference to users table', to=settings.AUTH_USER_MODEL)),
             ],
         ),
         migrations.CreateModel(
@@ -62,23 +63,4 @@ class Migration(migrations.Migration):
             name='workspace',
             table='workspaces',
         ),
-
-        migrations.CreateModel(
-            name='WorkspacesUser',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, to=settings.AUTH_USER_MODEL)),
-                ('workspace', models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, to='workspaces.workspace')),
-            ],
-            options={
-                'db_table': 'workspaces_user',
-                'unique_together': {('workspace', 'user')},
-            },
-        ),
-        migrations.AddField(
-            model_name='workspace',
-            name='user',
-            field=models.ManyToManyField(help_text='Reference to users table', through='workspaces.WorkspacesUser', to=settings.AUTH_USER_MODEL),
-        ),
-        
     ]
