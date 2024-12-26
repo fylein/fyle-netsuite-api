@@ -151,6 +151,7 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
                         'is_custom': setting['is_custom'] if 'is_custom' in setting else False,
                         'source_placeholder': setting['source_placeholder'] if 'source_placeholder' in setting else None,
                     },
+                    user=user
                 )
 
         trigger.post_save_mapping_settings(configurations_instance)
