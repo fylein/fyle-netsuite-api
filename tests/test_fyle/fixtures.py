@@ -1015,6 +1015,8 @@ data = {
         "updated_at": "2021-11-15T08:46:16.069986Z",
         "workspace": 1,
         "split_expense_grouping": "MULTIPLE_LINE_ITEM",
+        "created_by": "ashu@sadsa.com",
+        "updated_by": "asdhasj@bjasd.com"
     },
     "fyle_orgs": [
         {
