@@ -324,7 +324,9 @@ CREATE TABLE public.configurations (
     name_in_journal_entry character varying(100) NOT NULL,
     allow_intercompany_vendors boolean NOT NULL,
     je_single_credit_line boolean NOT NULL,
-    is_attachment_upload_enabled boolean NOT NULL
+    is_attachment_upload_enabled boolean NOT NULL,
+    created_by character varying(255),
+    updated_by character varying(255)
 );
 
 
@@ -961,7 +963,9 @@ CREATE TABLE public.expense_group_settings (
     import_card_credits boolean NOT NULL,
     ccc_export_date_type character varying(100) NOT NULL,
     ccc_expense_state character varying(100),
-    split_expense_grouping character varying(100) NOT NULL
+    split_expense_grouping character varying(100) NOT NULL,
+    created_by character varying(255),
+    updated_by character varying(255)
 );
 
 
@@ -1445,7 +1449,9 @@ CREATE TABLE public.general_mappings (
     class_name character varying(255),
     default_tax_code_id character varying(255),
     default_tax_code_name character varying(255),
-    is_tax_balancing_enabled boolean NOT NULL
+    is_tax_balancing_enabled boolean NOT NULL,
+    created_by character varying(255),
+    updated_by character varying(255)
 );
 
 
@@ -2701,10 +2707,10 @@ COPY public.category_mappings (id, created_at, updated_at, destination_account_i
 -- Data for Name: configurations; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.configurations (id, reimbursable_expenses_object, corporate_credit_card_expenses_object, created_at, updated_at, workspace_id, sync_fyle_to_netsuite_payments, sync_netsuite_to_fyle_payments, import_projects, auto_map_employees, import_categories, auto_create_destination_entity, auto_create_merchants, employee_field_mapping, import_tax_items, change_accounting_period, memo_structure, map_fyle_cards_netsuite_account, skip_cards_mapping, import_vendors_as_merchants, import_netsuite_employees, is_simplify_report_closure_enabled, import_items, name_in_journal_entry, allow_intercompany_vendors, je_single_credit_line, is_attachment_upload_enabled) FROM stdin;
-1	EXPENSE REPORT	BILL	2021-11-15 08:56:07.193743+00	2021-11-15 08:56:07.193795+00	1	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f	MERCHANT	f	f	t
-2	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-11-16 04:18:15.836271+00	2021-11-16 04:20:09.969589+00	2	f	f	f	\N	f	f	f	EMPLOYEE	t	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f	MERCHANT	f	f	t
-3	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-12-03 11:04:00.194287+00	2021-12-03 11:04:00.1943+00	49	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f	MERCHANT	f	f	t
+COPY public.configurations (id, reimbursable_expenses_object, corporate_credit_card_expenses_object, created_at, updated_at, workspace_id, sync_fyle_to_netsuite_payments, sync_netsuite_to_fyle_payments, import_projects, auto_map_employees, import_categories, auto_create_destination_entity, auto_create_merchants, employee_field_mapping, import_tax_items, change_accounting_period, memo_structure, map_fyle_cards_netsuite_account, skip_cards_mapping, import_vendors_as_merchants, import_netsuite_employees, is_simplify_report_closure_enabled, import_items, name_in_journal_entry, allow_intercompany_vendors, je_single_credit_line, is_attachment_upload_enabled, created_by, updated_by) FROM stdin;
+1	EXPENSE REPORT	BILL	2021-11-15 08:56:07.193743+00	2021-11-15 08:56:07.193795+00	1	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f	MERCHANT	f	f	t	\N	\N
+2	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-11-16 04:18:15.836271+00	2021-11-16 04:20:09.969589+00	2	f	f	f	\N	f	f	f	EMPLOYEE	t	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f	MERCHANT	f	f	t	\N	\N
+3	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-12-03 11:04:00.194287+00	2021-12-03 11:04:00.1943+00	49	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f	MERCHANT	f	f	t	\N	\N
 \.
 
 
@@ -8004,6 +8010,9 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 207	fyle_accounting_mappings	0027_alter_employeemapping_source_employee	2024-12-18 05:34:34.929303+00
 208	workspaces	0041_configuration_is_attachment_upload_enabled	2024-12-18 05:34:34.968096+00
 209	workspaces	0042_auto_20241219_1808	2024-12-23 09:56:48.057086+00
+210	fyle	0037_auto_20241226_0929	2024-12-26 09:48:19.921189+00
+211	mappings	0016_auto_20241226_0929	2024-12-26 09:48:19.963414+00
+212	workspaces	0043_auto_20241224_1102	2024-12-26 09:48:19.987821+00
 \.
 
 
@@ -11590,10 +11599,10 @@ COPY public.expense_filters (id, condition, operator, "values", rank, join_by, i
 -- Data for Name: expense_group_settings; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.expense_group_settings (id, reimbursable_expense_group_fields, corporate_credit_card_expense_group_fields, expense_state, reimbursable_export_date_type, created_at, updated_at, workspace_id, import_card_credits, ccc_export_date_type, ccc_expense_state, split_expense_grouping) FROM stdin;
-1	{employee_email,report_id,claim_number,fund_source}	{employee_email,report_id,claim_number,fund_source}	PAYMENT_PROCESSING	current_date	2021-11-15 08:46:16.069944+00	2021-11-15 08:46:16.069986+00	1	f	current_date	PAID	MULTIPLE_LINE_ITEM
-2	{fund_source,employee_email,settlement_id,spent_at}	{expense_id,fund_source,employee_email,settlement_id,spent_at}	PAID	spent_at	2021-11-16 04:16:57.847694+00	2021-11-16 07:34:26.302812+00	2	f	spent_at	PAID	MULTIPLE_LINE_ITEM
-74	{employee_email,report_id,claim_number,fund_source}	{claim_number,employee_email,expense_id,report_id,fund_source}	PAYMENT_PROCESSING	last_spent_at	2021-12-03 11:00:33.637654+00	2021-12-03 11:04:00.206339+00	49	f	last_spent_at	PAID	MULTIPLE_LINE_ITEM
+COPY public.expense_group_settings (id, reimbursable_expense_group_fields, corporate_credit_card_expense_group_fields, expense_state, reimbursable_export_date_type, created_at, updated_at, workspace_id, import_card_credits, ccc_export_date_type, ccc_expense_state, split_expense_grouping, created_by, updated_by) FROM stdin;
+1	{employee_email,report_id,claim_number,fund_source}	{employee_email,report_id,claim_number,fund_source}	PAYMENT_PROCESSING	current_date	2021-11-15 08:46:16.069944+00	2021-11-15 08:46:16.069986+00	1	f	current_date	PAID	MULTIPLE_LINE_ITEM	\N	\N
+2	{fund_source,employee_email,settlement_id,spent_at}	{expense_id,fund_source,employee_email,settlement_id,spent_at}	PAID	spent_at	2021-11-16 04:16:57.847694+00	2021-11-16 07:34:26.302812+00	2	f	spent_at	PAID	MULTIPLE_LINE_ITEM	\N	\N
+74	{employee_email,report_id,claim_number,fund_source}	{claim_number,employee_email,expense_id,report_id,fund_source}	PAYMENT_PROCESSING	last_spent_at	2021-12-03 11:00:33.637654+00	2021-12-03 11:04:00.206339+00	49	f	last_spent_at	PAID	MULTIPLE_LINE_ITEM	\N	\N
 \.
 
 
@@ -11669,10 +11678,10 @@ COPY public.fyle_credentials (id, refresh_token, created_at, updated_at, workspa
 -- Data for Name: general_mappings; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.general_mappings (id, location_name, location_id, accounts_payable_name, accounts_payable_id, created_at, updated_at, workspace_id, default_ccc_account_id, default_ccc_account_name, reimbursable_account_id, reimbursable_account_name, default_ccc_vendor_id, default_ccc_vendor_name, vendor_payment_account_id, vendor_payment_account_name, location_level, department_level, use_employee_department, use_employee_class, use_employee_location, department_id, department_name, override_tax_details, class_id, class_level, class_name, default_tax_code_id, default_tax_code_name, is_tax_balancing_enabled) FROM stdin;
-1	hubajuba	8	Accounts Payable	25	2021-11-15 08:56:31.432106+00	2021-11-15 13:21:26.113427+00	1	\N	\N	118	Unapproved Expense Reports	1674	Ashwin Vendor	\N	\N	TRANSACTION_BODY	\N	f	f	f	\N	\N	f	\N	\N	\N	\N	\N	f
-2	\N	\N	Accounts Payable	25	2021-11-16 04:18:39.195287+00	2021-11-16 04:18:39.195312+00	2	228	Aus Account	118	Unapproved Expense Reports	12104	Nilesh Aus Vendor	\N	\N	\N	\N	f	f	f	\N	\N	f	\N	\N	\N	\N	\N	f
-3	hukiju	10	\N	\N	2021-12-03 11:24:17.962764+00	2021-12-03 11:24:17.962809+00	49	228	Aus Account	228	Aus Account	12104	Nilesh Aus Vendor	\N	\N	TRANSACTION_BODY	\N	f	f	f	\N	\N	f	\N	\N	\N	\N	\N	f
+COPY public.general_mappings (id, location_name, location_id, accounts_payable_name, accounts_payable_id, created_at, updated_at, workspace_id, default_ccc_account_id, default_ccc_account_name, reimbursable_account_id, reimbursable_account_name, default_ccc_vendor_id, default_ccc_vendor_name, vendor_payment_account_id, vendor_payment_account_name, location_level, department_level, use_employee_department, use_employee_class, use_employee_location, department_id, department_name, override_tax_details, class_id, class_level, class_name, default_tax_code_id, default_tax_code_name, is_tax_balancing_enabled, created_by, updated_by) FROM stdin;
+1	hubajuba	8	Accounts Payable	25	2021-11-15 08:56:31.432106+00	2021-11-15 13:21:26.113427+00	1	\N	\N	118	Unapproved Expense Reports	1674	Ashwin Vendor	\N	\N	TRANSACTION_BODY	\N	f	f	f	\N	\N	f	\N	\N	\N	\N	\N	f	\N	\N
+2	\N	\N	Accounts Payable	25	2021-11-16 04:18:39.195287+00	2021-11-16 04:18:39.195312+00	2	228	Aus Account	118	Unapproved Expense Reports	12104	Nilesh Aus Vendor	\N	\N	\N	\N	f	f	f	\N	\N	f	\N	\N	\N	\N	\N	f	\N	\N
+3	hukiju	10	\N	\N	2021-12-03 11:24:17.962764+00	2021-12-03 11:24:17.962809+00	49	228	Aus Account	228	Aus Account	12104	Nilesh Aus Vendor	\N	\N	TRANSACTION_BODY	\N	f	f	f	\N	\N	f	\N	\N	\N	\N	\N	f	\N	\N
 \.
 
 
@@ -11915,7 +11924,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 47, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 209, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 212, true);
 
 
 --

@@ -32,7 +32,7 @@ class ConfigurationSerializer(serializers.ModelSerializer):
             'is_simplify_report_closure_enabled',
             'name_in_journal_entry',
             'employee_field_mapping',
-            'auto_map_employees'
+            'auto_map_employees',
         ]
 
         read_only_fields = ['is_simplify_report_closure_enabled']   
@@ -120,6 +120,8 @@ class ExportSettingsSerializer(serializers.ModelSerializer):
         return instance.id
 
     def update(self, instance: Workspace, validated_data):
+        request = self.context.get('request')
+        user = request.user if request and hasattr(request, 'user') else None
 
         configurations = validated_data.pop('configuration')
         expense_group_settings = validated_data.pop('expense_group_settings')
@@ -134,7 +136,8 @@ class ExportSettingsSerializer(serializers.ModelSerializer):
                 'employee_field_mapping': configurations['employee_field_mapping'],
                 'name_in_journal_entry': configurations['name_in_journal_entry'],
                 'auto_map_employees': configurations['auto_map_employees'],
-            }
+            },
+            user=user
         )
 
         exports_trigger = ExportSettingsTrigger(
@@ -156,7 +159,7 @@ class ExportSettingsSerializer(serializers.ModelSerializer):
         if not expense_group_settings['ccc_export_date_type']:
             expense_group_settings['ccc_export_date_type'] = 'current_date'
 
-        ExpenseGroupSettings.update_expense_group_settings(expense_group_settings, workspace_id=workspace_id)
+        ExpenseGroupSettings.update_expense_group_settings(expense_group_settings, workspace_id=workspace_id, user=user)
 
         GeneralMapping.objects.update_or_create(
             workspace=instance,
@@ -169,7 +172,8 @@ class ExportSettingsSerializer(serializers.ModelSerializer):
                 'accounts_payable_name': general_mappings['accounts_payable']['name'],
                 'default_ccc_vendor_id': general_mappings['default_ccc_vendor']['id'],
                 'default_ccc_vendor_name': general_mappings['default_ccc_vendor']['name']
-            }
+            },
+            user=user
         )
 
         if instance.onboarding_state == 'EXPORT_SETTINGS':

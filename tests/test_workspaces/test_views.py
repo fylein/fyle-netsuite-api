@@ -297,6 +297,9 @@ def test_patch_workspace_configuration(api_client, access_token):
 
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
     configuration = Configuration.objects.get(workspace_id=1)
+    configuration.created_by = 'ashu@gmail.com'
+    configuration.updated_by = 'ashu@gmail.com'
+    configuration.save()
     configuration.auto_create_destination_entity = True
     configuration.auto_map_employees = ''
 
