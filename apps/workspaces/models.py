@@ -7,7 +7,7 @@ from django.contrib.postgres.fields import ArrayField
 
 from django_q.models import Schedule
 from django.db.models import JSONField
-
+from fyle_accounting_mappings.mixins import AutoAddCreateUpdateInfoMixin
 
 User = get_user_model()
 
@@ -135,7 +135,7 @@ def get_default_memo_fields():
     return ['employee_email', 'category', 'merchant', 'spent_on', 'report_number', 'purpose']
 
 
-class Configuration(models.Model):
+class Configuration(AutoAddCreateUpdateInfoMixin, models.Model):
     """
     Workspace General Settings
     """

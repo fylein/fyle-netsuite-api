@@ -4,6 +4,7 @@ Mapping Models
 from django.db import models
 
 from apps.workspaces.models import Workspace
+from fyle_accounting_mappings.mixins import AutoAddCreateUpdateInfoMixin
 
 
 class SubsidiaryMapping(models.Model):
@@ -22,7 +23,7 @@ class SubsidiaryMapping(models.Model):
         db_table = 'subsidiary_mappings'
 
 
-class GeneralMapping(models.Model):
+class GeneralMapping(AutoAddCreateUpdateInfoMixin, models.Model):
     """
     General Mapping
     """
@@ -73,6 +74,7 @@ class GeneralMapping(models.Model):
     workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model', related_name='general_mappings')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime')
+
 
     class Meta:
         db_table = 'general_mappings'

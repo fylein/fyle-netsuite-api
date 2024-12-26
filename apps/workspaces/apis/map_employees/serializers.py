@@ -23,6 +23,8 @@ class MapEmployeesSerializer(serializers.ModelSerializer):
         return instance.id
 
     def update(self, instance, validated_data):
+        request = self.context.get('request')
+        user = request.user if request and hasattr(request, 'user') else None
 
         workspace_id = instance.id
         configuration = validated_data.pop('configuration')
@@ -34,7 +36,8 @@ class MapEmployeesSerializer(serializers.ModelSerializer):
             configuration_instance.save()
         
         configuration_instance, _ =  Configuration.objects.update_or_create(
-            workspace_id=workspace_id, defaults={'employee_field_mapping': configuration['employee_field_mapping'], 'auto_map_employees': configuration['auto_map_employees']}
+            workspace_id=workspace_id, defaults={'employee_field_mapping': configuration['employee_field_mapping'], 'auto_map_employees': configuration['auto_map_employees']},
+            user=user
         )
 
         MapEmployeesTriggers.run_configurations_triggers(configuration=configuration_instance)
