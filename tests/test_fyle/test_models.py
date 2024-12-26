@@ -41,9 +41,10 @@ def test_default_fields():
 @pytest.mark.django_db
 def test_expense_group_settings(create_temp_workspace):
     payload = data['expense_group_setting_payload']
+    user = Workspace.objects.get(id=1).user
 
     ExpenseGroupSettings.update_expense_group_settings(
-        payload, 3
+        payload, 3, user
     )
 
     settings = ExpenseGroupSettings.objects.last()
