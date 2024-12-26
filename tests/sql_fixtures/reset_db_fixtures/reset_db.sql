@@ -1261,7 +1261,9 @@ CREATE TABLE public.mapping_settings (
     import_to_fyle boolean NOT NULL,
     is_custom boolean NOT NULL,
     source_placeholder text,
-    expense_field_id integer
+    expense_field_id integer,
+    created_by character varying(255),
+    updated_by character varying(255)
 );
 
 
@@ -8013,6 +8015,7 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 210	fyle	0037_auto_20241226_0929	2024-12-26 09:48:19.921189+00
 211	mappings	0016_auto_20241226_0929	2024-12-26 09:48:19.963414+00
 212	workspaces	0043_auto_20241224_1102	2024-12-26 09:48:19.987821+00
+213	fyle_accounting_mappings	0028_auto_20241226_1030	2024-12-26 11:00:11.334548+00
 \.
 
 
@@ -11721,12 +11724,12 @@ COPY public.last_export_details (id, last_exported_at, next_export, export_mode,
 -- Data for Name: mapping_settings; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.mapping_settings (id, source_field, destination_field, created_at, updated_at, workspace_id, import_to_fyle, is_custom, source_placeholder, expense_field_id) FROM stdin;
-1	TAX_GROUP	TAX_ITEM	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	2	f	f	\N	\N
-5	PROJECT	PROJECT	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	1	t	f	\N	\N
-6	COST_CENTER	DEPARTMENT	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	1	t	f	\N	\N
-10	DUMMY	ASHWINTEST1	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	49	t	t	\N	\N
-30	CORPORATE_CARD	CREDIT_CARD_ACCOUNT	2022-05-10 11:54:10.731264+00	2022-05-10 11:54:10.731264+00	49	t	f	\N	\N
+COPY public.mapping_settings (id, source_field, destination_field, created_at, updated_at, workspace_id, import_to_fyle, is_custom, source_placeholder, expense_field_id, created_by, updated_by) FROM stdin;
+1	TAX_GROUP	TAX_ITEM	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	2	f	f	\N	\N	\N	\N
+5	PROJECT	PROJECT	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	1	t	f	\N	\N	\N	\N
+6	COST_CENTER	DEPARTMENT	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	1	t	f	\N	\N	\N	\N
+10	DUMMY	ASHWINTEST1	2021-11-16 04:18:15.823753+00	2021-11-16 04:20:09.978098+00	49	t	t	\N	\N	\N	\N
+30	CORPORATE_CARD	CREDIT_CARD_ACCOUNT	2022-05-10 11:54:10.731264+00	2022-05-10 11:54:10.731264+00	49	t	f	\N	\N	\N	\N
 \.
 
 
@@ -11924,7 +11927,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 47, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 212, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 213, true);
 
 
 --
