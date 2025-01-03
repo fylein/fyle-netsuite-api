@@ -1219,7 +1219,7 @@ class NetSuiteConnector:
 
         if general_mapping.is_tax_balancing_enabled and round(line.tax_amount, 2) != expected_tax_amount:
             # Recalculate the net amount based on the modified tax
-            recalculated_net_amount = round((line.tax_amount * 100) / tax_item_rate, 2)
+            recalculated_net_amount = round((line.tax_amount * 100) / tax_item_rate, 2) if tax_item_rate != 0 else 0
             untaxed_amount = round(original_amount - recalculated_net_amount - line.tax_amount, 2)
 
             # Create a taxable line item
