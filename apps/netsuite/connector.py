@@ -1239,9 +1239,14 @@ class NetSuiteConnector:
                 untaxed_line['grossAmt'] = round(untaxed_amount, 2)
                 untaxed_line['debit'] = untaxed_amount
                 untaxed_line.pop('amount', None)
+                taxable_line['tax1Amt'] = round(line.tax_amount, 2) # Tax is applied to this line
             
-            if export_module in ('EXPENSE_REPORT', 'JOURNAL_ENTRY'):
-                taxable_line['tax1Amt'] = round(line.tax_amount, 2)  # Tax is applied to this line
+            if export_module == 'EXPENSE_REPORT':
+                taxable_line['tax1Amt'] = round(line.tax_amount, 2) # Tax is applied to this line
+                if recalculated_net_amount == 0:
+                    taxable_line['foreignAmount'] = 0
+                if untaxed_amount == 0:
+                    untaxed_line['foreignAmount'] = 0
 
             if export_module == 'BILL' and taxable_line.get('rate'):
                 taxable_line['rate'] = str(round(line.amount - line.tax_amount, 2))
@@ -1253,13 +1258,16 @@ class NetSuiteConnector:
             base_line['amount'] = round(original_amount - line.tax_amount, 2)
             base_line['taxCode']['internalId'] = line.tax_item_id
             
-            if export_module in ('EXPENSE_REPORT', 'JOURNAL_ENTRY'):
+            if export_module == 'EXPENSE_REPORT':
                 base_line['tax1Amt'] = round(line.tax_amount, 2)  # Tax is applied to this line
+                if base_line['amount'] == 0:
+                    base_line['foreignAmount'] = 0
 
             if export_module == 'BILL' and base_line.get('rate'):
                 base_line['rate'] = str(round(line.amount - line.tax_amount, 2))
 
             if export_module == 'JOURNAL_ENTRY':
+                base_line['tax1Amt'] = round(line.tax_amount, 2)  # Tax is applied to this line
                 base_line['grossAmt'] = original_amount
                 base_line['debit'] = round(original_amount - line.tax_amount, 2)
                 base_line.pop('amount', None)
