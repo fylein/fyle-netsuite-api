@@ -1,0 +1,27 @@
+https://github.com/fylein/fyle-netsuite-api/commit/0e5c6cda009bf8f941e520660054a15c4c292d11,ruuushhh,Wed Nov 27 16:30:58 2024 +0530,fix: tax validate (#684),master,netsuite-api
+https://github.com/fylein/fyle-netsuite-api/commit/3b6724abcd387b29b0fb3b7a15667618547ab6c0,Ashwin Thanaraj,Wed Nov 27 15:40:24 2024 +0530,fix: Update API path (#683),master,netsuite-api
+https://github.com/fylein/fyle-netsuite-api/commit/ba16b649e322e24e3ee26e82894708adbbe3f67d,Anish Kr Singh,Tue Nov 26 15:43:06 2024 +0530,feat: add masked corporate card number and employee name (#673),master,netsuite-api
+https://github.com/fylein/fyle-netsuite-api/commit/975e8dee1290392e7e6deb94ed7ee56d1ebb72af,Ashwin Thanaraj,Tue Nov 26 12:23:26 2024 +0530,feat: NetSuite Internal APIs (#658),master,netsuite-api
+https://github.com/fylein/fyle-netsuite-api/commit/0aea0ec658601824d0eadf4648cf6f39ca2452e7,Viswas Haridas,Mon Nov 25 18:08:55 2024 +0530,fix: include receipt links in all line items for cc charges (#682),master,netsuite-api
+https://github.com/fylein/fyle-netsuite-api/commit/c0309e8b7bb5b5d7ff4071f9b6243718e4014846,Viswas Haridas,Mon Nov 25 13:14:30 2024 +0530,feat: support split expense grouping (#681),master,netsuite-api
+https://github.com/fylein/fyle-netsuite-api/commit/a2bb92ac7e3752372461c754d3d0c2166889b355,Anish Kr Singh,Wed Nov 20 11:46:33 2024 +0530,fix: add default value for is_posted_at_null (#674),master,netsuite-api
+https://github.com/fylein/fyle-netsuite-api/commit/3e833586a4e31e4f42716adb432cf74f731b6085,ruuushhh,Tue Nov 19 10:05:48 2024 +0530,feat: Netsuite Tax Override (#662),master,netsuite-api
+https://github.com/fylein/fyle-netsuite-api/commit/f5b390a5f7c27d21ac99a1fb28325d09ab2d9e89,Anish Kr Singh,Mon Nov 18 14:36:10 2024 +0530,feat: handle posted at (#661),master,netsuite-api
+https://github.com/fylein/fyle-netsuite-api/commit/8990c3a23a54a922c78f16e6d79a0ed22e0012f4,Hrishabh Tiwari,Fri Nov 15 10:01:08 2024 +0530,fix: add unique constraint in task_logs for expense_group (#666),master,netsuite-api
+https://github.com/fylein/fyle-netsuite-api/commit/f3b599ba8e80af938ea3aa723363a9266867c25d,Ashutosh singh,Thu Nov 14 12:28:22 2024 +0530,Fix: Remove code for adding department in expense group settings (#665),master,netsuite-api
+https://github.com/fylein/fyle-netsuite-api/commit/1d1ea730c423f92ba75b140f36a3e7a904ef7249,Hrishabh Tiwari,Tue Nov 12 15:17:23 2024 +0530,feat: update netsuite sdk/wsdl version (#664),master,netsuite-api
+https://github.com/fylein/fyle-netsuite-api/commit/ebc243b70407d077872505819430148b402a3010,Viswas Haridas,Tue Nov 12 14:25:30 2024 +0530,fix: remove sentry transaction sampling (#663),master,netsuite-api
+https://github.com/fylein/fyle-netsuite-api/commit/96c13db068a2c1120033df919fde0c413983eba5,Hrishabh Tiwari,Thu Nov 7 11:54:33 2024 +0530,fix: add transaction block (#660),master,netsuite-api
+https://github.com/fylein/fyle-netsuite-api/commit/b353f2f93f39b785ae76cf66d4444261687d7d16,Viswas Haridas,Wed Nov 6 16:18:08 2024 +0530,fix: fix export url generation for sandbox accounts (#659),master,netsuite-api
+https://github.com/fylein/fyle-netsuite-api/commit/054b3c1fd0acfbe4282433e9e76b52d6019cbc5d,Ashwin Thanaraj,Wed Oct 16 18:33:13 2024 +0530,feat: Single credit line for Journal Entry (#655),master,netsuite-api
+https://github.com/fylein/fyle-netsuite-api/commit/5e23d08cd1a093adbd3052027e10f65cb7730171,Ashutosh singh,Fri Oct 11 14:50:38 2024 +0530,feat: Add middleware to log all post requests. (#651),master,netsuite-api
+https://github.com/fylein/fyle-netsuite-api/commit/cf1a29068b9f05c868b0ec06c7587fd6f7b3440c,Anish Kr Singh,Thu Oct 10 14:27:58 2024 +0530,fix: default tax code (#654),master,netsuite-api
+https://github.com/fylein/fyle-netsuite-api/commit/8fb14081b133af950d794a413f59035c57f2cae5,ruuushhh,Thu Oct 10 13:26:40 2024 +0530,fix: expense group creation (#653),master,netsuite-api
+https://github.com/fylein/fyle-netsuite-api/commit/4bc00e8979de5cea6be76059652a8df33a6aaf76,Ashutosh singh,Tue Oct 8 16:27:01 2024 +0530,feat: Log worker Id for export async task (#650),master,netsuite-api
+https://github.com/fylein/fyle-netsuite-api/commit/bffcf72335806f57de80d9ea253fdf611d9822de,Ashutosh singh,Tue Oct 8 15:30:33 2024 +0530,feat: Added limits to attributes (#649),master,netsuite-api
+https://github.com/fylein/fyle-netsuite-api/commit/f231952d6ca8db29e092628456f5ca31dd7071bc,ruuushhh,Tue Oct 1 14:38:24 2024 +0530,fix: activity stats (#648),master,netsuite-api
+https://github.com/fylein/fyle-netsuite-api/commit/b1ceb170213911ac9b3ff62791d2438ca8eab700,ruuushhh,Tue Oct 1 13:49:16 2024 +0530,fix: handle post acconting summary (#646),master,netsuite-api
+https://github.com/fylein/fyle-netsuite-api/commit/0351989bb4e33cc075640aa33962f2aefcd906d6,Ashutosh singh,Tue Oct 1 12:39:07 2024 +0530,feat: Add generators in syncing dimensions (#638),master,netsuite-api
+https://github.com/fylein/fyle-netsuite-api/commit/2317c3b19946a64e180a4ca455805776971a19d2,shubham-fyle,Fri Sep 27 20:16:41 2024 +0530,PR Size Label CI Version Update,master,netsuite-api
+https://github.com/fylein/fyle-netsuite-api/commit/5cdede2c553fbb47cfaa798bfe35e2455e98fd16,ruuushhh,Tue Sep 24 21:17:32 2024 +0530,feat: Add Receipt URL (#645),master,netsuite-api
+https://github.com/fylein/fyle-netsuite-api/commit/5777049601e609b1c11710d3f0fe59053c515d8b,shubham-fyle,Mon Sep 23 23:02:50 2024 +0530,chore: Added github action (#641),master,netsuite-api
