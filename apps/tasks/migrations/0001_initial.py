@@ -13,6 +13,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ('fyle', '0001_initial'),
         ('workspaces', '0001_initial'),
+        ('netsuite', '0001_initial')
     ]
 
     operations = [
