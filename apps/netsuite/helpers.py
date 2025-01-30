@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
 import logging
 
+from django_q.models import OrmQ
+
 from django.utils.module_loading import import_string
 
 from apps.mappings.constants import SYNC_METHODS
@@ -242,3 +244,19 @@ def handle_refresh_dimensions(workspace_id, dimensions_to_sync):
     if not dimensions_to_sync:
         workspace.destination_synced_at = datetime.now()
         workspace.save(update_fields=['destination_synced_at'])
+
+
+def check_if_task_exists_in_ormq(func: str, payload: str) -> bool:
+    """
+    Check if task exists in ORMQ
+    :param func: Function name
+    :param payload: Payload
+    :return: True if task exists in ORMQ else False
+    """
+    ormqs = OrmQ.objects.all()
+
+    for ormq in ormqs:
+        if ormq.task['func'] == func and str(ormq.task['args'][0]) == payload:
+            return True
+
+    return False
