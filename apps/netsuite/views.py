@@ -1,15 +1,12 @@
-import json
 import logging
-from datetime import datetime
 
 from django.db.models import Q
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import status
 
-from netsuitesdk.internal.exceptions import NetSuiteRequestError
 
-from fyle_accounting_mappings.models import DestinationAttribute, MappingSetting
+from fyle_accounting_mappings.models import DestinationAttribute
 from fyle_accounting_mappings.serializers import DestinationAttributeSerializer
 
 from apps.workspaces.models import NetSuiteCredentials, Workspace, Configuration
@@ -19,7 +16,7 @@ from django_q.tasks import async_task
 from .serializers import NetSuiteFieldSerializer, CustomSegmentSerializer
 from .tasks import create_vendor_payment, check_netsuite_object_status, process_reimbursements
 from .models import CustomSegment
-from .helpers import check_interval_and_sync_dimension, handle_refresh_dimensions, sync_dimensions
+from .helpers import check_if_task_exists_in_ormq, handle_refresh_dimensions
 from apps.workspaces.actions import export_to_netsuite
 
 logger = logging.getLogger(__name__)
@@ -149,8 +146,8 @@ class SyncNetSuiteDimensionView(generics.ListCreateAPIView):
             workspace = Workspace.objects.get(pk=kwargs['workspace_id'])
             NetSuiteCredentials.objects.get(workspace_id=workspace.id)
 
-            async_task('apps.netsuite.helpers.check_interval_and_sync_dimension', kwargs['workspace_id'])
-
+            if not check_if_task_exists_in_ormq(func='apps.netsuite.helpers.check_interval_and_sync_dimension', payload=kwargs['workspace_id']):
+                async_task('apps.netsuite.helpers.check_interval_and_sync_dimension', kwargs['workspace_id'])
 
             return Response(
                 status=status.HTTP_200_OK
@@ -188,7 +185,8 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
             if dimensions_to_sync:
                 handle_refresh_dimensions(kwargs['workspace_id'], dimensions_to_sync)
             else:
-                async_task('apps.netsuite.helpers.handle_refresh_dimensions', kwargs['workspace_id'], dimensions_to_sync)
+                if not check_if_task_exists_in_ormq(func='apps.netsuite.helpers.handle_refresh_dimensions', payload=kwargs['workspace_id']):
+                    async_task('apps.netsuite.helpers.handle_refresh_dimensions', kwargs['workspace_id'], dimensions_to_sync)
 
             return Response(
                 status=status.HTTP_200_OK

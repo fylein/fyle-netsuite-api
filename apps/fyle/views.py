@@ -3,6 +3,7 @@ from datetime import datetime
 from django.db.models import Q
 from apps.fyle.helpers import get_exportable_expense_group_ids
 
+from apps.netsuite.helpers import check_if_task_exists_in_ormq
 from rest_framework.views import status
 from rest_framework import generics
 from rest_framework.response import Response
@@ -267,7 +268,8 @@ class SyncFyleDimensionView(generics.ListCreateAPIView):
             workspace = Workspace.objects.get(pk=kwargs['workspace_id'])
             FyleCredential.objects.get(workspace_id=workspace.id)
 
-            async_task('apps.fyle.helpers.check_interval_and_sync_dimension', kwargs['workspace_id'])
+            if not check_if_task_exists_in_ormq(func='apps.fyle.helpers.check_interval_and_sync_dimension', payload=kwargs['workspace_id']):
+                async_task('apps.fyle.helpers.check_interval_and_sync_dimension', kwargs['workspace_id'])
 
             return Response(
                 status=status.HTTP_200_OK
@@ -300,7 +302,8 @@ class RefreshFyleDimensionView(generics.ListCreateAPIView):
             workspace = Workspace.objects.get(id=kwargs['workspace_id'])
             FyleCredential.objects.get(workspace_id=workspace.id)
 
-            async_task('apps.fyle.helpers.sync_dimensions', kwargs['workspace_id'])
+            if not check_if_task_exists_in_ormq(func='apps.fyle.helpers.sync_dimensions', payload=kwargs['workspace_id']):
+                async_task('apps.fyle.helpers.sync_dimensions', kwargs['workspace_id'])
 
             return Response(
                 status=status.HTTP_200_OK
