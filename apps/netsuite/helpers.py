@@ -256,7 +256,7 @@ def check_if_task_exists_in_ormq(func: str, payload: str) -> bool:
     ormqs = OrmQ.objects.all()
 
     for ormq in ormqs:
-        if ormq.task['func'] == func and str(ormq.task['args'][0]) == payload:
+        if ormq.task['func'] == func and str(ormq.task['args'][0]) == str(payload):
             return True
 
     return False
