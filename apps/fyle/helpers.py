@@ -159,7 +159,7 @@ def get_request(url, params, refresh_token):
     """
     access_token = get_access_token(refresh_token)
     api_headers = {
-        'content-type': 'application/json',
+        'Content-Type': 'application/json',
         'Authorization': 'Bearer {0}'.format(access_token)
     }
     api_params = {}
