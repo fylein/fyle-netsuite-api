@@ -79,7 +79,7 @@ def post_request(url, body, refresh_token=None):
     """
     access_token = None
     api_headers = {
-        'content-type': 'application/json'
+        'Content-Type': 'application/json',
     }
     if refresh_token:
         access_token = get_access_token(refresh_token)
