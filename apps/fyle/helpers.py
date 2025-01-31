@@ -89,7 +89,7 @@ def post_request(url, body, refresh_token=None):
     response = requests.post(
         url,
         headers=api_headers,
-        data=body
+        data=json.dumps(body)
     )
 
     if response.status_code in [200, 201]:
