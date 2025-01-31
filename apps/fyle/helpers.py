@@ -78,11 +78,12 @@ def post_request(url, body, refresh_token=None):
     Create a HTTP post request.
     """
     access_token = None
-    api_headers = {}
+    api_headers = {
+        'content-type': 'application/json'
+    }
     if refresh_token:
         access_token = get_access_token(refresh_token)
 
-        api_headers['content-type'] = 'application/json'
         api_headers['Authorization'] = 'Bearer {0}'.format(access_token)
 
     response = requests.post(
