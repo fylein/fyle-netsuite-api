@@ -224,7 +224,7 @@ def post_to_integration_settings(workspace_id: int, active: bool):
     }
 
     try:
-        post_request(url, json.dumps(payload), refresh_token)
+        post_request(url, payload, refresh_token)
     except Exception as error:
         logger.error(error)
 
