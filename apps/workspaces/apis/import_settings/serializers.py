@@ -116,8 +116,6 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
         general_mappings = validated_data.pop('general_mappings')
         mapping_settings = validated_data.pop('mapping_settings')
 
-        pre_save_configuration = Configuration.objects.filter(workspace_id=instance.id).first()
-
         configurations_instance, _ = Configuration.objects.update_or_create(
             workspace=instance,
             defaults={
@@ -135,7 +133,7 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
         trigger: ImportSettingsTrigger = ImportSettingsTrigger(configurations=configurations, mapping_settings=mapping_settings, workspace_id=instance.id)
 
         trigger.post_save_configurations(configurations_instance)
-        trigger.pre_save_mapping_settings(pre_save_configuration)
+        trigger.pre_save_mapping_settings()
 
         if configurations['import_tax_items']:
             mapping_settings.append({'source_field': 'TAX_GROUP', 'destination_field': 'TAX_ITEM', 'import_to_fyle': True, 'is_custom': False})

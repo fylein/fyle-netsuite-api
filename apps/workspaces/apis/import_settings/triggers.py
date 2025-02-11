@@ -86,7 +86,7 @@ class ImportSettingsTrigger:
 
         ExpenseAttribute.objects.filter(workspace_id=self.__workspace_id, attribute_type__in=changed_source_fields).update(auto_mapped=False)
 
-    def pre_save_mapping_settings(self, pre_save_configuration: Configuration):
+    def pre_save_mapping_settings(self):
         """
         Post save action for mapping settings
         """
@@ -112,7 +112,7 @@ class ImportSettingsTrigger:
             self,
             current_mapping_settings: List[MappingSetting],
             new_mappings_settings: List[Dict],
-            workspace_id: int,
+            workspace_id: int
     ):
         """
         Reset Import logs when mapping settings are deleted or the source_field is changed.
