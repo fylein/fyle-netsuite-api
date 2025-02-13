@@ -22,7 +22,7 @@ def test_post_save_configuration_trigger(mocker, db):
     ).exclude(fund_source__in=['PERSONAL']).values_list('id', flat=True)
 
     export_trigger = ExportSettingsTrigger(configuration=configuration, workspace_id=workspace_id)
-    export_trigger.post_save_configurations()
+    export_trigger.post_save_configurations(False)
 
     after_delete_count = TaskLog.objects.filter(
         workspace_id=workspace_id,
@@ -55,7 +55,7 @@ def test_post_save_configuration_trigger_2(mocker, db):
     ).exclude(fund_source__in=['CCC']).values_list('id', flat=True)
 
     export_trigger = ExportSettingsTrigger(configuration=configuration, workspace_id=workspace_id)
-    export_trigger.post_save_configurations()
+    export_trigger.post_save_configurations(False)
 
     after_delete_count = TaskLog.objects.filter(
         workspace_id=workspace_id,
