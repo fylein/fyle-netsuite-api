@@ -40,19 +40,7 @@ class ExportSettingsTrigger:
         elif not enable_card_mapping and mapping_setting:
             mapping_setting.delete()
 
-    def __update_category_mapping_settings(self, is_category_mapping_changed: bool = False):
-        if is_category_mapping_changed and self.__configuration.import_categories:
-            ImportLog.objects.filter(workspace_id=self.__workspace_id, attribute_type='CATEGORY').update(last_successful_run_at=None, updated_at=datetime.now(timezone.utc))
-
-            new_schedule_or_delete_fyle_import_tasks(
-                configuration_instance=self.__configuration,
-                mapping_settings=MappingSetting.objects.filter(
-                    workspace_id=self.__workspace_id
-                ).values()
-            )
-
-
-    def post_save_configurations(self, is_category_mapping_changed: bool = False):
+    def post_save_configurations(self, is_category_mapping_changed: bool):
         """
         Run post save action for configurations
         """
@@ -65,7 +53,9 @@ class ExportSettingsTrigger:
             fund_source.append('CCC')
 
         self.__delete_or_create_card_mapping_setting()
-        self.__update_category_mapping_settings(is_category_mapping_changed)
+
+        if is_category_mapping_changed and self.__configuration.import_categories:
+            ImportLog.objects.filter(workspace_id=self.__workspace_id, attribute_type='CATEGORY').update(last_successful_run_at=None, updated_at=datetime.now(timezone.utc))
 
         expense_group_ids = ExpenseGroup.objects.filter(
             workspace_id=self.__workspace_id,
