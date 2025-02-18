@@ -2,7 +2,7 @@ import logging
 from typing import List, Dict
 import traceback
 from datetime import datetime
-
+from django.db.models import Q
 from django.db import transaction
 from django_q.tasks import async_task
 
@@ -14,8 +14,8 @@ from fyle.platform.exceptions import (
     InvalidTokenError
 )
 
-from apps.workspaces.models import FyleCredential, Workspace, Configuration
-from apps.tasks.models import TaskLog
+from apps.workspaces.models import FyleCredential, LastExportDetail, Workspace, Configuration
+from apps.tasks.models import Error, TaskLog
 
 from .models import Expense, ExpenseFilter, ExpenseGroup, ExpenseGroupSettings
 from .helpers import construct_expense_filter_query
@@ -322,3 +322,69 @@ def update_non_exported_expenses(data: Dict) -> None:
             Expense.create_expense_objects(
                 expense_objects, expense.workspace_id, skip_update=True
             )
+
+
+
+def re_run_skip_export_rule(workspace: Workspace) -> None:
+    """
+    Skip expenses before export
+    :param workspace_id: Workspace id
+    :return: None
+    """
+    expense_filters = ExpenseFilter.objects.filter(workspace_id=workspace.id).order_by('rank')
+    if expense_filters:
+        filtered_expense_query = construct_expense_filter_query(expense_filters)
+        # Get all expenses matching the filter query, excluding those in COMPLETE state
+        expenses = Expense.objects.filter(
+            filtered_expense_query,
+            workspace_id=workspace.id,
+            is_skipped=False
+        ).exclude(
+            ~Q(accounting_export_summary={}),
+            accounting_export_summary__state='COMPLETE'
+        )
+        expense_ids = list(expenses.values_list('id', flat=True))
+        skipped_expenses = mark_expenses_as_skipped(
+            filtered_expense_query,
+            expense_ids,
+            workspace
+        )
+        if skipped_expenses:
+            expense_groups = ExpenseGroup.objects.filter(exported_at__isnull=True, workspace_id=workspace.id)
+            deleted_failed_expense_groups_count = 0
+            for expense_group in expense_groups:
+                task_log = TaskLog.objects.filter(
+                    workspace_id=workspace.id,
+                    expense_group_id=expense_group.id
+                ).first()
+                if task_log:
+                    if task_log.status != 'COMPLETE':
+                        deleted_failed_expense_groups_count += 1
+                    logger.info('Deleting task log for expense group %s before export', expense_group.id)
+                    task_log.delete()
+
+                error = Error.objects.filter(
+                    workspace_id=workspace.id,
+                    expense_group_id=expense_group.id,
+                    type__in=['QBO_ERROR']
+                ).first()
+                if error:
+                    logger.info('Deleting QBO error for expense group %s before export', expense_group.id)
+                    error.delete()
+
+                expense_group.expenses.remove(*skipped_expenses)
+                if not expense_group.expenses.exists():
+                    logger.info('Deleting empty expense group %s before export', expense_group.id)
+                    expense_group.delete()
+
+            last_export_detail = LastExportDetail.objects.filter(workspace_id=workspace.id, failed_expense_groups_count__gt=0).first()
+            if last_export_detail and deleted_failed_expense_groups_count > 0:
+                last_export_detail.failed_expense_groups_count = max(
+                    0,
+                    last_export_detail.failed_expense_groups_count - deleted_failed_expense_groups_count
+                )
+                last_export_detail.total_expense_groups_count = max(
+                    0,
+                    last_export_detail.total_expense_groups_count - deleted_failed_expense_groups_count
+                )
+                last_export_detail.save()
