@@ -755,6 +755,7 @@ class NetSuiteConnector:
 
         vendor_response = None
         try:
+            logger.info('Workspace: %s - Processing vendor payload: %s', self.workspace_id, vendor)
             vendor_response = self.connection.vendors.post(vendor)
         except NetSuiteRequestError as exception:
             logger.info({'error': exception})
