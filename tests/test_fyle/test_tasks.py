@@ -234,7 +234,7 @@ def test_re_run_skip_export_rule(db, create_temp_workspace, mocker, api_client):
     Test the re-running of skip export rules for expenses
     """
     # Create an expense filter matching employee_email == 'jhonsnow@fyle.in'
-    ExpenseFilter.objects.create(
+    ExpenseFilter.objects.update_or_create(
         workspace_id=1,
         condition='employee_email',
         operator='in',
