@@ -195,7 +195,7 @@ def group_expenses_and_save(expenses: List[Dict], task_log: TaskLog, workspace: 
             expensegroup__isnull=True,
             org_id=workspace.fyle_org_id
         )
-
+    filtered_expenses = [expense for expense in filtered_expenses if not expense.is_skipped]
     ExpenseGroup.create_expense_groups_by_report_id_fund_source(
         filtered_expenses, configuration, workspace.id
     )
@@ -324,7 +324,6 @@ def update_non_exported_expenses(data: Dict) -> None:
             )
 
 
-
 def re_run_skip_export_rule(workspace: Workspace) -> None:
     """
     Skip expenses before export
@@ -365,11 +364,10 @@ def re_run_skip_export_rule(workspace: Workspace) -> None:
 
                 error = Error.objects.filter(
                     workspace_id=workspace.id,
-                    expense_group_id=expense_group.id,
-                    type__in=['QBO_ERROR']
+                    expense_group_id=expense_group.id
                 ).first()
                 if error:
-                    logger.info('Deleting QBO error for expense group %s before export', expense_group.id)
+                    logger.info('Deleting error for expense group %s before export', expense_group.id)
                     error.delete()
 
                 expense_group.expenses.remove(*skipped_expenses)
