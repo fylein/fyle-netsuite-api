@@ -755,9 +755,14 @@ class NetSuiteConnector:
 
         vendor_response = None
         try:
+            logger.info('Vendor Post Payload for workspace_id: %s, expense_group: %s, payload: %s',
+                self.workspace_id,
+                expense_group.id,
+                vendor
+            )
             vendor_response = self.connection.vendors.post(vendor)
         except NetSuiteRequestError as exception:
-            logger.info({'error': exception})
+            logger.info('Error in creating vendor: %s', {'error': exception})
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
             if 'representingsubsidiary' in detail['message']:
