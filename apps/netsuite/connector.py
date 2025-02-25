@@ -777,11 +777,12 @@ class NetSuiteConnector:
                 logger.info('Error in creating vendor (attempt %s of %s): %s',
                             retry_count, max_retries, {'error': exception})
                 
-                detail = json.dumps(exception.__dict__)
-                detail = json.loads(detail)
-                error_message = detail['message'].lower()
-                
-                
+                detail = exception.args[0] if exception.args else {}
+                if isinstance(detail, dict):
+                    error_message = detail.get('message', '')
+                else:
+                    error_message = detail
+
                 modified = False
                 
                 if 'representingsubsidiary' in error_message and not attempted_modifications['representingSubsidiary']:
@@ -807,8 +808,6 @@ class NetSuiteConnector:
                 if not modified or retry_count >= max_retries:
                     logger.error('Failed to create vendor after %s attempts', retry_count)
                     raise
-        
-        raise Exception(f"Failed to create vendor after {max_retries} attempts with all possible modifications")
 
     def sync_employees(self):
         """
