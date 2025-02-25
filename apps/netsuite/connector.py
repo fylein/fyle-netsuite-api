@@ -709,8 +709,8 @@ class NetSuiteConnector:
         expense = expense_group.expenses.first()
 
         currency = DestinationAttribute.objects.filter(value=expense.currency,
-                                                       workspace_id=expense_group.workspace_id,
-                                                       attribute_type='CURRENCY').first()
+                                                    workspace_id=expense_group.workspace_id,
+                                                    attribute_type='CURRENCY').first()
 
         netsuite_entity_id = vendor.detail['full_name'] if vendor else merchant
 
@@ -753,25 +753,64 @@ class NetSuiteConnector:
             'externalId': vendor.detail['user_id'] if vendor else merchant
         }
 
-        vendor_response = None
-        try:
-            logger.info('Vendor Post Payload for workspace_id: %s, expense_group: %s, payload: %s',
-                self.workspace_id,
-                expense_group.id,
-                vendor
-            )
-            vendor_response = self.connection.vendors.post(vendor)
-        except NetSuiteRequestError as exception:
-            logger.info('Error in creating vendor: %s', {'error': exception})
-            detail = json.dumps(exception.__dict__)
-            detail = json.loads(detail)
-            if 'representingsubsidiary' in detail['message']:
-                vendor['representingSubsidiary']['internalId'] = None
-            elif 'isperson' in detail['message']:
-                del vendor['isPerson']
-            vendor_response = self.connection.vendors.post(vendor)
-            
-        return vendor_response
+        attempted_modifications = {
+            'representingSubsidiary': False,
+            'isPerson': False,
+            'entityId': False
+        }
+        
+        max_retries = 3
+        retry_count = 0
+        
+        while retry_count < max_retries:
+            try:
+                logger.info('Vendor Post Payload for workspace_id: %s, expense_group: %s, payload: %s',
+                    self.workspace_id,
+                    expense_group.id,
+                    vendor
+                )
+                vendor_response = self.connection.vendors.post(vendor)
+                return vendor_response
+                
+            except NetSuiteRequestError as exception:
+                retry_count += 1
+                logger.info('Error in creating vendor (attempt %s of %s): %s',
+                            retry_count, max_retries, {'error': exception})
+                
+                detail = json.dumps(exception.__dict__)
+                detail = json.loads(detail)
+                error_message = detail['message'].lower()
+                
+                
+                modified = False
+                
+                if 'representingsubsidiary' in error_message and not attempted_modifications['representingSubsidiary']:
+                    vendor['representingSubsidiary']['internalId'] = None
+                    attempted_modifications['representingSubsidiary'] = True
+                    modified = True
+                    logger.info('Retrying vendor creation without representingSubsidiary')
+                    
+                
+                elif 'isperson' in error_message and not attempted_modifications['isPerson']:
+                    if 'isPerson' in vendor:
+                        del vendor['isPerson']
+                    attempted_modifications['isPerson'] = True
+                    modified = True
+                    logger.info('Retrying vendor creation without isPerson')
+                    
+                elif 'entityid' in error_message and not attempted_modifications['entityId']:
+                    vendor['entityId'] = None
+                    attempted_modifications['entityId'] = True
+                    modified = True
+                    logger.info('Retrying vendor creation without entityId')
+                
+                # If we couldn't modify anything or reached max retries, raise the exception
+                if not modified or retry_count >= max_retries:
+                    logger.error('Failed to create vendor after %s attempts', retry_count)
+                    raise
+        
+        # This should not be reached due to the raise in the loop, but just in case
+        raise Exception(f"Failed to create vendor after {max_retries} attempts with all possible modifications")
 
     def sync_employees(self):
         """
