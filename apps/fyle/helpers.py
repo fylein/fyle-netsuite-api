@@ -349,59 +349,51 @@ def construct_expense_filter_query(expense_filters: list[ExpenseFilter]) -> Q:
 
     return final_filter
 
-def construct_expense_filter(expense_filter: ExpenseFilter) -> Q:
-    """
-    Construct the expense filter
-    :param expense_filter: Expense filter
-    :return: Constructed expense filter
-    """
-    # If the expense filter is a custom field
-    if expense_filter.is_custom:
-        # If the operator is not isnull
-        if expense_filter.operator != 'isnull':
-            # If the custom field is of type SELECT and the operator is not_in
-            if expense_filter.custom_field_type == 'SELECT' and expense_filter.operator == 'not_in':
-                # Construct the filter for the custom property
-                filter1 = {
-                    f'custom_properties__{expense_filter.condition}__in': expense_filter.values
-                }
-                # Invert the filter using the ~Q operator and assign it to the constructed expense filter
-                constructed_expense_filter = ~Q(**filter1)
-            else:
-                # If the custom field is of type NUMBER, convert the values to integers
-                if expense_filter.custom_field_type == 'NUMBER':
-                    expense_filter.values = [int(value) for value in expense_filter.values]
-                # If the expense filter is a custom field and the operator is yes or no(checkbox)
-                if expense_filter.custom_field_type == 'BOOLEAN':
-                    expense_filter.values[0] = True if expense_filter.values[0] == 'true' else False
-                # Construct the filter for the custom property
-                filter1 = {
-                    f'custom_properties__{expense_filter.condition}__{expense_filter.operator}':
-                        expense_filter.values[0] if len(expense_filter.values) == 1 and expense_filter.operator != 'in'
-                        else expense_filter.values
-                }
-                # Assign the constructed filter to the constructed expense filter
-                constructed_expense_filter = Q(**filter1)
-
-        # If the expense filter is a custom field and the operator is isnull
-        elif expense_filter.operator == 'isnull':
-            # Determine the value for the isnull filter based on the first value in the values list
-            expense_filter_value: bool = True if expense_filter.values[0].lower() == 'true' else False
-            # Construct the isnull filter for the custom property
+def construct_expense_filter(expense_filter: ExpenseFilter):
+    constructed_expense_filter = {}
+    if expense_filter.is_custom and expense_filter.operator != 'isnull':
+        #This block is for custom-field with not null check
+        if expense_filter.custom_field_type == 'SELECT' and expense_filter.operator == 'not_in':
             filter1 = {
-                f'custom_properties__{expense_filter.condition}__isnull': expense_filter_value
+                'custom_properties__{0}__{1}'.format(
+                    expense_filter.condition,
+                    'in'
+                ): expense_filter.values
             }
-            # Construct the exact filter for the custom property
-            filter2 = {
-                f'custom_properties__{expense_filter.condition}__exact': None
+            constructed_expense_filter = ~Q(**filter1)
+        else:
+            if expense_filter.custom_field_type == 'NUMBER':
+                expense_filter.values = [int(expense_filter_value) for expense_filter_value in expense_filter.values]
+            # If the expense filter is a custom field and the operator is yes or no(checkbox)
+            if expense_filter.custom_field_type == 'BOOLEAN':
+                expense_filter.values[0] = True if expense_filter.values[0] == 'true' else False
+            filter1 = {
+                'custom_properties__{0}__{1}'.format(
+                    expense_filter.condition,
+                    expense_filter.operator
+                ): expense_filter.values if len(expense_filter.values) > 1 or expense_filter.operator == 'in' else expense_filter.values[0]
             }
-            if expense_filter_value:
-                # If the isnull filter value is True, combine the two filters using the | operator and assign it to the constructed expense filter
-                constructed_expense_filter = Q(**filter1) | Q(**filter2)
-            else:
-                # If the isnull filter value is False, invert the exact filter using the ~Q operator and assign it to the constructed expense filter
-                constructed_expense_filter = ~Q(**filter2)
-    # for category non-custom field with not_in as operator, to check this later on
+            constructed_expense_filter = Q(**filter1)
+
+    elif expense_filter.is_custom and expense_filter.operator == 'isnull':
+        #This block is for custom-field is null check
+        expense_filter_value: bool = True if expense_filter.values[0].lower() == 'true' else False
+        filter1 = {
+            'custom_properties__{0}__{1}'.format(
+                expense_filter.condition,
+                expense_filter.operator
+            ): expense_filter_value
+        }
+        filter2 = {
+            'custom_properties__{0}__exact'.format(expense_filter.condition): None
+        }
+        if expense_filter_value == True:
+            #if isnull=True
+            constructed_expense_filter = Q(**filter1) | Q(**filter2)
+        else:
+            #if isnull=False
+            constructed_expense_filter = ~Q(**filter2)
+
     elif expense_filter.condition == 'category' and expense_filter.operator == 'not_in' and not expense_filter.is_custom:
         # construct the filter
         filter1 = {
@@ -409,19 +401,19 @@ def construct_expense_filter(expense_filter: ExpenseFilter) -> Q:
         }
         # Invert the filter using the ~Q operator and assign it to the constructed expense filter
         constructed_expense_filter = ~Q(**filter1)
-    # For all non-custom fields
+
     else:
-        # Construct the filter for the non-custom field
+        #This block is for all the non-custom-fields
         filter1 = {
-            f'{expense_filter.condition}__{expense_filter.operator}':
-                expense_filter.values[0] if len(expense_filter.values) == 1 and expense_filter.operator != 'in'
-                else expense_filter.values
+            '{0}__{1}'.format(
+                expense_filter.condition,
+                expense_filter.operator
+            ):expense_filter.values if len(expense_filter.values) > 1 or expense_filter.operator == 'in' else expense_filter.values[0]
         }
-        # Assign the constructed filter to the constructed expense filter
         constructed_expense_filter = Q(**filter1)
 
-    # Return the constructed expense filter
     return constructed_expense_filter
+
 
 def assert_valid_request(workspace_id:int, fyle_org_id:str):
     """
