@@ -284,8 +284,7 @@ data = {
                 'Vehicle Type': '',
                 'Fyle Categories': '',
             },
-            "is_posted_at_null": True,
-            "is_skipped": False
+            "is_posted_at_null": True
         },
         {
             'id': '1235',
@@ -327,8 +326,7 @@ data = {
                 'Vehicle Type': '',
                 'Fyle Categories': '',
             },
-            "is_posted_at_null": True,
-            "is_skipped": False
+            "is_posted_at_null": True
         },
         {
             'id': '1236',
@@ -370,8 +368,7 @@ data = {
                 'Vehicle Type': '',
                 'Fyle Categories': '',
             },
-            "is_posted_at_null": True,
-            "is_skipped": False
+            "is_posted_at_null": True
         },
     ],
     "skipped_expenses":{
