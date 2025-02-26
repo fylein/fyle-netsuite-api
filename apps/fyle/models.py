@@ -372,6 +372,48 @@ class ExpenseGroup(models.Model):
     class Meta:
         db_table = 'expense_groups'
 
+    def filter_negative_expenses(filtered_expenses: list[Expense]) -> list:
+        """
+        Filter negative expenses
+        :param filtered_expenses: Filtered Expenses
+        :return: Filtered Expenses
+        """
+        return list(filter(lambda expense: expense.amount > 0, filtered_expenses))
+    
+    @staticmethod
+    def filter_expense_groups(expense_groups: dict, expenses: Expense, export_type: str, expense_group_fields: dict) -> list:
+        """
+        Filter expense groups
+        :param expense_groups: Expense Groups
+        :param expenses: Expenses
+        :param export_type: Export Type
+        :param expense_group_fields: Expense Group Fields
+        :return: Filtered Expense Groups
+        """
+        filtered_expense_groups = []
+
+        for expense_group in expense_groups:
+            expense_group_expenses_ids = expense_group['expense_ids']
+
+            filtered_expenses = [item for item in expenses if item.id in expense_group_expenses_ids]
+
+            if export_type in ('EXPENSE REPORT', 'BILL') and 'expense_id' not in expense_group_fields:
+                total_amount = sum(expense.amount for expense in filtered_expenses)
+
+                if total_amount < 0:
+                    filtered_expenses = ExpenseGroup.filter_negative_expenses(filtered_expenses)
+
+            elif export_type != 'JOURNAL ENTRY':
+                filtered_expenses = ExpenseGroup.filter_negative_expenses(filtered_expenses)
+
+            filtered_expense_ids = [item.id for item in filtered_expenses]
+
+            if len(filtered_expense_ids) != 0:
+                expense_group['expense_ids'] = filtered_expense_ids
+                filtered_expense_groups.append(expense_group)
+
+        return filtered_expense_groups
+
     @staticmethod
     def create_expense_groups_by_report_id_fund_source(expense_objects: List[Expense], configuration: Configuration, workspace_id):
         """
