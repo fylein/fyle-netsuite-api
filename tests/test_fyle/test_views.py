@@ -350,14 +350,22 @@ def test_expense_filters(api_client, access_token):
 
    assert dict_compare_keys(response, data['expense_filters_response']) == [], 'expense group api return diffs in keys'
 
-   url = reverse('expense-filters-delete',
-                 kwargs={
-                     'workspace_id': 1,
-                     'pk': 2
-                 })
 
-   response = api_client.delete(url)
-   assert response.status_code == 204
+@pytest.mark.django_db(databases=['default'])
+def test_expense_filter_delete(api_client, access_token):
+    # First, create an expense filter to delete later
+    create_url = reverse('expense-filters', kwargs={'workspace_id': 1})
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
+
+    response = api_client.post(create_url, data=data['expense_filter_1'])
+    assert response.status_code == 201
+    created_filter = response.json()
+    filter_id = created_filter['id']
+
+    # Now, delete that expense filter
+    delete_url = reverse('expense-filters-delete', kwargs={'workspace_id': 1, 'pk': filter_id})
+    response = api_client.delete(delete_url)
+    assert response.status_code == 204
 
 
 @pytest.mark.django_db(databases=['default'])
