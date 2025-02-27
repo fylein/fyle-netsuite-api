@@ -67,7 +67,8 @@ def get_exportable_expense_group_ids(workspace_id):
     expense_group_ids = ExpenseGroup.objects.filter(
         workspace_id=workspace_id,
         exported_at__isnull=True,
-        fund_source__in=fund_source
+        fund_source__in=fund_source,
+        expenses__is_skipped=False
     ).values_list('id', flat=True)
     
     return expense_group_ids
@@ -341,10 +342,11 @@ def construct_expense_filter_query(expense_filters: list[ExpenseFilter]) -> Q:
         elif expense_filter.rank != 1:
             if previous_join_by == 'AND':
                 final_filter = final_filter & (constructed_expense_filter)
-            else:
+            elif previous_join_by == 'OR':
                 final_filter = final_filter | (constructed_expense_filter)
+            # If no join_by is specified, don't combine the filters
 
-        # Set the join type for the additonal filter
+        # Set the join type for the additional filter
         previous_join_by = expense_filter.join_by
 
     return final_filter

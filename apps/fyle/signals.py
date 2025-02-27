@@ -19,7 +19,7 @@ def run_post_save_expense_filters(sender, instance: ExpenseFilter, **kwargs):
     :param instance: Row Instance of Sender Class
     :return: None
     """
-    if instance.join_by is None and instance.workspace_id:
+    if instance.join_by is None:
         try:
             re_run_skip_export_rule(instance.workspace)
         except Exception as e:

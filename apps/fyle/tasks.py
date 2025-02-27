@@ -177,11 +177,19 @@ def create_expense_groups(workspace_id: int, configuration: Configuration, fund_
         logger.exception('Something unexpected happened workspace_id: %s %s', task_log.workspace_id, task_log.detail)
 
 
-def group_expenses_and_save(expenses: List[Dict], task_log: TaskLog, workspace: Workspace):
+def group_expenses_and_save(expenses: list[dict], task_log: TaskLog, workspace: Workspace) -> None:
+    """
+    Group expenses and save
+    :param expenses: Expenses
+    :param task_log: Task log object
+    :param workspace: Workspace object
+    :return: None
+    """
     expense_objects = Expense.create_expense_objects(expenses, workspace.id)
     expense_filters = ExpenseFilter.objects.filter(workspace_id=workspace.id).order_by('rank')
-    configuration : Configuration = Configuration.objects.get(workspace_id=workspace.id)
+    configuration = Configuration.objects.get(workspace_id=workspace.id)
     filtered_expenses = expense_objects
+
     if expense_filters:
         expenses_object_ids = [expense_object.id for expense_object in expense_objects]
         final_query = construct_expense_filter_query(expense_filters)
