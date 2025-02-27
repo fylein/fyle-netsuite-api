@@ -67,8 +67,7 @@ def get_exportable_expense_group_ids(workspace_id):
     expense_group_ids = ExpenseGroup.objects.filter(
         workspace_id=workspace_id,
         exported_at__isnull=True,
-        fund_source__in=fund_source,
-        expenses__is_skipped=False
+        fund_source__in=fund_source
     ).values_list('id', flat=True)
     
     return expense_group_ids

@@ -377,8 +377,7 @@ class ExpenseGroup(models.Model):
         """
         Group expense by report_id and fund_source
         """
-        expense_groups = []
-        filtered_corporate_credit_card_expense_groups = []
+        expense_objects = [expense for expense in expense_objects if not expense.is_skipped]
         expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=workspace_id)
 
         # Group Reimbursable Expenses
