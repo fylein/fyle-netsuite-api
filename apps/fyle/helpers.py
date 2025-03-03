@@ -97,6 +97,30 @@ def post_request(url, body, refresh_token=None):
     else:
         raise Exception(response.text)
 
+def patch_request(url, body, refresh_token=None):
+    """
+    Create a HTTP patch request.
+    """
+    access_token = None
+    api_headers = {
+        'Content-Type': 'application/json',
+    }
+    if refresh_token:
+        access_token = get_access_token(refresh_token)
+
+        api_headers['Authorization'] = 'Bearer {0}'.format(access_token)
+
+    response = requests.patch(
+        url,
+        headers=api_headers,
+        data=json.dumps(body)
+    )
+
+    if response.status_code in [200, 201]:
+        return json.loads(response.text)
+    else:
+        raise Exception(response.text)
+
 
 def get_source_account_type(fund_source: List[str]) -> List[str]:
     """
