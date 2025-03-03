@@ -13,7 +13,6 @@ def test_async_post_accounting_export_summary(db):
 def test_create_chain_and_run(db):
     workspace_id = 1
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-    in_progress_expenses = Expense.objects.filter(org_id='or79Cob97KSh')
     chain_tasks = [
         {
             'target': 'apps.sage_intacct.tasks.create_bill',
@@ -23,7 +22,7 @@ def test_create_chain_and_run(db):
         }
     ]
 
-    __create_chain_and_run(fyle_credentials, in_progress_expenses, workspace_id, chain_tasks, 'PERSONAL')
+    __create_chain_and_run(fyle_credentials, workspace_id, chain_tasks, False)
     assert True
 
 

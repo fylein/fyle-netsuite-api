@@ -37,6 +37,7 @@ from .models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, Jo
 from apps.fyle.actions import update_expenses_in_progress, update_complete_expenses
 from apps.fyle.tasks import post_accounting_export_summary
 from .connector import NetSuiteConnector
+from apps.netsuite.actions import update_last_export_details
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -94,7 +95,7 @@ def update_expense_and_post_summary(in_progress_expenses: List[Expense], workspa
     """
     fyle_org_id = Workspace.objects.get(pk=workspace_id).fyle_org_id
     update_expenses_in_progress(in_progress_expenses)
-    post_accounting_export_summary(fyle_org_id, workspace_id, fund_source)
+    post_accounting_export_summary(fyle_org_id, workspace_id, [expense.id for expense in in_progress_expenses], fund_source)
 
 
 def load_attachments(netsuite_connection: NetSuiteConnector, expense: Expense, expense_group: ExpenseGroup, credit_card_charge_object: CreditCardCharge):
@@ -449,7 +450,7 @@ def resolve_errors_for_exported_expense_group(expense_group, workspace_id=None):
 
 
 @handle_netsuite_exceptions(payment=False)
-def create_bill(expense_group: ExpenseGroup, task_log_id, last_export):
+def create_bill(expense_group: ExpenseGroup, task_log_id, last_export, is_auto_export: bool):
     task_log = TaskLog.objects.get(id=task_log_id)
     logger.info('Creating Bill for Expense Group %s, current state is %s', expense_group.id, task_log.status)
 
@@ -458,6 +459,12 @@ def create_bill(expense_group: ExpenseGroup, task_log_id, last_export):
         task_log.save()
     else:
         return
+    
+    in_progress_expenses = []
+    # Don't include expenses with previous export state as ERROR and it's an auto import/export run
+    if not (is_auto_export and expense_group.expenses.first().previous_export_state == 'ERROR'):
+        in_progress_expenses.extend(expense_group.expenses.all())
+        update_expense_and_post_summary(in_progress_expenses, expense_group.workspace_id, expense_group.fund_source)
 
     configuration: Configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
     general_mappings: GeneralMapping = GeneralMapping.objects.filter(workspace_id=expense_group.workspace_id).first()
@@ -503,9 +510,13 @@ def create_bill(expense_group: ExpenseGroup, task_log_id, last_export):
         expense_group.save()
         
         resolve_errors_for_exported_expense_group(expense_group)
+
+    if last_export:
+        update_last_export_details(expense_group.workspace_id)
+
     try:
         update_complete_expenses(expense_group.expenses.all(), expense_group.export_url)
-        post_accounting_export_summary(expense_group.workspace.fyle_org_id, expense_group.workspace.id, expense_group.fund_source)
+        post_accounting_export_summary(expense_group.workspace.fyle_org_id, expense_group.workspace.id, [expense.id for expense in expense_group.expenses.all()], expense_group.fund_source)
     except Exception as e:
         logger.error('Error while updating expenses for expense_group_id: %s and posting accounting export summary %s', expense_group.id, e)
 
@@ -518,7 +529,7 @@ def create_bill(expense_group: ExpenseGroup, task_log_id, last_export):
         
 
 @handle_netsuite_exceptions(payment=False)
-def create_credit_card_charge(expense_group, task_log_id, last_export):
+def create_credit_card_charge(expense_group, task_log_id, last_export, is_auto_export: bool):
     worker_logger = get_logger()
     task_log = TaskLog.objects.get(id=task_log_id)
     worker_logger.info('Creating Credit Card Charge for Expense Group %s, current state is %s', expense_group.id, task_log.status)
@@ -528,6 +539,12 @@ def create_credit_card_charge(expense_group, task_log_id, last_export):
         task_log.save()
     else:
         return
+    
+    in_progress_expenses = []
+    # Don't include expenses with previous export state as ERROR and it's an auto import/export run
+    if not (is_auto_export and expense_group.expenses.first().previous_export_state == 'ERROR'):
+        in_progress_expenses.extend(expense_group.expenses.all())
+        update_expense_and_post_summary(in_progress_expenses, expense_group.workspace_id, expense_group.fund_source)
 
     configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
     general_mappings: GeneralMapping = GeneralMapping.objects.filter(workspace_id=expense_group.workspace_id).first()
@@ -592,9 +609,12 @@ def create_credit_card_charge(expense_group, task_log_id, last_export):
         resolve_errors_for_exported_expense_group(expense_group)
         worker_logger.info('Updated Expense Group %s successfully', expense_group.id)
 
+    if last_export:
+        update_last_export_details(expense_group.workspace_id)
+
     try:
         update_complete_expenses(expense_group.expenses.all(), expense_group.export_url)
-        post_accounting_export_summary(expense_group.workspace.fyle_org_id, expense_group.workspace.id, expense_group.fund_source)
+        post_accounting_export_summary(expense_group.workspace.fyle_org_id, expense_group.workspace.id, [expense.id for expense in expense_group.expenses.all()], expense_group.fund_source)
     except Exception as e:
         logger.error('Error while updating expenses for expense_group_id: %s and posting accounting export summary %s', expense_group.id, e)
 
@@ -604,7 +624,7 @@ def create_credit_card_charge(expense_group, task_log_id, last_export):
 
 
 @handle_netsuite_exceptions(payment=False)
-def create_expense_report(expense_group, task_log_id, last_export):
+def create_expense_report(expense_group, task_log_id, last_export, is_auto_export: bool):
     worker_logger = get_logger()
     task_log = TaskLog.objects.get(id=task_log_id)
     worker_logger.info('Creating Expense Report for Expense Group %s, current state is %s', expense_group.id, task_log.status)
@@ -614,6 +634,12 @@ def create_expense_report(expense_group, task_log_id, last_export):
         task_log.save()
     else:
         return
+    
+    in_progress_expenses = []
+    # Don't include expenses with previous export state as ERROR and it's an auto import/export run
+    if not (is_auto_export and expense_group.expenses.first().previous_export_state == 'ERROR'):
+        in_progress_expenses.extend(expense_group.expenses.all())
+        update_expense_and_post_summary(in_progress_expenses, expense_group.workspace_id, expense_group.fund_source)
 
     configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
     general_mapping = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
@@ -654,9 +680,12 @@ def create_expense_report(expense_group, task_log_id, last_export):
         expense_group.save()
         resolve_errors_for_exported_expense_group(expense_group)
 
+    if last_export:
+        update_last_export_details(expense_group.workspace_id)
+
     try:
         update_complete_expenses(expense_group.expenses.all(), expense_group.export_url)
-        post_accounting_export_summary(expense_group.workspace.fyle_org_id, expense_group.workspace.id, expense_group.fund_source)
+        post_accounting_export_summary(expense_group.workspace.fyle_org_id, expense_group.workspace.id, [expense.id for expense in expense_group.expenses.all()], expense_group.fund_source)
     except Exception as e:
         logger.error('Error while updating expenses for expense_group_id: %s and posting accounting export summary %s', expense_group.id, e)
 
@@ -670,7 +699,7 @@ def create_expense_report(expense_group, task_log_id, last_export):
 
 
 @handle_netsuite_exceptions(payment=False)
-def create_journal_entry(expense_group, task_log_id, last_export):
+def create_journal_entry(expense_group, task_log_id, last_export, is_auto_export: bool):
     worker_logger = get_logger()
     task_log = TaskLog.objects.get(id=task_log_id)
     worker_logger.info('Creating Journal Entry for Expense Group %s, current state is %s', expense_group.id, task_log.status)
@@ -680,6 +709,12 @@ def create_journal_entry(expense_group, task_log_id, last_export):
         task_log.save()
     else:
         return
+
+    in_progress_expenses = []
+    # Don't include expenses with previous export state as ERROR and it's an auto import/export run
+    if not (is_auto_export and expense_group.expenses.first().previous_export_state == 'ERROR'):
+        in_progress_expenses.extend(expense_group.expenses.all())
+        update_expense_and_post_summary(in_progress_expenses, expense_group.workspace_id, expense_group.fund_source)
 
     configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
     general_mapping = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
@@ -720,9 +755,13 @@ def create_journal_entry(expense_group, task_log_id, last_export):
         expense_group.export_url = generate_netsuite_export_url(response_logs=created_journal_entry, netsuite_credentials=netsuite_credentials)      
         expense_group.save()
         resolve_errors_for_exported_expense_group(expense_group)
+
+    if last_export:
+        update_last_export_details(expense_group.workspace_id)
+
     try:
         update_complete_expenses(expense_group.expenses.all(), expense_group.export_url)
-        post_accounting_export_summary(expense_group.workspace.fyle_org_id, expense_group.workspace.id, expense_group.fund_source)
+        post_accounting_export_summary(expense_group.workspace.fyle_org_id, expense_group.workspace.id, [expense.id for expense in expense_group.expenses.all()], expense_group.fund_source)
     except Exception as e:
         logger.error('Error while updating expenses for expense_group_id: %s and posting accounting export summary %s', expense_group.id, e)
 

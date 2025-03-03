@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from django.db.models import Q
 from django_q.tasks import Chain
 
-from apps.fyle.models import ExpenseGroup, Expense
+from apps.fyle.models import ExpenseGroup
 from apps.tasks.models import TaskLog, Error
 from apps.workspaces.models import FyleCredential
 
@@ -13,8 +13,7 @@ logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
 
-def __create_chain_and_run(fyle_credentials: FyleCredential, in_progress_expenses: List[Expense],
-        workspace_id: int, chain_tasks: List[dict], fund_source: str) -> None:
+def __create_chain_and_run(fyle_credentials: FyleCredential, workspace_id: int, chain_tasks: List[dict], is_auto_export: bool) -> None:
     """
     Create chain and run
     :param fyle_credentials: Fyle credentials
@@ -26,14 +25,12 @@ def __create_chain_and_run(fyle_credentials: FyleCredential, in_progress_expense
     """
     chain = Chain()
 
-    chain.append('apps.netsuite.tasks.update_expense_and_post_summary', in_progress_expenses, workspace_id, fund_source)
-    chain.append('apps.fyle.helpers.sync_dimensions', workspace_id, True)
+    chain.append('apps.fyle.helpers.sync_dimensions', fyle_credentials, workspace_id, True)
 
     for task in chain_tasks:
         logger.info('Chain task %s, Chain Expense Group %s, Chain Task Log %s', task['target'], task['expense_group'], task['task_log_id'])
-        chain.append(task['target'], task['expense_group'], task['task_log_id'], task['last_export'])
+        chain.append(task['target'], task['expense_group'], task['task_log_id'], task['last_export'], is_auto_export)
 
-    chain.append('apps.fyle.tasks.post_accounting_export_summary', fyle_credentials.workspace.fyle_org_id, workspace_id, fund_source, True)
     chain.run()
 
 
@@ -104,7 +101,7 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str], is_
 
         if len(chain_tasks) > 0:
                 fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-                __create_chain_and_run(fyle_credentials, in_progress_expenses, workspace_id, chain_tasks, fund_source)
+                __create_chain_and_run(fyle_credentials, workspace_id, chain_tasks, is_auto_export)
 
 
 def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str, interval_hours: int):
@@ -170,7 +167,7 @@ def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: L
 
         if len(chain_tasks) > 0:
             fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-            __create_chain_and_run(fyle_credentials, in_progress_expenses, workspace_id, chain_tasks, fund_source)
+            __create_chain_and_run(fyle_credentials, workspace_id, chain_tasks, is_auto_export)
 
 
 def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str, interval_hours: int):
@@ -231,7 +228,7 @@ def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List
 
         if len(chain_tasks) > 0:
                 fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-                __create_chain_and_run(fyle_credentials, in_progress_expenses, workspace_id, chain_tasks, fund_source)
+                __create_chain_and_run(fyle_credentials, workspace_id, chain_tasks, is_auto_export)
 
 
 def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str, interval_hours: int):
@@ -291,4 +288,4 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
 
         if len(chain_tasks) > 0:
                 fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-                __create_chain_and_run(fyle_credentials, in_progress_expenses, workspace_id, chain_tasks, fund_source)
+                __create_chain_and_run(fyle_credentials, workspace_id, chain_tasks, is_auto_export)

@@ -104,6 +104,7 @@ def mark_expenses_as_skipped(final_query: Q, expenses_object_ids: List, workspac
         )
 
     __bulk_update_expenses(expense_to_be_updated)
+    return [expense.id for expense in expenses_to_be_skipped]
 
 
 def mark_accounting_export_summary_as_synced(expenses: List[Expense]) -> None:
