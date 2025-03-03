@@ -7,7 +7,7 @@ from typing import List
 
 from django.conf import settings
 from django.db.models import Q
-from apps.fyle.helpers import post_request
+from apps.fyle.helpers import patch_request, post_request
 from django.template.loader import render_to_string
 from django_q.models import Schedule
 from fyle_accounting_mappings.models import MappingSetting, ExpenseAttribute
@@ -228,6 +228,21 @@ def post_to_integration_settings(workspace_id: int, active: bool):
     except Exception as error:
         logger.error(error)
 
+def patch_integration_settings(workspace_id: int, errors: int = 0):
+    """
+    Patch integration settings
+    """
+    refresh_token = FyleCredential.objects.get(workspace_id=workspace_id).refresh_token
+    url = '{}/integrations/'.format(settings.INTEGRATIONS_SETTINGS_API)
+    payload = {
+        'tpa_name': 'Fyle Netsuite Integration',
+        'errors_count': errors
+    }
+
+    try:
+        patch_request(url, payload, refresh_token)
+    except Exception as error:
+        logger.error(error, exc_info=True)
 
 def async_update_fyle_credentials(fyle_org_id: str, refresh_token: str):
     fyle_credentials = FyleCredential.objects.filter(workspace__fyle_org_id=fyle_org_id).first()
