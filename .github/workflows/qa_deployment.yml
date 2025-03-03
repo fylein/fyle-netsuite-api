@@ -1,9 +1,6 @@
 name: Deploy to QA
 
 on:
-  push:
-    branches:
-      - master
   pull_request:
     types: [labeled]
 

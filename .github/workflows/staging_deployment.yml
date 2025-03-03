@@ -37,10 +37,22 @@ jobs:
           persist-credentials: false
           token: ${{ secrets.DEPLOY_GIT_ACCESS_TOKEN }}
 
-      - name: Update Image Tag
+      - name: Update Image Tag - fyle staging
         run: |
           NEW_TAG="v$(git rev-parse --short HEAD)"
           cd ${{ vars.STAGING_DEPLOY_REPO }}/${{ vars.STAGING_DEPLOY_DIR }}/staging/integrations
+          kustomize edit set image docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api:$NEW_TAG
+
+      - name: Update Image Tag - c1 qa
+        run: |
+          NEW_TAG="v$(git rev-parse --short HEAD)"
+          cd ${{ vars.STAGING_DEPLOY_REPO }}/${{ vars.C1_STAGING_DEPLOY_DIR }}/qa/integrations
+          kustomize edit set image docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api:$NEW_TAG
+
+      - name: Update Image Tag - c1 staging
+        run: |
+          NEW_TAG="v$(git rev-parse --short HEAD)"
+          cd ${{ vars.STAGING_DEPLOY_REPO }}/${{ vars.C1_STAGING_DEPLOY_DIR }}/staging/integrations
           kustomize edit set image docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api:$NEW_TAG
 
       - name: Commit and push changes
