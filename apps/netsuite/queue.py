@@ -13,19 +13,17 @@ logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
 
-def __create_chain_and_run(fyle_credentials: FyleCredential, workspace_id: int, chain_tasks: List[dict], is_auto_export: bool) -> None:
+def __create_chain_and_run(workspace_id: int, chain_tasks: List[dict], is_auto_export: bool) -> None:
     """
     Create chain and run
-    :param fyle_credentials: Fyle credentials
-    :param in_progress_expenses: List of in progress expenses
     :param workspace_id: workspace id
     :param chain_tasks: List of chain tasks
-    :param fund_source: Fund source
+    :param is_auto_export: Is auto export
     :return: None
     """
     chain = Chain()
 
-    chain.append('apps.fyle.helpers.sync_dimensions', fyle_credentials, workspace_id, True)
+    chain.append('apps.fyle.helpers.sync_dimensions', workspace_id, True)
 
     for task in chain_tasks:
         logger.info('Chain task %s, Chain Expense Group %s, Chain Task Log %s', task['target'], task['expense_group'], task['task_log_id'])
@@ -62,7 +60,6 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str], is_
         errors = Error.objects.filter(workspace_id=workspace_id, is_resolved=False, expense_group_id__in=expense_group_ids).all()
 
         chain_tasks = []
-        in_progress_expenses = []
 
         for index, expense_group in enumerate(expense_groups):
             
@@ -96,12 +93,9 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str], is_
                     'task_log_id': task_log.id,
                     'last_export': last_export
                     })
-            if not (is_auto_export and expense_group.expenses.first().previous_export_state == 'ERROR'):
-                in_progress_expenses.extend(expense_group.expenses.all())
 
         if len(chain_tasks) > 0:
-                fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-                __create_chain_and_run(fyle_credentials, workspace_id, chain_tasks, is_auto_export)
+            __create_chain_and_run(workspace_id, chain_tasks, is_auto_export)
 
 
 def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str, interval_hours: int):
@@ -122,7 +116,6 @@ def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: L
         errors = Error.objects.filter(workspace_id=workspace_id, is_resolved=False, expense_group_id__in=expense_group_ids).all()
 
         chain_tasks = []
-        in_progress_expenses = []
 
         for index, expense_group in enumerate(expense_groups):
             
@@ -162,12 +155,8 @@ def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: L
                     'last_export': last_export
                     })
 
-            if not (is_auto_export and expense_group.expenses.first().previous_export_state == 'ERROR'):
-                in_progress_expenses.extend(expense_group.expenses.all())
-
         if len(chain_tasks) > 0:
-            fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-            __create_chain_and_run(fyle_credentials, workspace_id, chain_tasks, is_auto_export)
+            __create_chain_and_run(workspace_id, chain_tasks, is_auto_export)
 
 
 def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str, interval_hours: int):
@@ -188,7 +177,6 @@ def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List
         errors = Error.objects.filter(workspace_id=workspace_id, is_resolved=False, expense_group_id__in=expense_group_ids).all()
 
         chain_tasks = []
-        in_progress_expenses = []
 
         for index, expense_group in enumerate(expense_groups):
 
@@ -223,12 +211,8 @@ def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List
                     'last_export': last_export
                     })
 
-            if not (is_auto_export and expense_group.expenses.first().previous_export_state == 'ERROR'):
-                in_progress_expenses.extend(expense_group.expenses.all())
-
         if len(chain_tasks) > 0:
-                fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-                __create_chain_and_run(fyle_credentials, workspace_id, chain_tasks, is_auto_export)
+            __create_chain_and_run(workspace_id, chain_tasks, is_auto_export)
 
 
 def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str, interval_hours: int):
@@ -248,7 +232,6 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
         errors = Error.objects.filter(workspace_id=workspace_id, is_resolved=False, expense_group_id__in=expense_group_ids).all()
 
         chain_tasks = []
-        in_progress_expenses = []
 
         for index, expense_group in enumerate(expense_groups):
 
@@ -283,9 +266,5 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
                     'last_export': last_export
                     })
 
-            if not (is_auto_export and expense_group.expenses.first().previous_export_state == 'ERROR'):
-                in_progress_expenses.extend(expense_group.expenses.all())
-
         if len(chain_tasks) > 0:
-                fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-                __create_chain_and_run(fyle_credentials, workspace_id, chain_tasks, is_auto_export)
+            __create_chain_and_run(workspace_id, chain_tasks, is_auto_export)

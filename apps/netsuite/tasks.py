@@ -463,8 +463,11 @@ def create_bill(expense_group: ExpenseGroup, task_log_id, last_export, is_auto_e
     in_progress_expenses = []
     # Don't include expenses with previous export state as ERROR and it's an auto import/export run
     if not (is_auto_export and expense_group.expenses.first().previous_export_state == 'ERROR'):
-        in_progress_expenses.extend(expense_group.expenses.all())
-        update_expense_and_post_summary(in_progress_expenses, expense_group.workspace_id, expense_group.fund_source)
+        try:
+            in_progress_expenses.extend(expense_group.expenses.all())
+            update_expense_and_post_summary(in_progress_expenses, expense_group.workspace_id, expense_group.fund_source)
+        except Exception as e:
+            logger.error('Error while updating expenses for expense_group_id: %s and posting accounting export summary %s', expense_group.id, e)
 
     configuration: Configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
     general_mappings: GeneralMapping = GeneralMapping.objects.filter(workspace_id=expense_group.workspace_id).first()
@@ -543,8 +546,11 @@ def create_credit_card_charge(expense_group, task_log_id, last_export, is_auto_e
     in_progress_expenses = []
     # Don't include expenses with previous export state as ERROR and it's an auto import/export run
     if not (is_auto_export and expense_group.expenses.first().previous_export_state == 'ERROR'):
-        in_progress_expenses.extend(expense_group.expenses.all())
-        update_expense_and_post_summary(in_progress_expenses, expense_group.workspace_id, expense_group.fund_source)
+        try:
+            in_progress_expenses.extend(expense_group.expenses.all())
+            update_expense_and_post_summary(in_progress_expenses, expense_group.workspace_id, expense_group.fund_source)
+        except Exception as e:
+            logger.error('Error while updating expenses for expense_group_id: %s and posting accounting export summary %s', expense_group.id, e)
 
     configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
     general_mappings: GeneralMapping = GeneralMapping.objects.filter(workspace_id=expense_group.workspace_id).first()
@@ -638,8 +644,11 @@ def create_expense_report(expense_group, task_log_id, last_export, is_auto_expor
     in_progress_expenses = []
     # Don't include expenses with previous export state as ERROR and it's an auto import/export run
     if not (is_auto_export and expense_group.expenses.first().previous_export_state == 'ERROR'):
-        in_progress_expenses.extend(expense_group.expenses.all())
-        update_expense_and_post_summary(in_progress_expenses, expense_group.workspace_id, expense_group.fund_source)
+        try:
+            in_progress_expenses.extend(expense_group.expenses.all())
+            update_expense_and_post_summary(in_progress_expenses, expense_group.workspace_id, expense_group.fund_source)
+        except Exception as e:
+            logger.error('Error while updating expenses for expense_group_id: %s and posting accounting export summary %s', expense_group.id, e)
 
     configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
     general_mapping = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
@@ -713,8 +722,11 @@ def create_journal_entry(expense_group, task_log_id, last_export, is_auto_export
     in_progress_expenses = []
     # Don't include expenses with previous export state as ERROR and it's an auto import/export run
     if not (is_auto_export and expense_group.expenses.first().previous_export_state == 'ERROR'):
-        in_progress_expenses.extend(expense_group.expenses.all())
-        update_expense_and_post_summary(in_progress_expenses, expense_group.workspace_id, expense_group.fund_source)
+        try:
+            in_progress_expenses.extend(expense_group.expenses.all())
+            update_expense_and_post_summary(in_progress_expenses, expense_group.workspace_id, expense_group.fund_source)
+        except Exception as e:
+            logger.error('Error while updating expenses for expense_group_id: %s and posting accounting export summary %s', expense_group.id, e)
 
     configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
     general_mapping = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)

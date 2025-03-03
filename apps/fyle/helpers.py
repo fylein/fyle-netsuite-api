@@ -290,13 +290,13 @@ def check_interval_and_sync_dimension(workspace_id: int):
         time_interval = datetime.now(timezone.utc) - workspace.source_synced_at
 
     if workspace.source_synced_at is None or time_interval.days > 0:
-        fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-        sync_dimensions(fyle_credentials, workspace_id)
+        sync_dimensions(workspace_id)
 
 
 
-def sync_dimensions(fyle_credentials: FyleCredential, workspace_id: int, is_export: bool = False) -> None:
+def sync_dimensions(workspace_id: int, is_export: bool = False) -> None:
     workspace = Workspace.objects.get(id=workspace_id)
+    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
 
     platform = PlatformConnector(fyle_credentials)
     platform.import_fyle_dimensions(is_export=is_export)

@@ -1,18 +1,11 @@
 from apps.fyle.models import Expense
-from apps.workspaces.models import Workspace, FyleCredential
+from apps.workspaces.models import Workspace
 from apps.netsuite.queue import __create_chain_and_run
-from apps.fyle.queue import async_post_accounting_export_summary, async_import_and_export_expenses
-
-
-# This test is just for cov :D
-def test_async_post_accounting_export_summary(db):
-    async_post_accounting_export_summary(1, 1)
-    assert True
+from apps.fyle.queue import async_import_and_export_expenses
 
 # This test is just for cov :D
 def test_create_chain_and_run(db):
     workspace_id = 1
-    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
     chain_tasks = [
         {
             'target': 'apps.sage_intacct.tasks.create_bill',
@@ -22,7 +15,7 @@ def test_create_chain_and_run(db):
         }
     ]
 
-    __create_chain_and_run(fyle_credentials, workspace_id, chain_tasks, False)
+    __create_chain_and_run(workspace_id, chain_tasks, False)
     assert True
 
 
