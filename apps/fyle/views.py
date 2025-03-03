@@ -266,7 +266,7 @@ class SyncFyleDimensionView(generics.ListCreateAPIView):
         """
         try:
             workspace = Workspace.objects.get(pk=kwargs['workspace_id'])
-            fyle_credentials = FyleCredential.objects.get(workspace_id=workspace.id)
+            FyleCredential.objects.get(workspace_id=workspace.id)
 
             if not check_if_task_exists_in_ormq(func='apps.fyle.helpers.check_interval_and_sync_dimension', payload=kwargs['workspace_id']):
                 async_task('apps.fyle.helpers.check_interval_and_sync_dimension', kwargs['workspace_id'])
