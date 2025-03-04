@@ -294,9 +294,9 @@ def check_interval_and_sync_dimension(workspace_id: int):
 
 
 
-def sync_dimensions(workspace_id, is_export: bool = False) -> None:
+def sync_dimensions(workspace_id: int, is_export: bool = False) -> None:
     workspace = Workspace.objects.get(id=workspace_id)
-    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace.id)
+    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
 
     platform = PlatformConnector(fyle_credentials)
     platform.import_fyle_dimensions(is_export=is_export)

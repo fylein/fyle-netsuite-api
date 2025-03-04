@@ -210,7 +210,7 @@ def test_post_bill_success(add_tax_destination_attributes, mocker, db):
     for expenses in expense_group.expenses.all():
         expenses.workspace_id = 2
         expenses.save()
-    create_bill(expense_group, task_log.id, True)
+    create_bill(expense_group, task_log.id, True, False)
     
     task_log = TaskLog.objects.get(pk=task_log.id)
     bill = Bill.objects.get(expense_group_id=expense_group.id)
@@ -227,7 +227,7 @@ def test_post_bill_success(add_tax_destination_attributes, mocker, db):
     task_log.save()
 
     expense_group = ExpenseGroup.objects.filter(workspace_id=workspace_id, fund_source='CCC').first()
-    create_bill(expense_group, task_log.id, True)
+    create_bill(expense_group, task_log.id, True, False)
 
     task_log = TaskLog.objects.get(id=task_log.id)
     assert task_log.detail['message'] == 'NetSuite Account not connected'
@@ -265,7 +265,7 @@ def test_post_bill_mapping_error(mocker, db):
     created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
 
     expense_group = ExpenseGroup.objects.filter(workspace_id=workspace_id, fund_source='CCC').first()
-    create_bill(expense_group, task_log.id, True)
+    create_bill(expense_group, task_log.id, True, False)
 
     task_log = TaskLog.objects.filter(pk=task_log.id).first()
 
@@ -302,7 +302,7 @@ def test_accounting_period_working_bill(db, mocker):
 
     with mock.patch('apps.netsuite.connector.NetSuiteConnector.post_bill') as mock_call:
         mock_call.side_effect = NetSuiteRequestError(message='An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.')
-        create_bill(expense_group, task_log.id, True)
+        create_bill(expense_group, task_log.id, True, False)
 
         task_log = TaskLog.objects.get(pk=task_log.id)
 
@@ -310,7 +310,7 @@ def test_accounting_period_working_bill(db, mocker):
         assert task_log.status=='FAILED'
 
         mock_call.side_effect = Exception()
-        create_bill(expense_group, task_log.id, True)
+        create_bill(expense_group, task_log.id, True, False)
 
         task_log = TaskLog.objects.get(pk=task_log.id)
         assert task_log.status=='FATAL'
@@ -339,7 +339,7 @@ def test_post_expense_report(mocker, db):
     successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
     created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
     
-    create_expense_report(expense_group, task_log.id, True)
+    create_expense_report(expense_group, task_log.id, True, False)
     
     task_log = TaskLog.objects.get(pk=task_log.id)
     expense_report = ExpenseReport.objects.get(expense_group_id=expense_group.id)
@@ -355,7 +355,7 @@ def test_post_expense_report(mocker, db):
     task_log.status = 'READY'
     task_log.save()
 
-    create_expense_report(expense_group, task_log.id, True)
+    create_expense_report(expense_group, task_log.id, True, False)
 
     task_log = TaskLog.objects.get(id=task_log.id)
     assert task_log.detail['message'] == 'NetSuite Account not connected'
@@ -364,7 +364,7 @@ def test_post_expense_report(mocker, db):
     mock_call = mocker.patch.object(mock_connector, 'post_expense_report')
 
     mock_call.side_effect = zeep.exceptions.Fault('INVALID_KEY_OR_REF', 'An error occured in a upsert request: Invalid apacct reference key 223.')
-    create_expense_report(expense_group, task_log.id, True)
+    create_expense_report(expense_group, task_log.id, True, False)
 
     mock_call.call_count == 1
 
@@ -389,7 +389,7 @@ def test_post_expense_report_mapping_error(mocker, db):
     successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
     created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
 
-    create_expense_report(expense_group, task_log.id, True)
+    create_expense_report(expense_group, task_log.id, True, False)
 
     task_log = TaskLog.objects.filter(pk=task_log.id).first()
 
@@ -422,7 +422,7 @@ def test_accounting_period_working_expense_report(mocker, db):
 
     with mock.patch('apps.netsuite.connector.NetSuiteConnector.post_expense_report') as mock_call:
         mock_call.side_effect = NetSuiteRequestError(message='An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.')
-        create_expense_report(expense_group, task_log.id, True)
+        create_expense_report(expense_group, task_log.id, True, False)
 
         task_log = TaskLog.objects.get(pk=task_log.id)
 
@@ -430,7 +430,7 @@ def test_accounting_period_working_expense_report(mocker, db):
         assert task_log.status=='FAILED'
 
         mock_call.side_effect = Exception()
-        create_expense_report(expense_group, task_log.id, True)
+        create_expense_report(expense_group, task_log.id, True, False)
 
         task_log = TaskLog.objects.get(pk=task_log.id)
         assert task_log.status=='FATAL'
@@ -468,7 +468,7 @@ def test_post_journal_entry(mocker, db):
     successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
     created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
     
-    create_journal_entry(expense_group, task_log.id, True)
+    create_journal_entry(expense_group, task_log.id, True, False)
 
     task_log = TaskLog.objects.get(pk=task_log.id)
     journal_entry = JournalEntry.objects.get(expense_group_id=expense_group.id)
@@ -489,7 +489,7 @@ def test_post_journal_entry(mocker, db):
     configuration.employee_field_mapping = 'VENDOR'
     configuration.save()
 
-    create_journal_entry(expense_group, task_log.id, True)
+    create_journal_entry(expense_group, task_log.id, True, False)
 
     # journal_entry = JournalEntry.objects.get(expense_group__id=expense_group.id)
     # expense_group.id = random.randint(50, 1000)
@@ -502,7 +502,7 @@ def test_post_journal_entry(mocker, db):
     configuration.employee_field_mapping = 'EMPLOYEE'
     configuration.save()
 
-    create_journal_entry(expense_group, task_log.id, True)
+    create_journal_entry(expense_group, task_log.id, True, False)
 
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_credentials.delete()
@@ -510,7 +510,7 @@ def test_post_journal_entry(mocker, db):
     task_log.status = 'READY'
     task_log.save()
 
-    create_journal_entry(expense_group, task_log.id, True)
+    create_journal_entry(expense_group, task_log.id, True, False)
 
     task_log = TaskLog.objects.get(id=task_log.id)
     assert task_log.detail['message'] == 'NetSuite Account not connected'
@@ -536,7 +536,7 @@ def test_post_journal_entry_mapping_error(mocker, db):
     successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
     created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
 
-    create_journal_entry(expense_group, task_log.id, True)
+    create_journal_entry(expense_group, task_log.id, True, False)
 
     task_log = TaskLog.objects.filter(pk=task_log.id).first()
 
@@ -567,7 +567,7 @@ def test_accounting_period_working_create_journal_entry(mocker, db):
     
     with mock.patch('apps.netsuite.connector.NetSuiteConnector.post_journal_entry') as mock_call:
         mock_call.side_effect = NetSuiteRequestError(message='An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.')
-        create_journal_entry(expense_group, task_log.id, True)
+        create_journal_entry(expense_group, task_log.id, True, False)
 
         task_log = TaskLog.objects.get(pk=task_log.id)
 
@@ -575,7 +575,7 @@ def test_accounting_period_working_create_journal_entry(mocker, db):
         assert task_log.status=='FAILED'
 
         mock_call.side_effect = Exception()
-        create_journal_entry(expense_group, task_log.id, True)
+        create_journal_entry(expense_group, task_log.id, True, False)
 
         task_log = TaskLog.objects.get(pk=task_log.id)
         assert task_log.status=='FATAL'
@@ -629,7 +629,7 @@ def test_create_credit_card_charge(mocker, db):
     successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
     created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
 
-    create_credit_card_charge(expense_group, task_log.id, True)
+    create_credit_card_charge(expense_group, task_log.id, True, False)
     
     task_log = TaskLog.objects.get(pk=task_log.id)
     credit_card_charge = CreditCardCharge.objects.get(expense_group_id=expense_group.id)
@@ -648,7 +648,7 @@ def test_create_credit_card_charge(mocker, db):
         expense.amount = -1.00
         expense.save()
 
-    create_credit_card_charge(expense_group, task_log.id, True)
+    create_credit_card_charge(expense_group, task_log.id, True, False)
 
     expense_group = ExpenseGroup.objects.filter(id=expense_group.id).first()
     created_credit_card_charge = expense_group.response_logs
@@ -660,7 +660,7 @@ def test_create_credit_card_charge(mocker, db):
     task_log.status = 'READY'
     task_log.save()
 
-    create_credit_card_charge(expense_group, task_log.id, True)
+    create_credit_card_charge(expense_group, task_log.id, True, False)
 
     task_log = TaskLog.objects.get(id=task_log.id)
     assert task_log.detail['message'] == 'NetSuite Account not connected'
@@ -697,7 +697,7 @@ def test_post_credit_card_charge_mapping_error(mocker, db):
     successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
     created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
 
-    create_credit_card_charge(expense_group, task_log.id, True)
+    create_credit_card_charge(expense_group, task_log.id, True, False)
 
     task_log = TaskLog.objects.filter(pk=task_log.id).first()
 
@@ -742,7 +742,7 @@ def test_accounting_period_working_credit_card_charge(mocker, db):
     
     with mock.patch('apps.netsuite.connector.NetSuiteConnector.post_credit_card_charge') as mock_call:
         mock_call.side_effect = NetSuiteRequestError(message='An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.')
-        create_credit_card_charge(expense_group, task_log.id, True)
+        create_credit_card_charge(expense_group, task_log.id, True, False)
 
         task_log = TaskLog.objects.get(pk=task_log.id)
 
@@ -750,7 +750,7 @@ def test_accounting_period_working_credit_card_charge(mocker, db):
         assert task_log.status=='FAILED'
 
         mock_call.side_effect = Exception()
-        create_credit_card_charge(expense_group, task_log.id, True)
+        create_credit_card_charge(expense_group, task_log.id, True, False)
 
         task_log = TaskLog.objects.get(pk=task_log.id)
         assert task_log.status=='FATAL'
