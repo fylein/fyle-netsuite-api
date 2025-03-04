@@ -7661,5 +7661,28 @@ data = {
             "text": """<HTML><HEAD>""",
             "message": "HTML bad response from NetSuite"
         }
+    ],
+
+    'task_logs': [
+        {
+            'type': 'CREATING_BILL',
+            'status': 'FAILED'
+        },
+        {
+            'type': 'CREATING_CREDIT_CARD_CHARGE',
+            'status': 'FATAL'
+        },
+        {
+            'type': 'CREATING_CREDIT_CARD_REFUND',
+            'status': 'FAILED'
+        },
+        {
+            'type': 'CREATING_EXPENSE_REPORT',
+            'status': 'COMPLETE'
+        },
+        {
+            'type': 'CREATING_JOURNAL_ENTRY',
+            'status': 'FATAL'
+        },
     ]
 }
