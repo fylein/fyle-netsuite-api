@@ -21,7 +21,6 @@ from .models import Expense, ExpenseFilter, ExpenseGroup, ExpenseGroupSettings
 from .helpers import construct_expense_filter_query
 from .helpers import construct_expense_filter_query, get_filter_credit_expenses, get_source_account_type, get_fund_source, handle_import_exception
 from apps.workspaces.actions import export_to_netsuite
-from .queue import async_post_accounting_export_summary
 from .actions import (
     mark_expenses_as_skipped,
     create_generator_and_post_in_batches
@@ -187,7 +186,8 @@ def group_expenses_and_save(expenses: List[Dict], task_log: TaskLog, workspace: 
         final_query = construct_expense_filter_query(expense_filters)
 
         mark_expenses_as_skipped(final_query, expenses_object_ids, workspace)
-        async_post_accounting_export_summary(workspace.fyle_org_id, workspace.id)
+        skipped_expense_ids = mark_expenses_as_skipped(final_query, expenses_object_ids, workspace)
+        post_accounting_export_summary(workspace.fyle_org_id, workspace.id, skipped_expense_ids)
 
         filtered_expenses = Expense.objects.filter(
             is_skipped=False,
@@ -204,7 +204,7 @@ def group_expenses_and_save(expenses: List[Dict], task_log: TaskLog, workspace: 
     task_log.save()
 
 
-def post_accounting_export_summary(org_id: str, workspace_id: int, fund_source: str = None, is_failed: bool = False) -> None:
+def post_accounting_export_summary(org_id: str, workspace_id: int, expense_ids: List = None, fund_source: str = None, is_failed: bool = False) -> None:
     """
     Post accounting export summary to Fyle
     :param org_id: org id
@@ -219,6 +219,9 @@ def post_accounting_export_summary(org_id: str, workspace_id: int, fund_source: 
         'org_id': org_id,
         'accounting_export_summary__synced': False
     }
+
+    if expense_ids:
+        filters['id__in'] = expense_ids
 
     if fund_source:
         filters['fund_source'] = fund_source

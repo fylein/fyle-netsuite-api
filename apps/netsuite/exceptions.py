@@ -230,6 +230,9 @@ def handle_netsuite_exceptions(payment=False):
                     update_failed_expenses(expense_group.expenses.all(), False)
                 __log_error(task_log)
             
+            if not payment:
+                post_accounting_export_summary(expense_group.workspace.fyle_org_id, expense_group.workspace_id, [expense.id for expense in expense_group.expenses.all()], expense_group.fund_source, True)
+            
             if not payment and last_export is True:
                 update_last_export_details(expense_group.workspace_id)
 
