@@ -7,9 +7,8 @@ from django_q.models import OrmQ, Schedule
 from apps.fyle.actions import update_failed_expenses
 from apps.fyle.models import ExpenseGroup
 from apps.tasks.models import TaskLog
+from apps.workspaces.actions import export_to_netsuite
 from apps.workspaces.models import Workspace
-
-from django_q.tasks import async_task
 
 
 logger = logging.getLogger(__name__)
@@ -48,15 +47,15 @@ def re_export_stuck_exports():
         workspace_ids_list = list(workspace_ids)
         task_logs.update(status='FAILED', updated_at=datetime.now())
         update_failed_expenses(expenses, True)
-        workspaces = Workspace.objects.filter(id__in=workspace_ids_list)
         schedules = Schedule.objects.filter(
-            args__in=[str(workspace.id) for workspace in workspaces],
+            args__in=[str(workspace_id) for workspace_id in workspace_ids_list],
             func='apps.workspaces.tasks.run_sync_schedule'
         )
-        for workspace in workspaces:
-            logger.info('Checking if 1hour sync schedule for workspace %s', workspace.id)
-            schedule = schedules.filter(args=str(workspace.id)).first()
+        for workspace_id in workspace_ids_list:
+            logger.info('Checking if 1hour sync schedule for workspace %s', workspace_id)
+            schedule = schedules.filter(args=str(workspace_id)).first()
             # If schedule exist and it's within 1 hour, need not trigger it immediately
             if not (schedule and schedule.next_run < datetime.now(tz=schedule.next_run.tzinfo) + timedelta(minutes=60)):
-                logger.info('Re-triggering sync schedule since no 1 hour schedule for workspace  %s', workspace.id)
-                async_task('apps.workspaces.tasks.run_sync_schedule', workspace.id)
+                export_expense_group_ids = expense_groups.filter(workspace_id=workspace_id).values_list('id', flat=True)
+                logger.info('Re-triggering export for expense group %s since no 1 hour schedule for workspace  %s', export_expense_group_ids, workspace_id)
+                export_to_netsuite(workspace_id, 'AUTO', export_expense_group_ids)
