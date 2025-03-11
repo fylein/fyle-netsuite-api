@@ -12,8 +12,6 @@ from fyle_netsuite_api.tests import settings
 
 from .test_fyle.fixtures import data as fyle_data
 
-def pytest_configure():
-    os.system('sh ./tests/sql_fixtures/reset_db_fixtures/reset_db.sh')
 
 @pytest.fixture
 def api_client():
