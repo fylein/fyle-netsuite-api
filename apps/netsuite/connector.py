@@ -806,7 +806,7 @@ class NetSuiteConnector:
                     logger.info('Retrying vendor creation without entityId')
                 
                 if not modified or retry_count >= max_retries:
-                    logger.error('Failed to create vendor after %s attempts', retry_count)
+                    logger.info('Failed to create vendor after %s attempts', retry_count)
                     raise
 
     def sync_employees(self):
