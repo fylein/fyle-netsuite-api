@@ -20,6 +20,16 @@ WORKDIR /fyle-netsuite-api
 # Do linting checks
 RUN pylint --load-plugins pylint_django --rcfile=.pylintrc apps/**.py
 
+#================================================================
+# Setup non-root user and permissions
+#================================================================
+RUN groupadd -r netsuite_api_service && \
+    useradd -r -g netsuite_api_service netsuite_api_user && \
+    chown -R netsuite_api_user:netsuite_api_service /fyle-netsuite-api
+
+# Switch to non-root user
+USER netsuite_api_user
+
 # Expose development port
 EXPOSE 8000
 
