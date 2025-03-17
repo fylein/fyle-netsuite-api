@@ -10,7 +10,7 @@ if [ $PGBOUNCER_STATUS -ne 0 ]; then
 fi
 
 # Check direct PostgreSQL connection using pg_isready
-pg_isready -h $PGHOST -p $PGPORT -U $PGUSER -d $PGDATABASE
+pg_isready -h $PGHOST -p 5432 -U $PGUSER -d $PGDATABASE
 POSTGRES_STATUS=$?
 
 if [ $POSTGRES_STATUS -ne 0 ]; then
