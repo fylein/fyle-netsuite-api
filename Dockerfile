@@ -23,7 +23,7 @@ RUN pylint --load-plugins pylint_django --rcfile=.pylintrc apps/**.py
 #================================================================
 # Setup non-root user and permissions
 #================================================================
-RUN groupadd -r netsuite_api_service && \
+RUN groupadd -r -g 1001 netsuite_api_service && \
     useradd -r -g netsuite_api_service netsuite_api_user && \
     chown -R netsuite_api_user:netsuite_api_service /fyle-netsuite-api
 
