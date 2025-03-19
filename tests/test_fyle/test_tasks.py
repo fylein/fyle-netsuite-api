@@ -1,12 +1,14 @@
 import pytest
 import json
 from django.db.models import Q
+from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
+
 from apps.fyle.models import ExpenseGroup, Expense, ExpenseGroupSettings
 from apps.tasks.models import TaskLog
+from apps.fyle.actions import post_accounting_export_summary
 from apps.fyle.tasks import (
     create_expense_groups,
     schedule_expense_group_creation,
-    post_accounting_export_summary,
     update_non_exported_expenses
 )
 from apps.workspaces.models import Configuration, FyleCredential, Workspace
@@ -44,7 +46,7 @@ def test_create_expense_group(mocker, add_fyle_credentials):
         expense_group_count = len(ExpenseGroup.objects.filter(workspace_id=1))
         expenses_count = len(Expense.objects.filter(org_id='or79Cob97KSh'))
 
-        create_expense_groups(1, configuration, ['PERSONAL', 'CCC'], task_log)
+        create_expense_groups(1, configuration, ['PERSONAL', 'CCC'], task_log, ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
         expense_group = ExpenseGroup.objects.filter(workspace_id=1)
         expenses = Expense.objects.filter(org_id='or79Cob97KSh')
@@ -55,7 +57,7 @@ def test_create_expense_group(mocker, add_fyle_credentials):
         fyle_credential = FyleCredential.objects.get(workspace_id=1)
         fyle_credential.delete()
 
-        create_expense_groups(1, configuration, ['PERSONAL', 'CCC'], task_log)
+        create_expense_groups(1, configuration, ['PERSONAL', 'CCC'], task_log, ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
         task_log = TaskLog.objects.get(workspace_id=1)
         assert task_log.detail['message'] == 'Fyle credentials do not exist in workspace / Invalid token'
@@ -64,16 +66,16 @@ def test_create_expense_group(mocker, add_fyle_credentials):
         expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=1)
         expense_group_settings.delete()
 
-        create_expense_groups(1, configuration, ['PERSONAL', 'CCC'], task_log)
+        create_expense_groups(1, configuration, ['PERSONAL', 'CCC'], task_log, ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
         task_log = TaskLog.objects.get(workspace_id=1)
         assert task_log.status == 'FATAL'
 
         mock_call.side_effect = InternalServerError('Error')
-        create_expense_groups(1, configuration, ['PERSONAL', 'CCC'], task_log)
+        create_expense_groups(1, configuration, ['PERSONAL', 'CCC'], task_log, ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
         mock_call.side_effect = InvalidTokenError('Invalid Token')
-        create_expense_groups(1, configuration, ['PERSONAL', 'CCC'], task_log)
+        create_expense_groups(1, configuration, ['PERSONAL', 'CCC'], task_log, ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
         assert mock_call.call_count == 2
 
@@ -118,7 +120,7 @@ def test_create_expense_group_skipped_flow(mocker, api_client, add_fyle_credenti
         expense_group_count = len(ExpenseGroup.objects.filter(workspace_id=1))
         expenses_count = len(Expense.objects.filter(org_id='or79Cob97KSh'))
 
-        create_expense_groups(1, configuration, ['PERSONAL', 'CCC'], task_log)
+        create_expense_groups(1, configuration, ['PERSONAL', 'CCC'], task_log, ExpenseImportSourceEnum.DASHBOARD_SYNC)
         expense_group = ExpenseGroup.objects.filter(workspace_id=1)
         expenses = Expense.objects.filter(org_id='or79Cob97KSh')
 
