@@ -21,9 +21,14 @@ WORKDIR /fyle-netsuite-api
 RUN pylint --load-plugins pylint_django --rcfile=.pylintrc apps/**.py
 
 #================================================================
+# Set default GID if not provided during build
+#================================================================
+ARG SERVICE_GID=1001
+
+#================================================================
 # Setup non-root user and permissions
 #================================================================
-RUN groupadd -r -g 1001 netsuite_api_service && \
+RUN groupadd -r -g ${SERVICE_GID} netsuite_api_service && \
     useradd -r -g netsuite_api_service netsuite_api_user && \
     chown -R netsuite_api_user:netsuite_api_service /fyle-netsuite-api
 
