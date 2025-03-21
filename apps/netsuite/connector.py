@@ -433,17 +433,17 @@ class NetSuiteConnector:
         for i, (record_id, old_id, new_id) in enumerate(changed_destination_attributes):
             temp_id = f"{temp_internal_id_base}_{i}"
             temp_internal_ids[record_id] = (temp_id, new_id)
-            destination_attributes_to_be_updated.append(DestinationAttribute(id=record_id, destination_id=temp_id, workspace_id=self.workspace_id))
+            destination_attributes_to_be_updated.append(DestinationAttribute(id=record_id, destination_id=temp_id, workspace_id=self.workspace_id, updated_at=datetime.now()))
 
         with transaction.atomic():
-            DestinationAttribute.objects.bulk_update(destination_attributes_to_be_updated, ['destination_id'], batch_size=100)
+            DestinationAttribute.objects.bulk_update(destination_attributes_to_be_updated, ['destination_id', 'updated_at'], batch_size=100)
 
             updated_destination_attributes = [
-                DestinationAttribute(id=record_id, destination_id=new_id, workspace_id=self.workspace_id)
+                DestinationAttribute(id=record_id, destination_id=new_id, workspace_id=self.workspace_id, updated_at=datetime.now())
                 for record_id, (temp_id, new_id) in temp_internal_ids.items()
             ]
             
-            DestinationAttribute.objects.bulk_update(updated_destination_attributes, ['destination_id'], batch_size=100)
+            DestinationAttribute.objects.bulk_update(updated_destination_attributes, ['destination_id', 'updated_at'], batch_size=100)
 
     def get_custom_record_attributes(self, attribute_type: str, internal_id: str):
         custom_segment_attributes = []

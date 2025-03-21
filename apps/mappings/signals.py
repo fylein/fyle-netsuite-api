@@ -53,7 +53,7 @@ def resolve_post_mapping_errors(sender, instance: Mapping, **kwargs):
     """
     if instance.source_type == 'TAX_GROUP':
         Error.objects.filter(expense_attribute_id=instance.source_id).update(
-            is_resolved=True
+            is_resolved=True, updated_at=datetime.now()
         )
 
 
@@ -63,7 +63,7 @@ def resolve_post_category_mapping_errors(sender, instance: Mapping, **kwargs):
     Resolve errors after mapping is created
     """
     Error.objects.filter(expense_attribute_id=instance.source_category_id).update(
-        is_resolved=True
+        is_resolved=True, updated_at=datetime.now()
     )
 
 
@@ -73,7 +73,7 @@ def resolve_post_employees_mapping_errors(sender, instance: Mapping, **kwargs):
     Resolve errors after mapping is created 
     """
     Error.objects.filter(expense_attribute_id=instance.source_employee_id).update(
-        is_resolved=True
+        is_resolved=True, updated_at=datetime.now()
     )
 
 @receiver(post_save, sender=SubsidiaryMapping)
