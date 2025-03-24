@@ -7,7 +7,7 @@ from fyle_accounting_mappings.models import MappingSetting, ExpenseAttribute
 from apps.fyle.models import ExpenseGroupSettings
 from apps.mappings.schedules import new_schedule_or_delete_fyle_import_tasks
 from apps.workspaces.models import Configuration
-from apps.mappings.models import ImportLog
+from fyle_integrations_imports.models import ImportLog
 
 
 class ImportSettingsTrigger:

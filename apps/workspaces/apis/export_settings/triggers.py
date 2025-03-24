@@ -5,7 +5,7 @@ from apps.netsuite.exceptions import update_last_export_details
 from fyle_accounting_mappings.models import MappingSetting
 from apps.fyle.models import ExpenseGroup
 from apps.tasks.models import TaskLog, Error
-from apps.mappings.models import ImportLog
+from fyle_integrations_imports.models import ImportLog
 
 
 class ExportSettingsTrigger:
