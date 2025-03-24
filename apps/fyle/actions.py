@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 import logging
 
@@ -42,7 +42,7 @@ def __bulk_update_expenses(expense_to_be_updated: List[Expense]) -> None:
     """
     if expense_to_be_updated:
         for expense in expense_to_be_updated:
-            expense.updated_at = datetime.now()
+            expense.updated_at = datetime.now(timezone.utc)
 
         Expense.objects.bulk_update(expense_to_be_updated, ['is_skipped', 'accounting_export_summary', 'updated_at'], batch_size=50)
 
@@ -119,7 +119,7 @@ def mark_accounting_export_summary_as_synced(expenses: List[Expense]) -> None:
     """
     # Mark all expenses as synced
     expense_to_be_updated = []
-    current_time = datetime.now()
+    current_time = datetime.now(timezone.utc)
     for expense in expenses:
         expense.accounting_export_summary['synced'] = True
         updated_accounting_export_summary = expense.accounting_export_summary
@@ -202,7 +202,7 @@ def __handle_post_accounting_export_summary_exception(exception: Exception, work
         and 'response' in error_response and 'data' in error_response['response'] and error_response['response']['data']
     ):
         logger.info('Error while syncing workspace %s %s',workspace_id, error_response)
-        current_time = datetime.now()
+        current_time = datetime.now(timezone.utc)
         for expense in error_response['response']['data']:
             url = __get_redirection_url(workspace_id, 'DELETED')
 

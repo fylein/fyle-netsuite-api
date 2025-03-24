@@ -4,7 +4,7 @@ Fyle Models
 import logging
 from dateutil import parser
 from typing import List, Dict
-from datetime import datetime
+from datetime import datetime, timezone
 from collections import defaultdict
 
 
@@ -524,7 +524,7 @@ class Reimbursement(models.Model):
 
         existing_reimbursement_ids = []
         primary_key_map = {}
-        current_time = datetime.now()
+        current_time = datetime.now(timezone.utc)
 
         for existing_reimbursement in existing_reimbursements:
             existing_reimbursement_ids.append(existing_reimbursement.reimbursement_id)

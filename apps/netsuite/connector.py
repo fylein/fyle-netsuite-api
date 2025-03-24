@@ -433,13 +433,13 @@ class NetSuiteConnector:
         for i, (record_id, old_id, new_id) in enumerate(changed_destination_attributes):
             temp_id = f"{temp_internal_id_base}_{i}"
             temp_internal_ids[record_id] = (temp_id, new_id)
-            destination_attributes_to_be_updated.append(DestinationAttribute(id=record_id, destination_id=temp_id, workspace_id=self.workspace_id, updated_at=datetime.now()))
+            destination_attributes_to_be_updated.append(DestinationAttribute(id=record_id, destination_id=temp_id, workspace_id=self.workspace_id, updated_at=datetime.now(timezone.utc)))
 
         with transaction.atomic():
             DestinationAttribute.objects.bulk_update(destination_attributes_to_be_updated, ['destination_id', 'updated_at'], batch_size=100)
 
             updated_destination_attributes = [
-                DestinationAttribute(id=record_id, destination_id=new_id, workspace_id=self.workspace_id, updated_at=datetime.now())
+                DestinationAttribute(id=record_id, destination_id=new_id, workspace_id=self.workspace_id, updated_at=datetime.now(timezone.utc))
                 for record_id, (temp_id, new_id) in temp_internal_ids.items()
             ]
             
