@@ -9,7 +9,7 @@ services:
     entrypoint: bash run.sh
     restart: unless-stopped
     volumes:
-    - api-volume:/fyle-netsuite-api
+    - ./:/fyle-netsuite-api
     ports:
     - 8000:8000
     depends_on:
@@ -45,4 +45,3 @@ services:
 
 volumes:
   api:
-  api-volume:
