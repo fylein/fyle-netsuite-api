@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 from apps.workspaces.models import Configuration, LastExportDetail
 from apps.netsuite.exceptions import update_last_export_details
-from fyle_accounting_mappings.models import MappingSetting
+from fyle_accounting_mappings.models import MappingSetting, ExpenseAttribute
 from apps.fyle.models import ExpenseGroup
 from apps.tasks.models import TaskLog, Error
 from fyle_integrations_imports.models import ImportLog
@@ -53,6 +53,7 @@ class ExportSettingsTrigger:
 
         if is_category_mapping_changed and self.__configuration.import_categories:
             ImportLog.objects.filter(workspace_id=self.__workspace_id, attribute_type='CATEGORY').update(last_successful_run_at=None, updated_at=datetime.now(timezone.utc))
+            ExpenseAttribute.objects.filter(workspace_id=self.__workspace_id, attribute_type='CATEGORY').update(auto_mapped=False)
 
         self.__delete_or_create_card_mapping_setting()
 
