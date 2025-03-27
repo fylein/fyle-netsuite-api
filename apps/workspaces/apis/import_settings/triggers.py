@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Dict, List
 from datetime import datetime, timezone
 
@@ -84,7 +85,7 @@ class ImportSettingsTrigger:
             if current_setting and current_setting.source_field != source_field:
                 changed_source_fields.append(current_setting.source_field)
 
-        ExpenseAttribute.objects.filter(workspace_id=self.__workspace_id, attribute_type__in=changed_source_fields).update(auto_mapped=False)
+        ExpenseAttribute.objects.filter(workspace_id=self.__workspace_id, attribute_type__in=changed_source_fields).update(auto_mapped=False, updated_at=datetime.now(timezone.utc))
 
 
     def __reset_import_log_timestamp(

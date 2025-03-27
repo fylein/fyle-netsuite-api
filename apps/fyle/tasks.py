@@ -1,7 +1,7 @@
 import logging
 from typing import List, Dict
 import traceback
-from datetime import datetime
+from datetime import datetime, timezone
 
 from django.db import transaction
 from django_q.tasks import async_task
@@ -128,7 +128,7 @@ def create_expense_groups(workspace_id: int, configuration: Configuration, fund_
             if expense_filters:
                 expenses_object_ids = [expense_object.id for expense_object in expense_objects]
                 final_query = construct_expense_filter_query(expense_filters)
-                Expense.objects.filter(final_query, id__in=expenses_object_ids, expensegroup__isnull=True, org_id=workspace.fyle_org_id).update(is_skipped=True)
+                Expense.objects.filter(final_query, id__in=expenses_object_ids, expensegroup__isnull=True, org_id=workspace.fyle_org_id).update(is_skipped=True, updated_at=datetime.now(timezone.utc))
                 filtered_expenses = Expense.objects.filter(is_skipped=False, id__in=expenses_object_ids, expensegroup__isnull=True, org_id=workspace.fyle_org_id)
             else:
                 filtered_expenses = expense_objects
