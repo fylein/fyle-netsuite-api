@@ -257,11 +257,17 @@ def import_and_export_expenses(report_id: str, org_id: str, is_state_change_even
 
     except Configuration.DoesNotExist:
         logger.info('Configuration not found %s', workspace.id)
+        if not task_log:
+            task_log, _ = TaskLog.objects.update_or_create(workspace_id=workspace.id, type='FETCHING_EXPENSES', defaults={'status': 'IN_PROGRESS'})
+
         task_log.detail = {'message': 'Configuration not found'}
         task_log.status = 'FAILED'
         task_log.save()
 
     except Exception:
+        if not task_log:
+            task_log, _ = TaskLog.objects.update_or_create(workspace_id=workspace.id, type='FETCHING_EXPENSES', defaults={'status': 'IN_PROGRESS'})
+
         handle_import_exception(task_log)
 
 
