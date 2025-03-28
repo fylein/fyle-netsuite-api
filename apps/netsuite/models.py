@@ -57,8 +57,6 @@ def get_department_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
                 attribute = ExpenseAttribute.objects.filter(attribute_type=department_setting.source_field, workspace_id=expense_group.workspace_id).first()
                 if attribute:
                     source_value = lineitem.custom_properties.get(attribute.display_name, None)
-        else:
-            source_value = expense_group.description[department_setting.source_field.lower()]
 
         mapping: Mapping = get_filtered_mapping(
             department_setting.source_field, 'DEPARTMENT', expense_group.workspace_id, source_value, source_id
