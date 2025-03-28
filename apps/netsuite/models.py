@@ -1165,36 +1165,29 @@ class JournalEntryLineItem(models.Model):
                 workspace_id=expense_group.workspace_id
             ).first()
 
-            class_id = None
-            department_id = None
+            class_id = get_class_id_or_none(expense_group, lineitem)
+            department_id = get_department_id_or_none(expense_group, lineitem)
+            location_id = get_location_id_or_none(expense_group, lineitem)
 
             if general_mappings.use_employee_class and employee_field_mapping == 'EMPLOYEE' and employee_mapping and employee_mapping.destination_employee:
                 class_id = employee_mapping.destination_employee.detail.get('class_id')
-            
-            if not class_id:
-                class_id = get_class_id_or_none(expense_group, lineitem)
 
             if expense_group.fund_source == 'CCC':
                 department_id = get_department_id_or_none(expense_group, lineitem)
                 location_id = get_location_id_or_none(expense_group, lineitem)
             
-            if general_mappings.use_employee_department and general_mappings.department_level in ('ALL', 'TRANSACTION_LINE') \
-                and employee_field_mapping == 'EMPLOYEE'and employee_mapping and employee_mapping.destination_employee:    
+            if not department_id and general_mappings.use_employee_department and general_mappings.department_level in ('ALL', 'TRANSACTION_LINE') \
+                and employee_field_mapping == 'EMPLOYEE'and employee_mapping and employee_mapping.destination_employee:  
                 if employee_mapping.destination_employee.detail.get('department_id'):
                     department_id = employee_mapping.destination_employee.detail.get('department_id')
-
-            elif expense_group.fund_source == 'PERSONAL':
-                department_id = get_department_id_or_none(expense_group, lineitem)
             
             if not department_id:
                 if general_mappings.department_id and general_mappings.department_level in ['TRANSACTION_LINE', 'ALL']:
                     department_id = general_mappings.department_id
             
-            if  general_mappings.use_employee_location and general_mappings.location_level in ('ALL', 'TRANSACTION_LINE')\
+            if not location_id and general_mappings.use_employee_location and general_mappings.location_level in ('ALL', 'TRANSACTION_LINE')\
                 and employee_field_mapping == 'EMPLOYEE'and employee_mapping and employee_mapping.destination_employee:
                 location_id = employee_mapping.destination_employee.detail.get('location_id')
-            elif expense_group.fund_source == 'PERSONAL':
-                location_id = get_location_id_or_none(expense_group, lineitem)
 
             if not location_id and general_mappings.location_id:
                 location_id = general_mappings.location_id
