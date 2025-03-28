@@ -3,7 +3,7 @@ from apps.workspaces.models import LastExportDetail, Workspace
 from django.db.models import Q
 
 from apps.workspaces.tasks import patch_integration_settings
-from apps.fyle.tasks import post_accounting_export_summary
+from apps.fyle.actions import post_accounting_export_summary
 
 def update_last_export_details(workspace_id):
     last_export_detail = LastExportDetail.objects.get(workspace_id=workspace_id)

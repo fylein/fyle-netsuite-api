@@ -1,6 +1,8 @@
 from django.db import models
 from django.db.models import JSONField
 
+from fyle_accounting_library.fyle_platform.constants import IMPORTED_FROM_CHOICES
+
 from apps.netsuite.models import Bill, ExpenseReport, JournalEntry, VendorPayment, CreditCardCharge
 from apps.workspaces.models import Workspace
 from apps.fyle.models import ExpenseGroup
@@ -57,6 +59,7 @@ class TaskLog(models.Model):
     detail = JSONField(help_text='Task response', null=True, default=get_default)
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime')
+    triggered_by = models.CharField(max_length=255, help_text="Triggered by", null=True, choices=IMPORTED_FROM_CHOICES)
 
     class Meta:
         db_table = 'task_logs'

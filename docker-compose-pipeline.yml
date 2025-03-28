@@ -14,6 +14,7 @@ services:
     - 8000:8000
     depends_on:
     - db
+    - rabbitmq
     environment: 
       SECRET_KEY: thisisthedjangosecretkey
       ALLOWED_HOSTS: "*"
@@ -33,6 +34,7 @@ services:
       NS_TOKEN_SECRET: ''
       NS_CONSUMER_KEY: ''
       NS_CONSUMER_SECRET: ''
+      RABBITMQ_URL: amqp://admin:password@rabbitmq:5673/?heartbeat=0
   db:
     image: "postgres:15"
     environment: 
@@ -42,6 +44,16 @@ services:
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./tests/sql_fixtures/reset_db_fixtures/reset_db.sql:/docker-entrypoint-initdb.d/reset_db.sql
+  rabbitmq:
+     image: rabbitmq:3.8.9-management-alpine
+     environment:
+       - RABBITMQ_DEFAULT_USER=admin
+       - RABBITMQ_DEFAULT_PASS=password
+     ports:
+       - '5673:5673'
+     volumes:
+       - rabbitmq-data:/data/
 
 volumes:
   api:
+  rabbitmq-data:

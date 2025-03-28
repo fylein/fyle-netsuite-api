@@ -34,8 +34,7 @@ from apps.workspaces.models import LastExportDetail, NetSuiteCredentials, FyleCr
 
 from .models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, JournalEntryLineItem, \
     VendorPayment, VendorPaymentLineitem, CreditCardCharge, CreditCardChargeLineItem
-from apps.fyle.actions import update_expenses_in_progress, update_complete_expenses
-from apps.fyle.tasks import post_accounting_export_summary
+from apps.fyle.actions import update_expenses_in_progress, update_complete_expenses, post_accounting_export_summary
 from .connector import NetSuiteConnector
 from apps.netsuite.actions import update_last_export_details
 

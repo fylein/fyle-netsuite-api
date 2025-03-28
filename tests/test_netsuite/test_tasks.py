@@ -12,6 +12,8 @@ from django_q.models import Schedule
 from netsuitesdk import NetSuiteRequestError
 from fyle.platform.exceptions import InternalServerError
 from fyle_integrations_platform_connector import PlatformConnector
+from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
+
 from apps.fyle.models import ExpenseGroup, Reimbursement, Expense
 from apps.netsuite.connector import NetSuiteConnector
 from apps.netsuite.models import CreditCardCharge, ExpenseReport, Bill, JournalEntry, BillLineitem, JournalEntryLineItem, ExpenseReportLineItem
@@ -1328,7 +1330,7 @@ def test_schedule_netsuite_entity_creation(db):
 
     expense_group = ExpenseGroup.objects.get(id=1)
 
-    schedule_expense_reports_creation(1, ['1'], False, 'CCC', 1)
+    schedule_expense_reports_creation(1, ['1'], False, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
     task_logs = TaskLog.objects.get(workspace_id=1, expense_group=expense_group)
 
@@ -1337,7 +1339,7 @@ def test_schedule_netsuite_entity_creation(db):
 
     expense_group = ExpenseGroup.objects.get(id=3)
 
-    schedule_journal_entry_creation(2, ['3'], False, 'CCC', 1)
+    schedule_journal_entry_creation(2, ['3'], False, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
     task_logs = TaskLog.objects.get(workspace_id=2, expense_group=expense_group)
 
@@ -1347,7 +1349,7 @@ def test_schedule_netsuite_entity_creation(db):
 
     expense_group = ExpenseGroup.objects.get(id=2)
 
-    schedule_bills_creation(1, ['2'], False, 'CCC', 1)
+    schedule_bills_creation(1, ['2'], False, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
     task_logs = TaskLog.objects.get(workspace_id=1, expense_group=expense_group)
 
@@ -1356,7 +1358,7 @@ def test_schedule_netsuite_entity_creation(db):
 
     expense_group = ExpenseGroup.objects.get(id=48)
 
-    schedule_credit_card_charge_creation(49, ['48'], False, 'CCC', 1)
+    schedule_credit_card_charge_creation(49, ['48'], False, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
     task_logs = TaskLog.objects.get(workspace_id=49, expense_group=expense_group)
 
@@ -1485,7 +1487,7 @@ def test_schedule_bills_creation(db, mocker):
     expense_group = expense_group
     task_log.save()
 
-    schedule_bills_creation(workspace_id, [1], False, 'CCC', 0)
+    schedule_bills_creation(workspace_id, [1], False, 'CCC', 0, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
     assert task_log.type == 'CREATING_BILL'
@@ -1511,7 +1513,7 @@ def test_schedule_credit_card_charge_creation(db, mocker):
     expense_group = expense_group
     task_log.save()
 
-    schedule_credit_card_charge_creation(workspace_id, [1], False, 'CCC', 0)
+    schedule_credit_card_charge_creation(workspace_id, [1], False, 'CCC', 0, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
     assert task_log.type == 'CREATING_CREDIT_CARD_REFUND'
@@ -1533,7 +1535,7 @@ def test_schedule_expense_reports_creation(db, mocker):
     expense_group = expense_group
     task_log.save()
 
-    schedule_expense_reports_creation(workspace_id, [1], False, 'CCC', 0)
+    schedule_expense_reports_creation(workspace_id, [1], False, 'CCC', 0, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
     assert task_log.type == 'CREATING_EXPENSE_REPORT'
@@ -1555,7 +1557,7 @@ def test_schedule_journal_entry_creation(db, mocker):
     expense_group = expense_group
     task_log.save()
 
-    schedule_journal_entry_creation(workspace_id, [1], False, 'CCC', 0)
+    schedule_journal_entry_creation(workspace_id, [1], False, 'CCC', 0, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
     assert task_log.type == 'CREATING_JOURNAL_ENTRY'
@@ -1725,14 +1727,14 @@ def test_skipping_bill_creation(db, mocker):
     expense_group = expense_group
     task_log.save()
 
-    schedule_bills_creation(workspace_id, [1], True, 'CCC', 1)
+    schedule_bills_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first()
     assert task_log.type == 'FETCHING_EXPENSES'
 
     Error.objects.filter(id=error.id).update(updated_at=datetime(2024, 8, 20))
 
-    schedule_bills_creation(workspace_id, [1], True, 'CCC', 1)
+    schedule_bills_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
     assert task_log.type == 'CREATING_BILL'
@@ -1764,14 +1766,14 @@ def test_skipping_journal_creation(db, mocker):
     expense_group = expense_group
     task_log.save()
 
-    schedule_journal_entry_creation(workspace_id, [1], True, 'CCC', 1)
+    schedule_journal_entry_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first()
     assert task_log.type == 'FETCHING_EXPENSES'
 
     Error.objects.filter(id=error.id).update(updated_at=datetime(2024, 8, 20))
 
-    schedule_journal_entry_creation(workspace_id, [1], True, 'CCC', 1)
+    schedule_journal_entry_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
     assert task_log.type == 'CREATING_JOURNAL_ENTRY'
@@ -1803,14 +1805,14 @@ def test_skipping_expense_group_creation(db, mocker):
     expense_group = expense_group
     task_log.save()
 
-    schedule_expense_reports_creation(workspace_id, [1], True, 'CCC', 1)
+    schedule_expense_reports_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first()
     assert task_log.type == 'FETCHING_EXPENSES'
 
     Error.objects.filter(id=error.id).update(updated_at=datetime(2024, 8, 20))
 
-    schedule_expense_reports_creation(workspace_id, [1], True, 'CCC', 1)
+    schedule_expense_reports_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
     assert task_log.type == 'CREATING_EXPENSE_REPORT'
@@ -1842,14 +1844,14 @@ def test_skipping_credit_card_charge_creation(db, mocker):
     expense_group = expense_group
     task_log.save()
 
-    schedule_credit_card_charge_creation(workspace_id, [1], True, 'CCC', 1)
+    schedule_credit_card_charge_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first()
     assert task_log.type == 'FETCHING_EXPENSES'
 
     Error.objects.filter(id=error.id).update(updated_at=datetime(2024, 8, 20))
 
-    schedule_credit_card_charge_creation(workspace_id, [1], True, 'CCC', 1)
+    schedule_credit_card_charge_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
     assert task_log.type == 'CREATING_CREDIT_CARD_CHARGE'
