@@ -500,7 +500,7 @@ class ExpenseGroup(models.Model):
                     corporate_credit_card_expenses, corporate_credit_card_expense_group_field, workspace_id)
 
 
-        if configuration.corporate_credit_card_expenses_object == "BILL":
+        if configuration.corporate_credit_card_expenses_object == "BILL" and "expense_id" not in corporate_credit_card_expense_group_field:
             filtered_corporate_credit_card_expense_groups = filter_expense_groups(
                 filtered_corporate_credit_card_expense_groups,
                 corporate_credit_card_expenses,
@@ -508,6 +508,8 @@ class ExpenseGroup(models.Model):
                 None,
                 configuration.corporate_credit_card_expenses_object
             )
+        
+        expense_groups.extend(filtered_corporate_credit_card_expense_groups)
 
         for expense_group in expense_groups:
             if expense_group_settings.reimbursable_export_date_type == 'last_spent_at':
