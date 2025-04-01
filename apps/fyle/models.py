@@ -459,7 +459,7 @@ class ExpenseGroup(models.Model):
 
         corporate_credit_card_expenses = list(filter(lambda expense: expense.fund_source == 'CCC', expense_objects))
 
-        if configuration.corporate_credit_card_expenses_object not in ('EXPENSE REPORT', 'CREDIT CARD CHARGE', 'JOURNAL ENTRY'):
+        if configuration.corporate_credit_card_expenses_object not in ('EXPENSE REPORT', 'CREDIT CARD CHARGE', 'JOURNAL ENTRY', 'BILL'):
             corporate_credit_card_expenses = list(
                 filter(lambda expense: expense.amount > 0, corporate_credit_card_expenses)
             )
@@ -498,7 +498,6 @@ class ExpenseGroup(models.Model):
             else:
                 filtered_corporate_credit_card_expense_groups = _group_expenses(
                     corporate_credit_card_expenses, corporate_credit_card_expense_group_field, workspace_id)
-
 
         if configuration.corporate_credit_card_expenses_object == "BILL" and "expense_id" not in corporate_credit_card_expense_group_field:
             filtered_corporate_credit_card_expense_groups = filter_expense_groups(
@@ -544,7 +543,7 @@ class ExpenseGroup(models.Model):
                 description=expense_group,
                 employee_name=employee_name
             )
-
+            
             expense_group_object.expenses.add(*expense_ids)
 
 class Reimbursement(models.Model):

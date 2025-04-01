@@ -244,3 +244,65 @@ def test_split_expense_grouping_pairs_of_same_ids(db, update_config_for_split_ex
     groups = ExpenseGroup.objects.filter(expenses__expense_id__in=[expense['id'] for expense in expenses]).distinct()
 
     assert len(groups) - old_count== 2, f'Expected 2 groups, got {len(groups) - old_count}'
+
+
+def test_create_expense_groups_refund_invalid(db):
+
+    configuration = Configuration.objects.get(workspace_id=1)
+
+    configuration.corporate_credit_card_expenses_object = "BILL"
+    configuration.save()
+
+    expenses = data["expense_refund_invalid"]
+    expense_objects = Expense.create_expense_objects(expenses, 1)
+    assert len(expense_objects) == 2
+    ExpenseGroup.create_expense_groups_by_report_id_fund_source(expense_objects, configuration, 1)
+    groups = ExpenseGroup.objects.filter(expenses__expense_id__in=[expense['id'] for expense in expenses]).distinct()
+
+    assert len(groups) == 0
+
+def test_create_expense_groups_refund(db):
+    expenses = data["expense_refund_valid"]
+    expense_objects = Expense.create_expense_objects(expenses, 1)
+
+    assert len(expense_objects) == 2
+
+    configuration = Configuration.objects.get(workspace_id=1)
+
+    configuration.corporate_credit_card_expenses_object = "BILL"
+    configuration.save()
+
+    ExpenseGroup.create_expense_groups_by_report_id_fund_source(expense_objects, configuration, 1)
+
+    groups = ExpenseGroup.objects.filter(expenses__expense_id__in=[expense['id'] for expense in expenses]).first()
+
+    assert groups.expenses.count() == 2
+
+
+def creat_expense_groups_by_report_id_refund_spent_at(db):
+    workspace = workspace = Workspace.objects.get(id=1)
+    configuration = Configuration.objects.get(workspace_id=1)
+
+    configuration.corporate_credit_card_expenses_object = "BILL"
+    configuration.save()
+
+    expenses = data["expense_refund_spend_at"]
+
+    expense_objects = Expense.create_expense_objects(expenses, 1)
+    expense_group_setting = ExpenseGroupSettings.objects.get(workspace_id=1)
+    expense_group_setting.ccc_export_date_type = "spent_at"
+    corporate_expense_group_fields = (
+        expense_group_setting.corporate_credit_card_expense_group_fields
+    )
+    corporate_expense_group_fields.append("spent_at")
+    expense_group_setting.corporate_credit_card_expense_group_fields = (
+        corporate_expense_group_fields
+    )
+    expense_group_setting.save()
+
+    assert len(expense_objects) == 2
+
+    ExpenseGroup.create_expense_groups_by_report_id_fund_source(expense_objects, configuration, 1)
+
+    groups = ExpenseGroup.objects.filter(expenses__expense_id__in=[expense['id'] for expense in expenses]).first()
+    assert groups.expenses.count() == 1
