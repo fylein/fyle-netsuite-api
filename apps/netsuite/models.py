@@ -1169,12 +1169,8 @@ class JournalEntryLineItem(models.Model):
             department_id = get_department_id_or_none(expense_group, lineitem)
             location_id = get_location_id_or_none(expense_group, lineitem)
 
-            if general_mappings.use_employee_class and employee_field_mapping == 'EMPLOYEE' and employee_mapping and employee_mapping.destination_employee:
+            if not class_id and general_mappings.use_employee_class and employee_field_mapping == 'EMPLOYEE' and employee_mapping and employee_mapping.destination_employee:
                 class_id = employee_mapping.destination_employee.detail.get('class_id')
-
-            if expense_group.fund_source == 'CCC':
-                department_id = get_department_id_or_none(expense_group, lineitem)
-                location_id = get_location_id_or_none(expense_group, lineitem)
             
             if not department_id and general_mappings.use_employee_department and general_mappings.department_level in ('ALL', 'TRANSACTION_LINE') \
                 and employee_field_mapping == 'EMPLOYEE'and employee_mapping and employee_mapping.destination_employee:  
