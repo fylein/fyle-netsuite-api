@@ -306,3 +306,31 @@ def creat_expense_groups_by_report_id_refund_spent_at(db):
 
     groups = ExpenseGroup.objects.filter(expenses__expense_id__in=[expense['id'] for expense in expenses]).first()
     assert groups.expenses.count() == 1
+
+
+def test_create_expense_group_report_id_journal_entry(db):
+
+    workspace = Workspace.objects.get(id=1)
+
+    configuration = Configuration.objects.get(workspace=workspace)
+
+    configuration.corporate_credit_card_expenses_object = "JOURNAL ENTRY"
+    configuration.save()
+
+    expense_group_setting = ExpenseGroupSettings.objects.get(workspace_id=1)
+
+    corporate_expense_group_fields = (
+        expense_group_setting.corporate_credit_card_expense_group_fields
+    )
+    corporate_expense_group_fields.append("expense_id")
+    expense_group_setting.corporate_credit_card_expense_group_fields = (
+        corporate_expense_group_fields
+    )
+    expense_group_setting.save()
+    workspace = workspace = Workspace.objects.get(id=1)
+    expense = data["expense_refund_single_ccc"]
+    expense_objects = Expense.create_expense_objects([expense], 1)
+    assert len(expense_objects) == 1
+    ExpenseGroup.create_expense_groups_by_report_id_fund_source(expense_objects, configuration, 1)
+    groups = ExpenseGroup.objects.filter(expenses__expense_id=expense['id']).first()
+    assert groups.expenses.count() == 1
