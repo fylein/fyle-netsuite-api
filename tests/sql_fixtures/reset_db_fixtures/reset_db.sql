@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.10 (Debian 15.10-1.pgdg120+1)
--- Dumped by pg_dump version 15.10 (Debian 15.10-1.pgdg120+1)
+-- Dumped from database version 15.12 (Debian 15.12-1.pgdg120+1)
+-- Dumped by pg_dump version 15.12 (Debian 15.12-0+deb12u2)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -16,980 +16,775 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+--
+-- Name: delete_failed_expenses(integer, boolean, integer[]); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.delete_failed_expenses(_workspace_id integer, _delete_all boolean DEFAULT false, _expense_group_ids integer[] DEFAULT '{}'::integer[]) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+
+DECLARE
+  	rcount integer;
+	temp_expenses integer[];
+	local_expense_group_ids integer[];
+	total_expense_groups integer;
+	failed_expense_groups integer;
+	_fyle_org_id text;
+	expense_ids text;
+BEGIN
+  RAISE NOTICE 'Deleting failed expenses from workspace % ', _workspace_id; 
+
+local_expense_group_ids := _expense_group_ids;
+
+IF _delete_all THEN
+	-- Update last_export_details when delete_all is true
+	select array_agg(expense_group_id) into local_expense_group_ids from task_logs where status='FAILED' and workspace_id=_workspace_id;
+	UPDATE last_export_details SET failed_expense_groups_count = 0 WHERE workspace_id = _workspace_id;
+	GET DIAGNOSTICS rcount = ROW_COUNT;
+	RAISE NOTICE 'Updated % last_export_details', rcount;
+END IF;
+
+SELECT array_agg(expense_id) into temp_expenses from expense_groups_expenses where expensegroup_id in (SELECT unnest(local_expense_group_ids));
+
+_fyle_org_id := (select fyle_org_id from workspaces where id = _workspace_id);
+expense_ids := (
+    select string_agg(format('%L', expense_id), ', ') 
+    from expenses
+    where workspace_id = _workspace_id
+    and id in (SELECT unnest(temp_expenses))
+);
+
+DELETE
+	FROM task_logs WHERE workspace_id = _workspace_id AND status = 'FAILED' and expense_group_id in (SELECT unnest(local_expense_group_ids));
+	GET DIAGNOSTICS rcount = ROW_COUNT;
+	RAISE NOTICE 'Deleted % task_logs', rcount;
+
+DELETE
+	FROM errors
+	where expense_group_id IN (SELECT unnest(local_expense_group_ids));
+	GET DIAGNOSTICS rcount = ROW_COUNT;
+	RAISE NOTICE 'Deleted % errors', rcount;
+
+DELETE 
+	FROM expense_groups_expenses WHERE expensegroup_id IN (SELECT unnest(local_expense_group_ids));
+	GET DIAGNOSTICS rcount = ROW_COUNT;
+	RAISE NOTICE 'Deleted % expense_groups_expenses', rcount;
+
+DELETE 
+	FROM expense_groups WHERE id in (SELECT unnest(local_expense_group_ids));
+	GET DIAGNOSTICS rcount = ROW_COUNT;
+	RAISE NOTICE 'Deleted % expense_groups', rcount;
+
+IF NOT _delete_all THEN
+    UPDATE last_export_details
+        SET total_expense_groups_count = total_expense_groups_count - rcount,
+            failed_expense_groups_count = failed_expense_groups_count - rcount,
+            updated_at = NOW()
+        WHERE workspace_id = _workspace_id;
+
+    total_expense_groups := (SELECT total_expense_groups_count FROM last_export_details WHERE workspace_id = _workspace_id);
+    failed_expense_groups := (SELECT failed_expense_groups_count FROM last_export_details WHERE workspace_id = _workspace_id);
+
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Updated last_export_details';
+    RAISE NOTICE 'New total_expense_groups_count: %', total_expense_groups;
+    RAISE NOTICE 'New failed_expense_groups_count: %', failed_expense_groups;
+END IF;
+
+
+DELETE 
+	FROM expenses WHERE id in (SELECT unnest(temp_expenses));
+	GET DIAGNOSTICS rcount = ROW_COUNT;
+	RAISE NOTICE 'Deleted % expenses', rcount;
+
+
+RAISE NOTICE E'\n\n\nProd DB Queries to delete accounting export summaries:';
+RAISE NOTICE E'rollback; begin; update platform_schema.expenses_wot set accounting_export_summary = \'{}\' where org_id = \'%\' and id in (%); update platform_schema.reports_wot set accounting_export_summary = \'{}\' where org_id = \'%\' and id in (select report->>\'id\' from platform_schema.expenses_rov where org_id = \'%\' and id in (%));', _fyle_org_id, expense_ids, _fyle_org_id, _fyle_org_id, expense_ids;
+
+RETURN;
+END
+$$;
+
+
+ALTER FUNCTION public.delete_failed_expenses(_workspace_id integer, _delete_all boolean, _expense_group_ids integer[]) OWNER TO postgres;
+
+--
+-- Name: delete_test_orgs_schedule(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.delete_test_orgs_schedule() RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    rcount integer;
+BEGIN
+    
+    DELETE FROM workspace_schedules
+    WHERE workspace_id NOT IN (
+        SELECT id FROM prod_workspaces_view
+    );
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % workspace_schedules', rcount;
+
+    DELETE FROM django_q_schedule
+    WHERE args NOT IN (
+        SELECT id::text FROM prod_workspaces_view
+    );
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % django_q_schedule', rcount;
+END;
+$$;
+
+
+ALTER FUNCTION public.delete_test_orgs_schedule() OWNER TO postgres;
+
+--
+-- Name: delete_workspace(integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.delete_workspace(_workspace_id integer) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    rcount integer;
+    _org_id varchar(255);
+BEGIN
+    RAISE NOTICE 'Deleting data from workspace %', _workspace_id;
+
+    DELETE
+    FROM import_logs il
+    WHERE il.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % import_logs', rcount;
+
+    DELETE
+    FROM task_logs tl
+    WHERE tl.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % task_logs', rcount;
+
+    DELETE
+    FROM bill_lineitems bl
+    WHERE bl.bill_id IN (
+        SELECT b.id FROM bills b WHERE b.expense_group_id IN (
+            SELECT eg.id FROM expense_groups eg WHERE eg.workspace_id = _workspace_id
+        )
+    );
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % bill_lineitems', rcount;
+
+    DELETE
+    FROM bills b
+    WHERE b.expense_group_id IN (
+        SELECT eg.id FROM expense_groups eg WHERE eg.workspace_id = _workspace_id
+    );
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % bills', rcount;
+
+    DELETE
+    FROM credit_card_charge_lineitems cccl
+    WHERE cccl.credit_card_charge_id IN (
+        SELECT ccc.id FROM credit_card_charges ccc WHERE ccc.expense_group_id IN (
+            SELECT eg.id FROM expense_groups eg WHERE eg.workspace_id = _workspace_id
+        )
+    );
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % credit_card_charge_lineitems', rcount;
+
+    DELETE
+    FROM credit_card_charges ccc
+    WHERE ccc.expense_group_id IN (
+        SELECT eg.id FROM expense_groups eg WHERE eg.workspace_id = _workspace_id
+    );
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % credit_card_charges', rcount;
+
+    DELETE
+    FROM expense_report_lineitems erl
+    WHERE erl.expense_report_id IN (
+        SELECT er.id FROM expense_reports er WHERE er.expense_group_id IN (
+            SELECT eg.id FROM expense_groups eg WHERE eg.workspace_id = _workspace_id
+        )
+    );
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % expense_report_lineitems', rcount;
+
+    DELETE
+    FROM expense_reports er
+    WHERE er.expense_group_id IN (
+        SELECT eg.id FROM expense_groups eg WHERE eg.workspace_id = _workspace_id
+    );
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % expense_reports', rcount;
+
+
+    DELETE
+    FROM journal_entry_lineitems jel
+    WHERE jel.journal_entry_id IN (
+        SELECT je.id FROM journal_entries je WHERE je.expense_group_id IN (
+            SELECT eg.id FROM expense_groups eg WHERE eg.workspace_id = _workspace_id
+        )
+    );
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % journal_entry_lineitems', rcount;
+
+    DELETE
+    FROM journal_entries je
+    WHERE je.expense_group_id IN (
+        SELECT eg.id FROM expense_groups eg WHERE eg.workspace_id = _workspace_id
+    );
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % journal_entries', rcount;
+
+    DELETE
+    FROM reimbursements r
+    WHERE r.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % reimbursements', rcount;
+
+    DELETE
+    FROM expenses e
+    WHERE e.id IN (
+        SELECT expense_id FROM expense_groups_expenses ege WHERE ege.expensegroup_id IN (
+            SELECT eg.id FROM expense_groups eg WHERE eg.workspace_id = _workspace_id
+        )
+    );
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % expenses', rcount;
+
+    DELETE
+    FROM expenses 
+    WHERE is_skipped=true and org_id in (SELECT fyle_org_id FROM workspaces WHERE id=_workspace_id);
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % skipped expenses', rcount;
+
+    DELETE
+    FROM expense_groups_expenses ege
+    WHERE ege.expensegroup_id IN (
+        SELECT eg.id FROM expense_groups eg WHERE eg.workspace_id = _workspace_id
+    );
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % expense_groups_expenses', rcount;
+
+    DELETE
+    FROM vendor_payments vp
+    WHERE vp.id IN (
+        SELECT vpl.vendor_payment_id FROM vendor_payment_lineitems vpl WHERE vpl.expense_group_id IN (
+            SELECT eg.id FROM expense_groups eg WHERE eg.workspace_id = _workspace_id
+        )
+    );
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % vendor_payments', rcount;
+
+    DELETE
+    FROM vendor_payment_lineitems vpl
+    WHERE vpl.expense_group_id IN (
+        SELECT eg.id FROM expense_groups eg WHERE eg.workspace_id = _workspace_id
+    );
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % vendor_payment_lineitems', rcount;
+
+    DELETE
+    FROM expense_groups eg
+    WHERE eg.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % expense_groups', rcount;
+
+    DELETE
+    FROM mappings m
+    WHERE m.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % mappings', rcount;
+
+    DELETE
+    FROM employee_mappings em
+    WHERE em.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % employee_mappings', rcount;
+
+    DELETE
+    FROM category_mappings cm
+    WHERE cm.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % category_mappings', rcount;
+
+    DELETE
+    FROM mapping_settings ms
+    WHERE ms.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % mapping_settings', rcount;
+
+    DELETE
+    FROM general_mappings gm
+    WHERE gm.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % general_mappings', rcount;
+
+    DELETE
+    FROM configurations c
+    WHERE c.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % configurations', rcount;
+
+    DELETE
+    FROM expense_group_settings egs
+    WHERE egs.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % expense_group_settings', rcount;
+
+    DELETE
+    FROM fyle_credentials fc
+    WHERE fc.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % fyle_credentials', rcount;
+
+    DELETE
+    FROM netsuite_credentials nc
+    WHERE nc.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % netsuite_credentials', rcount;
+
+    DELETE
+    from expense_attributes_deletion_cache ead
+    WHERE ead.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % expense_attributes_deletion_cache', rcount;
+
+    DELETE
+    FROM expense_attributes ea
+    WHERE ea.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % expense_attributes', rcount;
+
+    DELETE
+    FROM expense_filters ef
+    WHERE ef.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % expense_filters', rcount;
+
+    DELETE
+    FROM destination_attributes da
+    WHERE da.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % destination_attributes', rcount;
+
+    DELETE
+    FROM workspace_schedules wsch
+    WHERE wsch.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % workspace_schedules', rcount;
+
+    DELETE
+    FROM last_export_details led
+    WHERE led.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % last_export_details', rcount;
+
+    DELETE
+    FROM errors e
+    WHERE e.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % errors', rcount;
+
+    DELETE
+    FROM django_q_schedule dqs
+    WHERE dqs.args = _workspace_id::varchar(255);
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % django_q_schedule', rcount;
+
+    DELETE
+    FROM auth_tokens aut
+    WHERE aut.user_id IN (
+        SELECT u.id FROM users u WHERE u.id IN (
+            SELECT wu.user_id FROM workspaces_user wu WHERE workspace_id = _workspace_id
+        )
+    );
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % auth_tokens', rcount;
+
+    DELETE
+    FROM workspaces_user wu
+    WHERE workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % workspaces_user', rcount;
+
+    DELETE
+    FROM subsidiary_mappings sm
+    WHERE sm.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % subsidiary_mappings', rcount;
+
+    DELETE
+    FROM custom_segments cs
+    WHERE cs.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % custom_segments', rcount;
+
+    DELETE
+    FROM users u
+    WHERE u.id IN (
+        SELECT wu.user_id FROM workspaces_user wu WHERE workspace_id = _workspace_id
+    );
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % users', rcount;
+
+    _org_id := (SELECT fyle_org_id FROM workspaces WHERE id = _workspace_id);
+
+    DELETE
+    FROM workspaces w
+    WHERE w.id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % workspaces', rcount;
+
+    RAISE NOTICE E'\n\n\n\n\n\n\n\n\nSwitch to integration_settings db and run the below query to delete the integration';
+    RAISE NOTICE E'\\c integration_settings; \n\n begin; select delete_integration(''%'');\n\n\n\n\n\n\n\n\n\n\n', _org_id;
+
+    RAISE NOTICE E'\n\n\n\n\n\n\n\n\nSwitch to prod db and run the below query to update the subscription';
+    RAISE NOTICE E'begin; update platform_schema.admin_subscriptions set is_enabled = false where org_id = ''%'';\n\n\n\n\n\n\n\n\n\n\n', _org_id;
+
+RETURN;
+END
+$$;
+
+
+ALTER FUNCTION public.delete_workspace(_workspace_id integer) OWNER TO postgres;
+
+--
+-- Name: json_diff(jsonb, jsonb); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.json_diff(left_json jsonb, right_json jsonb) RETURNS jsonb
+    LANGUAGE sql
+    AS $$
+    SELECT jsonb_object_agg(left_table.key, jsonb_build_array(left_table.value, right_table.value)) FROM
+        ( SELECT key, value FROM jsonb_each(left_json) ) left_table LEFT OUTER JOIN
+        ( SELECT key, value FROM jsonb_each(right_json) ) right_table ON left_table.key = right_table.key
+    WHERE left_table.value != right_table.value OR right_table.key IS NULL;
+$$;
+
+
+ALTER FUNCTION public.json_diff(left_json jsonb, right_json jsonb) OWNER TO postgres;
+
+--
+-- Name: log_delete_event(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.log_delete_event() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE difference jsonb;
+BEGIN
+    IF (TG_OP = 'DELETE') THEN
+        INSERT INTO update_logs(table_name, old_data, operation_type, workspace_id)
+        VALUES (TG_TABLE_NAME, to_jsonb(OLD), 'DELETE', OLD.workspace_id);
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.log_delete_event() OWNER TO postgres;
+
+--
+-- Name: log_update_event(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.log_update_event() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    difference jsonb;
+    key_count int;
+BEGIN
+    IF (TG_OP = 'UPDATE') THEN
+        difference := json_diff(to_jsonb(OLD), to_jsonb(NEW));
+
+        -- Count the number of keys in the difference JSONB object
+        SELECT COUNT(*)
+        INTO key_count
+        FROM jsonb_each_text(difference);
+
+        -- If difference has only the key updated_at, then insert into update_logs
+        IF TG_TABLE_NAME = 'expenses' THEN
+            IF (difference ? 'accounting_export_summary') THEN
+                INSERT INTO update_logs(table_name, old_data, new_data, difference, workspace_id)
+                VALUES (TG_TABLE_NAME, to_jsonb(OLD), to_jsonb(NEW), difference, OLD.workspace_id);
+            END IF;
+        ELSE
+            IF NOT (key_count = 1 AND difference ? 'updated_at') THEN
+                INSERT INTO update_logs(table_name, old_data, new_data, difference, workspace_id)
+                VALUES (TG_TABLE_NAME, to_jsonb(OLD), to_jsonb(NEW), difference, OLD.workspace_id);
+            END IF;
+        END IF;
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.log_update_event() OWNER TO postgres;
+
+--
+-- Name: re_export_expenses_netsuite(integer, integer[]); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.re_export_expenses_netsuite(_workspace_id integer, _expense_group_ids integer[]) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+
+DECLARE
+  	rcount integer;
+	temp_expenses integer[];
+	local_expense_group_ids integer[];
+BEGIN
+  RAISE NOTICE 'Starting to delete exported entries from workspace % ', _workspace_id; 
+
+local_expense_group_ids := _expense_group_ids;
+
+
+SELECT array_agg(expense_id) into temp_expenses from expense_groups_expenses where expensegroup_id in (SELECT unnest(local_expense_group_ids));
+
+DELETE
+	FROM task_logs WHERE workspace_id = _workspace_id AND status = 'COMPLETE' and expense_group_id in (SELECT unnest(local_expense_group_ids));
+	GET DIAGNOSTICS rcount = ROW_COUNT;
+	RAISE NOTICE 'Deleted % task_logs', rcount;
+
+DELETE
+	FROM errors
+	where expense_group_id IN (SELECT unnest(local_expense_group_ids));
+	GET DIAGNOSTICS rcount = ROW_COUNT;
+	RAISE NOTICE 'Deleted % errors', rcount;
+
+DELETE
+	FROM bill_lineitems bl
+	WHERE bl.bill_id IN (
+		SELECT b.id FROM bills b WHERE b.expense_group_id IN (
+			SELECT unnest(local_expense_group_ids)
+		) 
+	);
+	GET DIAGNOSTICS rcount = ROW_COUNT;
+	RAISE NOTICE 'Deleted % bill_lineitems', rcount;
+
+DELETE
+	FROM bills WHERE expense_group_id IN (SELECT unnest(local_expense_group_ids));
+	GET DIAGNOSTICS rcount = ROW_COUNT;
+	RAISE NOTICE 'Deleted % bills', rcount;
+
+DELETE
+	FROM credit_card_charge_lineitems ccl
+	WHERE ccl.credit_card_charge_id IN (
+		SELECT ccc.id FROM credit_card_charges ccc WHERE ccc.expense_group_id IN (
+			SELECT unnest(local_expense_group_ids)
+		) 
+	);
+	GET DIAGNOSTICS rcount = ROW_COUNT;
+	RAISE NOTICE 'Deleted % credit_card_charge_lineitems', rcount;
+
+DELETE
+	FROM credit_card_charges WHERE expense_group_id IN (SELECT unnest(local_expense_group_ids));
+	GET DIAGNOSTICS rcount = ROW_COUNT;
+	RAISE NOTICE 'Deleted % credit_card_charges', rcount;
+
+DELETE
+	FROM expense_report_lineitems erl
+	WHERE erl.expense_report_id IN (
+		SELECT er.id FROM expense_reports er WHERE er.expense_group_id IN (
+			SELECT unnest(local_expense_group_ids)
+		) 
+	);
+	GET DIAGNOSTICS rcount = ROW_COUNT;
+	RAISE NOTICE 'Deleted % expense_report_lineitems', rcount;
+
+DELETE
+	FROM expense_reports WHERE expense_group_id IN (SELECT unnest(local_expense_group_ids));
+	GET DIAGNOSTICS rcount = ROW_COUNT;
+	RAISE NOTICE 'Deleted % expense_reports', rcount;
+
+DELETE
+	FROM journal_entry_lineitems jel
+	WHERE jel.journal_entry_id IN (
+		SELECT je.id FROM journal_entries je WHERE je.expense_group_id IN (
+			SELECT unnest(local_expense_group_ids)
+		) 
+	);
+	GET DIAGNOSTICS rcount = ROW_COUNT;
+	RAISE NOTICE 'Deleted % journal_entry_lineitems', rcount;
+
+DELETE
+	FROM journal_entries WHERE expense_group_id IN (SELECT unnest(local_expense_group_ids));
+	GET DIAGNOSTICS rcount = ROW_COUNT;
+	RAISE NOTICE 'Deleted % journal_entries', rcount;
+
+UPDATE 
+	expense_groups set exported_at = null, response_logs = null
+	WHERE id in (SELECT unnest(local_expense_group_ids));
+	GET DIAGNOSTICS rcount = ROW_COUNT;
+	RAISE NOTICE 'Updating % expense_groups and resetting exported_at, response_logs', rcount;
+
+UPDATE django_q_schedule 
+    SET next_run = now() + INTERVAL '35 sec' 
+    WHERE args = _workspace_id::text and func = 'apps.workspaces.tasks.run_sync_schedule';
+    
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+
+    IF rcount > 0 THEN
+        RAISE NOTICE 'Updated % schedule', rcount;
+    ELSE
+        RAISE NOTICE 'Schedule not updated since it doesnt exist';
+    END IF;
+
+RETURN;
+END
+$$;
+
+
+ALTER FUNCTION public.re_export_expenses_netsuite(_workspace_id integer, _expense_group_ids integer[]) OWNER TO postgres;
+
+--
+-- Name: trigger_auto_import(character varying); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.trigger_auto_import(_workspace_id character varying) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    rcount integer;
+BEGIN
+    UPDATE django_q_schedule 
+    SET next_run = now() + INTERVAL '35 sec' 
+    WHERE args = _workspace_id and func = 'apps.mappings.queue.construct_tasks_and_chain_import_fields_to_fyle';
+    
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+
+    IF rcount > 0 THEN
+        RAISE NOTICE 'Updated % schedule', rcount;
+    ELSE
+        RAISE NOTICE 'Schedule not updated since it doesnt exist';
+    END IF;
+
+RETURN;
+END
+$$;
+
+
+ALTER FUNCTION public.trigger_auto_import(_workspace_id character varying) OWNER TO postgres;
+
+--
+-- Name: trigger_auto_import_export(character varying); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.trigger_auto_import_export(_workspace_id character varying) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    rcount integer;
+BEGIN
+    UPDATE django_q_schedule 
+    SET next_run = now() + INTERVAL '35 sec' 
+    WHERE args = _workspace_id and func = 'apps.workspaces.tasks.run_sync_schedule';
+    
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+
+    IF rcount > 0 THEN
+        RAISE NOTICE 'Updated % schedule', rcount;
+    ELSE
+        RAISE NOTICE 'Schedule not updated since it doesnt exist';
+    END IF;
+
+    update errors set updated_at = now() - interval '25 hours' where is_resolved = 'f' and workspace_id = NULLIF(_workspace_id, '')::int and repetition_count > 100;
+
+RETURN;
+END
+$$;
+
+
+ALTER FUNCTION public.trigger_auto_import_export(_workspace_id character varying) OWNER TO postgres;
+
+--
+-- Name: update_in_progress_tasks_to_failed(integer[]); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.update_in_progress_tasks_to_failed(_expense_group_ids integer[]) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+
+DECLARE
+  rcount integer;
+
+BEGIN
+    RAISE NOTICE 'Updating in progress tasks to failed for expense groups % ', _expense_group_ids;
+
+UPDATE
+    task_logs SET status = 'FAILED' WHERE status in ('ENQUEUED', 'IN_PROGRESS') and expense_group_id in (SELECT unnest(_expense_group_ids));
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Updated % task_logs', rcount;
+
+RETURN;
+END
+$$;
+
+
+ALTER FUNCTION public.update_in_progress_tasks_to_failed(_expense_group_ids integer[]) OWNER TO postgres;
+
+--
+-- Name: ws_email(integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.ws_email(_workspace_id integer) RETURNS TABLE(workspace_id integer, workspace_name character varying, email character varying)
+    LANGUAGE plpgsql SECURITY DEFINER
+    AS $$
+BEGIN
+  RETURN QUERY
+  select w.id as workspace_id, w.name as workspace_name, u.email as email from workspaces w 
+    left join workspaces_user wu on wu.workspace_id = w.id
+    left join users u on wu.user_id = u.id
+    where w.id = _workspace_id;
+END;
+$$;
+
+
+ALTER FUNCTION public.ws_email(_workspace_id integer) OWNER TO postgres;
+
+--
+-- Name: ws_org_id(text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.ws_org_id(_org_id text) RETURNS TABLE(workspace_id integer, workspace_org_id character varying, workspace_name character varying)
+    LANGUAGE plpgsql SECURITY DEFINER
+    AS $$
+BEGIN
+  RETURN QUERY
+  select id as workspace_id, fyle_org_id as workspace_org_id, name as workspace_name
+  from workspaces where fyle_org_id = _org_id;
+END;
+$$;
+
+
+ALTER FUNCTION public.ws_org_id(_org_id text) OWNER TO postgres;
+
+--
+-- Name: ws_search(text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.ws_search(_name text) RETURNS TABLE(workspace_id integer, workspace_org_id character varying, workspace_name character varying)
+    LANGUAGE plpgsql SECURITY DEFINER
+    AS $$
+BEGIN
+  RETURN QUERY
+  select id as workspace_id, fyle_org_id as workspace_org_id, name as workspace_name
+  from workspaces where name ilike '%' || _name || '%';
+END;
+$$;
+
+
+ALTER FUNCTION public.ws_search(_name text) OWNER TO postgres;
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
-
---
--- Name: auth_cache; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.auth_cache (
-    cache_key character varying(255) NOT NULL,
-    value text NOT NULL,
-    expires timestamp with time zone NOT NULL
-);
-
-
-ALTER TABLE public.auth_cache OWNER TO postgres;
-
---
--- Name: auth_group; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.auth_group (
-    id integer NOT NULL,
-    name character varying(150) NOT NULL
-);
-
-
-ALTER TABLE public.auth_group OWNER TO postgres;
-
---
--- Name: auth_group_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.auth_group_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.auth_group_id_seq OWNER TO postgres;
-
---
--- Name: auth_group_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.auth_group_id_seq OWNED BY public.auth_group.id;
-
-
---
--- Name: auth_group_permissions; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.auth_group_permissions (
-    id integer NOT NULL,
-    group_id integer NOT NULL,
-    permission_id integer NOT NULL
-);
-
-
-ALTER TABLE public.auth_group_permissions OWNER TO postgres;
-
---
--- Name: auth_group_permissions_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.auth_group_permissions_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.auth_group_permissions_id_seq OWNER TO postgres;
-
---
--- Name: auth_group_permissions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.auth_group_permissions_id_seq OWNED BY public.auth_group_permissions.id;
-
-
---
--- Name: auth_permission; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.auth_permission (
-    id integer NOT NULL,
-    name character varying(255) NOT NULL,
-    content_type_id integer NOT NULL,
-    codename character varying(100) NOT NULL
-);
-
-
-ALTER TABLE public.auth_permission OWNER TO postgres;
-
---
--- Name: auth_permission_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.auth_permission_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.auth_permission_id_seq OWNER TO postgres;
-
---
--- Name: auth_permission_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.auth_permission_id_seq OWNED BY public.auth_permission.id;
-
-
---
--- Name: auth_tokens; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.auth_tokens (
-    id integer NOT NULL,
-    refresh_token text NOT NULL,
-    user_id integer NOT NULL
-);
-
-
-ALTER TABLE public.auth_tokens OWNER TO postgres;
-
---
--- Name: bill_lineitems; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.bill_lineitems (
-    id integer NOT NULL,
-    account_id character varying(255),
-    location_id character varying(255),
-    department_id character varying(255),
-    class_id character varying(255),
-    amount double precision NOT NULL,
-    memo text,
-    created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL,
-    bill_id integer NOT NULL,
-    expense_id integer NOT NULL,
-    netsuite_custom_segments jsonb,
-    billable boolean,
-    customer_id character varying(255),
-    tax_amount double precision,
-    tax_item_id character varying(255),
-    netsuite_receipt_url text,
-    detail_type character varying(255) NOT NULL,
-    item_id character varying(255)
-);
-
-
-ALTER TABLE public.bill_lineitems OWNER TO postgres;
-
---
--- Name: bill_lineitems_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.bill_lineitems_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.bill_lineitems_id_seq OWNER TO postgres;
-
---
--- Name: bill_lineitems_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.bill_lineitems_id_seq OWNED BY public.bill_lineitems.id;
-
-
---
--- Name: bills; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.bills (
-    id integer NOT NULL,
-    entity_id character varying(255) NOT NULL,
-    accounts_payable_id character varying(255) NOT NULL,
-    subsidiary_id character varying(255) NOT NULL,
-    location_id character varying(255),
-    currency character varying(255) NOT NULL,
-    memo text NOT NULL,
-    external_id character varying(255) NOT NULL,
-    created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL,
-    expense_group_id integer NOT NULL,
-    transaction_date timestamp with time zone NOT NULL,
-    payment_synced boolean NOT NULL,
-    paid_on_netsuite boolean NOT NULL,
-    reference_number character varying(255),
-    department_id character varying(255),
-    override_tax_details boolean NOT NULL,
-    class_id character varying(255),
-    is_retired boolean NOT NULL,
-    is_attachment_upload_failed boolean NOT NULL
-);
-
-
-ALTER TABLE public.bills OWNER TO postgres;
-
---
--- Name: bills_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.bills_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.bills_id_seq OWNER TO postgres;
-
---
--- Name: bills_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.bills_id_seq OWNED BY public.bills.id;
-
-
---
--- Name: category_mappings; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.category_mappings (
-    id integer NOT NULL,
-    created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL,
-    destination_account_id integer,
-    destination_expense_head_id integer,
-    source_category_id integer NOT NULL,
-    workspace_id integer NOT NULL
-);
-
-
-ALTER TABLE public.category_mappings OWNER TO postgres;
-
---
--- Name: category_mappings_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.category_mappings_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.category_mappings_id_seq OWNER TO postgres;
-
---
--- Name: category_mappings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.category_mappings_id_seq OWNED BY public.category_mappings.id;
-
-
---
--- Name: configurations; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.configurations (
-    id integer NOT NULL,
-    reimbursable_expenses_object character varying(50),
-    corporate_credit_card_expenses_object character varying(50),
-    created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL,
-    workspace_id integer NOT NULL,
-    sync_fyle_to_netsuite_payments boolean NOT NULL,
-    sync_netsuite_to_fyle_payments boolean NOT NULL,
-    import_projects boolean NOT NULL,
-    auto_map_employees character varying(50),
-    import_categories boolean NOT NULL,
-    auto_create_destination_entity boolean NOT NULL,
-    auto_create_merchants boolean NOT NULL,
-    employee_field_mapping character varying(50),
-    import_tax_items boolean NOT NULL,
-    change_accounting_period boolean NOT NULL,
-    memo_structure character varying(100)[] NOT NULL,
-    map_fyle_cards_netsuite_account boolean NOT NULL,
-    skip_cards_mapping boolean NOT NULL,
-    import_vendors_as_merchants boolean NOT NULL,
-    import_netsuite_employees boolean NOT NULL,
-    is_simplify_report_closure_enabled boolean NOT NULL,
-    import_items boolean NOT NULL,
-    name_in_journal_entry character varying(100) NOT NULL,
-    allow_intercompany_vendors boolean NOT NULL,
-    je_single_credit_line boolean NOT NULL,
-    is_attachment_upload_enabled boolean NOT NULL,
-    created_by character varying(255),
-    updated_by character varying(255)
-);
-
-
-ALTER TABLE public.configurations OWNER TO postgres;
-
---
--- Name: credit_card_charge_lineitems; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.credit_card_charge_lineitems (
-    id integer NOT NULL,
-    account_id character varying(255) NOT NULL,
-    location_id character varying(255),
-    department_id character varying(255),
-    class_id character varying(255),
-    customer_id character varying(255),
-    amount double precision NOT NULL,
-    billable boolean,
-    memo text,
-    netsuite_custom_segments jsonb,
-    created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL,
-    credit_card_charge_id integer NOT NULL,
-    expense_id integer NOT NULL,
-    tax_amount double precision,
-    tax_item_id character varying(255),
-    netsuite_receipt_url text
-);
-
-
-ALTER TABLE public.credit_card_charge_lineitems OWNER TO postgres;
-
---
--- Name: credit_card_charge_lineitems_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.credit_card_charge_lineitems_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.credit_card_charge_lineitems_id_seq OWNER TO postgres;
-
---
--- Name: credit_card_charge_lineitems_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.credit_card_charge_lineitems_id_seq OWNED BY public.credit_card_charge_lineitems.id;
-
-
---
--- Name: credit_card_charges; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.credit_card_charges (
-    id integer NOT NULL,
-    credit_card_account_id character varying(255) NOT NULL,
-    entity_id character varying(255) NOT NULL,
-    subsidiary_id character varying(255) NOT NULL,
-    location_id character varying(255),
-    currency character varying(255) NOT NULL,
-    memo text NOT NULL,
-    external_id character varying(255) NOT NULL,
-    transaction_date timestamp with time zone NOT NULL,
-    created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL,
-    expense_group_id integer NOT NULL,
-    reference_number character varying(255),
-    department_id character varying(255),
-    class_id character varying(255),
-    is_attachment_upload_failed boolean NOT NULL
-);
-
-
-ALTER TABLE public.credit_card_charges OWNER TO postgres;
-
---
--- Name: credit_card_charges_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.credit_card_charges_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.credit_card_charges_id_seq OWNER TO postgres;
-
---
--- Name: credit_card_charges_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.credit_card_charges_id_seq OWNED BY public.credit_card_charges.id;
-
-
---
--- Name: custom_segments; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.custom_segments (
-    id integer NOT NULL,
-    name character varying(255) NOT NULL,
-    segment_type character varying(255) NOT NULL,
-    script_id character varying(255) NOT NULL,
-    internal_id character varying(255) NOT NULL,
-    created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL,
-    workspace_id integer NOT NULL
-);
-
-
-ALTER TABLE public.custom_segments OWNER TO postgres;
-
---
--- Name: custom_segments_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.custom_segments_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.custom_segments_id_seq OWNER TO postgres;
-
---
--- Name: custom_segments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.custom_segments_id_seq OWNED BY public.custom_segments.id;
-
-
---
--- Name: destination_attributes; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.destination_attributes (
-    id integer NOT NULL,
-    attribute_type character varying(255) NOT NULL,
-    display_name character varying(255) NOT NULL,
-    value character varying(255) NOT NULL,
-    destination_id character varying(255) NOT NULL,
-    created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL,
-    workspace_id integer NOT NULL,
-    active boolean,
-    detail jsonb,
-    auto_created boolean NOT NULL,
-    code character varying(255)
-);
-
-
-ALTER TABLE public.destination_attributes OWNER TO postgres;
-
---
--- Name: django_admin_log; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.django_admin_log (
-    id integer NOT NULL,
-    action_time timestamp with time zone NOT NULL,
-    object_id text,
-    object_repr character varying(200) NOT NULL,
-    action_flag smallint NOT NULL,
-    change_message text NOT NULL,
-    content_type_id integer,
-    user_id integer NOT NULL,
-    CONSTRAINT django_admin_log_action_flag_check CHECK ((action_flag >= 0))
-);
-
-
-ALTER TABLE public.django_admin_log OWNER TO postgres;
-
---
--- Name: django_admin_log_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.django_admin_log_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.django_admin_log_id_seq OWNER TO postgres;
-
---
--- Name: django_admin_log_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.django_admin_log_id_seq OWNED BY public.django_admin_log.id;
-
-
---
--- Name: django_content_type; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.django_content_type (
-    id integer NOT NULL,
-    app_label character varying(100) NOT NULL,
-    model character varying(100) NOT NULL
-);
-
-
-ALTER TABLE public.django_content_type OWNER TO postgres;
-
---
--- Name: django_content_type_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.django_content_type_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.django_content_type_id_seq OWNER TO postgres;
-
---
--- Name: django_content_type_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.django_content_type_id_seq OWNED BY public.django_content_type.id;
-
-
---
--- Name: django_migrations; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.django_migrations (
-    id integer NOT NULL,
-    app character varying(255) NOT NULL,
-    name character varying(255) NOT NULL,
-    applied timestamp with time zone NOT NULL
-);
-
-
-ALTER TABLE public.django_migrations OWNER TO postgres;
-
---
--- Name: django_migrations_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.django_migrations_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.django_migrations_id_seq OWNER TO postgres;
-
---
--- Name: django_migrations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.django_migrations_id_seq OWNED BY public.django_migrations.id;
-
-
---
--- Name: django_q_ormq; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.django_q_ormq (
-    id integer NOT NULL,
-    key character varying(100) NOT NULL,
-    payload text NOT NULL,
-    lock timestamp with time zone
-);
-
-
-ALTER TABLE public.django_q_ormq OWNER TO postgres;
-
---
--- Name: django_q_ormq_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.django_q_ormq_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.django_q_ormq_id_seq OWNER TO postgres;
-
---
--- Name: django_q_ormq_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.django_q_ormq_id_seq OWNED BY public.django_q_ormq.id;
-
-
---
--- Name: django_q_schedule; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.django_q_schedule (
-    id integer NOT NULL,
-    func character varying(256) NOT NULL,
-    hook character varying(256),
-    args text,
-    kwargs text,
-    schedule_type character varying(2) NOT NULL,
-    repeats integer NOT NULL,
-    next_run timestamp with time zone,
-    task character varying(100),
-    name character varying(100),
-    minutes smallint,
-    cron character varying(100),
-    cluster character varying(100),
-    intended_date_kwarg character varying(100),
-    CONSTRAINT django_q_schedule_minutes_check CHECK ((minutes >= 0))
-);
-
-
-ALTER TABLE public.django_q_schedule OWNER TO postgres;
-
---
--- Name: django_q_schedule_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.django_q_schedule_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.django_q_schedule_id_seq OWNER TO postgres;
-
---
--- Name: django_q_schedule_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.django_q_schedule_id_seq OWNED BY public.django_q_schedule.id;
-
-
---
--- Name: django_q_task; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.django_q_task (
-    name character varying(100) NOT NULL,
-    func character varying(256) NOT NULL,
-    hook character varying(256),
-    args text,
-    kwargs text,
-    result text,
-    started timestamp with time zone NOT NULL,
-    stopped timestamp with time zone NOT NULL,
-    success boolean NOT NULL,
-    id character varying(32) NOT NULL,
-    "group" character varying(100),
-    attempt_count integer NOT NULL,
-    cluster character varying(100)
-);
-
-
-ALTER TABLE public.django_q_task OWNER TO postgres;
-
---
--- Name: django_session; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.django_session (
-    session_key character varying(40) NOT NULL,
-    session_data text NOT NULL,
-    expire_date timestamp with time zone NOT NULL
-);
-
-
-ALTER TABLE public.django_session OWNER TO postgres;
-
---
--- Name: employee_mappings; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.employee_mappings (
-    id integer NOT NULL,
-    created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL,
-    destination_card_account_id integer,
-    destination_employee_id integer,
-    destination_vendor_id integer,
-    source_employee_id integer NOT NULL,
-    workspace_id integer NOT NULL
-);
-
-
-ALTER TABLE public.employee_mappings OWNER TO postgres;
-
---
--- Name: employee_mappings_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.employee_mappings_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.employee_mappings_id_seq OWNER TO postgres;
-
---
--- Name: employee_mappings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.employee_mappings_id_seq OWNED BY public.employee_mappings.id;
-
-
---
--- Name: errors; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.errors (
-    id integer NOT NULL,
-    type character varying(50) NOT NULL,
-    is_resolved boolean NOT NULL,
-    error_title character varying(255) NOT NULL,
-    error_detail text NOT NULL,
-    created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL,
-    expense_attribute_id integer,
-    expense_group_id integer,
-    workspace_id integer NOT NULL,
-    article_link character varying(255),
-    is_parsed boolean NOT NULL,
-    repetition_count integer NOT NULL
-);
-
-
-ALTER TABLE public.errors OWNER TO postgres;
-
---
--- Name: errors_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.errors_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.errors_id_seq OWNER TO postgres;
-
---
--- Name: errors_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.errors_id_seq OWNED BY public.errors.id;
-
-
---
--- Name: expense_attributes; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.expense_attributes (
-    id integer NOT NULL,
-    attribute_type character varying(255) NOT NULL,
-    display_name character varying(255) NOT NULL,
-    value character varying(1000) NOT NULL,
-    source_id character varying(255) NOT NULL,
-    created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL,
-    workspace_id integer NOT NULL,
-    active boolean,
-    detail jsonb,
-    auto_mapped boolean NOT NULL,
-    auto_created boolean NOT NULL
-);
-
-
-ALTER TABLE public.expense_attributes OWNER TO postgres;
-
---
--- Name: expense_attributes_deletion_cache; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.expense_attributes_deletion_cache (
-    id integer NOT NULL,
-    category_ids character varying(255)[] NOT NULL,
-    project_ids character varying(255)[] NOT NULL,
-    workspace_id integer NOT NULL
-);
-
-
-ALTER TABLE public.expense_attributes_deletion_cache OWNER TO postgres;
-
---
--- Name: expense_attributes_deletion_cache_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.expense_attributes_deletion_cache_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.expense_attributes_deletion_cache_id_seq OWNER TO postgres;
-
---
--- Name: expense_attributes_deletion_cache_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.expense_attributes_deletion_cache_id_seq OWNED BY public.expense_attributes_deletion_cache.id;
-
-
---
--- Name: expense_fields; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.expense_fields (
-    id integer NOT NULL,
-    attribute_type character varying(255) NOT NULL,
-    source_field_id integer NOT NULL,
-    is_enabled boolean NOT NULL,
-    created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL,
-    workspace_id integer NOT NULL
-);
-
-
-ALTER TABLE public.expense_fields OWNER TO postgres;
-
---
--- Name: expense_fields_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.expense_fields_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.expense_fields_id_seq OWNER TO postgres;
-
---
--- Name: expense_fields_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.expense_fields_id_seq OWNED BY public.expense_fields.id;
-
-
---
--- Name: expense_filters; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.expense_filters (
-    id integer NOT NULL,
-    condition character varying(255) NOT NULL,
-    operator character varying(255) NOT NULL,
-    "values" character varying(255)[],
-    rank integer NOT NULL,
-    join_by character varying(3),
-    is_custom boolean NOT NULL,
-    created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL,
-    workspace_id integer NOT NULL,
-    custom_field_type character varying(255)
-);
-
-
-ALTER TABLE public.expense_filters OWNER TO postgres;
-
---
--- Name: expense_filters_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.expense_filters_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.expense_filters_id_seq OWNER TO postgres;
-
---
--- Name: expense_filters_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.expense_filters_id_seq OWNED BY public.expense_filters.id;
-
-
---
--- Name: expense_group_settings; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.expense_group_settings (
-    id integer NOT NULL,
-    reimbursable_expense_group_fields character varying(100)[] NOT NULL,
-    corporate_credit_card_expense_group_fields character varying(100)[] NOT NULL,
-    expense_state character varying(100),
-    reimbursable_export_date_type character varying(100) NOT NULL,
-    created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL,
-    workspace_id integer NOT NULL,
-    import_card_credits boolean NOT NULL,
-    ccc_export_date_type character varying(100) NOT NULL,
-    ccc_expense_state character varying(100),
-    split_expense_grouping character varying(100) NOT NULL,
-    created_by character varying(255),
-    updated_by character varying(255)
-);
-
-
-ALTER TABLE public.expense_group_settings OWNER TO postgres;
-
---
--- Name: expense_groups; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.expense_groups (
-    id integer NOT NULL,
-    description jsonb,
-    created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL,
-    workspace_id integer NOT NULL,
-    fund_source character varying(255) NOT NULL,
-    exported_at timestamp with time zone,
-    response_logs jsonb,
-    employee_name character varying(255),
-    export_url character varying(255)
-);
-
-
-ALTER TABLE public.expense_groups OWNER TO postgres;
 
 --
 -- Name: expense_groups_expenses; Type: TABLE; Schema: public; Owner: postgres
@@ -1001,110 +796,10 @@ CREATE TABLE public.expense_groups_expenses (
     expense_id integer NOT NULL
 );
 
+ALTER TABLE ONLY public.expense_groups_expenses REPLICA IDENTITY FULL;
+
 
 ALTER TABLE public.expense_groups_expenses OWNER TO postgres;
-
---
--- Name: expense_report_lineitems; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.expense_report_lineitems (
-    id integer NOT NULL,
-    amount double precision NOT NULL,
-    category character varying(255) NOT NULL,
-    class_id character varying(255),
-    customer_id character varying(255),
-    location_id character varying(255),
-    department_id character varying(255),
-    currency character varying(255) NOT NULL,
-    memo text,
-    created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL,
-    expense_id integer NOT NULL,
-    expense_report_id integer NOT NULL,
-    transaction_date timestamp with time zone NOT NULL,
-    netsuite_custom_segments jsonb,
-    billable boolean,
-    tax_amount double precision,
-    tax_item_id character varying(255),
-    netsuite_receipt_url text
-);
-
-
-ALTER TABLE public.expense_report_lineitems OWNER TO postgres;
-
---
--- Name: expense_report_lineitems_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.expense_report_lineitems_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.expense_report_lineitems_id_seq OWNER TO postgres;
-
---
--- Name: expense_report_lineitems_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.expense_report_lineitems_id_seq OWNED BY public.expense_report_lineitems.id;
-
-
---
--- Name: expense_reports; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.expense_reports (
-    id integer NOT NULL,
-    account_id character varying(255) NOT NULL,
-    entity_id character varying(255) NOT NULL,
-    currency character varying(255) NOT NULL,
-    department_id character varying(255),
-    class_id character varying(255),
-    location_id character varying(255),
-    subsidiary_id character varying(255) NOT NULL,
-    memo text NOT NULL,
-    external_id character varying(255) NOT NULL,
-    created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL,
-    expense_group_id integer NOT NULL,
-    transaction_date timestamp with time zone NOT NULL,
-    payment_synced boolean NOT NULL,
-    paid_on_netsuite boolean NOT NULL,
-    credit_card_account_id character varying(255),
-    is_retired boolean NOT NULL,
-    is_attachment_upload_failed boolean NOT NULL
-);
-
-
-ALTER TABLE public.expense_reports OWNER TO postgres;
-
---
--- Name: expense_reports_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.expense_reports_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.expense_reports_id_seq OWNER TO postgres;
-
---
--- Name: expense_reports_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.expense_reports_id_seq OWNED BY public.expense_reports.id;
-
 
 --
 -- Name: expenses; Type: TABLE; Schema: public; Owner: postgres
@@ -1160,8 +855,1727 @@ CREATE TABLE public.expenses (
     masked_corporate_card_number character varying(255)
 );
 
+ALTER TABLE ONLY public.expenses REPLICA IDENTITY FULL;
+
 
 ALTER TABLE public.expenses OWNER TO postgres;
+
+--
+-- Name: prod_workspaces_view; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.prod_workspaces_view AS
+SELECT
+    NULL::integer AS id,
+    NULL::character varying(255) AS name,
+    NULL::character varying(255) AS fyle_org_id,
+    NULL::character varying(255) AS ns_account_id,
+    NULL::timestamp with time zone AS last_synced_at,
+    NULL::timestamp with time zone AS created_at,
+    NULL::timestamp with time zone AS updated_at,
+    NULL::timestamp with time zone AS destination_synced_at,
+    NULL::timestamp with time zone AS source_synced_at,
+    NULL::character varying(255) AS cluster_domain,
+    NULL::timestamp with time zone AS employee_exported_at,
+    NULL::timestamp with time zone AS ccc_last_synced_at,
+    NULL::character varying(50) AS onboarding_state,
+    NULL::character varying[] AS user_emails;
+
+
+ALTER TABLE public.prod_workspaces_view OWNER TO postgres;
+
+--
+-- Name: task_logs; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.task_logs (
+    id integer NOT NULL,
+    type character varying(50) NOT NULL,
+    task_id character varying(255),
+    status character varying(255) NOT NULL,
+    detail jsonb,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    bill_id integer,
+    expense_group_id integer,
+    workspace_id integer NOT NULL,
+    expense_report_id integer,
+    journal_entry_id integer,
+    vendor_payment_id integer,
+    credit_card_charge_id integer
+);
+
+ALTER TABLE ONLY public.task_logs REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.task_logs OWNER TO postgres;
+
+--
+-- Name: _direct_export_errored_expenses_view; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public._direct_export_errored_expenses_view AS
+ WITH prod_workspace_ids AS (
+         SELECT prod_workspaces_view.id
+           FROM public.prod_workspaces_view
+        ), errored_expenses_in_complete_state AS (
+         SELECT count(*) AS complete_expenses_error_count
+           FROM public.expenses
+          WHERE ((expenses.workspace_id IN ( SELECT prod_workspace_ids.id
+                   FROM prod_workspace_ids)) AND ((expenses.accounting_export_summary ->> 'state'::text) <> ALL (ARRAY['COMPLETE'::text, 'DELETED'::text])) AND (expenses.id IN ( SELECT expense_groups_expenses.expense_id
+                   FROM public.expense_groups_expenses
+                  WHERE (expense_groups_expenses.expensegroup_id IN ( SELECT task_logs.expense_group_id
+                           FROM public.task_logs
+                          WHERE (((task_logs.status)::text = 'COMPLETE'::text) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
+                                   FROM prod_workspace_ids))))))))
+        ), errored_expenses_in_error_state AS (
+         SELECT count(*) AS error_expenses_error_count
+           FROM public.expenses
+          WHERE ((expenses.workspace_id IN ( SELECT prod_workspace_ids.id
+                   FROM prod_workspace_ids)) AND ((expenses.accounting_export_summary ->> 'state'::text) <> ALL (ARRAY['ERROR'::text, 'DELETED'::text])) AND (expenses.id IN ( SELECT expense_groups_expenses.expense_id
+                   FROM public.expense_groups_expenses
+                  WHERE (expense_groups_expenses.expensegroup_id IN ( SELECT task_logs.expense_group_id
+                           FROM public.task_logs
+                          WHERE (((task_logs.status)::text = ANY ((ARRAY['FAILED'::character varying, 'FATAL'::character varying])::text[])) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
+                                   FROM prod_workspace_ids))))))))
+        ), errored_expenses_in_inprogress_state AS (
+         SELECT count(*) AS in_progress_expenses_error_count
+           FROM public.expenses
+          WHERE ((expenses.workspace_id IN ( SELECT prod_workspace_ids.id
+                   FROM prod_workspace_ids)) AND ((expenses.accounting_export_summary ->> 'state'::text) <> ALL (ARRAY['IN_PROGRESS'::text, 'DELETED'::text])) AND (expenses.id IN ( SELECT expense_groups_expenses.expense_id
+                   FROM public.expense_groups_expenses
+                  WHERE (expense_groups_expenses.expensegroup_id IN ( SELECT task_logs.expense_group_id
+                           FROM public.task_logs
+                          WHERE (((task_logs.status)::text = 'IN_PROGRESS'::text) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
+                                   FROM prod_workspace_ids))))))))
+        ), not_synced_to_platform AS (
+         SELECT count(*) AS not_synced_expenses_count
+           FROM public.expenses
+          WHERE ((expenses.workspace_id IN ( SELECT prod_workspace_ids.id
+                   FROM prod_workspace_ids)) AND ((expenses.accounting_export_summary ->> 'synced'::text) = 'false'::text))
+        )
+ SELECT errored_expenses_in_complete_state.complete_expenses_error_count,
+    errored_expenses_in_error_state.error_expenses_error_count,
+    errored_expenses_in_inprogress_state.in_progress_expenses_error_count,
+    not_synced_to_platform.not_synced_expenses_count
+   FROM errored_expenses_in_complete_state,
+    errored_expenses_in_error_state,
+    errored_expenses_in_inprogress_state,
+    not_synced_to_platform;
+
+
+ALTER TABLE public._direct_export_errored_expenses_view OWNER TO postgres;
+
+--
+-- Name: _django_queue_fatal_tasks_view; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public._django_queue_fatal_tasks_view AS
+ SELECT 'FATAL'::text AS status,
+    COALESCE(count(*), (0)::bigint) AS count
+   FROM public.task_logs
+  WHERE ((task_logs.workspace_id IN ( SELECT prod_workspaces_view.id
+           FROM public.prod_workspaces_view)) AND ((task_logs.status)::text = 'FATAL'::text));
+
+
+ALTER TABLE public._django_queue_fatal_tasks_view OWNER TO postgres;
+
+--
+-- Name: _django_queue_in_progress_tasks_view; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public._django_queue_in_progress_tasks_view AS
+ SELECT 'IN_PROGRESS, ENQUEUED'::text AS status,
+    COALESCE(count(*), (0)::bigint) AS count
+   FROM public.task_logs
+  WHERE ((task_logs.workspace_id IN ( SELECT prod_workspaces_view.id
+           FROM public.prod_workspaces_view)) AND ((task_logs.status)::text = ANY ((ARRAY['IN_PROGRESS'::character varying, 'ENQUEUED'::character varying])::text[])));
+
+
+ALTER TABLE public._django_queue_in_progress_tasks_view OWNER TO postgres;
+
+--
+-- Name: import_logs; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.import_logs (
+    id integer NOT NULL,
+    attribute_type character varying(150) NOT NULL,
+    status character varying(255),
+    error_log jsonb NOT NULL,
+    total_batches_count integer NOT NULL,
+    processed_batches_count integer NOT NULL,
+    last_successful_run_at timestamp with time zone,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    workspace_id integer NOT NULL
+);
+
+ALTER TABLE ONLY public.import_logs REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.import_logs OWNER TO postgres;
+
+--
+-- Name: _import_logs_fatal_failed_in_progress_tasks_view; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public._import_logs_fatal_failed_in_progress_tasks_view AS
+ SELECT count(*) AS log_count,
+    import_logs.status,
+    current_database() AS database
+   FROM public.import_logs
+  WHERE (((import_logs.status)::text = ANY ((ARRAY['IN_PROGRESS'::character varying, 'FATAL'::character varying, 'FAILED'::character varying])::text[])) AND (import_logs.workspace_id IN ( SELECT prod_workspaces_view.id
+           FROM public.prod_workspaces_view)) AND ((import_logs.error_log)::text !~~* '%Token%'::text) AND ((import_logs.error_log)::text !~~* '%tenant%'::text) AND (import_logs.updated_at < (now() - '00:45:00'::interval)))
+  GROUP BY import_logs.status;
+
+
+ALTER TABLE public._import_logs_fatal_failed_in_progress_tasks_view OWNER TO postgres;
+
+--
+-- Name: auth_cache; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.auth_cache (
+    cache_key character varying(255) NOT NULL,
+    value text NOT NULL,
+    expires timestamp with time zone NOT NULL
+);
+
+ALTER TABLE ONLY public.auth_cache REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.auth_cache OWNER TO postgres;
+
+--
+-- Name: auth_group; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.auth_group (
+    id integer NOT NULL,
+    name character varying(150) NOT NULL
+);
+
+ALTER TABLE ONLY public.auth_group REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.auth_group OWNER TO postgres;
+
+--
+-- Name: auth_group_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.auth_group_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.auth_group_id_seq OWNER TO postgres;
+
+--
+-- Name: auth_group_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.auth_group_id_seq OWNED BY public.auth_group.id;
+
+
+--
+-- Name: auth_group_permissions; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.auth_group_permissions (
+    id integer NOT NULL,
+    group_id integer NOT NULL,
+    permission_id integer NOT NULL
+);
+
+ALTER TABLE ONLY public.auth_group_permissions REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.auth_group_permissions OWNER TO postgres;
+
+--
+-- Name: auth_group_permissions_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.auth_group_permissions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.auth_group_permissions_id_seq OWNER TO postgres;
+
+--
+-- Name: auth_group_permissions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.auth_group_permissions_id_seq OWNED BY public.auth_group_permissions.id;
+
+
+--
+-- Name: auth_permission; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.auth_permission (
+    id integer NOT NULL,
+    name character varying(255) NOT NULL,
+    content_type_id integer NOT NULL,
+    codename character varying(100) NOT NULL
+);
+
+ALTER TABLE ONLY public.auth_permission REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.auth_permission OWNER TO postgres;
+
+--
+-- Name: auth_permission_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.auth_permission_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.auth_permission_id_seq OWNER TO postgres;
+
+--
+-- Name: auth_permission_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.auth_permission_id_seq OWNED BY public.auth_permission.id;
+
+
+--
+-- Name: auth_tokens; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.auth_tokens (
+    id integer NOT NULL,
+    refresh_token text NOT NULL,
+    user_id integer NOT NULL
+);
+
+ALTER TABLE ONLY public.auth_tokens REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.auth_tokens OWNER TO postgres;
+
+--
+-- Name: bill_lineitems; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.bill_lineitems (
+    id integer NOT NULL,
+    account_id character varying(255),
+    location_id character varying(255),
+    department_id character varying(255),
+    class_id character varying(255),
+    amount double precision NOT NULL,
+    memo text,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    bill_id integer NOT NULL,
+    expense_id integer NOT NULL,
+    netsuite_custom_segments jsonb,
+    billable boolean,
+    customer_id character varying(255),
+    tax_amount double precision,
+    tax_item_id character varying(255),
+    netsuite_receipt_url text,
+    detail_type character varying(255) NOT NULL,
+    item_id character varying(255)
+);
+
+ALTER TABLE ONLY public.bill_lineitems REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.bill_lineitems OWNER TO postgres;
+
+--
+-- Name: bill_lineitems_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.bill_lineitems_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.bill_lineitems_id_seq OWNER TO postgres;
+
+--
+-- Name: bill_lineitems_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.bill_lineitems_id_seq OWNED BY public.bill_lineitems.id;
+
+
+--
+-- Name: bills; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.bills (
+    id integer NOT NULL,
+    entity_id character varying(255) NOT NULL,
+    accounts_payable_id character varying(255) NOT NULL,
+    subsidiary_id character varying(255) NOT NULL,
+    location_id character varying(255),
+    currency character varying(255) NOT NULL,
+    memo text NOT NULL,
+    external_id character varying(255) NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    expense_group_id integer NOT NULL,
+    transaction_date timestamp with time zone NOT NULL,
+    payment_synced boolean NOT NULL,
+    paid_on_netsuite boolean NOT NULL,
+    reference_number character varying(255),
+    department_id character varying(255),
+    override_tax_details boolean NOT NULL,
+    class_id character varying(255),
+    is_retired boolean NOT NULL,
+    is_attachment_upload_failed boolean NOT NULL
+);
+
+ALTER TABLE ONLY public.bills REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.bills OWNER TO postgres;
+
+--
+-- Name: bills_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.bills_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.bills_id_seq OWNER TO postgres;
+
+--
+-- Name: bills_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.bills_id_seq OWNED BY public.bills.id;
+
+
+--
+-- Name: category_mappings; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.category_mappings (
+    id integer NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    destination_account_id integer,
+    destination_expense_head_id integer,
+    source_category_id integer NOT NULL,
+    workspace_id integer NOT NULL
+);
+
+ALTER TABLE ONLY public.category_mappings REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.category_mappings OWNER TO postgres;
+
+--
+-- Name: category_mappings_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.category_mappings_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.category_mappings_id_seq OWNER TO postgres;
+
+--
+-- Name: category_mappings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.category_mappings_id_seq OWNED BY public.category_mappings.id;
+
+
+--
+-- Name: configurations; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.configurations (
+    id integer NOT NULL,
+    reimbursable_expenses_object character varying(50),
+    corporate_credit_card_expenses_object character varying(50),
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    workspace_id integer NOT NULL,
+    sync_fyle_to_netsuite_payments boolean NOT NULL,
+    sync_netsuite_to_fyle_payments boolean NOT NULL,
+    import_projects boolean NOT NULL,
+    auto_map_employees character varying(50),
+    import_categories boolean NOT NULL,
+    auto_create_destination_entity boolean NOT NULL,
+    auto_create_merchants boolean NOT NULL,
+    employee_field_mapping character varying(50),
+    import_tax_items boolean NOT NULL,
+    change_accounting_period boolean NOT NULL,
+    memo_structure character varying(100)[] NOT NULL,
+    map_fyle_cards_netsuite_account boolean NOT NULL,
+    import_vendors_as_merchants boolean NOT NULL,
+    import_netsuite_employees boolean NOT NULL,
+    import_items boolean NOT NULL,
+    name_in_journal_entry character varying(100) NOT NULL,
+    allow_intercompany_vendors boolean NOT NULL,
+    je_single_credit_line boolean NOT NULL,
+    is_attachment_upload_enabled boolean NOT NULL,
+    created_by character varying(255),
+    updated_by character varying(255)
+);
+
+ALTER TABLE ONLY public.configurations REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.configurations OWNER TO postgres;
+
+--
+-- Name: credit_card_charge_lineitems; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.credit_card_charge_lineitems (
+    id integer NOT NULL,
+    account_id character varying(255) NOT NULL,
+    location_id character varying(255),
+    department_id character varying(255),
+    class_id character varying(255),
+    customer_id character varying(255),
+    amount double precision NOT NULL,
+    billable boolean,
+    memo text,
+    netsuite_custom_segments jsonb,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    credit_card_charge_id integer NOT NULL,
+    expense_id integer NOT NULL,
+    tax_amount double precision,
+    tax_item_id character varying(255),
+    netsuite_receipt_url text
+);
+
+ALTER TABLE ONLY public.credit_card_charge_lineitems REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.credit_card_charge_lineitems OWNER TO postgres;
+
+--
+-- Name: credit_card_charge_lineitems_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.credit_card_charge_lineitems_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.credit_card_charge_lineitems_id_seq OWNER TO postgres;
+
+--
+-- Name: credit_card_charge_lineitems_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.credit_card_charge_lineitems_id_seq OWNED BY public.credit_card_charge_lineitems.id;
+
+
+--
+-- Name: credit_card_charges; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.credit_card_charges (
+    id integer NOT NULL,
+    credit_card_account_id character varying(255) NOT NULL,
+    entity_id character varying(255) NOT NULL,
+    subsidiary_id character varying(255) NOT NULL,
+    location_id character varying(255),
+    currency character varying(255) NOT NULL,
+    memo text NOT NULL,
+    external_id character varying(255) NOT NULL,
+    transaction_date timestamp with time zone NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    expense_group_id integer NOT NULL,
+    reference_number character varying(255),
+    department_id character varying(255),
+    class_id character varying(255),
+    is_attachment_upload_failed boolean NOT NULL
+);
+
+ALTER TABLE ONLY public.credit_card_charges REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.credit_card_charges OWNER TO postgres;
+
+--
+-- Name: credit_card_charges_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.credit_card_charges_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.credit_card_charges_id_seq OWNER TO postgres;
+
+--
+-- Name: credit_card_charges_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.credit_card_charges_id_seq OWNED BY public.credit_card_charges.id;
+
+
+--
+-- Name: custom_segments; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.custom_segments (
+    id integer NOT NULL,
+    name character varying(255) NOT NULL,
+    segment_type character varying(255) NOT NULL,
+    script_id character varying(255) NOT NULL,
+    internal_id character varying(255) NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    workspace_id integer NOT NULL
+);
+
+ALTER TABLE ONLY public.custom_segments REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.custom_segments OWNER TO postgres;
+
+--
+-- Name: custom_segments_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.custom_segments_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.custom_segments_id_seq OWNER TO postgres;
+
+--
+-- Name: custom_segments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.custom_segments_id_seq OWNED BY public.custom_segments.id;
+
+
+--
+-- Name: destination_attributes; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.destination_attributes (
+    id integer NOT NULL,
+    attribute_type character varying(255) NOT NULL,
+    display_name character varying(255) NOT NULL,
+    value character varying(255) NOT NULL,
+    destination_id character varying(255) NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    workspace_id integer NOT NULL,
+    active boolean,
+    detail jsonb,
+    auto_created boolean NOT NULL,
+    code character varying(255)
+);
+
+ALTER TABLE ONLY public.destination_attributes REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.destination_attributes OWNER TO postgres;
+
+--
+-- Name: direct_export_errored_expenses_view; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.direct_export_errored_expenses_view AS
+ WITH prod_workspace_ids AS (
+         SELECT prod_workspaces_view.id
+           FROM public.prod_workspaces_view
+        ), errored_expenses_in_complete_state AS (
+         SELECT count(*) AS complete_expenses_error_count
+           FROM public.expenses
+          WHERE ((expenses.workspace_id IN ( SELECT prod_workspace_ids.id
+                   FROM prod_workspace_ids)) AND ((expenses.accounting_export_summary ->> 'state'::text) <> ALL (ARRAY['COMPLETE'::text, 'DELETED'::text])) AND (expenses.id IN ( SELECT expense_groups_expenses.expense_id
+                   FROM public.expense_groups_expenses
+                  WHERE (expense_groups_expenses.expensegroup_id IN ( SELECT task_logs.expense_group_id
+                           FROM public.task_logs
+                          WHERE (((task_logs.status)::text = 'COMPLETE'::text) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
+                                   FROM prod_workspace_ids)) AND (task_logs.updated_at > (now() - '1 day'::interval)) AND (task_logs.updated_at < (now() - '00:45:00'::interval))))))))
+        ), errored_expenses_in_error_state AS (
+         SELECT count(*) AS error_expenses_error_count
+           FROM public.expenses
+          WHERE ((expenses.workspace_id IN ( SELECT prod_workspace_ids.id
+                   FROM prod_workspace_ids)) AND ((expenses.accounting_export_summary ->> 'state'::text) <> ALL (ARRAY['ERROR'::text, 'DELETED'::text])) AND (expenses.id IN ( SELECT expense_groups_expenses.expense_id
+                   FROM public.expense_groups_expenses
+                  WHERE (expense_groups_expenses.expensegroup_id IN ( SELECT task_logs.expense_group_id
+                           FROM public.task_logs
+                          WHERE (((task_logs.status)::text = ANY ((ARRAY['FAILED'::character varying, 'FATAL'::character varying])::text[])) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
+                                   FROM prod_workspace_ids)) AND (task_logs.updated_at > (now() - '1 day'::interval)) AND (task_logs.updated_at < (now() - '00:45:00'::interval))))))))
+        ), errored_expenses_in_inprogress_state AS (
+         SELECT count(*) AS in_progress_expenses_error_count
+           FROM public.expenses
+          WHERE ((expenses.workspace_id IN ( SELECT prod_workspace_ids.id
+                   FROM prod_workspace_ids)) AND ((expenses.accounting_export_summary ->> 'state'::text) <> ALL (ARRAY['IN_PROGRESS'::text, 'DELETED'::text])) AND (expenses.id IN ( SELECT expense_groups_expenses.expense_id
+                   FROM public.expense_groups_expenses
+                  WHERE (expense_groups_expenses.expensegroup_id IN ( SELECT task_logs.expense_group_id
+                           FROM public.task_logs
+                          WHERE (((task_logs.status)::text = ANY ((ARRAY['IN_PROGRESS'::character varying, 'ENQUEUED'::character varying])::text[])) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
+                                   FROM prod_workspace_ids)) AND (task_logs.updated_at > (now() - '1 day'::interval)) AND (task_logs.updated_at < (now() - '00:45:00'::interval))))))))
+        ), not_synced_to_platform AS (
+         SELECT count(*) AS not_synced_expenses_count
+           FROM public.expenses
+          WHERE ((expenses.workspace_id IN ( SELECT prod_workspace_ids.id
+                   FROM prod_workspace_ids)) AND ((expenses.accounting_export_summary ->> 'synced'::text) = 'false'::text) AND (expenses.updated_at > (now() - '1 day'::interval)) AND (expenses.updated_at < (now() - '00:45:00'::interval)))
+        )
+ SELECT errored_expenses_in_complete_state.complete_expenses_error_count,
+    errored_expenses_in_error_state.error_expenses_error_count,
+    errored_expenses_in_inprogress_state.in_progress_expenses_error_count,
+    not_synced_to_platform.not_synced_expenses_count
+   FROM errored_expenses_in_complete_state,
+    errored_expenses_in_error_state,
+    errored_expenses_in_inprogress_state,
+    not_synced_to_platform;
+
+
+ALTER TABLE public.direct_export_errored_expenses_view OWNER TO postgres;
+
+--
+-- Name: django_admin_log; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.django_admin_log (
+    id integer NOT NULL,
+    action_time timestamp with time zone NOT NULL,
+    object_id text,
+    object_repr character varying(200) NOT NULL,
+    action_flag smallint NOT NULL,
+    change_message text NOT NULL,
+    content_type_id integer,
+    user_id integer NOT NULL,
+    CONSTRAINT django_admin_log_action_flag_check CHECK ((action_flag >= 0))
+);
+
+ALTER TABLE ONLY public.django_admin_log REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.django_admin_log OWNER TO postgres;
+
+--
+-- Name: django_admin_log_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.django_admin_log_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.django_admin_log_id_seq OWNER TO postgres;
+
+--
+-- Name: django_admin_log_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.django_admin_log_id_seq OWNED BY public.django_admin_log.id;
+
+
+--
+-- Name: django_content_type; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.django_content_type (
+    id integer NOT NULL,
+    app_label character varying(100) NOT NULL,
+    model character varying(100) NOT NULL
+);
+
+ALTER TABLE ONLY public.django_content_type REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.django_content_type OWNER TO postgres;
+
+--
+-- Name: django_content_type_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.django_content_type_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.django_content_type_id_seq OWNER TO postgres;
+
+--
+-- Name: django_content_type_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.django_content_type_id_seq OWNED BY public.django_content_type.id;
+
+
+--
+-- Name: django_migrations; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.django_migrations (
+    id integer NOT NULL,
+    app character varying(255) NOT NULL,
+    name character varying(255) NOT NULL,
+    applied timestamp with time zone NOT NULL
+);
+
+ALTER TABLE ONLY public.django_migrations REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.django_migrations OWNER TO postgres;
+
+--
+-- Name: django_migrations_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.django_migrations_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.django_migrations_id_seq OWNER TO postgres;
+
+--
+-- Name: django_migrations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.django_migrations_id_seq OWNED BY public.django_migrations.id;
+
+
+--
+-- Name: django_q_ormq; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.django_q_ormq (
+    id integer NOT NULL,
+    key character varying(100) NOT NULL,
+    payload text NOT NULL,
+    lock timestamp with time zone
+);
+
+ALTER TABLE ONLY public.django_q_ormq REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.django_q_ormq OWNER TO postgres;
+
+--
+-- Name: django_q_ormq_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.django_q_ormq_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.django_q_ormq_id_seq OWNER TO postgres;
+
+--
+-- Name: django_q_ormq_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.django_q_ormq_id_seq OWNED BY public.django_q_ormq.id;
+
+
+--
+-- Name: django_q_schedule; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.django_q_schedule (
+    id integer NOT NULL,
+    func character varying(256) NOT NULL,
+    hook character varying(256),
+    args text,
+    kwargs text,
+    schedule_type character varying(2) NOT NULL,
+    repeats integer NOT NULL,
+    next_run timestamp with time zone,
+    task character varying(100),
+    name character varying(100),
+    minutes smallint,
+    cron character varying(100),
+    cluster character varying(100),
+    intended_date_kwarg character varying(100),
+    CONSTRAINT django_q_schedule_minutes_check CHECK ((minutes >= 0))
+);
+
+ALTER TABLE ONLY public.django_q_schedule REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.django_q_schedule OWNER TO postgres;
+
+--
+-- Name: django_q_schedule_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.django_q_schedule_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.django_q_schedule_id_seq OWNER TO postgres;
+
+--
+-- Name: django_q_schedule_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.django_q_schedule_id_seq OWNED BY public.django_q_schedule.id;
+
+
+--
+-- Name: django_q_task; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.django_q_task (
+    name character varying(100) NOT NULL,
+    func character varying(256) NOT NULL,
+    hook character varying(256),
+    args text,
+    kwargs text,
+    result text,
+    started timestamp with time zone NOT NULL,
+    stopped timestamp with time zone NOT NULL,
+    success boolean NOT NULL,
+    id character varying(32) NOT NULL,
+    "group" character varying(100),
+    attempt_count integer NOT NULL,
+    cluster character varying(100)
+);
+
+ALTER TABLE ONLY public.django_q_task REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.django_q_task OWNER TO postgres;
+
+--
+-- Name: django_queue_fatal_tasks_view; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.django_queue_fatal_tasks_view AS
+ SELECT 'FATAL'::text AS status,
+    COALESCE(count(*), (0)::bigint) AS count
+   FROM public.task_logs
+  WHERE ((task_logs.workspace_id IN ( SELECT prod_workspaces_view.id
+           FROM public.prod_workspaces_view)) AND ((task_logs.status)::text = 'FATAL'::text) AND ((task_logs.updated_at >= (now() - '24:00:00'::interval)) AND (task_logs.updated_at <= (now() - '00:30:00'::interval))));
+
+
+ALTER TABLE public.django_queue_fatal_tasks_view OWNER TO postgres;
+
+--
+-- Name: django_queue_in_progress_tasks_view; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.django_queue_in_progress_tasks_view AS
+ SELECT 'IN_PROGRESS, ENQUEUED'::text AS status,
+    COALESCE(count(*), (0)::bigint) AS count
+   FROM public.task_logs
+  WHERE ((task_logs.workspace_id IN ( SELECT prod_workspaces_view.id
+           FROM public.prod_workspaces_view)) AND ((task_logs.status)::text = ANY ((ARRAY['IN_PROGRESS'::character varying, 'ENQUEUED'::character varying])::text[])) AND ((task_logs.updated_at >= (now() - '24:00:00'::interval)) AND (task_logs.updated_at <= (now() - '00:30:00'::interval))));
+
+
+ALTER TABLE public.django_queue_in_progress_tasks_view OWNER TO postgres;
+
+--
+-- Name: django_session; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.django_session (
+    session_key character varying(40) NOT NULL,
+    session_data text NOT NULL,
+    expire_date timestamp with time zone NOT NULL
+);
+
+ALTER TABLE ONLY public.django_session REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.django_session OWNER TO postgres;
+
+--
+-- Name: employee_mappings; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.employee_mappings (
+    id integer NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    destination_card_account_id integer,
+    destination_employee_id integer,
+    destination_vendor_id integer,
+    source_employee_id integer NOT NULL,
+    workspace_id integer NOT NULL
+);
+
+ALTER TABLE ONLY public.employee_mappings REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.employee_mappings OWNER TO postgres;
+
+--
+-- Name: employee_mappings_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.employee_mappings_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.employee_mappings_id_seq OWNER TO postgres;
+
+--
+-- Name: employee_mappings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.employee_mappings_id_seq OWNED BY public.employee_mappings.id;
+
+
+--
+-- Name: errors; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.errors (
+    id integer NOT NULL,
+    type character varying(50) NOT NULL,
+    is_resolved boolean NOT NULL,
+    error_title character varying(255) NOT NULL,
+    error_detail text NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    expense_attribute_id integer,
+    expense_group_id integer,
+    workspace_id integer NOT NULL,
+    article_link character varying(255),
+    is_parsed boolean NOT NULL,
+    repetition_count integer NOT NULL
+);
+
+ALTER TABLE ONLY public.errors REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.errors OWNER TO postgres;
+
+--
+-- Name: errors_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.errors_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.errors_id_seq OWNER TO postgres;
+
+--
+-- Name: errors_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.errors_id_seq OWNED BY public.errors.id;
+
+
+--
+-- Name: expense_attributes; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.expense_attributes (
+    id integer NOT NULL,
+    attribute_type character varying(255) NOT NULL,
+    display_name character varying(255) NOT NULL,
+    value character varying(1000) NOT NULL,
+    source_id character varying(255) NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    workspace_id integer NOT NULL,
+    active boolean,
+    detail jsonb,
+    auto_mapped boolean NOT NULL,
+    auto_created boolean NOT NULL
+);
+
+ALTER TABLE ONLY public.expense_attributes REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.expense_attributes OWNER TO postgres;
+
+--
+-- Name: expense_attributes_deletion_cache; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.expense_attributes_deletion_cache (
+    id integer NOT NULL,
+    category_ids character varying(255)[] NOT NULL,
+    project_ids character varying(255)[] NOT NULL,
+    workspace_id integer NOT NULL
+);
+
+ALTER TABLE ONLY public.expense_attributes_deletion_cache REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.expense_attributes_deletion_cache OWNER TO postgres;
+
+--
+-- Name: expense_attributes_deletion_cache_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.expense_attributes_deletion_cache_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.expense_attributes_deletion_cache_id_seq OWNER TO postgres;
+
+--
+-- Name: expense_attributes_deletion_cache_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.expense_attributes_deletion_cache_id_seq OWNED BY public.expense_attributes_deletion_cache.id;
+
+
+--
+-- Name: expense_fields; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.expense_fields (
+    id integer NOT NULL,
+    attribute_type character varying(255) NOT NULL,
+    source_field_id integer NOT NULL,
+    is_enabled boolean NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    workspace_id integer NOT NULL
+);
+
+ALTER TABLE ONLY public.expense_fields REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.expense_fields OWNER TO postgres;
+
+--
+-- Name: expense_fields_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.expense_fields_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.expense_fields_id_seq OWNER TO postgres;
+
+--
+-- Name: expense_fields_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.expense_fields_id_seq OWNED BY public.expense_fields.id;
+
+
+--
+-- Name: expense_filters; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.expense_filters (
+    id integer NOT NULL,
+    condition character varying(255) NOT NULL,
+    operator character varying(255) NOT NULL,
+    "values" character varying(255)[],
+    rank integer NOT NULL,
+    join_by character varying(3),
+    is_custom boolean NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    workspace_id integer NOT NULL,
+    custom_field_type character varying(255)
+);
+
+ALTER TABLE ONLY public.expense_filters REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.expense_filters OWNER TO postgres;
+
+--
+-- Name: expense_filters_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.expense_filters_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.expense_filters_id_seq OWNER TO postgres;
+
+--
+-- Name: expense_filters_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.expense_filters_id_seq OWNED BY public.expense_filters.id;
+
+
+--
+-- Name: expense_group_settings; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.expense_group_settings (
+    id integer NOT NULL,
+    reimbursable_expense_group_fields character varying(100)[] NOT NULL,
+    corporate_credit_card_expense_group_fields character varying(100)[] NOT NULL,
+    expense_state character varying(100),
+    reimbursable_export_date_type character varying(100) NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    workspace_id integer NOT NULL,
+    import_card_credits boolean NOT NULL,
+    ccc_export_date_type character varying(100) NOT NULL,
+    ccc_expense_state character varying(100),
+    split_expense_grouping character varying(100) NOT NULL,
+    created_by character varying(255),
+    updated_by character varying(255)
+);
+
+ALTER TABLE ONLY public.expense_group_settings REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.expense_group_settings OWNER TO postgres;
+
+--
+-- Name: expense_groups; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.expense_groups (
+    id integer NOT NULL,
+    description jsonb,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    workspace_id integer NOT NULL,
+    fund_source character varying(255) NOT NULL,
+    exported_at timestamp with time zone,
+    response_logs jsonb,
+    employee_name character varying(255),
+    export_url character varying(255)
+);
+
+ALTER TABLE ONLY public.expense_groups REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.expense_groups OWNER TO postgres;
+
+--
+-- Name: expense_report_lineitems; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.expense_report_lineitems (
+    id integer NOT NULL,
+    amount double precision NOT NULL,
+    category character varying(255) NOT NULL,
+    class_id character varying(255),
+    customer_id character varying(255),
+    location_id character varying(255),
+    department_id character varying(255),
+    currency character varying(255) NOT NULL,
+    memo text,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    expense_id integer NOT NULL,
+    expense_report_id integer NOT NULL,
+    transaction_date timestamp with time zone NOT NULL,
+    netsuite_custom_segments jsonb,
+    billable boolean,
+    tax_amount double precision,
+    tax_item_id character varying(255),
+    netsuite_receipt_url text
+);
+
+ALTER TABLE ONLY public.expense_report_lineitems REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.expense_report_lineitems OWNER TO postgres;
+
+--
+-- Name: expense_report_lineitems_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.expense_report_lineitems_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.expense_report_lineitems_id_seq OWNER TO postgres;
+
+--
+-- Name: expense_report_lineitems_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.expense_report_lineitems_id_seq OWNED BY public.expense_report_lineitems.id;
+
+
+--
+-- Name: expense_reports; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.expense_reports (
+    id integer NOT NULL,
+    account_id character varying(255) NOT NULL,
+    entity_id character varying(255) NOT NULL,
+    currency character varying(255) NOT NULL,
+    department_id character varying(255),
+    class_id character varying(255),
+    location_id character varying(255),
+    subsidiary_id character varying(255) NOT NULL,
+    memo text NOT NULL,
+    external_id character varying(255) NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    expense_group_id integer NOT NULL,
+    transaction_date timestamp with time zone NOT NULL,
+    payment_synced boolean NOT NULL,
+    paid_on_netsuite boolean NOT NULL,
+    credit_card_account_id character varying(255),
+    is_retired boolean NOT NULL,
+    is_attachment_upload_failed boolean NOT NULL
+);
+
+ALTER TABLE ONLY public.expense_reports REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.expense_reports OWNER TO postgres;
+
+--
+-- Name: expense_reports_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.expense_reports_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.expense_reports_id_seq OWNER TO postgres;
+
+--
+-- Name: expense_reports_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.expense_reports_id_seq OWNED BY public.expense_reports.id;
+
+
+--
+-- Name: extended_category_mappings_view; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.extended_category_mappings_view AS
+ SELECT ea.id AS expense_attribute_id,
+    ea.attribute_type AS expense_attribute_attribute_type,
+    ea.display_name AS expense_attribute_display_name,
+    ea.value AS expense_attribute_value,
+    ea.auto_mapped AS expense_attribute_auto_mapped,
+    ea.auto_created AS expense_attribute_auto_created,
+    ea.created_at AS expense_attribute_created_at,
+    ea.updated_at AS expense_attribute_updated_at,
+    ea.source_id AS expense_attribute_source_id,
+    ea.detail AS expense_attribute_detail,
+    ea.active AS expense_attribute_active,
+    da.id AS destination_attribute_id,
+    da.attribute_type AS destination_attribute_attribute_type,
+    da.display_name AS destination_attribute_display_name,
+    da.value AS destination_attribute_value,
+    da.destination_id AS destination_attribute_destination_id,
+    da.auto_created AS destination_attribute_auto_created,
+    da.detail AS destination_attribute_detail,
+    da.active AS destination_attribute_active,
+    da.created_at AS destination_attribute_created_at,
+    da.updated_at AS destination_attribute_updated_at,
+    cm.workspace_id
+   FROM (((public.category_mappings cm
+     JOIN public.expense_attributes ea ON ((ea.id = cm.source_category_id)))
+     JOIN public.destination_attributes da ON ((da.id = cm.destination_account_id)))
+     JOIN public.destination_attributes da2 ON ((da2.id = cm.destination_expense_head_id)));
+
+
+ALTER TABLE public.extended_category_mappings_view OWNER TO postgres;
+
+--
+-- Name: extended_employee_mappings_view; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.extended_employee_mappings_view AS
+ SELECT ea.id AS expense_attribute_id,
+    ea.attribute_type AS expense_attribute_attribute_type,
+    ea.display_name AS expense_attribute_display_name,
+    ea.value AS expense_attribute_value,
+    ea.auto_mapped AS expense_attribute_auto_mapped,
+    ea.auto_created AS expense_attribute_auto_created,
+    ea.created_at AS expense_attribute_created_at,
+    ea.updated_at AS expense_attribute_updated_at,
+    ea.source_id AS expense_attribute_source_id,
+    ea.detail AS expense_attribute_detail,
+    ea.active AS expense_attribute_active,
+    da.id AS destination_attribute_id,
+    da.attribute_type AS destination_attribute_attribute_type,
+    da.display_name AS destination_attribute_display_name,
+    da.value AS destination_attribute_value,
+    da.destination_id AS destination_attribute_destination_id,
+    da.auto_created AS destination_attribute_auto_created,
+    da.detail AS destination_attribute_detail,
+    da.active AS destination_attribute_active,
+    da.created_at AS destination_attribute_created_at,
+    da.updated_at AS destination_attribute_updated_at,
+    em.workspace_id
+   FROM ((((public.employee_mappings em
+     JOIN public.expense_attributes ea ON ((ea.id = em.source_employee_id)))
+     JOIN public.destination_attributes da ON ((da.id = em.destination_employee_id)))
+     JOIN public.destination_attributes da2 ON ((da2.id = em.destination_vendor_id)))
+     JOIN public.destination_attributes da3 ON ((da3.id = em.destination_card_account_id)));
+
+
+ALTER TABLE public.extended_employee_mappings_view OWNER TO postgres;
+
+--
+-- Name: extended_expenses_view; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.extended_expenses_view AS
+ SELECT e.id,
+    e.employee_email,
+    e.category,
+    e.sub_category,
+    e.project,
+    e.expense_id,
+    e.expense_number,
+    e.claim_number,
+    e.amount,
+    e.currency,
+    e.foreign_amount,
+    e.foreign_currency,
+    e.settlement_id,
+    e.reimbursable,
+    e.state,
+    e.vendor,
+    e.cost_center,
+    e.purpose,
+    e.report_id,
+    e.spent_at,
+    e.approved_at,
+    e.expense_created_at,
+    e.expense_updated_at,
+    e.created_at,
+    e.updated_at,
+    e.fund_source,
+    e.custom_properties,
+    e.verified_at,
+    e.paid_on_netsuite,
+    e.billable,
+    e.org_id,
+    e.tax_amount,
+    e.tax_group_id,
+    e.project_id,
+    e.file_ids,
+    e.corporate_card_id,
+    e.is_skipped,
+    e.report_title,
+    e.employee_name,
+    e.posted_at,
+    e.accounting_export_summary,
+    e.previous_export_state,
+    e.workspace_id,
+    e.paid_on_fyle,
+    e.is_posted_at_null,
+    e.bank_transaction_id,
+    e.masked_corporate_card_number,
+    eg.id AS expense_group_id,
+    eg.employee_name AS expense_group_employee_name,
+    eg.export_url AS expense_group_export_url,
+    eg.description AS expense_group_description,
+    eg.created_at AS expense_group_created_at,
+    eg.updated_at AS expense_group_updated_at,
+    eg.workspace_id AS expense_group_workspace_id,
+    eg.fund_source AS expense_group_fund_source,
+    eg.exported_at AS expense_group_exported_at,
+    eg.response_logs AS expense_group_response_logs
+   FROM ((public.expenses e
+     JOIN public.expense_groups_expenses ege ON ((ege.expense_id = e.id)))
+     JOIN public.expense_groups eg ON ((eg.id = ege.expensegroup_id)));
+
+
+ALTER TABLE public.extended_expenses_view OWNER TO postgres;
+
+--
+-- Name: mappings; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.mappings (
+    id integer NOT NULL,
+    source_type character varying(255) NOT NULL,
+    destination_type character varying(255) NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    destination_id integer NOT NULL,
+    source_id integer NOT NULL,
+    workspace_id integer NOT NULL
+);
+
+ALTER TABLE ONLY public.mappings REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.mappings OWNER TO postgres;
+
+--
+-- Name: extended_mappings_view; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.extended_mappings_view AS
+ SELECT ea.id AS expense_attribute_id,
+    ea.attribute_type AS expense_attribute_attribute_type,
+    ea.display_name AS expense_attribute_display_name,
+    ea.value AS expense_attribute_value,
+    ea.auto_mapped AS expense_attribute_auto_mapped,
+    ea.auto_created AS expense_attribute_auto_created,
+    ea.created_at AS expense_attribute_created_at,
+    ea.updated_at AS expense_attribute_updated_at,
+    ea.source_id AS expense_attribute_source_id,
+    ea.detail AS expense_attribute_detail,
+    ea.active AS expense_attribute_active,
+    da.id AS destination_attribute_id,
+    da.attribute_type AS destination_attribute_attribute_type,
+    da.display_name AS destination_attribute_display_name,
+    da.value AS destination_attribute_value,
+    da.destination_id AS destination_attribute_destination_id,
+    da.auto_created AS destination_attribute_auto_created,
+    da.detail AS destination_attribute_detail,
+    da.active AS destination_attribute_active,
+    da.created_at AS destination_attribute_created_at,
+    da.updated_at AS destination_attribute_updated_at,
+    m.workspace_id
+   FROM ((public.mappings m
+     JOIN public.expense_attributes ea ON ((ea.id = m.source_id)))
+     JOIN public.destination_attributes da ON ((da.id = m.destination_id)));
+
+
+ALTER TABLE public.extended_mappings_view OWNER TO postgres;
+
+--
+-- Name: general_mappings; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.general_mappings (
+    id integer NOT NULL,
+    location_name character varying(255),
+    location_id character varying(255),
+    accounts_payable_name character varying(255),
+    accounts_payable_id character varying(255),
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    workspace_id integer NOT NULL,
+    default_ccc_account_id character varying(255),
+    default_ccc_account_name character varying(255),
+    reimbursable_account_id character varying(255),
+    reimbursable_account_name character varying(255),
+    default_ccc_vendor_id character varying(255),
+    default_ccc_vendor_name character varying(255),
+    vendor_payment_account_id character varying(255),
+    vendor_payment_account_name character varying(255),
+    location_level character varying(255),
+    department_level character varying(255),
+    use_employee_department boolean NOT NULL,
+    use_employee_class boolean NOT NULL,
+    use_employee_location boolean NOT NULL,
+    department_id character varying(255),
+    department_name character varying(255),
+    override_tax_details boolean NOT NULL,
+    class_id character varying(255),
+    class_level character varying(255),
+    class_name character varying(255),
+    default_tax_code_id character varying(255),
+    default_tax_code_name character varying(255),
+    is_tax_balancing_enabled boolean NOT NULL,
+    created_by character varying(255),
+    updated_by character varying(255)
+);
+
+ALTER TABLE ONLY public.general_mappings REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.general_mappings OWNER TO postgres;
+
+--
+-- Name: last_export_details; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.last_export_details (
+    id integer NOT NULL,
+    last_exported_at timestamp with time zone,
+    next_export timestamp with time zone,
+    export_mode character varying(50),
+    total_expense_groups_count integer,
+    successful_expense_groups_count integer,
+    failed_expense_groups_count integer,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    workspace_id integer NOT NULL
+);
+
+ALTER TABLE ONLY public.last_export_details REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.last_export_details OWNER TO postgres;
+
+--
+-- Name: workspace_schedules; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.workspace_schedules (
+    id integer NOT NULL,
+    enabled boolean NOT NULL,
+    start_datetime timestamp with time zone,
+    interval_hours integer,
+    workspace_id integer NOT NULL,
+    schedule_id integer,
+    additional_email_options jsonb,
+    emails_selected character varying(255)[],
+    error_count integer,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone
+);
+
+ALTER TABLE ONLY public.workspace_schedules REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.workspace_schedules OWNER TO postgres;
+
+--
+-- Name: workspaces; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.workspaces (
+    id integer NOT NULL,
+    name character varying(255) NOT NULL,
+    fyle_org_id character varying(255) NOT NULL,
+    ns_account_id character varying(255) NOT NULL,
+    last_synced_at timestamp with time zone,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    destination_synced_at timestamp with time zone,
+    source_synced_at timestamp with time zone,
+    cluster_domain character varying(255),
+    employee_exported_at timestamp with time zone NOT NULL,
+    ccc_last_synced_at timestamp with time zone,
+    onboarding_state character varying(50)
+);
+
+ALTER TABLE ONLY public.workspaces REPLICA IDENTITY FULL;
+
+
+ALTER TABLE public.workspaces OWNER TO postgres;
+
+--
+-- Name: extended_settings_view; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.extended_settings_view AS
+ SELECT row_to_json(w.*) AS workspaces,
+    row_to_json(c.*) AS configurations,
+    row_to_json(gm.*) AS general_mappings,
+    row_to_json(ws.*) AS workspace_schedules,
+    row_to_json(egs.*) AS expense_group_settings,
+    row_to_json(led.*) AS last_export_details,
+    w.fyle_org_id
+   FROM (((((public.workspaces w
+     LEFT JOIN public.configurations c ON ((w.id = c.workspace_id)))
+     LEFT JOIN public.general_mappings gm ON ((gm.workspace_id = w.id)))
+     LEFT JOIN public.workspace_schedules ws ON ((ws.workspace_id = w.id)))
+     LEFT JOIN public.expense_group_settings egs ON ((egs.workspace_id = w.id)))
+     LEFT JOIN public.last_export_details led ON ((led.workspace_id = w.id)));
+
+
+ALTER TABLE public.extended_settings_view OWNER TO postgres;
 
 --
 -- Name: fyle_accounting_mappings_destinationattribute_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -1208,24 +2622,6 @@ ALTER SEQUENCE public.fyle_accounting_mappings_expenseattribute_id_seq OWNED BY 
 
 
 --
--- Name: mappings; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.mappings (
-    id integer NOT NULL,
-    source_type character varying(255) NOT NULL,
-    destination_type character varying(255) NOT NULL,
-    created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL,
-    destination_id integer NOT NULL,
-    source_id integer NOT NULL,
-    workspace_id integer NOT NULL
-);
-
-
-ALTER TABLE public.mappings OWNER TO postgres;
-
---
 -- Name: fyle_accounting_mappings_mapping_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -1266,6 +2662,8 @@ CREATE TABLE public.mapping_settings (
     updated_by character varying(255)
 );
 
+ALTER TABLE ONLY public.mapping_settings REPLICA IDENTITY FULL;
+
 
 ALTER TABLE public.mapping_settings OWNER TO postgres;
 
@@ -1303,6 +2701,8 @@ CREATE TABLE public.fyle_credentials (
     workspace_id integer NOT NULL,
     cluster_domain character varying(255)
 );
+
+ALTER TABLE ONLY public.fyle_credentials REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.fyle_credentials OWNER TO postgres;
@@ -1418,48 +2818,6 @@ ALTER SEQUENCE public.fyle_rest_auth_authtokens_id_seq OWNED BY public.auth_toke
 
 
 --
--- Name: general_mappings; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.general_mappings (
-    id integer NOT NULL,
-    location_name character varying(255),
-    location_id character varying(255),
-    accounts_payable_name character varying(255),
-    accounts_payable_id character varying(255),
-    created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL,
-    workspace_id integer NOT NULL,
-    default_ccc_account_id character varying(255),
-    default_ccc_account_name character varying(255),
-    reimbursable_account_id character varying(255),
-    reimbursable_account_name character varying(255),
-    default_ccc_vendor_id character varying(255),
-    default_ccc_vendor_name character varying(255),
-    vendor_payment_account_id character varying(255),
-    vendor_payment_account_name character varying(255),
-    location_level character varying(255),
-    department_level character varying(255),
-    use_employee_department boolean NOT NULL,
-    use_employee_class boolean NOT NULL,
-    use_employee_location boolean NOT NULL,
-    department_id character varying(255),
-    department_name character varying(255),
-    override_tax_details boolean NOT NULL,
-    class_id character varying(255),
-    class_level character varying(255),
-    class_name character varying(255),
-    default_tax_code_id character varying(255),
-    default_tax_code_name character varying(255),
-    is_tax_balancing_enabled boolean NOT NULL,
-    created_by character varying(255),
-    updated_by character varying(255)
-);
-
-
-ALTER TABLE public.general_mappings OWNER TO postgres;
-
---
 -- Name: general_mappings_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -1482,24 +2840,20 @@ ALTER SEQUENCE public.general_mappings_id_seq OWNED BY public.general_mappings.i
 
 
 --
--- Name: import_logs; Type: TABLE; Schema: public; Owner: postgres
+-- Name: import_logs_fatal_failed_in_progress_tasks_view; Type: VIEW; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.import_logs (
-    id integer NOT NULL,
-    attribute_type character varying(150) NOT NULL,
-    status character varying(255),
-    error_log jsonb NOT NULL,
-    total_batches_count integer NOT NULL,
-    processed_batches_count integer NOT NULL,
-    last_successful_run_at timestamp with time zone,
-    created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL,
-    workspace_id integer NOT NULL
-);
+CREATE VIEW public.import_logs_fatal_failed_in_progress_tasks_view AS
+ SELECT count(*) AS count,
+    import_logs.status,
+    current_database() AS database
+   FROM public.import_logs
+  WHERE (((import_logs.status)::text = ANY ((ARRAY['IN_PROGRESS'::character varying, 'FATAL'::character varying, 'FAILED'::character varying])::text[])) AND (import_logs.workspace_id IN ( SELECT prod_workspaces_view.id
+           FROM public.prod_workspaces_view)) AND (import_logs.updated_at > (now() - '1 day'::interval)) AND (import_logs.updated_at < (now() - '00:45:00'::interval)) AND ((import_logs.error_log)::text !~~* '%Token%'::text) AND ((import_logs.error_log)::text !~~* '%tenant%'::text))
+  GROUP BY import_logs.status;
 
 
-ALTER TABLE public.import_logs OWNER TO postgres;
+ALTER TABLE public.import_logs_fatal_failed_in_progress_tasks_view OWNER TO postgres;
 
 --
 -- Name: import_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -1524,6 +2878,22 @@ ALTER SEQUENCE public.import_logs_id_seq OWNED BY public.import_logs.id;
 
 
 --
+-- Name: inactive_workspaces_view; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.inactive_workspaces_view AS
+ SELECT count(DISTINCT w.id) AS count,
+    current_database() AS database
+   FROM ((public.workspaces w
+     JOIN public.last_export_details led ON ((w.id = led.workspace_id)))
+     JOIN public.django_q_schedule dqs ON (((w.id)::text = dqs.args)))
+  WHERE ((w.source_synced_at < (now() - '2 mons'::interval)) AND (w.destination_synced_at < (now() - '2 mons'::interval)) AND (w.last_synced_at < (now() - '2 mons'::interval)) AND (w.ccc_last_synced_at < (now() - '2 mons'::interval)) AND (led.last_exported_at < (now() - '2 mons'::interval)) AND (w.id IN ( SELECT prod_workspaces_view.id
+           FROM public.prod_workspaces_view)));
+
+
+ALTER TABLE public.inactive_workspaces_view OWNER TO postgres;
+
+--
 -- Name: journal_entries; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -1543,6 +2913,8 @@ CREATE TABLE public.journal_entries (
     department_id character varying(255),
     is_attachment_upload_failed boolean NOT NULL
 );
+
+ALTER TABLE ONLY public.journal_entries REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.journal_entries OWNER TO postgres;
@@ -1593,6 +2965,8 @@ CREATE TABLE public.journal_entry_lineitems (
     netsuite_receipt_url text
 );
 
+ALTER TABLE ONLY public.journal_entry_lineitems REPLICA IDENTITY FULL;
+
 
 ALTER TABLE public.journal_entry_lineitems OWNER TO postgres;
 
@@ -1617,26 +2991,6 @@ ALTER TABLE public.journal_entry_lineitems_id_seq OWNER TO postgres;
 
 ALTER SEQUENCE public.journal_entry_lineitems_id_seq OWNED BY public.journal_entry_lineitems.id;
 
-
---
--- Name: last_export_details; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.last_export_details (
-    id integer NOT NULL,
-    last_exported_at timestamp with time zone,
-    next_export timestamp with time zone,
-    export_mode character varying(50),
-    total_expense_groups_count integer,
-    successful_expense_groups_count integer,
-    failed_expense_groups_count integer,
-    created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL,
-    workspace_id integer NOT NULL
-);
-
-
-ALTER TABLE public.last_export_details OWNER TO postgres;
 
 --
 -- Name: last_export_details_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -1676,8 +3030,109 @@ CREATE TABLE public.netsuite_credentials (
     workspace_id integer NOT NULL
 );
 
+ALTER TABLE ONLY public.netsuite_credentials REPLICA IDENTITY FULL;
+
 
 ALTER TABLE public.netsuite_credentials OWNER TO postgres;
+
+--
+-- Name: ormq_count_view; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.ormq_count_view AS
+ SELECT count(*) AS count,
+    current_database() AS database
+   FROM public.django_q_ormq;
+
+
+ALTER TABLE public.ormq_count_view OWNER TO postgres;
+
+--
+-- Name: prod_active_workspaces_view; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.prod_active_workspaces_view AS
+SELECT
+    NULL::integer AS id,
+    NULL::character varying(255) AS name,
+    NULL::character varying(255) AS fyle_org_id,
+    NULL::character varying(255) AS ns_account_id,
+    NULL::timestamp with time zone AS last_synced_at,
+    NULL::timestamp with time zone AS created_at,
+    NULL::timestamp with time zone AS updated_at,
+    NULL::timestamp with time zone AS destination_synced_at,
+    NULL::timestamp with time zone AS source_synced_at,
+    NULL::character varying(255) AS cluster_domain,
+    NULL::timestamp with time zone AS employee_exported_at,
+    NULL::timestamp with time zone AS ccc_last_synced_at,
+    NULL::character varying(50) AS onboarding_state,
+    NULL::character varying[] AS user_emails;
+
+
+ALTER TABLE public.prod_active_workspaces_view OWNER TO postgres;
+
+--
+-- Name: product_advanced_settings_view; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.product_advanced_settings_view AS
+ SELECT w.id AS workspace_id,
+    w.name AS workspace_name,
+    w.fyle_org_id AS workspace_org_id,
+    c.change_accounting_period,
+    c.sync_fyle_to_netsuite_payments,
+    c.sync_netsuite_to_fyle_payments,
+    c.auto_create_destination_entity,
+    c.memo_structure,
+    gm.vendor_payment_account_name,
+    gm.vendor_payment_account_id,
+    gm.location_name AS netsuite_location_name,
+    gm.location_id AS netsuite_location_id,
+    gm.location_level AS netsuite_location_level,
+    gm.department_name AS netsuite_department_name,
+    gm.department_id AS netsuite_department_id,
+    gm.department_level AS netsuite_department_level,
+    gm.class_name AS netsuite_class_name,
+    gm.class_id AS netsuite_class_id,
+    gm.class_level AS netsuite_class_level,
+    gm.use_employee_location,
+    gm.use_employee_department,
+    gm.use_employee_class,
+    ws.enabled AS schedule_enabled,
+    ws.interval_hours AS schedule_interval_hours,
+    ws.additional_email_options AS schedule_additional_email_options,
+    ws.emails_selected AS schedule_emails_selected
+   FROM (((public.workspaces w
+     JOIN public.configurations c ON ((w.id = c.workspace_id)))
+     JOIN public.general_mappings gm ON ((w.id = gm.workspace_id)))
+     LEFT JOIN public.workspace_schedules ws ON ((w.id = ws.workspace_id)));
+
+
+ALTER TABLE public.product_advanced_settings_view OWNER TO postgres;
+
+--
+-- Name: product_import_settings_view; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.product_import_settings_view AS
+ SELECT w.id AS workspace_id,
+    w.name AS workspace_name,
+    w.fyle_org_id AS workspace_org_id,
+    c.import_categories,
+    c.import_vendors_as_merchants,
+    c.import_items,
+    c.import_tax_items,
+    gm.default_tax_code_name,
+    gm.default_tax_code_id,
+    COALESCE(json_agg(json_build_object('source_field', ms.source_field, 'destination_field', ms.destination_field, 'import_to_fyle', ms.import_to_fyle, 'is_custom', ms.is_custom, 'source_placeholder', ms.source_placeholder)) FILTER (WHERE (ms.workspace_id IS NOT NULL)), '[]'::json) AS mapping_settings_array
+   FROM (((public.workspaces w
+     JOIN public.configurations c ON ((w.id = c.workspace_id)))
+     JOIN public.general_mappings gm ON ((w.id = gm.workspace_id)))
+     LEFT JOIN public.mapping_settings ms ON ((w.id = ms.workspace_id)))
+  GROUP BY w.id, w.name, w.fyle_org_id, c.import_categories, c.import_vendors_as_merchants, c.import_items, c.import_tax_items, gm.default_tax_code_name, gm.default_tax_code_id;
+
+
+ALTER TABLE public.product_import_settings_view OWNER TO postgres;
 
 --
 -- Name: reimbursements; Type: TABLE; Schema: public; Owner: postgres
@@ -1692,6 +3147,8 @@ CREATE TABLE public.reimbursements (
     updated_at timestamp with time zone NOT NULL,
     workspace_id integer NOT NULL
 );
+
+ALTER TABLE ONLY public.reimbursements REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.reimbursements OWNER TO postgres;
@@ -1719,6 +3176,20 @@ ALTER SEQUENCE public.reimbursements_id_seq OWNED BY public.reimbursements.id;
 
 
 --
+-- Name: repetition_error_count_view; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.repetition_error_count_view AS
+ SELECT count(*) AS count,
+    current_database() AS database
+   FROM public.errors
+  WHERE ((errors.repetition_count > 20) AND (errors.workspace_id IN ( SELECT prod_workspaces_view.id
+           FROM public.prod_workspaces_view)) AND (errors.is_resolved = false) AND (errors.created_at < (now() - '2 mons'::interval)));
+
+
+ALTER TABLE public.repetition_error_count_view OWNER TO postgres;
+
+--
 -- Name: subsidiary_mappings; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -1731,6 +3202,8 @@ CREATE TABLE public.subsidiary_mappings (
     workspace_id integer NOT NULL,
     country_name character varying(255)
 );
+
+ALTER TABLE ONLY public.subsidiary_mappings REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.subsidiary_mappings OWNER TO postgres;
@@ -1756,30 +3229,6 @@ ALTER TABLE public.subsidiary_mappings_id_seq OWNER TO postgres;
 
 ALTER SEQUENCE public.subsidiary_mappings_id_seq OWNED BY public.subsidiary_mappings.id;
 
-
---
--- Name: task_logs; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.task_logs (
-    id integer NOT NULL,
-    type character varying(50) NOT NULL,
-    task_id character varying(255),
-    status character varying(255) NOT NULL,
-    detail jsonb,
-    created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL,
-    bill_id integer,
-    expense_group_id integer,
-    workspace_id integer NOT NULL,
-    expense_report_id integer,
-    journal_entry_id integer,
-    vendor_payment_id integer,
-    credit_card_charge_id integer
-);
-
-
-ALTER TABLE public.task_logs OWNER TO postgres;
 
 --
 -- Name: tasks_tasklog_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -1819,6 +3268,8 @@ CREATE TABLE public.users (
     admin boolean NOT NULL
 );
 
+ALTER TABLE ONLY public.users REPLICA IDENTITY FULL;
+
 
 ALTER TABLE public.users OWNER TO postgres;
 
@@ -1856,6 +3307,8 @@ CREATE TABLE public.vendor_payment_lineitems (
     expense_group_id integer NOT NULL,
     vendor_payment_id integer NOT NULL
 );
+
+ALTER TABLE ONLY public.vendor_payment_lineitems REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.vendor_payment_lineitems OWNER TO postgres;
@@ -1902,6 +3355,8 @@ CREATE TABLE public.vendor_payments (
     updated_at timestamp with time zone NOT NULL
 );
 
+ALTER TABLE ONLY public.vendor_payments REPLICA IDENTITY FULL;
+
 
 ALTER TABLE public.vendor_payments OWNER TO postgres;
 
@@ -1926,50 +3381,6 @@ ALTER TABLE public.vendor_payments_id_seq OWNER TO postgres;
 
 ALTER SEQUENCE public.vendor_payments_id_seq OWNED BY public.vendor_payments.id;
 
-
---
--- Name: workspace_schedules; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.workspace_schedules (
-    id integer NOT NULL,
-    enabled boolean NOT NULL,
-    start_datetime timestamp with time zone,
-    interval_hours integer,
-    workspace_id integer NOT NULL,
-    schedule_id integer,
-    additional_email_options jsonb,
-    emails_selected character varying(255)[],
-    error_count integer,
-    created_at timestamp with time zone,
-    updated_at timestamp with time zone
-);
-
-
-ALTER TABLE public.workspace_schedules OWNER TO postgres;
-
---
--- Name: workspaces; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.workspaces (
-    id integer NOT NULL,
-    name character varying(255) NOT NULL,
-    fyle_org_id character varying(255) NOT NULL,
-    ns_account_id character varying(255) NOT NULL,
-    last_synced_at timestamp with time zone,
-    created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL,
-    destination_synced_at timestamp with time zone,
-    source_synced_at timestamp with time zone,
-    cluster_domain character varying(255),
-    employee_exported_at timestamp with time zone NOT NULL,
-    ccc_last_synced_at timestamp with time zone,
-    onboarding_state character varying(50)
-);
-
-
-ALTER TABLE public.workspaces OWNER TO postgres;
 
 --
 -- Name: workspaces_fylecredential_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -2025,6 +3436,8 @@ CREATE TABLE public.workspaces_user (
     user_id integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
+
+ALTER TABLE ONLY public.workspaces_user REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.workspaces_user OWNER TO postgres;
@@ -2709,10 +4122,10 @@ COPY public.category_mappings (id, created_at, updated_at, destination_account_i
 -- Data for Name: configurations; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.configurations (id, reimbursable_expenses_object, corporate_credit_card_expenses_object, created_at, updated_at, workspace_id, sync_fyle_to_netsuite_payments, sync_netsuite_to_fyle_payments, import_projects, auto_map_employees, import_categories, auto_create_destination_entity, auto_create_merchants, employee_field_mapping, import_tax_items, change_accounting_period, memo_structure, map_fyle_cards_netsuite_account, skip_cards_mapping, import_vendors_as_merchants, import_netsuite_employees, is_simplify_report_closure_enabled, import_items, name_in_journal_entry, allow_intercompany_vendors, je_single_credit_line, is_attachment_upload_enabled, created_by, updated_by) FROM stdin;
-1	EXPENSE REPORT	BILL	2021-11-15 08:56:07.193743+00	2021-11-15 08:56:07.193795+00	1	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f	MERCHANT	f	f	t	\N	\N
-2	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-11-16 04:18:15.836271+00	2021-11-16 04:20:09.969589+00	2	f	f	f	\N	f	f	f	EMPLOYEE	t	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f	MERCHANT	f	f	t	\N	\N
-3	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-12-03 11:04:00.194287+00	2021-12-03 11:04:00.1943+00	49	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f	MERCHANT	f	f	t	\N	\N
+COPY public.configurations (id, reimbursable_expenses_object, corporate_credit_card_expenses_object, created_at, updated_at, workspace_id, sync_fyle_to_netsuite_payments, sync_netsuite_to_fyle_payments, import_projects, auto_map_employees, import_categories, auto_create_destination_entity, auto_create_merchants, employee_field_mapping, import_tax_items, change_accounting_period, memo_structure, map_fyle_cards_netsuite_account, import_vendors_as_merchants, import_netsuite_employees, import_items, name_in_journal_entry, allow_intercompany_vendors, je_single_credit_line, is_attachment_upload_enabled, created_by, updated_by) FROM stdin;
+1	EXPENSE REPORT	BILL	2021-11-15 08:56:07.193743+00	2021-11-15 08:56:07.193795+00	1	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	MERCHANT	f	f	t	\N	\N
+2	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-11-16 04:18:15.836271+00	2021-11-16 04:20:09.969589+00	2	f	f	f	\N	f	f	f	EMPLOYEE	t	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	MERCHANT	f	f	t	\N	\N
+3	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-12-03 11:04:00.194287+00	2021-12-03 11:04:00.1943+00	49	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	MERCHANT	f	f	t	\N	\N
 \.
 
 
@@ -8016,6 +9429,13 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 211	mappings	0016_auto_20241226_0929	2024-12-26 09:48:19.963414+00
 212	workspaces	0043_auto_20241224_1102	2024-12-26 09:48:19.987821+00
 213	fyle_accounting_mappings	0028_auto_20241226_1030	2024-12-26 11:00:11.334548+00
+214	mappings	0017_alter_generalmapping_is_tax_balancing_enabled	2025-04-02 19:22:51.79007+00
+215	internal	0001_auto_generated_sql	2025-04-02 19:22:51.815956+00
+216	internal	0002_auto_generated_sql	2025-04-02 19:22:51.818628+00
+217	internal	0003_auto_generated_sql	2025-04-02 19:22:51.820655+00
+218	internal	0004_auto_generated_sql	2025-04-02 19:22:51.822391+00
+219	internal	0005_auto_generated_sql	2025-04-02 19:22:51.82402+00
+220	workspaces	0044_remove_configuration_is_simplify_report_closure_enabled_and_more	2025-04-02 19:22:51.840454+00
 \.
 
 
@@ -8033,6 +9453,7 @@ COPY public.django_q_ormq (id, key, payload, lock) FROM stdin;
 
 COPY public.django_q_schedule (id, func, hook, args, kwargs, schedule_type, repeats, next_run, task, name, minutes, cron, cluster, intended_date_kwarg) FROM stdin;
 1	apps.mappings.tasks.auto_create_tax_group_mappings	\N	2	\N	I	-3	2021-12-04 04:20:09.992371+00	aa5388fcba0e4b91ac88020c22f3e30f	\N	1440	\N	import	\N
+51	apps.internal.tasks.re_export_stuck_exports	\N	\N	\N	I	-1	2025-04-02 19:23:51.821516+00	\N	\N	60	\N	import	\N
 \.
 
 
@@ -11927,7 +13348,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 47, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 213, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 220, true);
 
 
 --
@@ -11941,7 +13362,7 @@ SELECT pg_catalog.setval('public.django_q_ormq_id_seq', 32, true);
 -- Name: django_q_schedule_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_q_schedule_id_seq', 50, true);
+SELECT pg_catalog.setval('public.django_q_schedule_id_seq', 51, true);
 
 
 --
@@ -13327,6 +14748,60 @@ CREATE INDEX workspaces_user_workspace_id_be6c5867 ON public.workspaces_user USI
 
 
 --
+-- Name: prod_workspaces_view _RETURN; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE OR REPLACE VIEW public.prod_workspaces_view AS
+ SELECT w.id,
+    w.name,
+    w.fyle_org_id,
+    w.ns_account_id,
+    w.last_synced_at,
+    w.created_at,
+    w.updated_at,
+    w.destination_synced_at,
+    w.source_synced_at,
+    w.cluster_domain,
+    w.employee_exported_at,
+    w.ccc_last_synced_at,
+    w.onboarding_state,
+    array_agg(u.email) AS user_emails
+   FROM ((public.workspaces w
+     JOIN public.workspaces_user wu ON ((wu.workspace_id = w.id)))
+     JOIN public.users u ON ((u.id = wu.user_id)))
+  WHERE ((u.email)::text !~~* '%fyle%'::text)
+  GROUP BY w.id;
+
+
+--
+-- Name: prod_active_workspaces_view _RETURN; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE OR REPLACE VIEW public.prod_active_workspaces_view AS
+ SELECT w.id,
+    w.name,
+    w.fyle_org_id,
+    w.ns_account_id,
+    w.last_synced_at,
+    w.created_at,
+    w.updated_at,
+    w.destination_synced_at,
+    w.source_synced_at,
+    w.cluster_domain,
+    w.employee_exported_at,
+    w.ccc_last_synced_at,
+    w.onboarding_state,
+    array_agg(u.email) AS user_emails
+   FROM ((public.workspaces w
+     JOIN public.workspaces_user wu ON ((wu.workspace_id = w.id)))
+     JOIN public.users u ON ((u.id = wu.user_id)))
+  WHERE (((u.email)::text !~~* '%fyle%'::text) AND (w.id IN ( SELECT DISTINCT task_logs.workspace_id
+           FROM public.task_logs
+          WHERE (((task_logs.status)::text = 'COMPLETE'::text) AND ((task_logs.type)::text <> 'FETCHING_EXPENSES'::text) AND (task_logs.updated_at > (now() - '3 mons'::interval))))))
+  GROUP BY w.id;
+
+
+--
 -- Name: auth_group_permissions auth_group_permissio_permission_id_84c5c92e_fk_auth_perm; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13852,6 +15327,309 @@ ALTER TABLE ONLY public.workspaces_user
 
 ALTER TABLE ONLY public.workspace_schedules
     ADD CONSTRAINT workspaces_workspace_schedule_id_8274d659_fk_django_q_ FOREIGN KEY (schedule_id) REFERENCES public.django_q_schedule(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: events; Type: PUBLICATION; Schema: -; Owner: postgres
+--
+
+CREATE PUBLICATION events WITH (publish = 'insert, update, delete, truncate');
+
+
+ALTER PUBLICATION events OWNER TO postgres;
+
+--
+-- Name: events auth_cache; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.auth_cache;
+
+
+--
+-- Name: events auth_group; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.auth_group;
+
+
+--
+-- Name: events auth_group_permissions; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.auth_group_permissions;
+
+
+--
+-- Name: events auth_permission; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.auth_permission;
+
+
+--
+-- Name: events auth_tokens; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.auth_tokens;
+
+
+--
+-- Name: events bill_lineitems; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.bill_lineitems;
+
+
+--
+-- Name: events bills; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.bills;
+
+
+--
+-- Name: events category_mappings; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.category_mappings;
+
+
+--
+-- Name: events configurations; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.configurations;
+
+
+--
+-- Name: events credit_card_charge_lineitems; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.credit_card_charge_lineitems;
+
+
+--
+-- Name: events credit_card_charges; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.credit_card_charges;
+
+
+--
+-- Name: events custom_segments; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.custom_segments;
+
+
+--
+-- Name: events destination_attributes; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.destination_attributes;
+
+
+--
+-- Name: events employee_mappings; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.employee_mappings;
+
+
+--
+-- Name: events errors; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.errors;
+
+
+--
+-- Name: events expense_attributes; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.expense_attributes;
+
+
+--
+-- Name: events expense_fields; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.expense_fields;
+
+
+--
+-- Name: events expense_filters; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.expense_filters;
+
+
+--
+-- Name: events expense_group_settings; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.expense_group_settings;
+
+
+--
+-- Name: events expense_groups; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.expense_groups;
+
+
+--
+-- Name: events expense_groups_expenses; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.expense_groups_expenses;
+
+
+--
+-- Name: events expense_report_lineitems; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.expense_report_lineitems;
+
+
+--
+-- Name: events expense_reports; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.expense_reports;
+
+
+--
+-- Name: events expenses; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.expenses;
+
+
+--
+-- Name: events fyle_credentials; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.fyle_credentials;
+
+
+--
+-- Name: events general_mappings; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.general_mappings;
+
+
+--
+-- Name: events import_logs; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.import_logs;
+
+
+--
+-- Name: events journal_entries; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.journal_entries;
+
+
+--
+-- Name: events journal_entry_lineitems; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.journal_entry_lineitems;
+
+
+--
+-- Name: events last_export_details; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.last_export_details;
+
+
+--
+-- Name: events mapping_settings; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.mapping_settings;
+
+
+--
+-- Name: events mappings; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.mappings;
+
+
+--
+-- Name: events netsuite_credentials; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.netsuite_credentials;
+
+
+--
+-- Name: events reimbursements; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.reimbursements;
+
+
+--
+-- Name: events subsidiary_mappings; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.subsidiary_mappings;
+
+
+--
+-- Name: events task_logs; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.task_logs;
+
+
+--
+-- Name: events users; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.users;
+
+
+--
+-- Name: events vendor_payment_lineitems; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.vendor_payment_lineitems;
+
+
+--
+-- Name: events vendor_payments; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.vendor_payments;
+
+
+--
+-- Name: events workspace_schedules; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.workspace_schedules;
+
+
+--
+-- Name: events workspaces; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.workspaces;
+
+
+--
+-- Name: events workspaces_user; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
+--
+
+ALTER PUBLICATION events ADD TABLE ONLY public.workspaces_user;
 
 
 --

@@ -29,13 +29,10 @@ class ConfigurationSerializer(serializers.ModelSerializer):
         fields = [
             'reimbursable_expenses_object',
             'corporate_credit_card_expenses_object',
-            'is_simplify_report_closure_enabled',
             'name_in_journal_entry',
             'employee_field_mapping',
             'auto_map_employees',
         ]
-
-        read_only_fields = ['is_simplify_report_closure_enabled']   
 
 
 class GeneralMappingsSerializer(serializers.ModelSerializer):
