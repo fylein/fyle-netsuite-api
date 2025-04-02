@@ -494,7 +494,7 @@ class ExpenseGroup(models.Model):
                 filtered_corporate_credit_card_expense_groups = _group_expenses(
                     corporate_credit_card_expenses, corporate_credit_card_expense_group_field, workspace_id)
 
-        if configuration.corporate_credit_card_expenses_object == "BILL" and "expense_id" not in corporate_credit_card_expense_group_field:
+        if configuration.corporate_credit_card_expenses_object == "BILL":
             filtered_corporate_credit_card_expense_groups = filter_expense_groups(
                 filtered_corporate_credit_card_expense_groups,
                 corporate_credit_card_expenses,
