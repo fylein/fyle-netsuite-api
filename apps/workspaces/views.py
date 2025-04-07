@@ -19,6 +19,7 @@ from fyle_rest_auth.utils import AuthUtils
 from fyle_rest_auth.models import AuthToken
 from fyle_rest_auth.helpers import get_fyle_admin
 from fyle_accounting_mappings.models import ExpenseAttribute
+from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 
 from fyle_netsuite_api.utils import assert_valid
 
@@ -526,7 +527,7 @@ class ExportToNetsuiteView(viewsets.ViewSet):
     """
 
     def post(self, request, *args, **kwargs):
-        export_to_netsuite(workspace_id=kwargs['workspace_id'])
+        export_to_netsuite(workspace_id=kwargs['workspace_id'], triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
         return Response(
             status=status.HTTP_200_OK

@@ -52,6 +52,8 @@ INSTALLED_APPS = [
     'fyle_rest_auth',
     'fyle_accounting_mappings',
     'fyle_integrations_imports',
+    'fyle_accounting_library.fyle_platform',
+    'fyle_accounting_library.rabbitmq',
 
     # User Created Apps
     'apps.users',
@@ -162,6 +164,11 @@ LOGGING = {
             'level': 'INFO',
         },
         'django.request': {'handlers': ['request_logs'], 'propagate': False},
+        'workers': {
+            'handlers': ['debug_logs'],
+            'level': 'INFO',
+            'propagate': True
+        },
     },
 }
 

@@ -796,8 +796,6 @@ CREATE TABLE public.expense_groups_expenses (
     expense_id integer NOT NULL
 );
 
-ALTER TABLE ONLY public.expense_groups_expenses REPLICA IDENTITY FULL;
-
 
 ALTER TABLE public.expense_groups_expenses OWNER TO postgres;
 
@@ -852,10 +850,9 @@ CREATE TABLE public.expenses (
     paid_on_fyle boolean NOT NULL,
     is_posted_at_null boolean NOT NULL,
     bank_transaction_id character varying(255),
-    masked_corporate_card_number character varying(255)
+    masked_corporate_card_number character varying(255),
+    imported_from character varying(255)
 );
-
-ALTER TABLE ONLY public.expenses REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.expenses OWNER TO postgres;
@@ -902,10 +899,9 @@ CREATE TABLE public.task_logs (
     expense_report_id integer,
     journal_entry_id integer,
     vendor_payment_id integer,
-    credit_card_charge_id integer
+    credit_card_charge_id integer,
+    triggered_by character varying(255)
 );
-
-ALTER TABLE ONLY public.task_logs REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.task_logs OWNER TO postgres;
@@ -1011,8 +1007,6 @@ CREATE TABLE public.import_logs (
     workspace_id integer NOT NULL
 );
 
-ALTER TABLE ONLY public.import_logs REPLICA IDENTITY FULL;
-
 
 ALTER TABLE public.import_logs OWNER TO postgres;
 
@@ -1042,8 +1036,6 @@ CREATE TABLE public.auth_cache (
     expires timestamp with time zone NOT NULL
 );
 
-ALTER TABLE ONLY public.auth_cache REPLICA IDENTITY FULL;
-
 
 ALTER TABLE public.auth_cache OWNER TO postgres;
 
@@ -1055,8 +1047,6 @@ CREATE TABLE public.auth_group (
     id integer NOT NULL,
     name character varying(150) NOT NULL
 );
-
-ALTER TABLE ONLY public.auth_group REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.auth_group OWNER TO postgres;
@@ -1092,8 +1082,6 @@ CREATE TABLE public.auth_group_permissions (
     group_id integer NOT NULL,
     permission_id integer NOT NULL
 );
-
-ALTER TABLE ONLY public.auth_group_permissions REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.auth_group_permissions OWNER TO postgres;
@@ -1131,8 +1119,6 @@ CREATE TABLE public.auth_permission (
     codename character varying(100) NOT NULL
 );
 
-ALTER TABLE ONLY public.auth_permission REPLICA IDENTITY FULL;
-
 
 ALTER TABLE public.auth_permission OWNER TO postgres;
 
@@ -1168,8 +1154,6 @@ CREATE TABLE public.auth_tokens (
     user_id integer NOT NULL
 );
 
-ALTER TABLE ONLY public.auth_tokens REPLICA IDENTITY FULL;
-
 
 ALTER TABLE public.auth_tokens OWNER TO postgres;
 
@@ -1198,8 +1182,6 @@ CREATE TABLE public.bill_lineitems (
     detail_type character varying(255) NOT NULL,
     item_id character varying(255)
 );
-
-ALTER TABLE ONLY public.bill_lineitems REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.bill_lineitems OWNER TO postgres;
@@ -1253,8 +1235,6 @@ CREATE TABLE public.bills (
     is_attachment_upload_failed boolean NOT NULL
 );
 
-ALTER TABLE ONLY public.bills REPLICA IDENTITY FULL;
-
 
 ALTER TABLE public.bills OWNER TO postgres;
 
@@ -1293,8 +1273,6 @@ CREATE TABLE public.category_mappings (
     source_category_id integer NOT NULL,
     workspace_id integer NOT NULL
 );
-
-ALTER TABLE ONLY public.category_mappings REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.category_mappings OWNER TO postgres;
@@ -1344,8 +1322,10 @@ CREATE TABLE public.configurations (
     change_accounting_period boolean NOT NULL,
     memo_structure character varying(100)[] NOT NULL,
     map_fyle_cards_netsuite_account boolean NOT NULL,
+    skip_cards_mapping boolean NOT NULL,
     import_vendors_as_merchants boolean NOT NULL,
     import_netsuite_employees boolean NOT NULL,
+    is_simplify_report_closure_enabled boolean NOT NULL,
     import_items boolean NOT NULL,
     name_in_journal_entry character varying(100) NOT NULL,
     allow_intercompany_vendors boolean NOT NULL,
@@ -1354,8 +1334,6 @@ CREATE TABLE public.configurations (
     created_by character varying(255),
     updated_by character varying(255)
 );
-
-ALTER TABLE ONLY public.configurations REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.configurations OWNER TO postgres;
@@ -1383,8 +1361,6 @@ CREATE TABLE public.credit_card_charge_lineitems (
     tax_item_id character varying(255),
     netsuite_receipt_url text
 );
-
-ALTER TABLE ONLY public.credit_card_charge_lineitems REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.credit_card_charge_lineitems OWNER TO postgres;
@@ -1434,8 +1410,6 @@ CREATE TABLE public.credit_card_charges (
     is_attachment_upload_failed boolean NOT NULL
 );
 
-ALTER TABLE ONLY public.credit_card_charges REPLICA IDENTITY FULL;
-
 
 ALTER TABLE public.credit_card_charges OWNER TO postgres;
 
@@ -1475,8 +1449,6 @@ CREATE TABLE public.custom_segments (
     updated_at timestamp with time zone NOT NULL,
     workspace_id integer NOT NULL
 );
-
-ALTER TABLE ONLY public.custom_segments REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.custom_segments OWNER TO postgres;
@@ -1521,8 +1493,6 @@ CREATE TABLE public.destination_attributes (
     auto_created boolean NOT NULL,
     code character varying(255)
 );
-
-ALTER TABLE ONLY public.destination_attributes REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.destination_attributes OWNER TO postgres;
@@ -1599,8 +1569,6 @@ CREATE TABLE public.django_admin_log (
     CONSTRAINT django_admin_log_action_flag_check CHECK ((action_flag >= 0))
 );
 
-ALTER TABLE ONLY public.django_admin_log REPLICA IDENTITY FULL;
-
 
 ALTER TABLE public.django_admin_log OWNER TO postgres;
 
@@ -1635,8 +1603,6 @@ CREATE TABLE public.django_content_type (
     app_label character varying(100) NOT NULL,
     model character varying(100) NOT NULL
 );
-
-ALTER TABLE ONLY public.django_content_type REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.django_content_type OWNER TO postgres;
@@ -1674,8 +1640,6 @@ CREATE TABLE public.django_migrations (
     applied timestamp with time zone NOT NULL
 );
 
-ALTER TABLE ONLY public.django_migrations REPLICA IDENTITY FULL;
-
 
 ALTER TABLE public.django_migrations OWNER TO postgres;
 
@@ -1711,8 +1675,6 @@ CREATE TABLE public.django_q_ormq (
     payload text NOT NULL,
     lock timestamp with time zone
 );
-
-ALTER TABLE ONLY public.django_q_ormq REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.django_q_ormq OWNER TO postgres;
@@ -1761,8 +1723,6 @@ CREATE TABLE public.django_q_schedule (
     CONSTRAINT django_q_schedule_minutes_check CHECK ((minutes >= 0))
 );
 
-ALTER TABLE ONLY public.django_q_schedule REPLICA IDENTITY FULL;
-
 
 ALTER TABLE public.django_q_schedule OWNER TO postgres;
 
@@ -1808,8 +1768,6 @@ CREATE TABLE public.django_q_task (
     cluster character varying(100)
 );
 
-ALTER TABLE ONLY public.django_q_task REPLICA IDENTITY FULL;
-
 
 ALTER TABLE public.django_q_task OWNER TO postgres;
 
@@ -1851,8 +1809,6 @@ CREATE TABLE public.django_session (
     expire_date timestamp with time zone NOT NULL
 );
 
-ALTER TABLE ONLY public.django_session REPLICA IDENTITY FULL;
-
 
 ALTER TABLE public.django_session OWNER TO postgres;
 
@@ -1870,8 +1826,6 @@ CREATE TABLE public.employee_mappings (
     source_employee_id integer NOT NULL,
     workspace_id integer NOT NULL
 );
-
-ALTER TABLE ONLY public.employee_mappings REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.employee_mappings OWNER TO postgres;
@@ -1918,8 +1872,6 @@ CREATE TABLE public.errors (
     repetition_count integer NOT NULL
 );
 
-ALTER TABLE ONLY public.errors REPLICA IDENTITY FULL;
-
 
 ALTER TABLE public.errors OWNER TO postgres;
 
@@ -1964,8 +1916,6 @@ CREATE TABLE public.expense_attributes (
     auto_created boolean NOT NULL
 );
 
-ALTER TABLE ONLY public.expense_attributes REPLICA IDENTITY FULL;
-
 
 ALTER TABLE public.expense_attributes OWNER TO postgres;
 
@@ -1979,8 +1929,6 @@ CREATE TABLE public.expense_attributes_deletion_cache (
     project_ids character varying(255)[] NOT NULL,
     workspace_id integer NOT NULL
 );
-
-ALTER TABLE ONLY public.expense_attributes_deletion_cache REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.expense_attributes_deletion_cache OWNER TO postgres;
@@ -2020,8 +1968,6 @@ CREATE TABLE public.expense_fields (
     updated_at timestamp with time zone NOT NULL,
     workspace_id integer NOT NULL
 );
-
-ALTER TABLE ONLY public.expense_fields REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.expense_fields OWNER TO postgres;
@@ -2065,8 +2011,6 @@ CREATE TABLE public.expense_filters (
     workspace_id integer NOT NULL,
     custom_field_type character varying(255)
 );
-
-ALTER TABLE ONLY public.expense_filters REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.expense_filters OWNER TO postgres;
@@ -2114,8 +2058,6 @@ CREATE TABLE public.expense_group_settings (
     updated_by character varying(255)
 );
 
-ALTER TABLE ONLY public.expense_group_settings REPLICA IDENTITY FULL;
-
 
 ALTER TABLE public.expense_group_settings OWNER TO postgres;
 
@@ -2135,8 +2077,6 @@ CREATE TABLE public.expense_groups (
     employee_name character varying(255),
     export_url character varying(255)
 );
-
-ALTER TABLE ONLY public.expense_groups REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.expense_groups OWNER TO postgres;
@@ -2166,8 +2106,6 @@ CREATE TABLE public.expense_report_lineitems (
     tax_item_id character varying(255),
     netsuite_receipt_url text
 );
-
-ALTER TABLE ONLY public.expense_report_lineitems REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.expense_report_lineitems OWNER TO postgres;
@@ -2219,8 +2157,6 @@ CREATE TABLE public.expense_reports (
     is_retired boolean NOT NULL,
     is_attachment_upload_failed boolean NOT NULL
 );
-
-ALTER TABLE ONLY public.expense_reports REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.expense_reports OWNER TO postgres;
@@ -2370,6 +2306,7 @@ CREATE VIEW public.extended_expenses_view AS
     e.is_posted_at_null,
     e.bank_transaction_id,
     e.masked_corporate_card_number,
+    e.imported_from,
     eg.id AS expense_group_id,
     eg.employee_name AS expense_group_employee_name,
     eg.export_url AS expense_group_export_url,
@@ -2401,8 +2338,6 @@ CREATE TABLE public.mappings (
     source_id integer NOT NULL,
     workspace_id integer NOT NULL
 );
-
-ALTER TABLE ONLY public.mappings REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.mappings OWNER TO postgres;
@@ -2480,8 +2415,6 @@ CREATE TABLE public.general_mappings (
     updated_by character varying(255)
 );
 
-ALTER TABLE ONLY public.general_mappings REPLICA IDENTITY FULL;
-
 
 ALTER TABLE public.general_mappings OWNER TO postgres;
 
@@ -2501,8 +2434,6 @@ CREATE TABLE public.last_export_details (
     updated_at timestamp with time zone NOT NULL,
     workspace_id integer NOT NULL
 );
-
-ALTER TABLE ONLY public.last_export_details REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.last_export_details OWNER TO postgres;
@@ -2524,8 +2455,6 @@ CREATE TABLE public.workspace_schedules (
     created_at timestamp with time zone,
     updated_at timestamp with time zone
 );
-
-ALTER TABLE ONLY public.workspace_schedules REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.workspace_schedules OWNER TO postgres;
@@ -2549,8 +2478,6 @@ CREATE TABLE public.workspaces (
     ccc_last_synced_at timestamp with time zone,
     onboarding_state character varying(50)
 );
-
-ALTER TABLE ONLY public.workspaces REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.workspaces OWNER TO postgres;
@@ -2576,6 +2503,37 @@ CREATE VIEW public.extended_settings_view AS
 
 
 ALTER TABLE public.extended_settings_view OWNER TO postgres;
+
+--
+-- Name: failed_events; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.failed_events (
+    id integer NOT NULL,
+    routing_key character varying(255) NOT NULL,
+    payload jsonb NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    error_traceback text,
+    workspace_id integer
+);
+
+
+ALTER TABLE public.failed_events OWNER TO postgres;
+
+--
+-- Name: failed_events_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.failed_events ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.failed_events_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
 
 --
 -- Name: fyle_accounting_mappings_destinationattribute_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -2662,8 +2620,6 @@ CREATE TABLE public.mapping_settings (
     updated_by character varying(255)
 );
 
-ALTER TABLE ONLY public.mapping_settings REPLICA IDENTITY FULL;
-
 
 ALTER TABLE public.mapping_settings OWNER TO postgres;
 
@@ -2701,8 +2657,6 @@ CREATE TABLE public.fyle_credentials (
     workspace_id integer NOT NULL,
     cluster_domain character varying(255)
 );
-
-ALTER TABLE ONLY public.fyle_credentials REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.fyle_credentials OWNER TO postgres;
@@ -2914,8 +2868,6 @@ CREATE TABLE public.journal_entries (
     is_attachment_upload_failed boolean NOT NULL
 );
 
-ALTER TABLE ONLY public.journal_entries REPLICA IDENTITY FULL;
-
 
 ALTER TABLE public.journal_entries OWNER TO postgres;
 
@@ -2964,8 +2916,6 @@ CREATE TABLE public.journal_entry_lineitems (
     tax_item_id character varying(255),
     netsuite_receipt_url text
 );
-
-ALTER TABLE ONLY public.journal_entry_lineitems REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.journal_entry_lineitems OWNER TO postgres;
@@ -3029,8 +2979,6 @@ CREATE TABLE public.netsuite_credentials (
     updated_at timestamp with time zone NOT NULL,
     workspace_id integer NOT NULL
 );
-
-ALTER TABLE ONLY public.netsuite_credentials REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.netsuite_credentials OWNER TO postgres;
@@ -3111,6 +3059,50 @@ CREATE VIEW public.product_advanced_settings_view AS
 ALTER TABLE public.product_advanced_settings_view OWNER TO postgres;
 
 --
+-- Name: product_export_settings_view; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.product_export_settings_view AS
+ SELECT w.id AS workspace_id,
+    w.name AS workspace_name,
+    w.fyle_org_id AS workspace_org_id,
+    c.reimbursable_expenses_object,
+    c.corporate_credit_card_expenses_object,
+    c.is_simplify_report_closure_enabled,
+    c.name_in_journal_entry,
+    c.employee_field_mapping,
+    c.auto_map_employees,
+    egs.reimbursable_expense_group_fields,
+        CASE
+            WHEN ((egs.reimbursable_expense_group_fields @> ARRAY['expense_id'::character varying]) OR (egs.reimbursable_expense_group_fields @> ARRAY['expense_number'::character varying])) THEN 'Expense'::text
+            ELSE 'Report'::text
+        END AS readable_reimbursable_expense_group_fields,
+    egs.corporate_credit_card_expense_group_fields,
+        CASE
+            WHEN ((egs.corporate_credit_card_expense_group_fields @> ARRAY['expense_id'::character varying]) OR (egs.corporate_credit_card_expense_group_fields @> ARRAY['expense_number'::character varying])) THEN 'Expense'::text
+            ELSE 'Report'::text
+        END AS readable_corporate_credit_card_expense_group_fields,
+    egs.reimbursable_export_date_type,
+    egs.expense_state,
+    egs.ccc_export_date_type,
+    egs.ccc_expense_state,
+    gm.accounts_payable_name,
+    gm.accounts_payable_id,
+    gm.default_ccc_account_name,
+    gm.default_ccc_account_id,
+    gm.reimbursable_account_name,
+    gm.reimbursable_account_id,
+    gm.default_ccc_vendor_name,
+    gm.default_ccc_vendor_id
+   FROM (((public.workspaces w
+     JOIN public.configurations c ON ((w.id = c.workspace_id)))
+     JOIN public.expense_group_settings egs ON ((w.id = egs.workspace_id)))
+     JOIN public.general_mappings gm ON ((w.id = gm.workspace_id)));
+
+
+ALTER TABLE public.product_export_settings_view OWNER TO postgres;
+
+--
 -- Name: product_import_settings_view; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -3147,8 +3139,6 @@ CREATE TABLE public.reimbursements (
     updated_at timestamp with time zone NOT NULL,
     workspace_id integer NOT NULL
 );
-
-ALTER TABLE ONLY public.reimbursements REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.reimbursements OWNER TO postgres;
@@ -3203,8 +3193,6 @@ CREATE TABLE public.subsidiary_mappings (
     country_name character varying(255)
 );
 
-ALTER TABLE ONLY public.subsidiary_mappings REPLICA IDENTITY FULL;
-
 
 ALTER TABLE public.subsidiary_mappings OWNER TO postgres;
 
@@ -3253,6 +3241,46 @@ ALTER SEQUENCE public.tasks_tasklog_id_seq OWNED BY public.task_logs.id;
 
 
 --
+-- Name: update_logs; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.update_logs (
+    id integer NOT NULL,
+    table_name text,
+    old_data jsonb,
+    new_data jsonb,
+    difference jsonb,
+    workspace_id integer,
+    operation_type text,
+    created_at timestamp without time zone DEFAULT now()
+);
+
+
+ALTER TABLE public.update_logs OWNER TO postgres;
+
+--
+-- Name: update_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.update_logs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.update_logs_id_seq OWNER TO postgres;
+
+--
+-- Name: update_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.update_logs_id_seq OWNED BY public.update_logs.id;
+
+
+--
 -- Name: users; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -3267,8 +3295,6 @@ CREATE TABLE public.users (
     staff boolean NOT NULL,
     admin boolean NOT NULL
 );
-
-ALTER TABLE ONLY public.users REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.users OWNER TO postgres;
@@ -3307,8 +3333,6 @@ CREATE TABLE public.vendor_payment_lineitems (
     expense_group_id integer NOT NULL,
     vendor_payment_id integer NOT NULL
 );
-
-ALTER TABLE ONLY public.vendor_payment_lineitems REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.vendor_payment_lineitems OWNER TO postgres;
@@ -3354,8 +3378,6 @@ CREATE TABLE public.vendor_payments (
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL
 );
-
-ALTER TABLE ONLY public.vendor_payments REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.vendor_payments OWNER TO postgres;
@@ -3436,8 +3458,6 @@ CREATE TABLE public.workspaces_user (
     user_id integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
-
-ALTER TABLE ONLY public.workspaces_user REPLICA IDENTITY FULL;
 
 
 ALTER TABLE public.workspaces_user OWNER TO postgres;
@@ -3818,6 +3838,13 @@ ALTER TABLE ONLY public.task_logs ALTER COLUMN id SET DEFAULT nextval('public.ta
 
 
 --
+-- Name: update_logs id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.update_logs ALTER COLUMN id SET DEFAULT nextval('public.update_logs_id_seq'::regclass);
+
+
+--
 -- Name: users id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -4076,6 +4103,10 @@ COPY public.auth_permission (id, name, content_type_id, codename) FROM stdin;
 186	Can change import log	47	change_importlog
 187	Can delete import log	47	delete_importlog
 188	Can view import log	47	view_importlog
+189	Can add failed event	48	add_failedevent
+190	Can change failed event	48	change_failedevent
+191	Can delete failed event	48	delete_failedevent
+192	Can view failed event	48	view_failedevent
 \.
 
 
@@ -4122,10 +4153,10 @@ COPY public.category_mappings (id, created_at, updated_at, destination_account_i
 -- Data for Name: configurations; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.configurations (id, reimbursable_expenses_object, corporate_credit_card_expenses_object, created_at, updated_at, workspace_id, sync_fyle_to_netsuite_payments, sync_netsuite_to_fyle_payments, import_projects, auto_map_employees, import_categories, auto_create_destination_entity, auto_create_merchants, employee_field_mapping, import_tax_items, change_accounting_period, memo_structure, map_fyle_cards_netsuite_account, import_vendors_as_merchants, import_netsuite_employees, import_items, name_in_journal_entry, allow_intercompany_vendors, je_single_credit_line, is_attachment_upload_enabled, created_by, updated_by) FROM stdin;
-1	EXPENSE REPORT	BILL	2021-11-15 08:56:07.193743+00	2021-11-15 08:56:07.193795+00	1	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	MERCHANT	f	f	t	\N	\N
-2	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-11-16 04:18:15.836271+00	2021-11-16 04:20:09.969589+00	2	f	f	f	\N	f	f	f	EMPLOYEE	t	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	MERCHANT	f	f	t	\N	\N
-3	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-12-03 11:04:00.194287+00	2021-12-03 11:04:00.1943+00	49	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	MERCHANT	f	f	t	\N	\N
+COPY public.configurations (id, reimbursable_expenses_object, corporate_credit_card_expenses_object, created_at, updated_at, workspace_id, sync_fyle_to_netsuite_payments, sync_netsuite_to_fyle_payments, import_projects, auto_map_employees, import_categories, auto_create_destination_entity, auto_create_merchants, employee_field_mapping, import_tax_items, change_accounting_period, memo_structure, map_fyle_cards_netsuite_account, skip_cards_mapping, import_vendors_as_merchants, import_netsuite_employees, is_simplify_report_closure_enabled, import_items, name_in_journal_entry, allow_intercompany_vendors, je_single_credit_line, is_attachment_upload_enabled, created_by, updated_by) FROM stdin;
+1	EXPENSE REPORT	BILL	2021-11-15 08:56:07.193743+00	2021-11-15 08:56:07.193795+00	1	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f	MERCHANT	f	f	t	\N	\N
+2	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-11-16 04:18:15.836271+00	2021-11-16 04:20:09.969589+00	2	f	f	f	\N	f	f	f	EMPLOYEE	t	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f	MERCHANT	f	f	t	\N	\N
+3	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-12-03 11:04:00.194287+00	2021-12-03 11:04:00.1943+00	49	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f	MERCHANT	f	f	t	\N	\N
 \.
 
 
@@ -9209,6 +9240,7 @@ COPY public.django_content_type (id, app_label, model) FROM stdin;
 45	tasks	error
 46	fyle_accounting_mappings	expenseattributesdeletioncache
 47	fyle_integrations_imports	importlog
+48	rabbitmq	failedevent
 \.
 
 
@@ -9429,13 +9461,17 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 211	mappings	0016_auto_20241226_0929	2024-12-26 09:48:19.963414+00
 212	workspaces	0043_auto_20241224_1102	2024-12-26 09:48:19.987821+00
 213	fyle_accounting_mappings	0028_auto_20241226_1030	2024-12-26 11:00:11.334548+00
-214	mappings	0017_alter_generalmapping_is_tax_balancing_enabled	2025-04-02 19:22:51.79007+00
-215	internal	0001_auto_generated_sql	2025-04-02 19:22:51.815956+00
-216	internal	0002_auto_generated_sql	2025-04-02 19:22:51.818628+00
-217	internal	0003_auto_generated_sql	2025-04-02 19:22:51.820655+00
-218	internal	0004_auto_generated_sql	2025-04-02 19:22:51.822391+00
-219	internal	0005_auto_generated_sql	2025-04-02 19:22:51.82402+00
-220	workspaces	0044_remove_configuration_is_simplify_report_closure_enabled_and_more	2025-04-02 19:22:51.840454+00
+214	fyle	0038_expense_imported_from	2025-03-19 16:33:28.660031+00
+215	mappings	0017_alter_generalmapping_is_tax_balancing_enabled	2025-03-19 16:33:28.672071+00
+216	internal	0001_auto_generated_sql	2025-03-19 16:33:28.700815+00
+217	internal	0002_auto_generated_sql	2025-03-19 16:33:28.70339+00
+218	internal	0003_auto_generated_sql	2025-03-19 16:33:28.705952+00
+219	internal	0004_auto_generated_sql	2025-03-19 16:33:28.707981+00
+220	internal	0005_auto_generated_sql	2025-03-19 16:33:28.709668+00
+221	rabbitmq	0001_initial	2025-03-19 16:33:28.713778+00
+222	rabbitmq	0002_alter_failedevent_error_traceback	2025-03-19 16:33:28.717985+00
+223	rabbitmq	0003_alter_failedevent_created_at_and_more	2025-03-19 16:33:28.725018+00
+224	tasks	0013_tasklog_triggered_by	2025-03-19 16:33:28.736902+00
 \.
 
 
@@ -9453,7 +9489,7 @@ COPY public.django_q_ormq (id, key, payload, lock) FROM stdin;
 
 COPY public.django_q_schedule (id, func, hook, args, kwargs, schedule_type, repeats, next_run, task, name, minutes, cron, cluster, intended_date_kwarg) FROM stdin;
 1	apps.mappings.tasks.auto_create_tax_group_mappings	\N	2	\N	I	-3	2021-12-04 04:20:09.992371+00	aa5388fcba0e4b91ac88020c22f3e30f	\N	1440	\N	import	\N
-51	apps.internal.tasks.re_export_stuck_exports	\N	\N	\N	I	-1	2025-04-02 19:23:51.821516+00	\N	\N	60	\N	import	\N
+51	apps.internal.tasks.re_export_stuck_exports	\N	\N	\N	I	-1	2025-03-19 16:34:28.707082+00	\N	\N	60	\N	import	\N
 \.
 
 
@@ -13078,15 +13114,23 @@ COPY public.expense_reports (id, account_id, entity_id, currency, department_id,
 -- Data for Name: expenses; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.expenses (id, employee_email, category, sub_category, project, expense_id, expense_number, claim_number, amount, currency, foreign_amount, foreign_currency, settlement_id, reimbursable, state, vendor, cost_center, purpose, report_id, spent_at, approved_at, expense_created_at, expense_updated_at, created_at, updated_at, fund_source, custom_properties, verified_at, paid_on_netsuite, billable, org_id, tax_amount, tax_group_id, project_id, file_ids, corporate_card_id, is_skipped, report_title, employee_name, posted_at, accounting_export_summary, previous_export_state, workspace_id, paid_on_fyle, is_posted_at_null, bank_transaction_id, masked_corporate_card_number) FROM stdin;
-1	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txjvDntD9ZXR	E/2021/11/T/11	C/2021/11/R/5	50	USD	\N	\N	set6GUp6tcEEp	t	PAYMENT_PROCESSING	\N	Treasury	\N	rpuN3bgphxbK	2021-11-15 00:00:00+00	2021-11-15 00:00:00+00	2021-11-15 10:27:53.649+00	2021-11-15 10:28:46.775+00	2021-11-15 10:29:07.597095+00	2021-11-15 10:29:07.597111+00	PERSONAL	{"Team": "", "Class": "", "Klass": "", "Team 2": "", "Location": "", "Team Copy": "", "Tax Groups": "", "Departments": "", "User Dimension": "", "Location Entity": "", "Operating System": "", "System Operating": "", "User Dimension Copy": ""}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N	f	\N	\N	\N	{}	\N	\N	f	f	\N	\N
-2	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txy6folbrG2j	E/2021/11/T/12	C/2021/11/R/6	100	USD	\N	\N	setNVTcPkZ6on	f	PAYMENT_PROCESSING	Ashwin Vendor	\N	\N	rpHLA9Dfp9hN	2021-11-15 00:00:00+00	2021-11-15 00:00:00+00	2021-11-15 13:11:22.304+00	2021-11-15 13:11:58.032+00	2021-11-15 13:12:12.250613+00	2021-11-15 13:12:12.250638+00	CCC	{"Team": "", "Class": "", "Klass": "Klass", "Team 2": "", "Location": "", "Team Copy": "", "Tax Groups": "", "Departments": "", "User Dimension": "", "Location Entity": "", "Operating System": "", "System Operating": "", "User Dimension Copy": ""}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N	f	\N	\N	\N	{}	\N	\N	f	f	\N	\N
-3	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txeLau9Rdu4X	E/2021/11/T/1	C/2021/11/R/2	80	USD	\N	\N	setqgvGQnsAya	t	PAYMENT_PROCESSING	\N	\N	\N	rpu5W0LYrk6e	2021-11-16 00:00:00+00	2021-11-16 00:00:00+00	2021-11-16 04:24:18.688+00	2021-11-16 04:25:21.996+00	2021-11-16 04:25:49.174565+00	2021-11-16 04:25:49.174584+00	PERSONAL	{"Klass": "Klass", "Device Type": "", "Fyle Category": ""}	\N	f	\N	oraWFQlEpjbb	4.53	tg31j9m4PoEO	\N	\N	\N	f	\N	\N	\N	{}	\N	\N	f	f	\N	\N
-4	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txMLGb6Xy8m8	E/2021/11/T/2	C/2021/11/R/1	100	USD	\N	\N	setqgvGQnsAya	f	PAYMENT_PROCESSING	\N	\N	\N	rprqDvARHUnv	2021-11-16 00:00:00+00	2021-11-16 00:00:00+00	2021-11-16 04:24:38.141+00	2021-11-16 04:25:21.996+00	2021-11-16 04:25:49.192351+00	2021-11-16 04:25:49.192367+00	CCC	{"Device Type": "", "Fyle Category": ""}	\N	f	\N	oraWFQlEpjbb	16.67	tgSYjXsBCviv	\N	\N	\N	f	\N	\N	\N	{}	\N	\N	f	f	\N	\N
-173	admin1@fyleforintacct.in	Food	Food	Project 2	tx7A5QpesrV5	E/2021/12/T/1	C/2021/12/R/1	120	USD	\N	\N	set15sMvtRIiS	t	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85N	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:30.076+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.685597+00	2021-12-03 11:26:58.685616+00	PERSONAL	{}	\N	f	\N	orHe8CpW2hyN	\N	\N	\N	\N	\N	f	\N	\N	\N	{}	\N	\N	f	f	\N	\N
-174	admin1@fyleforintacct.in	Food	Food	Project 2	txcKVVELn1Vl	E/2021/12/T/2	C/2021/12/R/1	130	USD	\N	\N	set15sMvtRIiS	f	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85N	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:49.51+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.702183+00	2021-12-03 11:26:58.702209+00	CCC	{}	\N	f	\N	orHe8CpW2hyN	\N	\N	\N	\N	\N	f	\N	\N	\N	{}	\N	\N	f	f	\N	\N
-600	jhonsnoww@fyle.in	Food	Food	Project 2	txcKVVELn1Vlkill	E/2021/12/T/298	    C/2021/12/R/198	130	USD	\N	\N	set15sMvtRIiSkill	f	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85Nkill	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:49.51+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.702183+00	2021-12-03 11:26:58.702209+00	CCC	{}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N	t	\N	\N	\N	{}	\N	\N	f	f	\N	\N
-601	jhonsnoww@fyle.in	Food	Food	Project 2	txcKVVELn1Vlgon	    E/2021/12/T/299	    C/2021/12/R/199	130	USD	\N	\N	set15sMvtRIiSgon	f	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85Ngon	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:49.51+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.702183+00	2021-12-03 11:26:58.702209+00	CCC	{}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N	t	\N	\N	\N	{}	\N	\N	f	f	\N	\N
+COPY public.expenses (id, employee_email, category, sub_category, project, expense_id, expense_number, claim_number, amount, currency, foreign_amount, foreign_currency, settlement_id, reimbursable, state, vendor, cost_center, purpose, report_id, spent_at, approved_at, expense_created_at, expense_updated_at, created_at, updated_at, fund_source, custom_properties, verified_at, paid_on_netsuite, billable, org_id, tax_amount, tax_group_id, project_id, file_ids, corporate_card_id, is_skipped, report_title, employee_name, posted_at, accounting_export_summary, previous_export_state, workspace_id, paid_on_fyle, is_posted_at_null, bank_transaction_id, masked_corporate_card_number, imported_from) FROM stdin;
+1	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txjvDntD9ZXR	E/2021/11/T/11	C/2021/11/R/5	50	USD	\N	\N	set6GUp6tcEEp	t	PAYMENT_PROCESSING	\N	Treasury	\N	rpuN3bgphxbK	2021-11-15 00:00:00+00	2021-11-15 00:00:00+00	2021-11-15 10:27:53.649+00	2021-11-15 10:28:46.775+00	2021-11-15 10:29:07.597095+00	2021-11-15 10:29:07.597111+00	PERSONAL	{"Team": "", "Class": "", "Klass": "", "Team 2": "", "Location": "", "Team Copy": "", "Tax Groups": "", "Departments": "", "User Dimension": "", "Location Entity": "", "Operating System": "", "System Operating": "", "User Dimension Copy": ""}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N	f	\N	\N	\N	{}	\N	\N	f	f	\N	\N	\N
+2	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txy6folbrG2j	E/2021/11/T/12	C/2021/11/R/6	100	USD	\N	\N	setNVTcPkZ6on	f	PAYMENT_PROCESSING	Ashwin Vendor	\N	\N	rpHLA9Dfp9hN	2021-11-15 00:00:00+00	2021-11-15 00:00:00+00	2021-11-15 13:11:22.304+00	2021-11-15 13:11:58.032+00	2021-11-15 13:12:12.250613+00	2021-11-15 13:12:12.250638+00	CCC	{"Team": "", "Class": "", "Klass": "Klass", "Team 2": "", "Location": "", "Team Copy": "", "Tax Groups": "", "Departments": "", "User Dimension": "", "Location Entity": "", "Operating System": "", "System Operating": "", "User Dimension Copy": ""}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N	f	\N	\N	\N	{}	\N	\N	f	f	\N	\N	\N
+3	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txeLau9Rdu4X	E/2021/11/T/1	C/2021/11/R/2	80	USD	\N	\N	setqgvGQnsAya	t	PAYMENT_PROCESSING	\N	\N	\N	rpu5W0LYrk6e	2021-11-16 00:00:00+00	2021-11-16 00:00:00+00	2021-11-16 04:24:18.688+00	2021-11-16 04:25:21.996+00	2021-11-16 04:25:49.174565+00	2021-11-16 04:25:49.174584+00	PERSONAL	{"Klass": "Klass", "Device Type": "", "Fyle Category": ""}	\N	f	\N	oraWFQlEpjbb	4.53	tg31j9m4PoEO	\N	\N	\N	f	\N	\N	\N	{}	\N	\N	f	f	\N	\N	\N
+4	ashwin.t@fyle.in	Accounts Payable	Accounts Payable	\N	txMLGb6Xy8m8	E/2021/11/T/2	C/2021/11/R/1	100	USD	\N	\N	setqgvGQnsAya	f	PAYMENT_PROCESSING	\N	\N	\N	rprqDvARHUnv	2021-11-16 00:00:00+00	2021-11-16 00:00:00+00	2021-11-16 04:24:38.141+00	2021-11-16 04:25:21.996+00	2021-11-16 04:25:49.192351+00	2021-11-16 04:25:49.192367+00	CCC	{"Device Type": "", "Fyle Category": ""}	\N	f	\N	oraWFQlEpjbb	16.67	tgSYjXsBCviv	\N	\N	\N	f	\N	\N	\N	{}	\N	\N	f	f	\N	\N	\N
+173	admin1@fyleforintacct.in	Food	Food	Project 2	tx7A5QpesrV5	E/2021/12/T/1	C/2021/12/R/1	120	USD	\N	\N	set15sMvtRIiS	t	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85N	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:30.076+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.685597+00	2021-12-03 11:26:58.685616+00	PERSONAL	{}	\N	f	\N	orHe8CpW2hyN	\N	\N	\N	\N	\N	f	\N	\N	\N	{}	\N	\N	f	f	\N	\N	\N
+174	admin1@fyleforintacct.in	Food	Food	Project 2	txcKVVELn1Vl	E/2021/12/T/2	C/2021/12/R/1	130	USD	\N	\N	set15sMvtRIiS	f	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85N	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:49.51+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.702183+00	2021-12-03 11:26:58.702209+00	CCC	{}	\N	f	\N	orHe8CpW2hyN	\N	\N	\N	\N	\N	f	\N	\N	\N	{}	\N	\N	f	f	\N	\N	\N
+600	jhonsnoww@fyle.in	Food	Food	Project 2	txcKVVELn1Vlkill	E/2021/12/T/298	    C/2021/12/R/198	130	USD	\N	\N	set15sMvtRIiSkill	f	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85Nkill	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:49.51+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.702183+00	2021-12-03 11:26:58.702209+00	CCC	{}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N	t	\N	\N	\N	{}	\N	\N	f	f	\N	\N	\N
+601	jhonsnoww@fyle.in	Food	Food	Project 2	txcKVVELn1Vlgon	    E/2021/12/T/299	    C/2021/12/R/199	130	USD	\N	\N	set15sMvtRIiSgon	f	PAYMENT_PROCESSING	\N	Sales and Cross	\N	rpXqCutQj85Ngon	2021-12-03 00:00:00+00	2021-12-03 00:00:00+00	2021-12-03 10:58:49.51+00	2021-12-03 11:00:22.64+00	2021-12-03 11:26:58.702183+00	2021-12-03 11:26:58.702209+00	CCC	{}	\N	f	\N	or79Cob97KSh	\N	\N	\N	\N	\N	t	\N	\N	\N	{}	\N	\N	f	f	\N	\N	\N
+\.
+
+
+--
+-- Data for Name: failed_events; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.failed_events (id, routing_key, payload, created_at, updated_at, error_traceback, workspace_id) FROM stdin;
 \.
 
 
@@ -13205,8 +13249,16 @@ COPY public.subsidiary_mappings (id, subsidiary_name, internal_id, created_at, u
 -- Data for Name: task_logs; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.task_logs (id, type, task_id, status, detail, created_at, updated_at, bill_id, expense_group_id, workspace_id, expense_report_id, journal_entry_id, vendor_payment_id, credit_card_charge_id) FROM stdin;
-141	FETCHING_EXPENSES	\N	COMPLETE	{"default": "default value"}	2021-12-03 11:26:57.1744+00	2021-12-03 11:26:58.747868+00	\N	\N	49	\N	\N	\N	\N
+COPY public.task_logs (id, type, task_id, status, detail, created_at, updated_at, bill_id, expense_group_id, workspace_id, expense_report_id, journal_entry_id, vendor_payment_id, credit_card_charge_id, triggered_by) FROM stdin;
+141	FETCHING_EXPENSES	\N	COMPLETE	{"default": "default value"}	2021-12-03 11:26:57.1744+00	2021-12-03 11:26:58.747868+00	\N	\N	49	\N	\N	\N	\N	\N
+\.
+
+
+--
+-- Data for Name: update_logs; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.update_logs (id, table_name, old_data, new_data, difference, workspace_id, operation_type, created_at) FROM stdin;
 \.
 
 
@@ -13285,7 +13337,7 @@ SELECT pg_catalog.setval('public.auth_group_permissions_id_seq', 1, false);
 -- Name: auth_permission_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.auth_permission_id_seq', 188, true);
+SELECT pg_catalog.setval('public.auth_permission_id_seq', 192, true);
 
 
 --
@@ -13341,14 +13393,14 @@ SELECT pg_catalog.setval('public.django_admin_log_id_seq', 1, false);
 -- Name: django_content_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_content_type_id_seq', 47, true);
+SELECT pg_catalog.setval('public.django_content_type_id_seq', 48, true);
 
 
 --
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 220, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 224, true);
 
 
 --
@@ -13412,6 +13464,13 @@ SELECT pg_catalog.setval('public.expense_report_lineitems_id_seq', 21, true);
 --
 
 SELECT pg_catalog.setval('public.expense_reports_id_seq', 21, true);
+
+
+--
+-- Name: failed_events_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.failed_events_id_seq', 1, false);
 
 
 --
@@ -13531,6 +13590,13 @@ SELECT pg_catalog.setval('public.subsidiary_mappings_id_seq', 3, true);
 --
 
 SELECT pg_catalog.setval('public.tasks_tasklog_id_seq', 143, true);
+
+
+--
+-- Name: update_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.update_logs_id_seq', 1, false);
 
 
 --
@@ -13957,6 +14023,14 @@ ALTER TABLE ONLY public.expense_reports
 
 
 --
+-- Name: failed_events failed_events_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.failed_events
+    ADD CONSTRAINT failed_events_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: destination_attributes fyle_accounting_mappings_destinationattribute_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -14194,6 +14268,14 @@ ALTER TABLE ONLY public.task_logs
 
 ALTER TABLE ONLY public.task_logs
     ADD CONSTRAINT tasks_tasklog_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: update_logs update_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.update_logs
+    ADD CONSTRAINT update_logs_pkey PRIMARY KEY (id);
 
 
 --
@@ -14802,6 +14884,48 @@ CREATE OR REPLACE VIEW public.prod_active_workspaces_view AS
 
 
 --
+-- Name: mapping_settings monitor_deletes; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER monitor_deletes AFTER DELETE ON public.mapping_settings FOR EACH ROW EXECUTE FUNCTION public.log_delete_event();
+
+
+--
+-- Name: configurations monitor_updates; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER monitor_updates AFTER UPDATE ON public.configurations FOR EACH ROW EXECUTE FUNCTION public.log_update_event();
+
+
+--
+-- Name: expense_group_settings monitor_updates; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER monitor_updates AFTER UPDATE ON public.expense_group_settings FOR EACH ROW EXECUTE FUNCTION public.log_update_event();
+
+
+--
+-- Name: general_mappings monitor_updates; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER monitor_updates AFTER UPDATE ON public.general_mappings FOR EACH ROW EXECUTE FUNCTION public.log_update_event();
+
+
+--
+-- Name: mapping_settings monitor_updates; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER monitor_updates AFTER UPDATE ON public.mapping_settings FOR EACH ROW EXECUTE FUNCTION public.log_update_event();
+
+
+--
+-- Name: workspace_schedules monitor_updates; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER monitor_updates AFTER UPDATE ON public.workspace_schedules FOR EACH ROW EXECUTE FUNCTION public.log_update_event();
+
+
+--
 -- Name: auth_group_permissions auth_group_permissio_permission_id_84c5c92e_fk_auth_perm; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15327,309 +15451,6 @@ ALTER TABLE ONLY public.workspaces_user
 
 ALTER TABLE ONLY public.workspace_schedules
     ADD CONSTRAINT workspaces_workspace_schedule_id_8274d659_fk_django_q_ FOREIGN KEY (schedule_id) REFERENCES public.django_q_schedule(id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: events; Type: PUBLICATION; Schema: -; Owner: postgres
---
-
-CREATE PUBLICATION events WITH (publish = 'insert, update, delete, truncate');
-
-
-ALTER PUBLICATION events OWNER TO postgres;
-
---
--- Name: events auth_cache; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.auth_cache;
-
-
---
--- Name: events auth_group; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.auth_group;
-
-
---
--- Name: events auth_group_permissions; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.auth_group_permissions;
-
-
---
--- Name: events auth_permission; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.auth_permission;
-
-
---
--- Name: events auth_tokens; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.auth_tokens;
-
-
---
--- Name: events bill_lineitems; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.bill_lineitems;
-
-
---
--- Name: events bills; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.bills;
-
-
---
--- Name: events category_mappings; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.category_mappings;
-
-
---
--- Name: events configurations; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.configurations;
-
-
---
--- Name: events credit_card_charge_lineitems; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.credit_card_charge_lineitems;
-
-
---
--- Name: events credit_card_charges; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.credit_card_charges;
-
-
---
--- Name: events custom_segments; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.custom_segments;
-
-
---
--- Name: events destination_attributes; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.destination_attributes;
-
-
---
--- Name: events employee_mappings; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.employee_mappings;
-
-
---
--- Name: events errors; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.errors;
-
-
---
--- Name: events expense_attributes; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.expense_attributes;
-
-
---
--- Name: events expense_fields; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.expense_fields;
-
-
---
--- Name: events expense_filters; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.expense_filters;
-
-
---
--- Name: events expense_group_settings; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.expense_group_settings;
-
-
---
--- Name: events expense_groups; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.expense_groups;
-
-
---
--- Name: events expense_groups_expenses; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.expense_groups_expenses;
-
-
---
--- Name: events expense_report_lineitems; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.expense_report_lineitems;
-
-
---
--- Name: events expense_reports; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.expense_reports;
-
-
---
--- Name: events expenses; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.expenses;
-
-
---
--- Name: events fyle_credentials; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.fyle_credentials;
-
-
---
--- Name: events general_mappings; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.general_mappings;
-
-
---
--- Name: events import_logs; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.import_logs;
-
-
---
--- Name: events journal_entries; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.journal_entries;
-
-
---
--- Name: events journal_entry_lineitems; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.journal_entry_lineitems;
-
-
---
--- Name: events last_export_details; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.last_export_details;
-
-
---
--- Name: events mapping_settings; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.mapping_settings;
-
-
---
--- Name: events mappings; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.mappings;
-
-
---
--- Name: events netsuite_credentials; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.netsuite_credentials;
-
-
---
--- Name: events reimbursements; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.reimbursements;
-
-
---
--- Name: events subsidiary_mappings; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.subsidiary_mappings;
-
-
---
--- Name: events task_logs; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.task_logs;
-
-
---
--- Name: events users; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.users;
-
-
---
--- Name: events vendor_payment_lineitems; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.vendor_payment_lineitems;
-
-
---
--- Name: events vendor_payments; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.vendor_payments;
-
-
---
--- Name: events workspace_schedules; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.workspace_schedules;
-
-
---
--- Name: events workspaces; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.workspaces;
-
-
---
--- Name: events workspaces_user; Type: PUBLICATION TABLE; Schema: public; Owner: postgres
---
-
-ALTER PUBLICATION events ADD TABLE ONLY public.workspaces_user;
 
 
 --
