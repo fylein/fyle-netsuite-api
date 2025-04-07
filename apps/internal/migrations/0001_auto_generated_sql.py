@@ -50,8 +50,8 @@ sql_files = [
     'fyle-integrations-db-migrations/netsuite/views/product_export_settings_view.sql',
     'fyle-integrations-db-migrations/netsuite/views/product_import_settings_view.sql',
 
-    # Netsuite Specific Trigger
-    'fyle-integrations-db-migrations/netsuite/triggers/update_logs.sql'
+    'fyle-integrations-db-migrations/common/global_shared/helpers/add-replication-identity.sql',
+    'fyle-integrations-db-migrations/netsuite/helpers/add-tables-to-publication.sql'
 ]
 class Migration(migrations.Migration):
     dependencies = [

@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from typing import List, Dict
 from django_q.models import Schedule
@@ -79,7 +79,7 @@ def resolve_expense_attribute_errors(
         mapped_attribute_ids = get_mapped_attributes_ids(source_attribute_type, destination_attribute_type, errored_attribute_ids)
 
         if mapped_attribute_ids:
-            Error.objects.filter(expense_attribute_id__in=mapped_attribute_ids).update(is_resolved=True)
+            Error.objects.filter(expense_attribute_id__in=mapped_attribute_ids).update(is_resolved=True, updated_at=datetime.now(timezone.utc))
 
 
 def remove_duplicates(ns_attributes: List[DestinationAttribute]):

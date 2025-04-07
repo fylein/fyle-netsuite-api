@@ -4,7 +4,7 @@ Fyle Models
 import logging
 from dateutil import parser
 from typing import List, Dict
-from datetime import datetime
+from datetime import datetime, timezone
 from collections import defaultdict
 
 
@@ -534,6 +534,7 @@ class Reimbursement(models.Model):
 
         existing_reimbursement_ids = []
         primary_key_map = {}
+        current_time = datetime.now(timezone.utc)
 
         for existing_reimbursement in existing_reimbursements:
             existing_reimbursement_ids.append(existing_reimbursement.reimbursement_id)
@@ -561,7 +562,8 @@ class Reimbursement(models.Model):
                     attributes_to_be_updated.append(
                         Reimbursement(
                             id=primary_key_map[reimbursement['id']]['id'],
-                            state=reimbursement['state']
+                            state=reimbursement['state'],
+                            updated_at=current_time
                         )
                     )
 
@@ -569,7 +571,7 @@ class Reimbursement(models.Model):
             Reimbursement.objects.bulk_create(attributes_to_be_created, batch_size=50)
 
         if attributes_to_be_updated:
-            Reimbursement.objects.bulk_update(attributes_to_be_updated, fields=['state'], batch_size=50)
+            Reimbursement.objects.bulk_update(attributes_to_be_updated, fields=['state', 'updated_at'], batch_size=50)
 
 
     @staticmethod
