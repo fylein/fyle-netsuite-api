@@ -169,7 +169,6 @@ class Configuration(AutoAddCreateUpdateInfoMixin, models.Model):
         max_length=50, choices=AUTO_MAP_EMPLOYEE_CHOICES,
         help_text='Auto Map Employees type from NetSuite to Fyle', null=True
     )
-    skip_cards_mapping = models.BooleanField(default=False, help_text='Skip cards mapping')
     map_fyle_cards_netsuite_account = models.BooleanField(default=True, help_text='Map Fyle Cards to Netsuite Account')
     memo_structure = ArrayField(
         base_field=models.CharField(max_length=100), default=get_default_memo_fields,
@@ -177,7 +176,6 @@ class Configuration(AutoAddCreateUpdateInfoMixin, models.Model):
     )
     import_items = models.BooleanField(default=False, help_text='Auto import Items to Fyle')
     auto_create_destination_entity = models.BooleanField(default=False, help_text='Auto create vendor / employee')
-    is_simplify_report_closure_enabled = models.BooleanField(default=True, help_text='Simplify report closure is enbaled')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
     name_in_journal_entry = models.CharField(max_length=100, help_text='Name in jounral entry for ccc expense only', default='MERCHANT',choices=NAME_IN_JOURNAL_ENTRY)

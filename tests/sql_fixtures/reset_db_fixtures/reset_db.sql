@@ -932,7 +932,7 @@ CREATE VIEW public._direct_export_errored_expenses_view AS
                    FROM public.expense_groups_expenses
                   WHERE (expense_groups_expenses.expensegroup_id IN ( SELECT task_logs.expense_group_id
                            FROM public.task_logs
-                          WHERE (((task_logs.status)::text = ANY ((ARRAY['FAILED'::character varying, 'FATAL'::character varying])::text[])) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
+                          WHERE (((task_logs.status)::text = ANY (ARRAY[('FAILED'::character varying)::text, ('FATAL'::character varying)::text])) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
                                    FROM prod_workspace_ids))))))))
         ), errored_expenses_in_inprogress_state AS (
          SELECT count(*) AS in_progress_expenses_error_count
@@ -985,7 +985,7 @@ CREATE VIEW public._django_queue_in_progress_tasks_view AS
     COALESCE(count(*), (0)::bigint) AS count
    FROM public.task_logs
   WHERE ((task_logs.workspace_id IN ( SELECT prod_workspaces_view.id
-           FROM public.prod_workspaces_view)) AND ((task_logs.status)::text = ANY ((ARRAY['IN_PROGRESS'::character varying, 'ENQUEUED'::character varying])::text[])));
+           FROM public.prod_workspaces_view)) AND ((task_logs.status)::text = ANY (ARRAY[('IN_PROGRESS'::character varying)::text, ('ENQUEUED'::character varying)::text])));
 
 
 ALTER TABLE public._django_queue_in_progress_tasks_view OWNER TO postgres;
@@ -1019,7 +1019,7 @@ CREATE VIEW public._import_logs_fatal_failed_in_progress_tasks_view AS
     import_logs.status,
     current_database() AS database
    FROM public.import_logs
-  WHERE (((import_logs.status)::text = ANY ((ARRAY['IN_PROGRESS'::character varying, 'FATAL'::character varying, 'FAILED'::character varying])::text[])) AND (import_logs.workspace_id IN ( SELECT prod_workspaces_view.id
+  WHERE (((import_logs.status)::text = ANY (ARRAY[('IN_PROGRESS'::character varying)::text, ('FATAL'::character varying)::text, ('FAILED'::character varying)::text])) AND (import_logs.workspace_id IN ( SELECT prod_workspaces_view.id
            FROM public.prod_workspaces_view)) AND ((import_logs.error_log)::text !~~* '%Token%'::text) AND ((import_logs.error_log)::text !~~* '%tenant%'::text) AND (import_logs.updated_at < (now() - '00:45:00'::interval)))
   GROUP BY import_logs.status;
 
@@ -1322,10 +1322,8 @@ CREATE TABLE public.configurations (
     change_accounting_period boolean NOT NULL,
     memo_structure character varying(100)[] NOT NULL,
     map_fyle_cards_netsuite_account boolean NOT NULL,
-    skip_cards_mapping boolean NOT NULL,
     import_vendors_as_merchants boolean NOT NULL,
     import_netsuite_employees boolean NOT NULL,
-    is_simplify_report_closure_enabled boolean NOT NULL,
     import_items boolean NOT NULL,
     name_in_journal_entry character varying(100) NOT NULL,
     allow_intercompany_vendors boolean NOT NULL,
@@ -1523,7 +1521,7 @@ CREATE VIEW public.direct_export_errored_expenses_view AS
                    FROM public.expense_groups_expenses
                   WHERE (expense_groups_expenses.expensegroup_id IN ( SELECT task_logs.expense_group_id
                            FROM public.task_logs
-                          WHERE (((task_logs.status)::text = ANY ((ARRAY['FAILED'::character varying, 'FATAL'::character varying])::text[])) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
+                          WHERE (((task_logs.status)::text = ANY (ARRAY[('FAILED'::character varying)::text, ('FATAL'::character varying)::text])) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
                                    FROM prod_workspace_ids)) AND (task_logs.updated_at > (now() - '1 day'::interval)) AND (task_logs.updated_at < (now() - '00:45:00'::interval))))))))
         ), errored_expenses_in_inprogress_state AS (
          SELECT count(*) AS in_progress_expenses_error_count
@@ -1533,7 +1531,7 @@ CREATE VIEW public.direct_export_errored_expenses_view AS
                    FROM public.expense_groups_expenses
                   WHERE (expense_groups_expenses.expensegroup_id IN ( SELECT task_logs.expense_group_id
                            FROM public.task_logs
-                          WHERE (((task_logs.status)::text = ANY ((ARRAY['IN_PROGRESS'::character varying, 'ENQUEUED'::character varying])::text[])) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
+                          WHERE (((task_logs.status)::text = ANY (ARRAY[('IN_PROGRESS'::character varying)::text, ('ENQUEUED'::character varying)::text])) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
                                    FROM prod_workspace_ids)) AND (task_logs.updated_at > (now() - '1 day'::interval)) AND (task_logs.updated_at < (now() - '00:45:00'::interval))))))))
         ), not_synced_to_platform AS (
          SELECT count(*) AS not_synced_expenses_count
@@ -1794,7 +1792,7 @@ CREATE VIEW public.django_queue_in_progress_tasks_view AS
     COALESCE(count(*), (0)::bigint) AS count
    FROM public.task_logs
   WHERE ((task_logs.workspace_id IN ( SELECT prod_workspaces_view.id
-           FROM public.prod_workspaces_view)) AND ((task_logs.status)::text = ANY ((ARRAY['IN_PROGRESS'::character varying, 'ENQUEUED'::character varying])::text[])) AND ((task_logs.updated_at >= (now() - '24:00:00'::interval)) AND (task_logs.updated_at <= (now() - '00:30:00'::interval))));
+           FROM public.prod_workspaces_view)) AND ((task_logs.status)::text = ANY (ARRAY[('IN_PROGRESS'::character varying)::text, ('ENQUEUED'::character varying)::text])) AND ((task_logs.updated_at >= (now() - '24:00:00'::interval)) AND (task_logs.updated_at <= (now() - '00:30:00'::interval))));
 
 
 ALTER TABLE public.django_queue_in_progress_tasks_view OWNER TO postgres;
@@ -2802,7 +2800,7 @@ CREATE VIEW public.import_logs_fatal_failed_in_progress_tasks_view AS
     import_logs.status,
     current_database() AS database
    FROM public.import_logs
-  WHERE (((import_logs.status)::text = ANY ((ARRAY['IN_PROGRESS'::character varying, 'FATAL'::character varying, 'FAILED'::character varying])::text[])) AND (import_logs.workspace_id IN ( SELECT prod_workspaces_view.id
+  WHERE (((import_logs.status)::text = ANY (ARRAY[('IN_PROGRESS'::character varying)::text, ('FATAL'::character varying)::text, ('FAILED'::character varying)::text])) AND (import_logs.workspace_id IN ( SELECT prod_workspaces_view.id
            FROM public.prod_workspaces_view)) AND (import_logs.updated_at > (now() - '1 day'::interval)) AND (import_logs.updated_at < (now() - '00:45:00'::interval)) AND ((import_logs.error_log)::text !~~* '%Token%'::text) AND ((import_logs.error_log)::text !~~* '%tenant%'::text))
   GROUP BY import_logs.status;
 
@@ -3057,50 +3055,6 @@ CREATE VIEW public.product_advanced_settings_view AS
 
 
 ALTER TABLE public.product_advanced_settings_view OWNER TO postgres;
-
---
--- Name: product_export_settings_view; Type: VIEW; Schema: public; Owner: postgres
---
-
-CREATE VIEW public.product_export_settings_view AS
- SELECT w.id AS workspace_id,
-    w.name AS workspace_name,
-    w.fyle_org_id AS workspace_org_id,
-    c.reimbursable_expenses_object,
-    c.corporate_credit_card_expenses_object,
-    c.is_simplify_report_closure_enabled,
-    c.name_in_journal_entry,
-    c.employee_field_mapping,
-    c.auto_map_employees,
-    egs.reimbursable_expense_group_fields,
-        CASE
-            WHEN ((egs.reimbursable_expense_group_fields @> ARRAY['expense_id'::character varying]) OR (egs.reimbursable_expense_group_fields @> ARRAY['expense_number'::character varying])) THEN 'Expense'::text
-            ELSE 'Report'::text
-        END AS readable_reimbursable_expense_group_fields,
-    egs.corporate_credit_card_expense_group_fields,
-        CASE
-            WHEN ((egs.corporate_credit_card_expense_group_fields @> ARRAY['expense_id'::character varying]) OR (egs.corporate_credit_card_expense_group_fields @> ARRAY['expense_number'::character varying])) THEN 'Expense'::text
-            ELSE 'Report'::text
-        END AS readable_corporate_credit_card_expense_group_fields,
-    egs.reimbursable_export_date_type,
-    egs.expense_state,
-    egs.ccc_export_date_type,
-    egs.ccc_expense_state,
-    gm.accounts_payable_name,
-    gm.accounts_payable_id,
-    gm.default_ccc_account_name,
-    gm.default_ccc_account_id,
-    gm.reimbursable_account_name,
-    gm.reimbursable_account_id,
-    gm.default_ccc_vendor_name,
-    gm.default_ccc_vendor_id
-   FROM (((public.workspaces w
-     JOIN public.configurations c ON ((w.id = c.workspace_id)))
-     JOIN public.expense_group_settings egs ON ((w.id = egs.workspace_id)))
-     JOIN public.general_mappings gm ON ((w.id = gm.workspace_id)));
-
-
-ALTER TABLE public.product_export_settings_view OWNER TO postgres;
 
 --
 -- Name: product_import_settings_view; Type: VIEW; Schema: public; Owner: postgres
@@ -4153,10 +4107,10 @@ COPY public.category_mappings (id, created_at, updated_at, destination_account_i
 -- Data for Name: configurations; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.configurations (id, reimbursable_expenses_object, corporate_credit_card_expenses_object, created_at, updated_at, workspace_id, sync_fyle_to_netsuite_payments, sync_netsuite_to_fyle_payments, import_projects, auto_map_employees, import_categories, auto_create_destination_entity, auto_create_merchants, employee_field_mapping, import_tax_items, change_accounting_period, memo_structure, map_fyle_cards_netsuite_account, skip_cards_mapping, import_vendors_as_merchants, import_netsuite_employees, is_simplify_report_closure_enabled, import_items, name_in_journal_entry, allow_intercompany_vendors, je_single_credit_line, is_attachment_upload_enabled, created_by, updated_by) FROM stdin;
-1	EXPENSE REPORT	BILL	2021-11-15 08:56:07.193743+00	2021-11-15 08:56:07.193795+00	1	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f	MERCHANT	f	f	t	\N	\N
-2	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-11-16 04:18:15.836271+00	2021-11-16 04:20:09.969589+00	2	f	f	f	\N	f	f	f	EMPLOYEE	t	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f	MERCHANT	f	f	t	\N	\N
-3	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-12-03 11:04:00.194287+00	2021-12-03 11:04:00.1943+00	49	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	f	f	MERCHANT	f	f	t	\N	\N
+COPY public.configurations (id, reimbursable_expenses_object, corporate_credit_card_expenses_object, created_at, updated_at, workspace_id, sync_fyle_to_netsuite_payments, sync_netsuite_to_fyle_payments, import_projects, auto_map_employees, import_categories, auto_create_destination_entity, auto_create_merchants, employee_field_mapping, import_tax_items, change_accounting_period, memo_structure, map_fyle_cards_netsuite_account, import_vendors_as_merchants, import_netsuite_employees, import_items, name_in_journal_entry, allow_intercompany_vendors, je_single_credit_line, is_attachment_upload_enabled, created_by, updated_by) FROM stdin;
+1	EXPENSE REPORT	BILL	2021-11-15 08:56:07.193743+00	2021-11-15 08:56:07.193795+00	1	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	MERCHANT	f	f	t	\N	\N
+2	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-11-16 04:18:15.836271+00	2021-11-16 04:20:09.969589+00	2	f	f	f	\N	f	f	f	EMPLOYEE	t	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	MERCHANT	f	f	t	\N	\N
+3	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-12-03 11:04:00.194287+00	2021-12-03 11:04:00.1943+00	49	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	MERCHANT	f	f	t	\N	\N
 \.
 
 
@@ -9472,6 +9426,7 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 222	rabbitmq	0002_alter_failedevent_error_traceback	2025-03-19 16:33:28.717985+00
 223	rabbitmq	0003_alter_failedevent_created_at_and_more	2025-03-19 16:33:28.725018+00
 224	tasks	0013_tasklog_triggered_by	2025-03-19 16:33:28.736902+00
+225	workspaces	0044_remove_configuration_is_simplify_report_closure_enabled_and_more	2025-04-07 11:24:25.007571+00
 \.
 
 
@@ -13400,7 +13355,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 48, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 224, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 225, true);
 
 
 --
