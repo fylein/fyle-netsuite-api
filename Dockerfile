@@ -2,7 +2,7 @@
 FROM python:3.10-slim
 
 # install the requirements from the requirements.txt file via git
-RUN apt-get update && apt-get -y install libpq-dev gcc && apt-get install git postgresql-client -y --no-install-recommends
+RUN apt-get update && apt-get -y install libpq-dev gcc && apt-get install git postgresql-client curl -y --no-install-recommends
 
 # set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1

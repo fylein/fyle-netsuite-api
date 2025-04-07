@@ -11,6 +11,7 @@ from apps.fyle.helpers import patch_request, post_request
 from django.template.loader import render_to_string
 from django_q.models import Schedule
 from fyle_accounting_mappings.models import MappingSetting, ExpenseAttribute
+from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 from fyle_integrations_platform_connector import PlatformConnector
 from fyle_rest_auth.helpers import get_fyle_admin
 
@@ -113,11 +114,11 @@ def run_sync_schedule(workspace_id):
 
     if configuration.reimbursable_expenses_object or configuration.corporate_credit_card_expenses_object:
         create_expense_groups(
-            workspace_id=workspace_id, configuration=configuration, fund_source=fund_source, task_log=task_log
+            workspace_id=workspace_id, configuration=configuration, fund_source=fund_source, task_log=task_log, imported_from=ExpenseImportSourceEnum.BACKGROUND_SCHEDULE
         )
 
     if task_log.status == 'COMPLETE':
-        export_to_netsuite(workspace_id, 'AUTO')
+        export_to_netsuite(workspace_id, 'AUTO', triggered_by=ExpenseImportSourceEnum.BACKGROUND_SCHEDULE)
 
 def run_email_notification(workspace_id):
 
