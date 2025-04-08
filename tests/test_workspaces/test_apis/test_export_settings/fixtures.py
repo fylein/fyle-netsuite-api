@@ -3,7 +3,6 @@ data = {
         'configuration': {
             'reimbursable_expenses_object': 'EXPENSE REPORT',
             'corporate_credit_card_expenses_object': 'EXPENSE REPORT',
-            'is_simplify_report_closure_enabled': False,
             'name_in_journal_entry': 'EMPLOYEE',
             'employee_field_mapping': 'EMPLOYEE',
             'auto_map_employees': 'NAME'
@@ -51,8 +50,7 @@ data = {
     'response': {
         'configuration': {
             'reimbursable_expenses_object': 'EXPENSE REPORT',
-            'corporate_credit_card_expenses_object': 'CHARGE_CARD_TRANSACTION',        
-            'is_simplify_report_closure_enabled': False,
+            'corporate_credit_card_expenses_object': 'CHARGE_CARD_TRANSACTION',
             'name_in_journal_entry': 'EMPLOYEE',
             'employee_field_mapping': 'EMPLOYEE',
             'auto_map_employees': 'NAME'
@@ -143,7 +141,6 @@ data = {
         'configurations': {
             'reimbursable_expenses_object': 'EXPENSE REPORT',
             'corporate_credit_card_expenses_object': 'CHARGE_CARD_TRANSACTION',
-            'is_simplify_report_closure_enabled': False,
             'name_in_journal_entry': 'EMPLOYEE',
             'employee_field_mapping': 'EMPLOYEE',
             'auto_map_employees': 'NAME'
@@ -172,7 +169,6 @@ data = {
         'configurations': {
             'reimbursable_expenses_object': 'EXPENSE REPORT',
             'corporate_credit_card_expenses_object': 'CHARGE_CARD_TRANSACTION',
-            'is_simplify_report_closure_enabled': False,
             'name_in_journal_entry': 'EMPLOYEE',
             'employee_field_mapping': 'EMPLOYEE',
             'auto_map_employees': 'NAME'

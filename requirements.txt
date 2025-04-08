@@ -11,8 +11,8 @@ django-sendgrid-v5==1.2.0
 enum34==1.1.10
 future==1.0.0
 fyle==0.37.2
-fyle-accounting-mappings==1.36.3
-fyle-integrations-platform-connector==1.39.3
+fyle-accounting-mappings==1.41.1
+fyle-integrations-platform-connector==1.41.0
 fyle-rest-auth==1.7.2
 gunicorn==23.0.0
 gevent==24.11.1
@@ -36,3 +36,4 @@ Unidecode==1.1.2
 zeep==4.3.1
 django-filter==24.3
 sendgrid==6.11.0
+git+https://github.com/fylein/pgevents.git@main#egg=pgevents
