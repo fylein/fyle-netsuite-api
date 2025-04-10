@@ -9428,6 +9428,8 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 224	tasks	0013_tasklog_triggered_by	2025-03-19 16:33:28.736902+00
 225	workspaces	0044_remove_configuration_is_simplify_report_closure_enabled_and_more	2025-04-07 11:24:25.007571+00
 226	fyle	0039_expense_expenses_account_ff34f0_idx_and_more	2025-04-10 10:20:37.56375+00
+227	fyle	0040_alter_expense_imported_from	2025-04-10 16:45:00.098769+00
+228	tasks	0014_alter_tasklog_triggered_by	2025-04-10 16:45:00.110707+00
 \.
 
 
@@ -13356,7 +13358,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 48, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 226, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 228, true);
 
 
 --
