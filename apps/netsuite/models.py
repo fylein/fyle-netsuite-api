@@ -57,8 +57,6 @@ def get_department_id_or_none(expense_group: ExpenseGroup, lineitem: Expense):
                 attribute = ExpenseAttribute.objects.filter(attribute_type=department_setting.source_field, workspace_id=expense_group.workspace_id).first()
                 if attribute:
                     source_value = lineitem.custom_properties.get(attribute.display_name, None)
-        else:
-            source_value = expense_group.description[department_setting.source_field.lower()]
 
         mapping: Mapping = get_filtered_mapping(
             department_setting.source_field, 'DEPARTMENT', expense_group.workspace_id, source_value, source_id
@@ -489,8 +487,8 @@ class BillLineitem(models.Model):
 
             account, detail_type = get_category_mapping_and_detail_type(configuration, category, configuration.workspace_id)
 
-            class_id = None
-            if expense_group.fund_source == 'CCC' and general_mappings.use_employee_class:
+            class_id = get_class_id_or_none(expense_group, lineitem)
+            if not class_id and expense_group.fund_source == 'CCC' and general_mappings.use_employee_class:
                 employee_mapping = EmployeeMapping.objects.filter(
                     source_employee__value=expense_group.description.get('employee_email'),
                     workspace_id=expense_group.workspace_id
@@ -498,12 +496,9 @@ class BillLineitem(models.Model):
                 if employee_mapping and employee_mapping.destination_employee:
                     class_id = employee_mapping.destination_employee.detail.get('class_id')
 
-            if not class_id:
-                class_id = get_class_id_or_none(expense_group, lineitem)
-
             department_id = get_department_id_or_none(expense_group, lineitem)
 
-            if expense_group.fund_source == 'CCC' and general_mappings.use_employee_department and \
+            if not department_id and expense_group.fund_source == 'CCC' and general_mappings.use_employee_department and \
                 general_mappings.department_level in ('ALL', 'TRANSACTION_LINE'):
                 employee_mapping = EmployeeMapping.objects.filter(
                     source_employee__value=expense_group.description.get('employee_email'),
@@ -519,7 +514,7 @@ class BillLineitem(models.Model):
 
             location_id = get_location_id_or_none(expense_group, lineitem)
 
-            if expense_group.fund_source == 'CCC' and general_mappings.use_employee_location and\
+            if not location_id and expense_group.fund_source == 'CCC' and general_mappings.use_employee_location and\
                     general_mappings.location_level in ('ALL', 'TRANSACTION_LINE'):
                 employee_mapping = EmployeeMapping.objects.filter(
                     source_employee__value=expense_group.description.get('employee_email'),
@@ -707,21 +702,18 @@ class CreditCardChargeLineItem(models.Model):
                 workspace_id=expense_group.workspace_id
             ).first()
 
-            class_id = None
-            if expense_group.fund_source == 'CCC' and general_mappings.use_employee_class:
+            class_id = get_class_id_or_none(expense_group, lineitem)
+            if not class_id and expense_group.fund_source == 'CCC' and general_mappings.use_employee_class:
                 employee_mapping = EmployeeMapping.objects.filter(
                     source_employee__value=expense_group.description.get('employee_email'),
                     workspace_id=expense_group.workspace_id
                 ).first()
                 if employee_mapping and employee_mapping.destination_employee:
                     class_id = employee_mapping.destination_employee.detail.get('class_id')
-            
-            if not class_id:
-                class_id = get_class_id_or_none(expense_group, lineitem)
 
             department_id = get_department_id_or_none(expense_group, lineitem)
 
-            if expense_group.fund_source == 'CCC' and general_mappings.use_employee_department and \
+            if not department_id and expense_group.fund_source == 'CCC' and general_mappings.use_employee_department and \
                 general_mappings.department_level in ('ALL', 'TRANSACTION_LINE'):
                 employee_mapping = EmployeeMapping.objects.filter(
                     source_employee__value=expense_group.description.get('employee_email'),
@@ -737,7 +729,7 @@ class CreditCardChargeLineItem(models.Model):
 
             location_id = get_location_id_or_none(expense_group, lineitem)
 
-            if expense_group.fund_source == 'CCC' and general_mappings.use_employee_location and\
+            if not location_id and expense_group.fund_source == 'CCC' and general_mappings.use_employee_location and\
                         general_mappings.location_level in ('ALL', 'TRANSACTION_LINE'):
                     employee_mapping = EmployeeMapping.objects.filter(
                         source_employee__value=expense_group.description.get('employee_email'),
@@ -951,41 +943,34 @@ class ExpenseReportLineItem(models.Model):
                                                            workspace_id=expense_group.workspace_id,
                                                            attribute_type='CURRENCY').first()
 
-            class_id = None
-            department_id = None
+            class_id = get_class_id_or_none(expense_group, lineitem)
+            department_id = get_department_id_or_none(expense_group, lineitem)
 
-            if general_mappings.use_employee_class and employee_field_mapping == 'EMPLOYEE':
+            if not class_id and general_mappings.use_employee_class and employee_field_mapping == 'EMPLOYEE':
                 class_id = entity.destination_employee.detail.get('class_id')
-            
-            if not class_id:
-                class_id = get_class_id_or_none(expense_group, lineitem)
 
-            if general_mappings.use_employee_department and \
+            if not department_id and general_mappings.use_employee_department and \
                 general_mappings.department_level in ('ALL', 'TRANSACTION_LINE') and \
                     employee_field_mapping == 'EMPLOYEE':
                 if entity.destination_employee.detail.get('department_id'):
                     department_id = entity.destination_employee.detail.get('department_id')
-
-            else:
-                department_id = get_department_id_or_none(expense_group, lineitem)
-
+ 
             if not department_id:
                 if general_mappings.department_id and general_mappings.department_level in ['TRANSACTION_LINE', 'ALL']:
                     department_id = general_mappings.department_id
 
-            customer_id = get_customer_id_or_none(expense_group, lineitem)
+            location_id = get_location_id_or_none(expense_group, lineitem)
 
-            if general_mappings.use_employee_location and \
+            if not location_id and general_mappings.use_employee_location and \
                 general_mappings.location_level in ('ALL', 'TRANSACTION_LINE') and \
                     employee_field_mapping == 'EMPLOYEE':
-                location_id = entity.destination_employee.detail.get('location_id')
-            else:
-                location_id = get_location_id_or_none(expense_group, lineitem)
+                location_id = entity.destination_employee.detail.get('location_id')     
 
             if not location_id:
                 if general_mappings.location_id and general_mappings.location_level in ['TRANSACTION_LINE', 'ALL']:
                     location_id = general_mappings.location_id
 
+            customer_id = get_customer_id_or_none(expense_group, lineitem)
             custom_segments = get_custom_segments(expense_group, lineitem)
 
             billable = lineitem.billable
@@ -1180,36 +1165,25 @@ class JournalEntryLineItem(models.Model):
                 workspace_id=expense_group.workspace_id
             ).first()
 
-            class_id = None
-            department_id = None
+            class_id = get_class_id_or_none(expense_group, lineitem)
+            department_id = get_department_id_or_none(expense_group, lineitem)
+            location_id = get_location_id_or_none(expense_group, lineitem)
 
-            if general_mappings.use_employee_class and employee_field_mapping == 'EMPLOYEE' and employee_mapping and employee_mapping.destination_employee:
+            if not class_id and general_mappings.use_employee_class and employee_field_mapping == 'EMPLOYEE' and employee_mapping and employee_mapping.destination_employee:
                 class_id = employee_mapping.destination_employee.detail.get('class_id')
             
-            if not class_id:
-                class_id = get_class_id_or_none(expense_group, lineitem)
-
-            if expense_group.fund_source == 'CCC':
-                department_id = get_department_id_or_none(expense_group, lineitem)
-                location_id = get_location_id_or_none(expense_group, lineitem)
-            
-            if general_mappings.use_employee_department and general_mappings.department_level in ('ALL', 'TRANSACTION_LINE') \
-                and employee_field_mapping == 'EMPLOYEE'and employee_mapping and employee_mapping.destination_employee:    
+            if not department_id and general_mappings.use_employee_department and general_mappings.department_level in ('ALL', 'TRANSACTION_LINE') \
+                and employee_field_mapping == 'EMPLOYEE'and employee_mapping and employee_mapping.destination_employee:  
                 if employee_mapping.destination_employee.detail.get('department_id'):
                     department_id = employee_mapping.destination_employee.detail.get('department_id')
-
-            elif expense_group.fund_source == 'PERSONAL':
-                department_id = get_department_id_or_none(expense_group, lineitem)
             
             if not department_id:
                 if general_mappings.department_id and general_mappings.department_level in ['TRANSACTION_LINE', 'ALL']:
                     department_id = general_mappings.department_id
             
-            if  general_mappings.use_employee_location and general_mappings.location_level in ('ALL', 'TRANSACTION_LINE')\
+            if not location_id and general_mappings.use_employee_location and general_mappings.location_level in ('ALL', 'TRANSACTION_LINE')\
                 and employee_field_mapping == 'EMPLOYEE'and employee_mapping and employee_mapping.destination_employee:
                 location_id = employee_mapping.destination_employee.detail.get('location_id')
-            elif expense_group.fund_source == 'PERSONAL':
-                location_id = get_location_id_or_none(expense_group, lineitem)
 
             if not location_id and general_mappings.location_id:
                 location_id = general_mappings.location_id

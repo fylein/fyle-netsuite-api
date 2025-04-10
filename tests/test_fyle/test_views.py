@@ -331,7 +331,6 @@ def test_expense_filters(api_client, access_token):
    )
    
    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
-
    response = api_client.post(url,data=data['expense_filter_1'])
    assert response.status_code == 201
    response = json.loads(response.content)
