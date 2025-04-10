@@ -26,6 +26,7 @@ Django Rest Framework API for Fyle Netsuite Integration.
         ```bash
         enter netsuite-api
         ```
+        
     4. **Generate a migration file** using the provided convenient command:
         ```bash
         python3 manage.py create_sql_migration <file-path1>
