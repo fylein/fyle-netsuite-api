@@ -135,6 +135,10 @@ class Expense(models.Model):
 
     class Meta:
         db_table = 'expenses'
+        indexes = [
+            models.Index(fields=['accounting_export_summary']),
+            models.Index(fields=['fund_source'])
+        ]
 
     @staticmethod
     def create_expense_objects(expenses: List[Dict], workspace_id, skip_update: bool = False, imported_from: ExpenseImportSourceEnum = None):
