@@ -1926,3 +1926,155 @@ def test_skipping_vendor_payment(mocker, db):
 
     assert task_log.updated_at == updated_at
 
+
+def test_get_or_create_error_with_expense_group_create_new(db):
+    """
+    Test creating a new error record
+    """
+    workspace_id = 1
+    expense_group = ExpenseGroup.objects.get(id=1)
+
+    expense_attribute = ExpenseAttribute.objects.create(
+        workspace_id=workspace_id,
+        attribute_type='EMPLOYEE',
+        display_name='Employee',
+        value='john.doe@fyle.in',
+        source_id='test123'
+    )
+
+    error, created = Error.get_or_create_error_with_expense_group(
+        expense_group,
+        expense_attribute
+    )
+
+    assert created == True
+    assert error.workspace_id == workspace_id
+    assert error.type == 'EMPLOYEE_MAPPING'
+    assert error.error_title == 'john.doe@fyle.in'
+    assert error.error_detail == 'Employee mapping is missing'
+    assert error.is_resolved == False
+    assert error.mapping_error_expense_group_ids == [expense_group.id]
+
+
+def test_get_or_create_error_with_expense_group_update_existing(db):
+    """
+    Test updating an existing error record with new expense group ID
+    """
+    workspace_id = 1
+    expense_group = ExpenseGroup.objects.get(id=1)
+
+    expense_attribute = ExpenseAttribute.objects.create(
+        workspace_id=workspace_id,
+        attribute_type='EMPLOYEE',
+        display_name='Employee',
+        value='john.doe@fyle.in',
+        source_id='test123'
+    )
+
+    # Create initial error
+    error1, created1 = Error.get_or_create_error_with_expense_group(
+        expense_group,
+        expense_attribute
+    )
+
+    # Get another expense group
+    expense_group2 = ExpenseGroup.objects.get(id=2)
+
+    # Try to create error with same attribute but different expense group
+    error2, created2 = Error.get_or_create_error_with_expense_group(
+        expense_group2,
+        expense_attribute
+    )
+
+    assert created2 == False
+    assert error2.id == error1.id
+    assert set(error2.mapping_error_expense_group_ids) == {expense_group.id, expense_group2.id}
+
+
+def test_get_or_create_error_with_expense_group_category_mapping(db):
+    """
+    Test creating category mapping error
+    """
+    workspace_id = 1
+    expense_group = ExpenseGroup.objects.get(id=1)
+
+    category_attribute = ExpenseAttribute.objects.create(
+        workspace_id=workspace_id,
+        attribute_type='CATEGORY',
+        display_name='Category',
+        value='Travel Test',
+        source_id='test456'
+    )
+
+    error, created = Error.get_or_create_error_with_expense_group(
+        expense_group,
+        category_attribute
+    )
+
+    assert created == True
+    assert error.type == 'CATEGORY_MAPPING'
+    assert error.error_title == 'Travel Test'
+    assert error.error_detail == 'Category mapping is missing'
+    assert error.mapping_error_expense_group_ids == [expense_group.id]
+
+
+def test_get_or_create_error_with_expense_group_duplicate_expense_group(db):
+    """
+    Test that adding same expense group ID twice doesn't create duplicate
+    """
+    workspace_id = 1
+    expense_group = ExpenseGroup.objects.get(id=1)
+
+    expense_attribute = ExpenseAttribute.objects.create(
+        workspace_id=workspace_id,
+        attribute_type='EMPLOYEE',
+        display_name='Employee',
+        value='john.doe@fyle.in',
+        source_id='test123'
+    )
+
+    # Create initial error
+    error1, _ = Error.get_or_create_error_with_expense_group(
+        expense_group,
+        expense_attribute
+    )
+
+    # Try to add same expense group again
+    error2, created2 = Error.get_or_create_error_with_expense_group(
+        expense_group,
+        expense_attribute
+    )
+
+    assert created2 == False
+    assert error2.id == error1.id
+    assert len(error2.mapping_error_expense_group_ids) == 1
+    assert error2.mapping_error_expense_group_ids == [expense_group.id]
+
+
+def test_get_or_create_error_with_expense_group_tax_mapping(db):
+    """
+    Test creating tax mapping error
+    """
+    workspace_id = 1
+    expense_group = ExpenseGroup.objects.get(id=1)
+
+    tax_attribute = ExpenseAttribute.objects.create(
+        workspace_id=workspace_id,
+        attribute_type='TAX_GROUP',
+        value='GST 10%',
+        source_id='test789',
+        display_name='Tax Group'
+    )
+
+    error, created = Error.get_or_create_error_with_expense_group(
+        expense_group,
+        tax_attribute
+    )
+
+    assert created == True
+    assert error.type == 'TAX_MAPPING'
+    assert error.error_title == 'GST 10%'
+    assert error.error_detail == 'Tax Group mapping is missing'
+    assert error.mapping_error_expense_group_ids == [expense_group.id]
+    assert error.workspace_id == workspace_id
+    assert error.is_resolved == False
