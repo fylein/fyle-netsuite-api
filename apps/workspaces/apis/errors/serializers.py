@@ -38,4 +38,5 @@ class ErrorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Error
-        fields = '__all__'
+        exclude = ['mapping_error_expense_group_ids']
+

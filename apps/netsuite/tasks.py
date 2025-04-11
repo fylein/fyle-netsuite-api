@@ -922,18 +922,8 @@ def __validate_tax_group_mapping(expense_group: ExpenseGroup, configuration: Con
                 })
 
                 if tax_group:
-                    error, _ = Error.objects.update_or_create(
-                        workspace_id=tax_group.workspace_id,
-                        expense_attribute=tax_group,
-                        defaults={
-                            'type': 'TAX_MAPPING',
-                            'error_title': tax_group.value,
-                            'error_detail': 'Tax mapping is missing',
-                            'is_resolved': False
-                        }
-                    )
-
-                    error.increase_repetition_count_by_one()
+                    error, created = Error.get_or_create_error_with_expense_group(expense_group, tax_group)
+                    error.increase_repetition_count_by_one(created)
 
         row = row + 1
 
@@ -1013,17 +1003,8 @@ def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Conf
             })
 
             if employee:
-                error, _ = Error.objects.update_or_create(
-                    workspace_id=expense_group.workspace_id,
-                    expense_attribute=employee,
-                    defaults={
-                        'type': 'EMPLOYEE_MAPPING',
-                        'error_title': employee.value,
-                        'error_detail': 'Employee mapping is missing',
-                        'is_resolved': False
-                    }
-                )
-                error.increase_repetition_count_by_one()
+                error, created = Error.get_or_create_error_with_expense_group(expense_group, employee)
+                error.increase_repetition_count_by_one(created)
 
     return bulk_errors
 
@@ -1070,17 +1051,8 @@ def __validate_category_mapping(expense_group: ExpenseGroup, configuration: Conf
             })
 
             if category_attribute:
-                error, _ = Error.objects.update_or_create(
-                    workspace_id=expense_group.workspace_id,
-                    expense_attribute=category_attribute,
-                    defaults={
-                        'type': 'CATEGORY_MAPPING',
-                        'error_title': category_attribute.value,
-                        'error_detail': 'Category mapping is missing',
-                        'is_resolved': False
-                    }
-                )
-                error.increase_repetition_count_by_one()
+                error, created = Error.get_or_create_error_with_expense_group(expense_group, category_attribute)
+                error.increase_repetition_count_by_one(created)
 
         row = row + 1
 
