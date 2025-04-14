@@ -425,9 +425,9 @@ class ExpenseGroupSyncView(generics.CreateAPIView):
         """
         Post expense groups creation
         """
-        task_log, fund_source, configuration = get_task_log_and_fund_source(kwargs['workspace_id'])
+        task_log, fund_source = get_task_log_and_fund_source(kwargs['workspace_id'])
 
-        create_expense_groups(kwargs['workspace_id'], configuration ,fund_source, task_log, ExpenseImportSourceEnum.DASHBOARD_SYNC)
+        create_expense_groups(kwargs['workspace_id'],fund_source, task_log, ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
         return Response(
             status=status.HTTP_200_OK
