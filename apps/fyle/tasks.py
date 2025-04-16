@@ -170,9 +170,12 @@ def group_expenses_and_save(expenses: List[Dict], task_log: TaskLog, workspace: 
         expenses_object_ids = [expense_object.id for expense_object in expense_objects]
         final_query = construct_expense_filter_query(expense_filters)
 
-        mark_expenses_as_skipped(final_query, expenses_object_ids, workspace)
-        skipped_expense_ids = mark_expenses_as_skipped(final_query, expenses_object_ids, workspace)
-        post_accounting_export_summary(workspace.id, skipped_expense_ids)
+        skipped_expenses = mark_expenses_as_skipped(final_query, expenses_object_ids, workspace)
+        if skipped_expenses:
+            try:
+                post_accounting_export_summary(workspace_id=workspace.id, expense_ids=[expense.id for expense in skipped_expenses])
+            except Exception:
+                logger.exception('Error posting accounting export summary for workspace_id: %s', workspace.id)
 
         filtered_expenses = Expense.objects.filter(
             is_skipped=False,
