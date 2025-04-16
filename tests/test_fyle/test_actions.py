@@ -77,7 +77,7 @@ def test_create_generator_and_post_in_batches(db):
     fyle_credentails = FyleCredential.objects.get(workspace_id=1)
     platform = PlatformConnector(fyle_credentails)
 
-    with mock.patch('fyle.platform.apis.v1beta.admin.Expenses.post_bulk_accounting_export_summary') as mock_call:
+    with mock.patch('fyle.platform.apis.v1.admin.Expenses.post_bulk_accounting_export_summary') as mock_call:
         mock_call.side_effect = RetryException('Timeout')
         try:
             create_generator_and_post_in_batches([{
@@ -100,7 +100,7 @@ def test_handle_post_accounting_export_summary_exception(db):
 
     expense_id = expense.expense_id
 
-    with mock.patch('fyle.platform.apis.v1beta.admin.Expenses.post_bulk_accounting_export_summary') as mock_call:
+    with mock.patch('fyle.platform.apis.v1.admin.Expenses.post_bulk_accounting_export_summary') as mock_call:
         mock_call.side_effect = WrongParamsError('Some of the parameters are wrong', {
             'data': [
                 {
@@ -147,7 +147,7 @@ def test_bulk_post_accounting_export_summary(db):
     fyle_credentails = FyleCredential.objects.get(workspace_id=1)
     platform = PlatformConnector(fyle_credentails)
 
-    with mock.patch('fyle.platform.apis.v1beta.admin.Expenses.post_bulk_accounting_export_summary') as mock_call:
+    with mock.patch('fyle.platform.apis.v1.admin.Expenses.post_bulk_accounting_export_summary') as mock_call:
         mock_call.side_effect = InternalServerError('Timeout')
         try:
             bulk_post_accounting_export_summary(platform, {})

@@ -30,14 +30,14 @@ def access_token(db):
     final_access_token = get_access_token(refresh_token=refresh_token)
 
     fyle = Platform(
-        server_url="https://staging.fyle.tech/platform/v1beta",
+        server_url="https://staging.fyle.tech/platform/v1",
         token_url=token_url,
         refresh_token=refresh_token,
         client_id=client_id,
         client_secret=client_secret
     )
 
-    user_profile = fyle.v1beta.spender.my_profile.get()['data']['user']
+    user_profile = fyle.v1.spender.my_profile.get()['data']['user']
     user = User(
         password='', last_login=datetime.now(tz=timezone.utc), id=1, email=user_profile['email'],
         user_id=user_profile['id'], full_name='', active='t', staff='f', admin='t'
@@ -108,7 +108,7 @@ def default_session_fixture(request):
     patched_4.__enter__()
 
     patched_5 = mock.patch(
-        'fyle.platform.apis.v1beta.spender.MyProfile.get',
+        'fyle.platform.apis.v1.spender.MyProfile.get',
         return_value=fyle_data['get_my_profile']
     )
     patched_5.__enter__()
