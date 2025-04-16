@@ -8,7 +8,7 @@ from .fixtures import data
 @pytest.mark.django_db()
 def test_sync_tax_groups(access_token, mocker, db):
     mocker.patch(
-      'fyle.platform.apis.v1beta.admin.TaxGroups.list_all',
+      'fyle.platform.apis.v1.admin.TaxGroups.list_all',
       return_value=data['get_all_tax_groups']
    )
     fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=1)

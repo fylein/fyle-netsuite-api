@@ -104,7 +104,7 @@ def test_async_auto_map_employees(mocker, db):
     )
 
     mocker.patch(
-        'fyle.platform.apis.v1beta.admin.Employees.list_all',
+        'fyle.platform.apis.v1.admin.Employees.list_all',
         return_value=fyle_data['get_all_employees']
     )
 
@@ -139,7 +139,7 @@ def test_schedule_auto_map_employees(mocker, db):
     )
 
     mocker.patch(
-        'fyle.platform.apis.v1beta.admin.Employees.list_all',
+        'fyle.platform.apis.v1.admin.Employees.list_all',
         return_value=fyle_data['get_all_employees']
     )
 
@@ -186,7 +186,7 @@ def test_schedule_auto_map_ccc_employees(db, mocker):
     configuration.save()
 
     mocker.patch(
-        'fyle.platform.apis.v1beta.admin.Employees.list_all',
+        'fyle.platform.apis.v1.admin.Employees.list_all',
         return_value=fyle_data['get_all_employees']
     )
 
@@ -234,7 +234,7 @@ def test_schedule_auto_map_ccc_employees(db, mocker):
 @pytest.mark.django_db
 def test_async_auto_map_ccc_account(db, mocker):
     mock_call = mocker.patch(
-        'fyle.platform.apis.v1beta.admin.Employees.list_all',
+        'fyle.platform.apis.v1.admin.Employees.list_all',
         return_value=fyle_data['get_all_employees']
     )
 
@@ -290,7 +290,7 @@ def test_auto_create_netsuite_employees_on_fyle(db, mocker):
         return_value=netsuite_data['get_all_employees'][0][0]
     )
     mocker.patch(
-        'fyle.platform.apis.v1beta.admin.Departments.list_all',
+        'fyle.platform.apis.v1.admin.Departments.list_all',
         return_value=netsuite_data['get_departments']
     )
     mocker.patch(
@@ -302,7 +302,7 @@ def test_auto_create_netsuite_employees_on_fyle(db, mocker):
         return_value=[]
     )
     mocker.patch(
-      'fyle.platform.apis.v1beta.admin.Employees.invite_bulk',
+      'fyle.platform.apis.v1.admin.Employees.invite_bulk',
       return_value=fyle_data['get_all_employees']
    )
 
