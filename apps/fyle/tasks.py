@@ -335,7 +335,7 @@ def re_run_skip_export_rule(workspace: Workspace) -> None:
                     expense_group.delete()
 
             last_export_detail = LastExportDetail.objects.filter(workspace_id=workspace.id, failed_expense_groups_count__gt=0).first()
-            if last_export_detail and deleted_failed_expense_groups_count > 0:
+            if last_export_detail:
                 last_export_detail.failed_expense_groups_count = max(
                     0,
                     last_export_detail.failed_expense_groups_count - deleted_failed_expense_groups_count
