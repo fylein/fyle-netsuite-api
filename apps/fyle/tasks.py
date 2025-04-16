@@ -323,7 +323,7 @@ def re_run_skip_export_rule(workspace: Workspace) -> None:
                     type__in=['NETSUITE_ERROR']
                 ).first()
                 if error:
-                    logger.info('Deleting QBO error for expense group %s before export', expense_group.id)
+                    logger.info('Deleting Netsuite error for expense group %s before export', expense_group.id)
                     error.delete()
 
                 expense_group.expenses.remove(*skipped_expenses)
