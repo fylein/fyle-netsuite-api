@@ -307,8 +307,15 @@ def re_run_skip_export_rule(workspace: Workspace) -> None:
             workspace
         )
         if skipped_expenses:
-            expense_groups = ExpenseGroup.objects.filter(exported_at__isnull=True, workspace_id=workspace.id)
+            # Get all expense groups that contain any of the skipped expenses
+            expense_groups = ExpenseGroup.objects.filter(
+                exported_at__isnull=True,
+                workspace_id=workspace.id,
+                expenses__in=skipped_expenses)
+            
             deleted_failed_expense_groups_count = 0
+            deleted_total_expense_groups_count = 0
+
             for expense_group in expense_groups:
                 task_log = TaskLog.objects.filter(
                     workspace_id=workspace.id,
@@ -333,8 +340,9 @@ def re_run_skip_export_rule(workspace: Workspace) -> None:
                 if not expense_group.expenses.exists():
                     logger.info('Deleting empty expense group %s before export', expense_group.id)
                     expense_group.delete()
+                    deleted_total_expense_groups_count += 1
 
-            last_export_detail = LastExportDetail.objects.filter(workspace_id=workspace.id, failed_expense_groups_count__gt=0).first()
+            last_export_detail = LastExportDetail.objects.filter(workspace_id=workspace.id).first()
             if last_export_detail:
                 last_export_detail.failed_expense_groups_count = max(
                     0,
@@ -342,6 +350,6 @@ def re_run_skip_export_rule(workspace: Workspace) -> None:
                 )
                 last_export_detail.total_expense_groups_count = max(
                     0,
-                    last_export_detail.total_expense_groups_count - deleted_failed_expense_groups_count
+                    last_export_detail.total_expense_groups_count - deleted_total_expense_groups_count
                 )
                 last_export_detail.save()
