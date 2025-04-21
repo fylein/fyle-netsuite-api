@@ -1021,7 +1021,7 @@ def test_process_reimbursements(db, mocker, add_fyle_credentials):
     )
 
     mocker.patch(
-        'fyle.platform.apis.v1beta.admin.Reimbursements.list_all',
+        'fyle.platform.apis.v1.admin.Reimbursements.list_all',
         return_value=data['list_reimbursements']
     )
 
@@ -1050,7 +1050,7 @@ def test_process_reimbursements_exception(db, mocker, add_fyle_credentials):
         return_value=data['list_reimbursements'],
     )
     mocker.patch(
-        'fyle.platform.apis.v1beta.admin.Reimbursements.list_all',
+        'fyle.platform.apis.v1.admin.Reimbursements.list_all',
         return_value=data['list_reimbursements']
     )
     expenses = Expense.objects.get(id=1)
