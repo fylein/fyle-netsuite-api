@@ -31,7 +31,7 @@ def update_last_export_details(workspace_id):
     last_export_detail.save()
     patch_integration_settings(workspace_id, errors=failed_exports)
     try:
-        post_accounting_export_summary(workspace_id)
+        post_accounting_export_summary(workspace_id=workspace_id)
     except Exception as e:
         logger.error(f"Error posting accounting export summary: {e} for workspace id {workspace_id}")
 

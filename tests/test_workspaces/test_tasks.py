@@ -118,7 +118,7 @@ def test_async_update_workspace_name(mocker):
 
 def test_async_create_admin_subcriptions(db, mocker):
     mocker.patch(
-        'fyle.platform.apis.v1beta.admin.Subscriptions.post',
+        'fyle.platform.apis.v1.admin.Subscriptions.post',
         return_value={}
     )
     async_create_admin_subcriptions(1)

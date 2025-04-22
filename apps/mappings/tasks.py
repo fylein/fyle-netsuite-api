@@ -262,7 +262,7 @@ def create_fyle_employee_payload(platform_connection: PlatformConnector, employe
     Get all departments and create department mapping dictionary
     """
     existing_departments: Dict = {}
-    departments_generator = platform_connection.connection.v1beta.admin.departments.list_all(query_params={
+    departments_generator = platform_connection.connection.v1.admin.departments.list_all(query_params={
         'order': 'id.desc'
     })
     for response in departments_generator:
@@ -353,13 +353,13 @@ def post_employees(platform_connection: PlatformConnector, workspace_id: int):
             platform_connection.departments.post(department)
 
     if fyle_employee_payload:
-        platform_connection.connection.v1beta.admin.employees.invite_bulk({'data': fyle_employee_payload})
+        platform_connection.connection.v1.admin.employees.invite_bulk({'data': fyle_employee_payload})
 
         workspace.employee_exported_at = datetime.now()
         workspace.save()
 
     if employee_approver_payload:
-        platform_connection.connection.v1beta.admin.employees.invite_bulk({'data': employee_approver_payload})
+        platform_connection.connection.v1.admin.employees.invite_bulk({'data': employee_approver_payload})
 
         workspace.employee_exported_at = datetime.now()
         workspace.save()
