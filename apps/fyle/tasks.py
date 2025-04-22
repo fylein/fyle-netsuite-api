@@ -293,12 +293,9 @@ def re_run_skip_export_rule(workspace: Workspace) -> None:
         filtered_expense_query = construct_expense_filter_query(expense_filters)
         # Get all expenses matching the filter query, excluding those in COMPLETE state
         expenses = Expense.objects.filter(
-            filtered_expense_query,
-            workspace_id=workspace.id,
-            is_skipped=False
-        ).exclude(
-            ~Q(accounting_export_summary={}),
-            accounting_export_summary__state='COMPLETE'
+            filtered_expense_query, workspace_id=workspace.id, is_skipped=False
+        ).filter(
+            Q(accounting_export_summary={}) | ~Q(accounting_export_summary__state="COMPLETE")
         )
         expense_ids = list(expenses.values_list('id', flat=True))
         skipped_expenses = mark_expenses_as_skipped(
@@ -312,7 +309,7 @@ def re_run_skip_export_rule(workspace: Workspace) -> None:
                 exported_at__isnull=True,
                 workspace_id=workspace.id,
                 expenses__in=skipped_expenses)
-            
+
             deleted_failed_expense_groups_count = 0
             deleted_total_expense_groups_count = 0
 
