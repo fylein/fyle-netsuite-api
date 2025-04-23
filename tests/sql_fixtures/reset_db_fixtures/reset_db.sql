@@ -1925,7 +1925,10 @@ CREATE TABLE public.expense_attributes_deletion_cache (
     id integer NOT NULL,
     category_ids character varying(255)[] NOT NULL,
     project_ids character varying(255)[] NOT NULL,
-    workspace_id integer NOT NULL
+    workspace_id integer NOT NULL,
+    cost_center_ids character varying(255)[] NOT NULL,
+    custom_field_list jsonb NOT NULL,
+    merchant_list character varying(255)[] NOT NULL
 );
 
 
@@ -9430,6 +9433,7 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 226	fyle	0039_expense_expenses_account_ff34f0_idx_and_more	2025-04-10 10:20:37.56375+00
 227	fyle	0040_alter_expense_imported_from	2025-04-10 16:45:00.098769+00
 228	tasks	0014_alter_tasklog_triggered_by	2025-04-10 16:45:00.110707+00
+229	fyle_accounting_mappings	0029_expenseattributesdeletioncache_cost_center_ids_and_more	2025-04-23 15:16:59.961373+00
 \.
 
 
@@ -12993,7 +12997,7 @@ COPY public.expense_attributes (id, attribute_type, display_name, value, source_
 -- Data for Name: expense_attributes_deletion_cache; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.expense_attributes_deletion_cache (id, category_ids, project_ids, workspace_id) FROM stdin;
+COPY public.expense_attributes_deletion_cache (id, category_ids, project_ids, workspace_id, cost_center_ids, custom_field_list, merchant_list) FROM stdin;
 \.
 
 
@@ -13358,7 +13362,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 48, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 228, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 229, true);
 
 
 --
