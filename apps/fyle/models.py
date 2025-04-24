@@ -212,7 +212,7 @@ class Expense(models.Model):
                     update_fields=['imported_from']
                 )
 
-            if not ExpenseGroup.objects.filter(expenses__id=expense_object.id).first():
+            if not ExpenseGroup.objects.filter(expenses__id=expense_object.id, expenses__is_skipped=False).first():
                 expense_objects.append(expense_object)
 
         return expense_objects
