@@ -149,6 +149,7 @@ class Expense(models.Model):
         expense_objects = []
 
         for expense in expenses:
+            print("expense", expense)
             for custom_property_field in expense['custom_properties']:
                 if expense['custom_properties'][custom_property_field] == '':
                     expense['custom_properties'][custom_property_field] = None
@@ -211,8 +212,8 @@ class Expense(models.Model):
                 expense_object.save(
                     update_fields=['imported_from']
                 )
-
-            if not ExpenseGroup.objects.filter(expenses__id=expense_object.id, expenses__is_skipped=False).first():
+            
+            if (not expense_object.is_skipped and not ExpenseGroup.objects.filter(expenses__id=expense_object.id).first()):
                 expense_objects.append(expense_object)
 
         return expense_objects
