@@ -352,7 +352,7 @@ def test_expense_filters(api_client, access_token):
    url = reverse('expense-filters-delete',
                  kwargs={
                      'workspace_id': 1,
-                     'pk': 2
+                     'pk': response['results'][0]['id']
                  })
 
    response = api_client.delete(url)
