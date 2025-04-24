@@ -10,7 +10,7 @@ from fyle.platform.internals.decorators import retry
 from fyle.platform.exceptions import InternalServerError, RetryException
 
 from apps.fyle.models import Expense
-from apps.workspaces.models import Workspace, FyleCredential
+from apps.workspaces.models import Workspace, FyleCredential, Configuration
 from apps.fyle.helpers import get_updated_accounting_export_summary, get_batched_expenses
 
 
@@ -270,6 +270,9 @@ def post_accounting_export_summary(workspace_id: int, expense_ids: List = None, 
     :param fund_source: fund source
     :return: None
     """
+    configuration = Configuration.objects.get(workspace_id=workspace_id)
+    if configuration.skip_accounting_export_summary_post:
+        return
     # Iterate through all expenses which are not synced and post accounting export summary to Fyle in batches
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
     platform = PlatformConnector(fyle_credentials)
