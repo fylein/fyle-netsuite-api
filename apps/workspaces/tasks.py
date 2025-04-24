@@ -114,7 +114,7 @@ def run_sync_schedule(workspace_id):
 
     if configuration.reimbursable_expenses_object or configuration.corporate_credit_card_expenses_object:
         create_expense_groups(
-            workspace_id=workspace_id, configuration=configuration, fund_source=fund_source, task_log=task_log, imported_from=ExpenseImportSourceEnum.BACKGROUND_SCHEDULE
+            workspace_id=workspace_id, fund_source=fund_source, task_log=task_log, imported_from=ExpenseImportSourceEnum.BACKGROUND_SCHEDULE
         )
 
     if task_log.status == 'COMPLETE':

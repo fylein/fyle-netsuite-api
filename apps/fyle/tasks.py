@@ -53,7 +53,7 @@ def get_task_log_and_fund_source(workspace_id: int):
     if configuration.corporate_credit_card_expenses_object:
         fund_source.append('CCC')
 
-    return task_log, fund_source, configuration
+    return task_log, fund_source
 
 def schedule_expense_group_creation(workspace_id: int):
     """
@@ -62,12 +62,12 @@ def schedule_expense_group_creation(workspace_id: int):
     :param user: User email
     :return: None
     """
-    task_log, fund_source, configuration = get_task_log_and_fund_source(workspace_id)
+    task_log, fund_source = get_task_log_and_fund_source(workspace_id)
 
-    async_task('apps.fyle.tasks.create_expense_groups', workspace_id, configuration, fund_source, task_log)
+    async_task('apps.fyle.tasks.create_expense_groups', workspace_id, fund_source, task_log)
 
 
-def create_expense_groups(workspace_id: int, configuration: Configuration, fund_source: List[str], task_log: TaskLog, imported_from: ExpenseImportSourceEnum):
+def create_expense_groups(workspace_id: int, fund_source: List[str], task_log: TaskLog, imported_from: ExpenseImportSourceEnum):
     """
     Create expense groups
     :param task_log: Task log object
@@ -124,25 +124,7 @@ def create_expense_groups(workspace_id: int, configuration: Configuration, fund_
 
             workspace.save()
 
-            expense_objects = Expense.create_expense_objects(expenses, workspace_id, imported_from=imported_from)
-            expense_filters = ExpenseFilter.objects.filter(workspace_id=workspace_id).order_by('rank')
-
-            if expense_filters:
-                expenses_object_ids = [expense_object.id for expense_object in expense_objects]
-                final_query = construct_expense_filter_query(expense_filters)
-                Expense.objects.filter(final_query, id__in=expenses_object_ids, expensegroup__isnull=True, org_id=workspace.fyle_org_id).update(is_skipped=True, updated_at=datetime.now(timezone.utc))
-                filtered_expenses = Expense.objects.filter(is_skipped=False, id__in=expenses_object_ids, expensegroup__isnull=True, org_id=workspace.fyle_org_id)
-            else:
-                filtered_expenses = expense_objects
-
-            ExpenseGroup.create_expense_groups_by_report_id_fund_source(
-                filtered_expenses, configuration, workspace_id
-            )
-
-            task_log.status = 'COMPLETE'
-            task_log.detail = None
-
-            task_log.save()
+            group_expenses_and_save(expenses, task_log, workspace, imported_from=imported_from)
 
     except (FyleCredential.DoesNotExist, InvalidTokenError):
         logger.info('Fyle credentials not found / Invalid token %s', workspace_id)
@@ -189,7 +171,7 @@ def group_expenses_and_save(expenses: List[Dict], task_log: TaskLog, workspace: 
 
         mark_expenses_as_skipped(final_query, expenses_object_ids, workspace)
         skipped_expense_ids = mark_expenses_as_skipped(final_query, expenses_object_ids, workspace)
-        post_accounting_export_summary(workspace.id, skipped_expense_ids)
+        post_accounting_export_summary(workspace_id=workspace.id, expense_ids=skipped_expense_ids)
 
         filtered_expenses = Expense.objects.filter(
             is_skipped=False,

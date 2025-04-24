@@ -93,7 +93,7 @@ def update_expense_and_post_summary(in_progress_expenses: List[Expense], workspa
     :return: None
     """
     update_expenses_in_progress(in_progress_expenses)
-    post_accounting_export_summary(workspace_id, [expense.id for expense in in_progress_expenses], fund_source)
+    post_accounting_export_summary(workspace_id=workspace_id, expense_ids=[expense.id for expense in in_progress_expenses], fund_source=fund_source)
 
 
 def load_attachments(netsuite_connection: NetSuiteConnector, expense: Expense, expense_group: ExpenseGroup, credit_card_charge_object: CreditCardCharge):
@@ -517,7 +517,7 @@ def create_bill(expense_group: ExpenseGroup, task_log_id, last_export, is_auto_e
 
     try:
         update_complete_expenses(expense_group.expenses.all(), expense_group.export_url)
-        post_accounting_export_summary(expense_group.workspace.id, [expense.id for expense in expense_group.expenses.all()], expense_group.fund_source)
+        post_accounting_export_summary(workspace_id=expense_group.workspace.id, expense_ids=[expense.id for expense in expense_group.expenses.all()], fund_source=expense_group.fund_source)
     except Exception as e:
         logger.error('Error while updating expenses for expense_group_id: %s and posting accounting export summary %s', expense_group.id, e)
 
@@ -618,7 +618,7 @@ def create_credit_card_charge(expense_group, task_log_id, last_export, is_auto_e
 
     try:
         update_complete_expenses(expense_group.expenses.all(), expense_group.export_url)
-        post_accounting_export_summary(expense_group.workspace.id, [expense.id for expense in expense_group.expenses.all()], expense_group.fund_source)
+        post_accounting_export_summary(workspace_id=expense_group.workspace.id, expense_ids=[expense.id for expense in expense_group.expenses.all()], fund_source=expense_group.fund_source)
     except Exception as e:
         logger.error('Error while updating expenses for expense_group_id: %s and posting accounting export summary %s', expense_group.id, e)
 
@@ -692,7 +692,7 @@ def create_expense_report(expense_group, task_log_id, last_export, is_auto_expor
 
     try:
         update_complete_expenses(expense_group.expenses.all(), expense_group.export_url)
-        post_accounting_export_summary(expense_group.workspace.id, [expense.id for expense in expense_group.expenses.all()], expense_group.fund_source)
+        post_accounting_export_summary(workspace_id=expense_group.workspace.id, expense_ids=[expense.id for expense in expense_group.expenses.all()], fund_source=expense_group.fund_source)
     except Exception as e:
         logger.error('Error while updating expenses for expense_group_id: %s and posting accounting export summary %s', expense_group.id, e)
 
@@ -771,7 +771,7 @@ def create_journal_entry(expense_group, task_log_id, last_export, is_auto_export
 
     try:
         update_complete_expenses(expense_group.expenses.all(), expense_group.export_url)
-        post_accounting_export_summary(expense_group.workspace.id, [expense.id for expense in expense_group.expenses.all()], expense_group.fund_source)
+        post_accounting_export_summary(workspace_id=expense_group.workspace.id, expense_ids=[expense.id for expense in expense_group.expenses.all()], fund_source=expense_group.fund_source)
     except Exception as e:
         logger.error('Error while updating expenses for expense_group_id: %s and posting accounting export summary %s', expense_group.id, e)
 

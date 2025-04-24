@@ -6,6 +6,7 @@ from .actions import handle_exports
 
 from fyle_accounting_library.fyle_platform.enums import RoutingKeyEnum
 from fyle_accounting_library.rabbitmq.models import FailedEvent
+from fyle_accounting_library.rabbitmq.data_class import RabbitMQData
 from consumer.event_consumer import EventConsumer
 from common.qconnector import RabbitMQConnector
 from common.event import BaseEvent
@@ -49,8 +50,15 @@ class ExportWorker(EventConsumer):
         )
 
         if payload_dict['retry_count'] < 2:
-            self.qconnector.reject_message(delivery_tag, requeue=True)
+            logger.info('Publishing new message with incremented retry count')
+            data = RabbitMQData(
+                new=payload_dict
+            )
+            self.qconnector.publish(RoutingKeyEnum.EXPORT, data.to_json())
+
+            self.qconnector.reject_message(delivery_tag, requeue=False)
         else:
+            logger.info('Max retries reached, dropping message')
             self.qconnector.reject_message(delivery_tag, requeue=False)
 
     def shutdown(self, _, __):
