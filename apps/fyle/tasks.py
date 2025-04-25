@@ -82,7 +82,6 @@ def create_expense_groups(workspace_id: int, fund_source: List[str], task_log: T
             workspace = Workspace.objects.get(pk=workspace_id)
             last_synced_at = workspace.last_synced_at
             ccc_last_synced_at = workspace.ccc_last_synced_at
-            print("ccc last synced at", ccc_last_synced_at)
             fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
 
             platform = PlatformConnector(fyle_credentials)
@@ -121,10 +120,7 @@ def create_expense_groups(workspace_id: int, fund_source: List[str], task_log: T
                     last_paid_at=ccc_last_synced_at if expense_group_settings.ccc_expense_state == 'PAID' else None
                 ))
 
-            print("expenses", expenses)
-
             if workspace.ccc_last_synced_at or len(expenses) != reimbursable_expenses_count:
-                print("update ccc last synced at", workspace.ccc_last_synced_at, len(expenses), reimbursable_expenses_count)
                 workspace.ccc_last_synced_at = datetime.now()
 
             workspace.save()
@@ -172,11 +168,8 @@ def group_expenses_and_save(expenses: List[Dict], task_log: TaskLog, workspace: 
     filtered_expenses = expense_objects
     if expense_filters:
         expenses_object_ids = [expense_object.id for expense_object in expense_objects]
-        print("expenses_object_ids", expenses_object_ids)
         final_query = construct_expense_filter_query(expense_filters)
-        print("final_query", final_query)
         skipped_expenses = mark_expenses_as_skipped(final_query, expenses_object_ids, workspace)
-        print("skipped_expenses", skipped_expenses)
         if skipped_expenses:
             try:
                 post_accounting_export_summary(workspace_id=workspace.id, expense_ids=[expense.id for expense in skipped_expenses])
@@ -189,8 +182,6 @@ def group_expenses_and_save(expenses: List[Dict], task_log: TaskLog, workspace: 
             expensegroup__isnull=True,
             org_id=workspace.fyle_org_id
         )
-
-        print("filtered_expenses", filtered_expenses)
 
     ExpenseGroup.create_expense_groups_by_report_id_fund_source(
         filtered_expenses, configuration, workspace.id
@@ -335,7 +326,6 @@ def re_run_skip_export_rule(workspace: Workspace) -> None:
                 error = Error.objects.filter(
                     workspace_id=workspace.id,
                     expense_group_id=expense_group.id,
-                    type__in=['NETSUITE_ERROR']
                 ).first()
                 if error:
                     logger.info('Deleting Netsuite error for expense group %s before export', expense_group.id)
