@@ -23,7 +23,7 @@ from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 
 from fyle_netsuite_api.utils import assert_valid
 
-from apps.netsuite.connector import NetSuiteConnection
+from apps.netsuite.connector import NetSuiteConnection, NetSuiteConnector
 from apps.fyle.models import ExpenseGroupSettings
 from apps.fyle.helpers import get_cluster_domain
 from apps.users.models import User
@@ -35,7 +35,6 @@ from apps.workspaces.actions import export_to_netsuite
 from .serializers import LastExportDetailSerializer, WorkspaceSerializer, FyleCredentialSerializer, NetSuiteCredentialSerializer, \
     ConfigurationSerializer, WorkspaceScheduleSerializer
 from .permissions import IsAuthenticatedForInternalAPI
-
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -64,6 +63,37 @@ class ReadyView(viewsets.ViewSet):
             },
             status=status.HTTP_200_OK
         )
+
+
+class TokenHealthView(viewsets.ViewSet):
+    """
+    Token Health View
+    """
+
+    def get(self, request, **kwargs):
+        status_code = status.HTTP_200_OK
+        message = "Netsuite connection is active"
+
+        workspace_id = Workspace.objects.get(pk=kwargs['workspace_id'])
+        netsuite_credentials = NetSuiteCredentials.objects.filter(workspace=workspace_id).first()
+
+        if not netsuite_credentials:
+         status_code = status.HTTP_400_BAD_REQUEST
+         message = "Netsuite credentials not found"
+        elif netsuite_credentials.is_expired:
+         status_code = status.HTTP_400_BAD_REQUEST
+         message = "Netsuite connection expired"
+
+        try:
+         netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
+         netsuite_connection.connection.locations.count()
+        except Exception as e:
+         status_code = status.HTTP_400_BAD_REQUEST
+         message = "Netsuite connection expired"
+         netsuite_credentials.is_expired = True
+         netsuite_credentials.save()
+
+        return Response({"message": message}, status=status_code)
 
 
 class WorkspaceView(viewsets.ViewSet):
@@ -202,6 +232,7 @@ class ConnectNetSuiteView(viewsets.ViewSet):
                 netsuite_credentials.ns_consumer_secret = ns_consumer_secret
                 netsuite_credentials.ns_token_id = ns_token_key
                 netsuite_credentials.ns_token_secret = ns_token_secret
+                netsuite_credentials.is_expired = False
 
                 netsuite_credentials.save()
 
