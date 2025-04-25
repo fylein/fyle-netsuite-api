@@ -58,5 +58,8 @@ def re_export_stuck_exports():
             # If schedule exist and it's within 1 hour, need not trigger it immediately
             if not (schedule and schedule.next_run < datetime.now(tz=schedule.next_run.tzinfo) + timedelta(minutes=60)):
                 export_expense_group_ids = expense_groups.filter(workspace_id=workspace_id).values_list('id', flat=True)
-                logger.info('Re-triggering export for expense group %s since no 1 hour schedule for workspace  %s', export_expense_group_ids, workspace_id)
-                export_to_netsuite(workspace_id, 'AUTO', export_expense_group_ids, triggered_by=ExpenseImportSourceEnum.INTERNAL)
+                if len(export_expense_group_ids) < 200:   
+                    logger.info('Re-triggering export for expense group %s since no 1 hour schedule for workspace  %s', export_expense_group_ids, workspace_id)
+                    export_to_netsuite(workspace_id, 'AUTO', export_expense_group_ids, triggered_by=ExpenseImportSourceEnum.INTERNAL)
+                else:
+                    logger.info('Skipping export for workspace %s since it has more than 200 expense groups', workspace_id)
