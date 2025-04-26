@@ -83,15 +83,15 @@ class TokenHealthView(viewsets.ViewSet):
         elif netsuite_credentials.is_expired:
          status_code = status.HTTP_400_BAD_REQUEST
          message = "Netsuite connection expired"
-
-        try:
-         netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
-         netsuite_connection.connection.locations.count()
-        except Exception as e:
-         status_code = status.HTTP_400_BAD_REQUEST
-         message = "Netsuite connection expired"
-         netsuite_credentials.is_expired = True
-         netsuite_credentials.save()
+        else:
+            try:
+                netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
+                netsuite_connection.connection.locations.count()
+            except Exception as e:
+                status_code = status.HTTP_400_BAD_REQUEST
+                message = "Netsuite connection expired"
+                netsuite_credentials.is_expired = True
+                netsuite_credentials.save()
 
         return Response({"message": message}, status=status_code)
 
