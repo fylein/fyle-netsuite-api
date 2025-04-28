@@ -521,11 +521,11 @@ class ExpenseGroup(models.Model):
         expense_groups.extend(filtered_corporate_credit_card_expense_groups)
 
         for expense_group in expense_groups:
-            if expense_group_settings.reimbursable_export_date_type == 'last_spent_at':
+            if expense_group_settings.reimbursable_export_date_type == 'last_spent_at' and expense_group['fund_source'] == 'PERSONAL':
                 expense_group['last_spent_at'] = Expense.objects.filter(
                     id__in=expense_group['expense_ids']).order_by('-spent_at').first().spent_at
 
-            if expense_group_settings.ccc_export_date_type == 'last_spent_at':
+            if expense_group_settings.ccc_export_date_type == 'last_spent_at' and expense_group['fund_source'] == 'CCC':
                 expense_group['last_spent_at'] = Expense.objects.filter(
                     id__in=expense_group['expense_ids']).order_by('-spent_at').first().spent_at
             
