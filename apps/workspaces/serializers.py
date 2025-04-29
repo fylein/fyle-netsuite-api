@@ -131,7 +131,7 @@ class ConfigurationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Configuration
-        fields = '__all__'
+        exclude = ['skip_accounting_export_summary_post']
 
 
 class LastExportDetailSerializer(serializers.ModelSerializer):

@@ -149,6 +149,7 @@ class Expense(models.Model):
         expense_objects = []
 
         for expense in expenses:
+            print("expense", expense)
             for custom_property_field in expense['custom_properties']:
                 if expense['custom_properties'][custom_property_field] == '':
                     expense['custom_properties'][custom_property_field] = None
@@ -211,8 +212,8 @@ class Expense(models.Model):
                 expense_object.save(
                     update_fields=['imported_from']
                 )
-
-            if not ExpenseGroup.objects.filter(expenses__id=expense_object.id).first():
+            
+            if (not expense_object.is_skipped and not ExpenseGroup.objects.filter(expenses__id=expense_object.id).first()):
                 expense_objects.append(expense_object)
 
         return expense_objects
@@ -520,11 +521,11 @@ class ExpenseGroup(models.Model):
         expense_groups.extend(filtered_corporate_credit_card_expense_groups)
 
         for expense_group in expense_groups:
-            if expense_group_settings.reimbursable_export_date_type == 'last_spent_at':
+            if expense_group_settings.reimbursable_export_date_type == 'last_spent_at' and expense_group['fund_source'] == 'PERSONAL':
                 expense_group['last_spent_at'] = Expense.objects.filter(
                     id__in=expense_group['expense_ids']).order_by('-spent_at').first().spent_at
 
-            if expense_group_settings.ccc_export_date_type == 'last_spent_at':
+            if expense_group_settings.ccc_export_date_type == 'last_spent_at' and expense_group['fund_source'] == 'CCC':
                 expense_group['last_spent_at'] = Expense.objects.filter(
                     id__in=expense_group['expense_ids']).order_by('-spent_at').first().spent_at
             

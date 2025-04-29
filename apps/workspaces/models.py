@@ -183,6 +183,7 @@ class Configuration(AutoAddCreateUpdateInfoMixin, models.Model):
     allow_intercompany_vendors = models.BooleanField(default=False, help_text='Allow intercompany vendors')
     je_single_credit_line = models.BooleanField(default=False, help_text='Journal Entry Single Credit Line')
     is_attachment_upload_enabled = models.BooleanField(default=True, help_text='Is Attachment upload enabled')
+    skip_accounting_export_summary_post = models.BooleanField(default=False, help_text='Skip accounting export summary post')
 
     class Meta:
         db_table = 'configurations'
