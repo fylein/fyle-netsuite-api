@@ -21,7 +21,7 @@ from fyle_rest_auth.helpers import get_fyle_admin
 from fyle_accounting_mappings.models import ExpenseAttribute
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 
-from fyle_netsuite_api.utils import assert_valid
+from fyle_netsuite_api.utils import assert_valid, invalidate_netsuite_credentials
 
 from apps.netsuite.connector import NetSuiteConnection, NetSuiteConnector
 from apps.fyle.models import ExpenseGroupSettings
@@ -30,7 +30,7 @@ from apps.users.models import User
 
 from .models import LastExportDetail, Workspace, FyleCredential, NetSuiteCredentials, Configuration, \
     WorkspaceSchedule
-from apps.workspaces.tasks import schedule_sync
+from apps.workspaces.tasks import schedule_sync, patch_integration_settings
 from apps.workspaces.actions import export_to_netsuite
 from .serializers import LastExportDetailSerializer, WorkspaceSerializer, FyleCredentialSerializer, NetSuiteCredentialSerializer, \
     ConfigurationSerializer, WorkspaceScheduleSerializer
@@ -88,10 +88,9 @@ class TokenHealthView(viewsets.ViewSet):
                 netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
                 netsuite_connection.connection.locations.count()
             except Exception as e:
+                invalidate_netsuite_credentials(workspace_id, netsuite_credentials)
                 status_code = status.HTTP_400_BAD_REQUEST
                 message = "Netsuite connection expired"
-                netsuite_credentials.is_expired = True
-                netsuite_credentials.save()
 
         return Response({"message": message}, status=status_code)
 
@@ -233,6 +232,7 @@ class ConnectNetSuiteView(viewsets.ViewSet):
                 netsuite_credentials.ns_token_id = ns_token_key
                 netsuite_credentials.ns_token_secret = ns_token_secret
                 netsuite_credentials.is_expired = False
+                patch_integration_settings(workspace, is_token_expired=False)
 
                 netsuite_credentials.save()
 
