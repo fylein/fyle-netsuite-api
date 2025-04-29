@@ -2980,8 +2980,7 @@ CREATE TABLE public.netsuite_credentials (
     ns_token_secret character varying(255) NOT NULL,
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
-    workspace_id integer NOT NULL,
-    is_expired boolean NOT NULL
+    workspace_id integer NOT NULL
 );
 
 
@@ -9439,7 +9438,6 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 229	tasks	0015_error_mapping_error_expense_group_ids	2025-04-11 09:30:28.733146+00
 230	fyle_accounting_mappings	0029_expenseattributesdeletioncache_cost_center_ids_and_more	2025-04-23 15:16:59.961373+00
 231	workspaces	0045_configuration_skip_accounting_export_summary_post	2025-04-23 17:56:40.537311+00
-231	workspaces	0045_netsuitecredentials_is_expired	2025-04-29 16:08:21.483724+00
 \.
 
 
@@ -13189,7 +13187,7 @@ COPY public.mappings (id, source_type, destination_type, created_at, updated_at,
 -- Data for Name: netsuite_credentials; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.netsuite_credentials (id, ns_account_id, ns_consumer_key, ns_consumer_secret, ns_token_id, ns_token_secret, created_at, updated_at, workspace_id, is_expired) FROM stdin;
+COPY public.netsuite_credentials (id, ns_account_id, ns_consumer_key, ns_consumer_secret, ns_token_id, ns_token_secret, created_at, updated_at, workspace_id) FROM stdin;
 \.
 
 
@@ -13368,7 +13366,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 48, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 229, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 230, true);
 
 
 --
@@ -13592,7 +13590,7 @@ SELECT pg_catalog.setval('public.vendor_payments_id_seq', 9, true);
 -- Name: workspaces_fylecredential_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.workspaces_fylecredential_id_seq', 1607, true);
+SELECT pg_catalog.setval('public.workspaces_fylecredential_id_seq', 794, true);
 
 
 --
