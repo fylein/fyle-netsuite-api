@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction, connection
+from datetime import timedelta
 
 from django_q.tasks import async_task
 
@@ -78,15 +79,20 @@ class TokenHealthView(viewsets.ViewSet):
         netsuite_credentials = NetSuiteCredentials.objects.filter(workspace=workspace_id).first()
 
         if not netsuite_credentials:
-         status_code = status.HTTP_400_BAD_REQUEST
-         message = "Netsuite credentials not found"
+            status_code = status.HTTP_400_BAD_REQUEST
+            message = "Netsuite credentials not found"
         elif netsuite_credentials.is_expired:
-         status_code = status.HTTP_400_BAD_REQUEST
-         message = "Netsuite connection expired"
+            status_code = status.HTTP_400_BAD_REQUEST
+            message = "Netsuite connection expired"
         else:
             try:
-                netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
-                netsuite_connection.connection.locations.count()
+                cache_key = f'HEALTH_CHECK_CACHE_{workspace_id}'
+                is_healthy = cache.get(cache_key)
+                
+                if is_healthy is None:
+                    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
+                    netsuite_connection.connection.locations.count()
+                    cache.set(cache_key, True, timeout=timedelta(hours=24).total_seconds())
             except Exception as e:
                 invalidate_netsuite_credentials(workspace_id, netsuite_credentials)
                 status_code = status.HTTP_400_BAD_REQUEST

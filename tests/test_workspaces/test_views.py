@@ -4,6 +4,7 @@ from unittest import mock
 from django_q.models import Schedule
 from datetime import timedelta
 from unittest.mock import MagicMock
+from django.core.cache import cache
 
 from fyle_netsuite_api.tests import settings
 from django.urls import reverse
@@ -23,6 +24,10 @@ def test_token_health_view(api_client, access_token, mocker):
     url = f"/api/workspaces/{workspace_id}/token_health/"
     api_client.credentials(HTTP_AUTHORIZATION="Bearer {}".format(access_token))
 
+    # Clean cache before test
+    cache_key = f'HEALTH_CHECK_CACHE_{workspace_id}'
+    cache.delete(cache_key)
+
     NetSuiteCredentials.objects.filter(workspace=workspace_id).delete()
     response = api_client.get(url)
 
@@ -38,16 +43,41 @@ def test_token_health_view(api_client, access_token, mocker):
     assert response.data["message"] == "Netsuite connection expired"
 
     NetSuiteCredentials.objects.all().delete()
-    credentials = NetSuiteCredentials.objects.create(workspace=workspace, is_expired=False)
+    NetSuiteCredentials.objects.create(workspace=workspace, is_expired=False)
 
-    mock_connector = mocker.patch('apps.netsuite.connector.NetSuiteConnector')
+    mock_connector = mocker.patch('apps.workspaces.views.NetSuiteConnector')
     mock_instance = MagicMock()
     mock_connector.return_value = mock_instance
     mock_instance.connection.locations.count.side_effect = Exception("Invalid")
+    
+    # Mocking invalidate function
+    mocker.patch('apps.workspaces.views.invalidate_netsuite_credentials', return_value=None)
+
     response = api_client.get(url)
     
     assert response.status_code == 400
     assert response.data["message"] == "Netsuite connection expired"
+    
+    # Reseting mocks for successful connection test
+    mocker.resetall()
+    mock_connector = mocker.patch('apps.workspaces.views.NetSuiteConnector')
+    mock_instance = MagicMock()
+    mock_connector.return_value = mock_instance
+    mock_instance.connection.locations.count.return_value = 1
+    
+    cache.delete(cache_key)
+    response = api_client.get(url)
+
+    assert response.status_code == 200
+    assert response.data["message"] == "Netsuite connection is active"
+    
+    cache.set(cache_key, True, timeout=timedelta(hours=24).total_seconds())
+    mock_connector.reset_mock()
+    response = api_client.get(url)
+    
+    assert response.status_code == 200
+    assert response.data["message"] == "Netsuite connection is active"
+    mock_connector.assert_not_called()
 
 
 @pytest.mark.django_db(databases=['default'])
