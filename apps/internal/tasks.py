@@ -29,8 +29,8 @@ def re_export_stuck_exports():
     if task_logs.count() > 0:
         logger.info('Re-exporting stuck task_logs')
         logger.info('%s stuck task_logs found', task_logs.count())
-        workspace_ids = task_logs.values_list('workspace_id', flat=True).distinct()
-        expense_group_ids = task_logs.values_list('expense_group_id', flat=True)
+        workspace_ids = list(task_logs.values_list('workspace_id', flat=True).distinct())
+        expense_group_ids = list(task_logs.values_list('expense_group_id', flat=True))
         ormqs = OrmQ.objects.all()
         for orm in ormqs:
             if 'chain' in orm.task and orm.task['chain']:
@@ -57,7 +57,7 @@ def re_export_stuck_exports():
             schedule = schedules.filter(args=str(workspace_id)).first()
             # If schedule exist and it's within 1 hour, need not trigger it immediately
             if not (schedule and schedule.next_run < datetime.now(tz=schedule.next_run.tzinfo) + timedelta(minutes=60)):
-                export_expense_group_ids = expense_groups.filter(workspace_id=workspace_id).values_list('id', flat=True)
+                export_expense_group_ids = list(expense_groups.filter(workspace_id=workspace_id).values_list('id', flat=True))
                 if len(export_expense_group_ids) < 200:   
                     logger.info('Re-triggering export for expense group %s since no 1 hour schedule for workspace  %s', export_expense_group_ids, workspace_id)
                     export_to_netsuite(workspace_id, 'AUTO', export_expense_group_ids, triggered_by=ExpenseImportSourceEnum.INTERNAL)
