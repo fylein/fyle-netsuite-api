@@ -3,6 +3,7 @@ import json
 from unittest import mock
 from django_q.models import Schedule
 from datetime import timedelta
+from unittest.mock import MagicMock
 
 from fyle_netsuite_api.tests import settings
 from django.urls import reverse
@@ -16,29 +17,37 @@ from fyle.platform import exceptions as fyle_exc
 
 
 @pytest.mark.django_db(databases=['default'])
-def test_token_health_view(api_client, access_token):
+def test_token_health_view(api_client, access_token, mocker):
     workspace_id = 1
 
     url = f"/api/workspaces/{workspace_id}/token_health/"
     api_client.credentials(HTTP_AUTHORIZATION="Bearer {}".format(access_token))
 
     NetSuiteCredentials.objects.filter(workspace=workspace_id).delete()
-
     response = api_client.get(url)
+
     assert response.status_code == 400
     assert response.data["message"] == "Netsuite credentials not found"
 
-    # Get the existing workspace
     workspace = Workspace.objects.get(id=workspace_id)
-
     NetSuiteCredentials.objects.all().delete()
     NetSuiteCredentials.objects.create(workspace=workspace, is_expired=True)
     response = api_client.get(url)
+
     assert response.status_code == 400
     assert response.data["message"] == "Netsuite connection expired"
 
     NetSuiteCredentials.objects.all().delete()
-    NetSuiteCredentials.objects.create(workspace=workspace, is_expired=False)
+    credentials = NetSuiteCredentials.objects.create(workspace=workspace, is_expired=False)
+
+    mock_connector = mocker.patch('apps.netsuite.connector.NetSuiteConnector')
+    mock_instance = MagicMock()
+    mock_connector.return_value = mock_instance
+    mock_instance.connection.locations.count.side_effect = Exception("Invalid")
+    response = api_client.get(url)
+    
+    assert response.status_code == 400
+    assert response.data["message"] == "Netsuite connection expired"
 
 
 @pytest.mark.django_db(databases=['default'])
