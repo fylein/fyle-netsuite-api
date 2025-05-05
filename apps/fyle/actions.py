@@ -293,7 +293,7 @@ def post_accounting_export_summary(workspace_id: int, expense_ids: List = None, 
     expenses_count = Expense.objects.filter(**filters).count()
 
     accounting_export_summary_batches = []
-    page_size = 200
+    page_size = 20
     for offset in range(0, expenses_count, page_size):
         limit = offset + page_size
         paginated_expenses = Expense.objects.filter(**filters).order_by('id')[offset:limit]
