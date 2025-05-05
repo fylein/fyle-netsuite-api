@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from django.db.models import Q
 from django_q.models import OrmQ, Schedule
 
-from apps.fyle.actions import update_failed_expenses
+from apps.fyle.actions import update_failed_expenses, post_accounting_export_summary
 from apps.fyle.models import ExpenseGroup
 from apps.tasks.models import TaskLog
 from apps.workspaces.actions import export_to_netsuite
@@ -47,7 +47,10 @@ def re_export_stuck_exports():
             expenses.extend(expense_group.expenses.all())
         workspace_ids_list = list(workspace_ids)
         task_logs.update(status='FAILED', updated_at=datetime.now())
-        update_failed_expenses(expenses, True)
+        for workspace_id in workspace_ids_list:
+            errored_expenses = expenses.filter(workspace_id=workspace_id)
+            update_failed_expenses(errored_expenses, True)
+            post_accounting_export_summary(workspace_id=workspace_id,  expense_ids=[expense.id for expense in errored_expenses], is_failed=True)
         schedules = Schedule.objects.filter(
             args__in=[str(workspace_id) for workspace_id in workspace_ids_list],
             func='apps.workspaces.tasks.run_sync_schedule'
