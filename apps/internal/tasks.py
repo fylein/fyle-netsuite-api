@@ -48,7 +48,7 @@ def re_export_stuck_exports():
         workspace_ids_list = list(workspace_ids)
         task_logs.update(status='FAILED', updated_at=datetime.now())
         for workspace_id in workspace_ids_list:
-            errored_expenses = expenses.filter(workspace_id=workspace_id)
+            errored_expenses = [expense for expense in expenses if expense.workspace_id == workspace_id]
             update_failed_expenses(errored_expenses, True)
             post_accounting_export_summary(workspace_id=workspace_id,  expense_ids=[expense.id for expense in errored_expenses], is_failed=True)
         schedules = Schedule.objects.filter(
