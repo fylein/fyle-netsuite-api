@@ -65,13 +65,16 @@ def test_token_health_view(api_client, access_token, mocker):
     mock_connector.return_value = mock_instance
     mock_instance.connection.locations.count.return_value = 1
     
-    cache.delete(cache_key)
     response = api_client.get(url)
 
     assert response.status_code == 200
     assert response.data["message"] == "Netsuite connection is active"
     
     cache.set(cache_key, True, timeout=timedelta(hours=24).total_seconds())
+
+    # Assert cache is present and true
+    assert cache.get(cache_key) == True
+    
     mock_connector.reset_mock()
     response = api_client.get(url)
     

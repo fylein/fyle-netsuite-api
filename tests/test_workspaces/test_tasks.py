@@ -144,23 +144,17 @@ def test_patch_integration_settings(mocker):
     """
     Test patch_integration_settings task
     """
-
-    workspace = Workspace.objects.create(
-        name='Test Workspace',
-        fyle_org_id='test_org',
-        cluster_domain='https://test.fyle.tech'
-    )
     
+    workspace_id = 1
+
     refresh_token = 'dummy_refresh_token'
-    FyleCredential.objects.create(
-        workspace=workspace,
-        refresh_token=refresh_token,
-        cluster_domain='https://test.fyle.tech'
-    )
+    fyle_credential = FyleCredential.objects.get(workspace_id=workspace_id)
+    fyle_credential.refresh_token = refresh_token
+    fyle_credential.save()
 
     patch_request_mock = mocker.patch('apps.workspaces.tasks.patch_request')
 
-    patch_integration_settings(workspace.id, errors=5)
+    patch_integration_settings(workspace_id, errors=5)
     
     patch_request_mock.assert_called_with(
         mocker.ANY,  # URL
@@ -172,7 +166,7 @@ def test_patch_integration_settings(mocker):
     )
 
     patch_request_mock.reset_mock()
-    patch_integration_settings(workspace.id, is_token_expired=True)
+    patch_integration_settings(workspace_id, is_token_expired=True)
 
     patch_request_mock.assert_called_with(
         mocker.ANY,  # URL
@@ -184,7 +178,7 @@ def test_patch_integration_settings(mocker):
     )
     
     patch_request_mock.reset_mock()
-    patch_integration_settings(workspace.id, errors=10, is_token_expired=False)
+    patch_integration_settings(workspace_id, errors=10, is_token_expired=False)
 
     patch_request_mock.assert_called_with(
         mocker.ANY,  # URL
@@ -199,6 +193,6 @@ def test_patch_integration_settings(mocker):
     patch_request_mock.reset_mock()
     patch_request_mock.side_effect = Exception('Test exception')
 
-    patch_integration_settings(workspace.id, errors=15)
+    patch_integration_settings(workspace_id, errors=15)
 
     patch_request_mock.assert_called_once()
