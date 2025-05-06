@@ -8,6 +8,7 @@ from django_q.tasks import Chain
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 
 from apps.fyle.models import ExpenseGroup
+from apps.fyle.actions import post_accounting_export_summary_for_skipped_exports
 from apps.tasks.models import TaskLog, Error
 
 logger = logging.getLogger(__name__)
@@ -76,6 +77,7 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str], is_
             skip_export = validate_failing_export(is_auto_export, interval_hours, error, expense_group)
             if skip_export:
                 skip_reason = f"{error.repetition_count} repeated attempts" if error else "mapping errors"
+                post_accounting_export_summary_for_skipped_exports(expense_group, workspace_id, is_mapping_error=False if error else True)
                 logger.info(f"Skipping expense group {expense_group.id} due to {skip_reason}")
                 continue
 
@@ -136,6 +138,7 @@ def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: L
             skip_export = validate_failing_export(is_auto_export, interval_hours, error, expense_group)
             if skip_export:
                 skip_reason = f"{error.repetition_count} repeated attempts" if error else "mapping errors"
+                post_accounting_export_summary_for_skipped_exports(expense_group, workspace_id, is_mapping_error=False if error else True)
                 logger.info(f"Skipping expense group {expense_group.id} due to {skip_reason}")
                 continue
 
@@ -201,6 +204,7 @@ def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List
             skip_export = validate_failing_export(is_auto_export, interval_hours, error, expense_group)
             if skip_export:
                 skip_reason = f"{error.repetition_count} repeated attempts" if error else "mapping errors"
+                post_accounting_export_summary_for_skipped_exports(expense_group, workspace_id, is_mapping_error=False if error else True)
                 logger.info(f"Skipping expense group {expense_group.id} due to {skip_reason}")
                 continue
 
@@ -260,6 +264,7 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
             skip_export = validate_failing_export(is_auto_export, interval_hours, error, expense_group)
             if skip_export:
                 skip_reason = f"{error.repetition_count} repeated attempts" if error else "mapping errors"
+                post_accounting_export_summary_for_skipped_exports(expense_group, workspace_id, is_mapping_error=False if error else True)
                 logger.info(f"Skipping expense group {expense_group.id} due to {skip_reason}")
                 continue
             
