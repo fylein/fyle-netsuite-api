@@ -1,6 +1,6 @@
 from django.urls import path, include
 
-from .views import ExportToNetsuiteView, LastExportDetailView, WorkspaceView, WorkspaceAdminsView, ReadyView, ConnectFyleView, ConnectNetSuiteView, ScheduleView, ConfigurationsView, SetupE2ETestView
+from .views import ExportToNetsuiteView, LastExportDetailView, WorkspaceView, WorkspaceAdminsView, ReadyView, ConnectFyleView, ConnectNetSuiteView, ScheduleView, ConfigurationsView, SetupE2ETestView, TokenHealthView
 
 workspaces_app_paths = [
     path('', WorkspaceView.as_view({'get': 'get', 'post': 'post'}), name='workspace'),
@@ -29,7 +29,8 @@ netsuite_connection_api_paths = [
     path('<int:workspace_id>/credentials/netsuite/', ConnectNetSuiteView.as_view({'get': 'get'}),
          name='get-netsuite-credentials'),
     path('<int:workspace_id>/credentials/netsuite/delete/', ConnectNetSuiteView.as_view({'post': 'delete'}),
-         name='delete-netsuite-credentials')
+         name='delete-netsuite-credentials'),
+    path('<int:workspace_id>/token_health/', TokenHealthView.as_view({'get': 'get'})),
 ]
 
 other_app_paths = [
