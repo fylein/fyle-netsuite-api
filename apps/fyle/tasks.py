@@ -356,3 +356,7 @@ def re_run_skip_export_rule(workspace: Workspace) -> None:
                     last_export_detail.total_expense_groups_count - deleted_total_expense_groups_count
                 )
                 last_export_detail.save()
+            try:
+                post_accounting_export_summary(workspace_id=workspace.id, expense_ids=[expense.id for expense in skipped_expenses])
+            except Exception:
+                logger.exception('Error posting accounting export summary for workspace_id: %s', workspace.id)
