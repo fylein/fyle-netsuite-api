@@ -12,6 +12,7 @@ from fyle.platform.exceptions import InternalServerError, RetryException
 from apps.fyle.models import Expense, ExpenseGroup
 from apps.workspaces.models import Workspace, FyleCredential, Configuration
 from apps.fyle.helpers import get_updated_accounting_export_summary, get_batched_expenses
+from fyle_netsuite_api.logging_middleware import get_logger, get_caller_info
 
 
 logger = logging.getLogger(__name__)
@@ -273,6 +274,9 @@ def post_accounting_export_summary(workspace_id: int, expense_ids: List = None, 
     configuration = Configuration.objects.get(workspace_id=workspace_id)
     if configuration.skip_accounting_export_summary_post:
         return
+    
+    worker_logger = get_logger()
+    caller_info = get_caller_info()
     # Iterate through all expenses which are not synced and post accounting export summary to Fyle in batches
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
     platform = PlatformConnector(fyle_credentials)
@@ -307,8 +311,9 @@ def post_accounting_export_summary(workspace_id: int, expense_ids: List = None, 
 
         accounting_export_summary_batches.append(payload)
 
-    logger.info(
-        'Posting accounting export summary to Fyle workspace_id: %s, payload: %s',
+    worker_logger.info(
+        'Called from %s, Posting accounting export summary to Fyle workspace_id: %s, payload: %s',
+        caller_info,
         workspace_id,
         accounting_export_summary_batches
     )
