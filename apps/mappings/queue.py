@@ -71,14 +71,13 @@ def construct_tasks_and_chain_import_fields_to_fyle(workspace_id: int):
             'use_mapping_table': False
         }
 
-    if not configurations.import_items:
-        task_settings['import_items'] = False
+    task_settings['import_items'] = configurations.import_items
 
     if configurations.import_vendors_as_merchants:
         task_settings['import_vendors_as_merchants'] = {
             'destination_field': 'VENDOR',
             'destination_sync_methods': [SYNC_METHODS['VENDOR']],
-            'is_auto_sync_enabled': False,
+            'is_auto_sync_enabled': True,
             'is_3d_mapping': False
         }
 
@@ -96,7 +95,7 @@ def construct_tasks_and_chain_import_fields_to_fyle(workspace_id: int):
                         'destination_field': mapping_setting.destination_field,
                         'is_custom': mapping_setting.is_custom,
                         'destination_sync_methods': destination_sync_methods,
-                        'is_auto_sync_enabled': is_auto_sync_allowed(configurations, mapping_setting)
+                        'is_auto_sync_enabled': True
                     }
                 )
 

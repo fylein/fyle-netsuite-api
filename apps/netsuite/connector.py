@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from django.utils import timezone
 from django.db import transaction
 
-from typing import List, Dict
+from typing import List, Dict, Optional
 import logging
 
 from django.conf import settings
@@ -15,11 +15,12 @@ from django.db.models import Max
 
 from requests_oauthlib import OAuth1Session
 
+from apps.workspaces.helpers import get_app_name
 from netsuitesdk import NetSuiteConnection, NetSuiteRequestError
 
 import unidecode
 
-from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute
+from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute, MappingSetting
 
 from apps.fyle.models import Expense, ExpenseGroup
 from apps.workspaces.models import Configuration
@@ -41,6 +42,16 @@ SYNC_UPPER_LIMIT = {
     'locations': 2000,
     'departments': 2000,
     'vendors': 20000,
+}
+
+
+AttributeDisableCallbackPath = {
+    'ACCOUNT': 'fyle_integrations_imports.modules.categories.disable_categories',
+    'EXPENSE_CATEGORY': 'fyle_integrations_imports.modules.categories.disable_categories',
+    'ITEM': 'fyle_integrations_imports.modules.categories.disable_categories',
+    'VENDOR': 'fyle_integrations_imports.modules.merchants.disable_merchants',
+    'PROJECT': 'fyle_integrations_imports.modules.projects.disable_projects',
+    'COST_CENTER': 'fyle_integrations_imports.modules.cost_centers.disable_cost_centers'
 }
 
 
@@ -100,6 +111,69 @@ class NetSuiteConnector:
                 return False
             else:
                 return True
+
+        return True
+
+    def is_import_enabled(self, attribute_type: str) -> bool:
+        """
+        Check if import is enabled for the attribute type
+        :param attribute_type: Type of the attribute
+        :return: Whether import is enabled
+        """
+        is_import_to_fyle_enabled = False
+
+        configuration = Configuration.objects.filter(workspace_id=self.workspace_id).first()
+        if not configuration:
+            return is_import_to_fyle_enabled
+
+        if attribute_type in ['ACCOUNT', 'EXPENSE_CATEGORY'] and configuration.import_categories:
+            is_import_to_fyle_enabled = True
+
+        elif attribute_type == 'VENDOR' and configuration.import_vendors_as_merchants:
+            is_import_to_fyle_enabled = True
+
+        elif attribute_type == 'ITEM' and configuration.import_items:
+            is_import_to_fyle_enabled = True
+
+        elif attribute_type == 'EMPLOYEE' and configuration.import_netsuite_employees:
+            is_import_to_fyle_enabled = True
+
+        elif attribute_type in ['PROJECT', 'DEPARTMENT', 'LOCATION', 'CLASS', 'CUSTOMER']:
+            mapping_setting = MappingSetting.objects.filter(workspace_id=self.workspace_id, destination_field=attribute_type).first()
+            if mapping_setting and mapping_setting.import_to_fyle:
+                is_import_to_fyle_enabled = True
+
+        return is_import_to_fyle_enabled
+
+    def get_attribute_disable_callback_path(self, attribute_type: str) -> Optional[str]:
+        """
+        Get the attribute disable callback path
+        :param attribute_type: Type of the attribute
+        :return: attribute disable callback path or none
+        """
+        if attribute_type in ['ACCOUNT', 'EXPENSE_CATEGORY', 'ITEM', 'VENDOR']:
+            return AttributeDisableCallbackPath.get(attribute_type)
+
+        mapping_setting = MappingSetting.objects.filter(
+            workspace_id=self.workspace_id,
+            destination_field=attribute_type
+        ).first()
+
+        if mapping_setting and not mapping_setting.is_custom:
+            return AttributeDisableCallbackPath.get(mapping_setting.source_field)
+
+    def is_duplicate_deletion_skipped(self, attribute_type: str) -> bool:
+        """
+        Check if duplicate deletion is skipped for the attribute type
+        :param attribute_type: Type of the attribute
+        :return: Whether deletion is skipped
+        """
+        if attribute_type in [
+            'ACCOUNT', 'EXPENSE_CATEGORY',
+            'VENDOR', 'PROJECT', 'ITEM', 'DEPARTMENT',
+            'LOCATION', 'CLASS', 'CUSTOMER'
+        ]:
+            return False
 
         return True
 
@@ -197,7 +271,12 @@ class NetSuiteConnector:
             for attribute_type, attribute in attributes.items():
                 if attribute:
                     DestinationAttribute.bulk_create_or_update_destination_attributes(
-                        attribute, attribute_type.upper(), self.workspace_id, True, attribute_type.title().replace('_',' '))
+                        attribute, attribute_type.upper(), self.workspace_id, True, attribute_type.title().replace('_',' '),
+                        skip_deletion=self.is_duplicate_deletion_skipped(attribute_type='ACCOUNT'),
+                        app_name=get_app_name(),
+                        attribute_disable_callback_path=self.get_attribute_disable_callback_path(attribute_type='ACCOUNT'),
+                        is_import_to_fyle_enabled=self.is_import_enabled(attribute_type='ACCOUNT')
+                    )
 
         return []
 
@@ -246,8 +325,12 @@ class NetSuiteConnector:
 
             for attribute_type, attribute in attributes.items():
                 DestinationAttribute.bulk_create_or_update_destination_attributes(
-                    attribute, attribute_type.upper(), self.workspace_id, True)
-
+                    attribute, attribute_type.upper(), self.workspace_id, True,
+                    skip_deletion=self.is_duplicate_deletion_skipped(attribute_type='EXPENSE_CATEGORY'),
+                    app_name=get_app_name(),
+                    attribute_disable_callback_path=self.get_attribute_disable_callback_path(attribute_type='EXPENSE_CATEGORY'),
+                    is_import_to_fyle_enabled=self.is_import_enabled(attribute_type='EXPENSE_CATEGORY')
+                )
         return []
     
     def sync_items(self):
@@ -292,7 +375,12 @@ class NetSuiteConnector:
                     })
 
             DestinationAttribute.bulk_create_or_update_destination_attributes(
-                attributes, 'ACCOUNT', self.workspace_id, True, 'Item')
+                attributes, 'ACCOUNT', self.workspace_id, True, 'Item',
+                skip_deletion=self.is_duplicate_deletion_skipped(attribute_type='ITEM'),
+                app_name=get_app_name(),
+                attribute_disable_callback_path=self.get_attribute_disable_callback_path(attribute_type='ITEM'),
+                is_import_to_fyle_enabled=self.is_import_enabled(attribute_type='ITEM')
+            )
 
         return []
 
@@ -561,20 +649,11 @@ class NetSuiteConnector:
 
         for locations in location_generator:
             for location in locations:
-                if not location['isInactive']:
-                    if 'subsidiaryList' in location and location['subsidiaryList']:
-                        subsidiaries = location['subsidiaryList']['recordRef']
-                        counter = 0
-                        if subsidiaries[counter]['internalId'] == subsidiary_mapping.internal_id:
-                            counter += 1
-                            location_attributes.append({
-                                'attribute_type': 'LOCATION',
-                                'display_name': 'Location',
-                                'value': location['name'],
-                                'destination_id': location['internalId'],
-                                'active': not location['isInactive']
-                            })
-                    else:
+                if 'subsidiaryList' in location and location['subsidiaryList']:
+                    subsidiaries = location['subsidiaryList']['recordRef']
+                    counter = 0
+                    if subsidiaries[counter]['internalId'] == subsidiary_mapping.internal_id:
+                        counter += 1
                         location_attributes.append({
                             'attribute_type': 'LOCATION',
                             'display_name': 'Location',
@@ -582,9 +661,22 @@ class NetSuiteConnector:
                             'destination_id': location['internalId'],
                             'active': not location['isInactive']
                         })
+                else:
+                    location_attributes.append({
+                        'attribute_type': 'LOCATION',
+                        'display_name': 'Location',
+                        'value': location['name'],
+                        'destination_id': location['internalId'],
+                        'active': not location['isInactive']
+                    })
 
             DestinationAttribute.bulk_create_or_update_destination_attributes(
-                location_attributes, 'LOCATION', self.workspace_id, True)
+                location_attributes, 'LOCATION', self.workspace_id, True,
+                skip_deletion=self.is_duplicate_deletion_skipped(attribute_type='LOCATION'),
+                app_name=get_app_name(),
+                attribute_disable_callback_path=self.get_attribute_disable_callback_path(attribute_type='LOCATION'),
+                is_import_to_fyle_enabled=self.is_import_enabled(attribute_type='LOCATION')
+            )
 
         return []
 
@@ -596,24 +688,28 @@ class NetSuiteConnector:
         if not self.is_sync_allowed(attribute_type = 'classes', attribute_count = attribute_count):
             logger.info('Skipping sync of classes for workspace %s as it has %s counts which is over the limit', self.workspace_id, attribute_count)
             return
-        
+
         classification_generator = self.connection.classifications.get_all_generator()
 
         classification_attributes = []
 
         for classifications in classification_generator:
             for classification in classifications:
-                if not classification['isInactive']:
-                    classification_attributes.append({
-                        'attribute_type': 'CLASS',
-                        'display_name': 'Class',
-                        'value': classification['name'],
-                        'destination_id': classification['internalId'],
-                        'active': not classification['isInactive']
-                    })
+                classification_attributes.append({
+                    'attribute_type': 'CLASS',
+                    'display_name': 'Class',
+                    'value': classification['name'],
+                    'destination_id': classification['internalId'],
+                    'active': not classification['isInactive']
+                })
 
             DestinationAttribute.bulk_create_or_update_destination_attributes(
-                classification_attributes, 'CLASS', self.workspace_id, True)
+                classification_attributes, 'CLASS', self.workspace_id, True,
+                skip_deletion=self.is_duplicate_deletion_skipped(attribute_type='CLASS'),
+                app_name=get_app_name(),
+                attribute_disable_callback_path=self.get_attribute_disable_callback_path(attribute_type='CLASS'),
+                is_import_to_fyle_enabled=self.is_import_enabled(attribute_type='CLASS')
+            )
 
         return []
 
@@ -631,17 +727,21 @@ class NetSuiteConnector:
 
         for departments in department_generator:
             for department in departments:
-                if not department['isInactive']:
-                    department_attributes.append({
-                        'attribute_type': 'DEPARTMENT',
-                        'display_name': 'Department',
-                        'value': department['name'],
-                        'destination_id': department['internalId'],
-                        'active': not department['isInactive']
-                    })
+                department_attributes.append({
+                    'attribute_type': 'DEPARTMENT',
+                    'display_name': 'Department',
+                    'value': department['name'],
+                    'destination_id': department['internalId'],
+                    'active': not department['isInactive']
+                })
 
             DestinationAttribute.bulk_create_or_update_destination_attributes(
-                department_attributes, 'DEPARTMENT', self.workspace_id, True)
+                department_attributes, 'DEPARTMENT', self.workspace_id, True,
+                skip_deletion=self.is_duplicate_deletion_skipped(attribute_type='DEPARTMENT'),
+                app_name=get_app_name(),
+                attribute_disable_callback_path=self.get_attribute_disable_callback_path(attribute_type='DEPARTMENT'),
+                is_import_to_fyle_enabled=self.is_import_enabled(attribute_type='DEPARTMENT')
+            )
 
         return []
 
@@ -667,21 +767,11 @@ class NetSuiteConnector:
         for vendors in vendors_generator:
             attributes = []
             for vendor in vendors:
-                if not vendor['isInactive']:
-                    detail = {
-                        'email': vendor['email'] if vendor['email'] else None
-                    }
-                    if 'subsidiary' in vendor and vendor['subsidiary']:
-                        if vendor['subsidiary']['internalId'] == subsidiary_mapping.internal_id or configuration.allow_intercompany_vendors:
-                            attributes.append({
-                                'attribute_type': 'VENDOR',
-                                'display_name': 'Vendor',
-                                'value': unidecode.unidecode(u'{0}'.format(vendor['entityId'])),
-                                'destination_id': vendor['internalId'],
-                                'detail': detail,
-                                'active': not vendor['isInactive']
-                            })
-                    else:
+                detail = {
+                    'email': vendor['email'] if vendor['email'] else None
+                }
+                if 'subsidiary' in vendor and vendor['subsidiary']:
+                    if vendor['subsidiary']['internalId'] == subsidiary_mapping.internal_id or configuration.allow_intercompany_vendors:
                         attributes.append({
                             'attribute_type': 'VENDOR',
                             'display_name': 'Vendor',
@@ -690,9 +780,23 @@ class NetSuiteConnector:
                             'detail': detail,
                             'active': not vendor['isInactive']
                         })
+                else:
+                    attributes.append({
+                        'attribute_type': 'VENDOR',
+                        'display_name': 'Vendor',
+                        'value': unidecode.unidecode(u'{0}'.format(vendor['entityId'])),
+                        'destination_id': vendor['internalId'],
+                        'detail': detail,
+                        'active': not vendor['isInactive']
+                    })
 
             DestinationAttribute.bulk_create_or_update_destination_attributes(
-                attributes, 'VENDOR', self.workspace_id, True)
+                attributes, 'VENDOR', self.workspace_id, True,
+                skip_deletion=self.is_duplicate_deletion_skipped(attribute_type='VENDOR'),
+                app_name=get_app_name(),
+                attribute_disable_callback_path=self.get_attribute_disable_callback_path(attribute_type='VENDOR'),
+                is_import_to_fyle_enabled=self.is_import_enabled(attribute_type='VENDOR')
+            )
 
         return []
 
@@ -897,7 +1001,12 @@ class NetSuiteConnector:
                     })
 
             DestinationAttribute.bulk_create_or_update_destination_attributes(
-                attributes, 'EMPLOYEE', self.workspace_id, True)
+                attributes, 'EMPLOYEE', self.workspace_id, True,
+                    skip_deletion=self.is_duplicate_deletion_skipped(attribute_type='EMPLOYEE'),
+                    app_name=get_app_name(),
+                    attribute_disable_callback_path=self.get_attribute_disable_callback_path(attribute_type='EMPLOYEE'),
+                    is_import_to_fyle_enabled=self.is_import_enabled(attribute_type='EMPLOYEE')
+                )
 
         return []
 
@@ -1161,7 +1270,12 @@ class NetSuiteConnector:
                         'active': True
                     })
             DestinationAttribute.bulk_create_or_update_destination_attributes(
-                attributes, 'PROJECT', self.workspace_id, True)
+                attributes, 'PROJECT', self.workspace_id, True,
+                skip_deletion=self.is_duplicate_deletion_skipped(attribute_type='PROJECT'),
+                app_name=get_app_name(),
+                attribute_disable_callback_path=self.get_attribute_disable_callback_path(attribute_type='PROJECT'),
+                is_import_to_fyle_enabled=self.is_import_enabled(attribute_type='PROJECT')
+            )
 
         return []
 
@@ -1200,7 +1314,12 @@ class NetSuiteConnector:
                     })
 
             DestinationAttribute.bulk_create_or_update_destination_attributes(
-                attributes, 'PROJECT', self.workspace_id, True)
+                attributes, 'PROJECT', self.workspace_id, True,
+                skip_deletion=self.is_duplicate_deletion_skipped(attribute_type='CUSTOMER'),
+                app_name=get_app_name(),
+                attribute_disable_callback_path=self.get_attribute_disable_callback_path(attribute_type='CUSTOMER'),
+                is_import_to_fyle_enabled=self.is_import_enabled(attribute_type='CUSTOMER')
+            )
 
         return []
 

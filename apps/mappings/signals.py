@@ -169,6 +169,7 @@ def run_pre_mapping_settings_triggers(sender, instance: MappingSetting, **kwargs
             import_log.status = 'IN_PROGRESS'
             import_log.save()
 
+            expense_custom_field.sync_expense_attributes(platform=platform)
             expense_custom_field.construct_payload_and_import_to_fyle(platform=platform, import_log=import_log)
             expense_custom_field.sync_expense_attributes(platform=platform)
 
