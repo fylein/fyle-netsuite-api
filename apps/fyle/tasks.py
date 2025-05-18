@@ -183,9 +183,17 @@ def group_expenses_and_save(expenses: List[Dict], task_log: TaskLog, workspace: 
             org_id=workspace.fyle_org_id
         )
 
-    ExpenseGroup.create_expense_groups_by_report_id_fund_source(
+    skipped_expense_ids = ExpenseGroup.create_expense_groups_by_report_id_fund_source(
         filtered_expenses, configuration, workspace.id
     )
+
+    if skipped_expense_ids:
+        skipped_expenses = mark_expenses_as_skipped(final_query=Q(), expenses_object_ids=skipped_expense_ids, workspace=workspace)
+        if skipped_expenses:
+            try:
+                post_accounting_export_summary(workspace_id=workspace.id, expense_ids=[expense.id for expense in skipped_expenses])
+            except Exception:
+                logger.error('Error posting accounting export summary for workspace_id: %s', workspace.id)
 
     task_log.status = 'COMPLETE'
     task_log.save()
@@ -233,7 +241,7 @@ def import_and_export_expenses(report_id: str, org_id: str, is_state_change_even
 
         # Export only selected expense groups
         expense_ids = Expense.objects.filter(report_id=report_id, org_id=org_id).values_list('id', flat=True)
-        expense_groups = ExpenseGroup.objects.filter(expenses__id__in=[expense_ids], workspace_id=workspace.id).distinct('id').values('id')
+        expense_groups = ExpenseGroup.objects.filter(expenses__id__in=[expense_ids], workspace_id=workspace.id, exported_at__isnull=True).distinct('id').values('id')
         expense_group_ids = [expense_group['id'] for expense_group in expense_groups]
 
         if len(expense_group_ids) and not is_state_change_event:
@@ -348,3 +356,7 @@ def re_run_skip_export_rule(workspace: Workspace) -> None:
                     last_export_detail.total_expense_groups_count - deleted_total_expense_groups_count
                 )
                 last_export_detail.save()
+            try:
+                post_accounting_export_summary(workspace_id=workspace.id, expense_ids=[expense.id for expense in skipped_expenses])
+            except Exception:
+                logger.exception('Error posting accounting export summary for workspace_id: %s', workspace.id)
