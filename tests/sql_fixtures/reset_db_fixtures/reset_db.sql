@@ -3,7 +3,7 @@
 --
 
 -- Dumped from database version 15.12 (Debian 15.12-1.pgdg120+1)
--- Dumped by pg_dump version 15.12 (Debian 15.12-0+deb12u2)
+-- Dumped by pg_dump version 15.13 (Debian 15.13-0+deb12u1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2456,7 +2456,8 @@ CREATE TABLE public.workspace_schedules (
     emails_selected character varying(255)[],
     error_count integer,
     created_at timestamp with time zone,
-    updated_at timestamp with time zone
+    updated_at timestamp with time zone,
+    is_real_time_export_enabled boolean NOT NULL
 );
 
 
@@ -2518,7 +2519,8 @@ CREATE TABLE public.failed_events (
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
     error_traceback text,
-    workspace_id integer
+    workspace_id integer,
+    is_resolved boolean NOT NULL
 );
 
 
@@ -9438,6 +9440,8 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 229	tasks	0015_error_mapping_error_expense_group_ids	2025-04-11 09:30:28.733146+00
 230	fyle_accounting_mappings	0029_expenseattributesdeletioncache_cost_center_ids_and_more	2025-04-23 15:16:59.961373+00
 231	workspaces	0045_configuration_skip_accounting_export_summary_post	2025-04-23 17:56:40.537311+00
+232	rabbitmq	0004_failedevent_is_resolved	2025-05-20 12:14:56.067087+00
+233	workspaces	0046_workspaceschedule_is_real_time_export_enabled	2025-05-20 12:14:56.076774+00
 \.
 
 
@@ -13096,7 +13100,7 @@ COPY public.expenses (id, employee_email, category, sub_category, project, expen
 -- Data for Name: failed_events; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.failed_events (id, routing_key, payload, created_at, updated_at, error_traceback, workspace_id) FROM stdin;
+COPY public.failed_events (id, routing_key, payload, created_at, updated_at, error_traceback, workspace_id, is_resolved) FROM stdin;
 \.
 
 
@@ -13258,8 +13262,8 @@ COPY public.vendor_payments (id, accounts_payable_id, account_id, entity_id, cur
 -- Data for Name: workspace_schedules; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.workspace_schedules (id, enabled, start_datetime, interval_hours, workspace_id, schedule_id, additional_email_options, emails_selected, error_count, created_at, updated_at) FROM stdin;
-1	t	2022-05-10 11:54:10.795285+00	1	49	\N	\N	{owner@fyleforintacct.in}	\N	2024-12-23 09:56:48.04448+00	2024-12-23 09:56:48.055509+00
+COPY public.workspace_schedules (id, enabled, start_datetime, interval_hours, workspace_id, schedule_id, additional_email_options, emails_selected, error_count, created_at, updated_at, is_real_time_export_enabled) FROM stdin;
+1	t	2022-05-10 11:54:10.795285+00	1	49	\N	\N	{owner@fyleforintacct.in}	\N	2024-12-23 09:56:48.04448+00	2024-12-23 09:56:48.055509+00	f
 \.
 
 
@@ -13366,7 +13370,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 48, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 230, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 233, true);
 
 
 --
@@ -15436,4 +15440,3 @@ ALTER TABLE ONLY public.workspace_schedules
 --
 -- PostgreSQL database dump complete
 --
-

@@ -163,5 +163,6 @@ fyle_integrations_platform_connector/
 fyle_accounting_library/
 common/
 consumer/
+netsuitesdk/
 
 commits.csv

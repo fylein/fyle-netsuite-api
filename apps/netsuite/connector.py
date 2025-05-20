@@ -640,15 +640,24 @@ class NetSuiteConnector:
         if not self.is_sync_allowed(attribute_type = 'locations', attribute_count = attribute_count):
             logger.info('Skipping sync of locations for workspace %s as it has %s counts which is over the limit', self.workspace_id, attribute_count)
             return
-        
+
         subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
 
         location_generator = self.connection.locations.get_all_generator()
 
         location_attributes = []
 
+        destination_ids = DestinationAttribute.objects.filter(
+            workspace_id=self.workspace_id,
+            attribute_type='LOCATION',
+            display_name='Location'
+        ).values_list('destination_id', flat=True)
+
         for locations in location_generator:
             for location in locations:
+                if location['isInactive'] and location['internalId'] not in destination_ids:
+                    continue
+
                 if 'subsidiaryList' in location and location['subsidiaryList']:
                     subsidiaries = location['subsidiaryList']['recordRef']
                     counter = 0
@@ -693,8 +702,17 @@ class NetSuiteConnector:
 
         classification_attributes = []
 
+        destination_ids = DestinationAttribute.objects.filter(
+            workspace_id=self.workspace_id,
+            attribute_type='CLASS',
+            display_name='Class'
+        ).values_list('destination_id', flat=True)
+
         for classifications in classification_generator:
             for classification in classifications:
+                if classification['isInactive'] and classification['internalId'] not in destination_ids:
+                    continue
+
                 classification_attributes.append({
                     'attribute_type': 'CLASS',
                     'display_name': 'Class',
@@ -725,8 +743,17 @@ class NetSuiteConnector:
 
         department_attributes = []
 
+        destination_ids = DestinationAttribute.objects.filter(
+            workspace_id=self.workspace_id,
+            attribute_type='DEPARTMENT',
+            display_name='Department'
+        ).values_list('destination_id', flat=True)
+
         for departments in department_generator:
             for department in departments:
+                if department['isInactive'] and department['internalId'] not in destination_ids:
+                    continue
+
                 department_attributes.append({
                     'attribute_type': 'DEPARTMENT',
                     'display_name': 'Department',
@@ -762,7 +789,20 @@ class NetSuiteConnector:
                 allow_intercompany_vendors=False
             )
 
-        vendors_generator = self.connection.vendors.get_all_generator()
+        params = {}
+
+        latest_vendor_attribute = DestinationAttribute.objects.filter(workspace_id=self.workspace_id, attribute_type='VENDOR').order_by('-updated_at').first()
+
+        if latest_vendor_attribute:
+            params = {
+                'last_modified_date': latest_vendor_attribute.updated_at
+            }
+        else:
+            params = {
+                'active': True
+            }
+
+        vendors_generator = self.connection.vendors.get_records_generator(**params)
 
         for vendors in vendors_generator:
             attributes = []
@@ -1287,31 +1327,33 @@ class NetSuiteConnector:
         if not self.is_sync_allowed(attribute_type = 'customers', attribute_count = attribute_count):
             logger.info('Skipping sync of customers for workspace %s as it has %s counts which is over the limit', self.workspace_id, attribute_count)
             return
-        
-        customers_generator = self.connection.customers.get_all_generator()
+
+        params = {}
+
+        latest_customer_attribute = DestinationAttribute.objects.filter(workspace_id=self.workspace_id, attribute_type='PROJECT', display_name='Customer').order_by('-updated_at').first()
+
+        if latest_customer_attribute:
+            params = {
+                'last_modified_date': latest_customer_attribute.updated_at
+            }
+        else:
+            params = {
+                'active': True
+            }
+
+        customers_generator = self.connection.customers.get_records_generator(**params)
 
         for customers in customers_generator:
             attributes = []
-            destination_ids = DestinationAttribute.objects.filter(workspace_id=self.workspace_id,\
-                attribute_type= 'PROJECT', display_name='Customer').values_list('destination_id', flat=True)
             for customer in customers:
                 value = self.__decode_project_or_customer_name(customer['entityId'])
-                if customer['internalId'] in destination_ids :
-                    attributes.append({
-                        'attribute_type': 'PROJECT',
-                        'display_name': 'Customer',
-                        'value': value,
-                        'destination_id': customer['internalId'],
-                        'active': not customer['isInactive']
-                    })
-                elif not customer['isInactive']:
-                    attributes.append({
-                        'attribute_type': 'PROJECT',
-                        'display_name': 'Customer',
-                        'value': value,
-                        'destination_id': customer['internalId'],
-                        'active': True
-                    })
+                attributes.append({
+                    'attribute_type': 'PROJECT',
+                    'display_name': 'Customer',
+                    'value': value,
+                    'destination_id': customer['internalId'],
+                    'active': not customer['isInactive']
+                })
 
             DestinationAttribute.bulk_create_or_update_destination_attributes(
                 attributes, 'PROJECT', self.workspace_id, True,
