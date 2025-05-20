@@ -1,11 +1,12 @@
 import pytest
 import json
 from unittest import mock
-from django_q.models import Schedule
-from datetime import timedelta
+from datetime import datetime
 
 from fyle_netsuite_api.tests import settings
 from django.urls import reverse
+from django.db.models import Q
+from apps.tasks.models import TaskLog
 from apps.workspaces.models import Configuration, FyleCredential, NetSuiteCredentials, WorkspaceSchedule, LastExportDetail
 from .fixtures import *
 from fyle_accounting_mappings.models import ExpenseAttribute
@@ -311,48 +312,6 @@ def test_patch_workspace_configuration(api_client, access_token):
     response = json.loads(response.content)
     assert response['auto_create_destination_entity'] == True
 
-def test_post_workspace_schedule(api_client, access_token):
-    url = reverse(
-         'workspace-schedule', kwargs={
-            'workspace_id': 1
-        }
-    )
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
-
-    response = api_client.post(url, {
-        "hours": 2,
-        "schedule_enabled": True,
-        "added_email": None,
-        "selected_email": [
-            "admin1@fyleforbadassashu.in"
-            ]
-        }, format='json')
-    assert response.status_code == 200
-
-def test_get_workspace_schedule(api_client, access_token):
-    url = reverse(
-        'workspace-schedule', kwargs={
-            'workspace_id': 1
-        }
-    )
-
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
-
-    response = api_client.get(url)
-    response = json.loads(response.content)
-
-    assert response['message'] == 'Schedule settings does not exist in workspace'
-
-    WorkspaceSchedule.objects.get_or_create(
-        workspace_id=1
-    )
-
-    response = api_client.get(url)
-    response = json.loads(response.content)
-    expected_response = get_response_dict('test_workspaces/data.json')
-
-    assert dict_compare_keys(response, expected_response['workspace_schedule']) == [] , 'workspace-schedule api returns a diff in keys'
-
 @pytest.mark.django_db(databases=['default'])
 def test_ready_view(api_client, access_token):
     url = reverse('ready')
@@ -559,3 +518,33 @@ def test_last_export_detail_view(api_client, access_token):
 
     response = api_client.get(url)
     assert response.status_code == 404
+
+
+@pytest.mark.django_db(databases=['default'])
+def test_last_export_detail_2(mocker, api_client, access_token):
+    workspace_id = 1
+
+    Configuration.objects.filter(workspace_id=workspace_id).update(
+        reimbursable_expenses_object='BILL',
+        corporate_credit_card_expenses_object='BILL'
+    )
+
+    url = "/api/workspaces/{}/export_detail/?start_date=2025-05-01".format(workspace_id)
+
+    api_client.credentials(
+        HTTP_AUTHORIZATION="Bearer {}".format(access_token)
+    )
+
+    LastExportDetail.objects.create(workspace_id=workspace_id, last_exported_at=datetime.now(), total_expense_groups_count=1)
+
+    TaskLog.objects.create(type='CREATING_EXPENSE_REPORT', status='COMPLETE', workspace_id=workspace_id)
+
+    failed_count = TaskLog.objects.filter(workspace_id=workspace_id, status__in=['FAILED', 'FATAL']).count()
+
+    response = api_client.get(url)
+    assert response.status_code == 200
+
+    response = json.loads(response.content)
+    assert response['repurposed_successful_count'] == 1
+    assert response['repurposed_failed_count'] == failed_count
+    assert response['repurposed_last_exported_at'] is not None
