@@ -12,7 +12,7 @@ enum34==1.1.10
 future==1.0.0
 fyle==1.0.0
 fyle-accounting-mappings==2.2.3
-fyle-integrations-platform-connector==2.2.2
+fyle-integrations-platform-connector==2.2.4
 fyle-rest-auth==1.7.2
 gunicorn==23.0.0
 gevent==24.11.1
