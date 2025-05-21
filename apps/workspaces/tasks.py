@@ -60,7 +60,7 @@ def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int, email_a
         ws_schedule.start_datetime = datetime.now()
         ws_schedule.interval_hours = hours
         ws_schedule.emails_selected = emails_selected
-        
+
         if email_added:
             ws_schedule.additional_email_options.append(email_added)
 
@@ -106,7 +106,7 @@ def run_sync_schedule(workspace_id):
 
     configuration = Configuration.objects.get(workspace_id=workspace_id)
     fund_source = []
-    
+
     if configuration.reimbursable_expenses_object:
         fund_source.append('PERSONAL')
     if configuration.corporate_credit_card_expenses_object:
@@ -162,7 +162,7 @@ def run_email_notification(workspace_id):
                         'workspace_id': workspace_id,
                         'year': date.today().year,
                         'export_time': export_time.date() if export_time else datetime.now(),
-                        'app_url': "{0}/workspaces/{1}/expense_groups".format(settings.FYLE_APP_URL, workspace_id),
+                        'app_url': "{0}/app/admin/#/integrations?integrationIframeTarget=integrations/netsuite".format(settings.FYLE_APP_URL),
                         'integrations_app_url': settings.INTEGRATIONS_APP_URL
                     }
 
