@@ -174,7 +174,8 @@ def handle_import_exception(task_log: TaskLog | None) -> None:
     if task_log:
         task_log.detail = {'error': error}
         task_log.status = 'FATAL'
-        task_log.save()
+        task_log.updated_at = datetime.now()
+        task_log.save(update_fields=['detail', 'status', 'updated_at'])
         logger.error('Something unexpected happened workspace_id: %s %s', task_log.workspace_id, task_log.detail)
     else:
         logger.error('Something unexpected happened %s', error)
