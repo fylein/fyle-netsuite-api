@@ -97,7 +97,7 @@ class NetSuiteConnector:
             return '{0}: {1} @{2}%'.format(tax_type, item_id, rate)
         else:
             return '{0} @{1}%'.format(item_id, rate)
-        
+
     def is_sync_allowed(self, attribute_type: str, attribute_count: int):
         """
         Checks if the sync is allowed
@@ -113,6 +113,24 @@ class NetSuiteConnector:
                 return True
 
         return True
+
+    def get_generator_params(self, attribute_type: str, display_name: str) -> dict:
+        """
+        Get Generator Params
+        """
+        params = {}
+        latest_attribute = DestinationAttribute.objects.filter(workspace_id=self.workspace_id, attribute_type=attribute_type, display_name=display_name).order_by('-updated_at').first()
+
+        if latest_attribute:
+            params = {
+                'last_modified_date': latest_attribute.updated_at
+            }
+        else:
+            params = {
+                'active': True
+            }
+
+        return params
 
     def is_import_enabled(self, attribute_type: str) -> bool:
         """
@@ -789,18 +807,7 @@ class NetSuiteConnector:
                 allow_intercompany_vendors=False
             )
 
-        params = {}
-
-        latest_vendor_attribute = DestinationAttribute.objects.filter(workspace_id=self.workspace_id, attribute_type='VENDOR').order_by('-updated_at').first()
-
-        if latest_vendor_attribute:
-            params = {
-                'last_modified_date': latest_vendor_attribute.updated_at
-            }
-        else:
-            params = {
-                'active': True
-            }
+        params = self.get_generator_params(attribute_type='VENDOR', display_name='Vendor')
 
         vendors_generator = self.connection.vendors.get_records_generator(**params)
 
@@ -1328,18 +1335,7 @@ class NetSuiteConnector:
             logger.info('Skipping sync of customers for workspace %s as it has %s counts which is over the limit', self.workspace_id, attribute_count)
             return
 
-        params = {}
-
-        latest_customer_attribute = DestinationAttribute.objects.filter(workspace_id=self.workspace_id, attribute_type='PROJECT', display_name='Customer').order_by('-updated_at').first()
-
-        if latest_customer_attribute:
-            params = {
-                'last_modified_date': latest_customer_attribute.updated_at
-            }
-        else:
-            params = {
-                'active': True
-            }
+        params = self.get_generator_params(attribute_type='PROJECT', display_name='Customer')
 
         customers_generator = self.connection.customers.get_records_generator(**params)
 
