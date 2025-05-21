@@ -226,18 +226,7 @@ class NetSuiteConnector:
                         'active': not account['isInactive']
                     })
 
-                    if settings.BRAND_ID == 'fyle':
-                        attributes['credit_card_account'].append({
-                            'attribute_type': 'CREDIT_CARD_ACCOUNT',
-                            'display_name': 'Credit Card Account',
-                            'value': account['acctName'],
-                            'destination_id': account['internalId'],
-                            'detail': {
-                                'account_type': account['acctType']
-                            },
-                            'active': not account['isInactive']
-                        })
-                    elif account['acctType'] == '_creditCard':
+                    if account['acctType'] == '_creditCard':
                         attributes['credit_card_account'].append({
                             'attribute_type': 'CREDIT_CARD_ACCOUNT',
                             'display_name': 'Credit Card Account',
