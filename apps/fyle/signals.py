@@ -45,8 +45,8 @@ def run_pre_save_expense_group_setting_triggers(sender, instance: ExpenseGroupSe
         configuration = Configuration.objects.filter(workspace_id=instance.workspace_id).first()
         if configuration:
             # TODO: move these async_tasks to maintenance worker later
-            if configuration.reimbursable_expenses_object and existing_expense_group_setting.reimbursable_export_date_type != instance.reimbursable_export_date_type and existing_expense_group_setting.reimbursable_export_date_type == ExpenseStateEnum.PAID and instance.reimbursable_export_date_type == ExpenseStateEnum.PAYMENT_PROCESSING:
-                logger.info(f'Reimbursable expense state changed from {existing_expense_group_setting.reimbursable_export_date_type} to {instance.reimbursable_export_date_type} for workspace {instance.workspace_id}, so pulling the data from Fyle')
+            if configuration.reimbursable_expenses_object and existing_expense_group_setting.expense_state != instance.expense_state and existing_expense_group_setting.expense_state == ExpenseStateEnum.PAID and instance.expense_state == ExpenseStateEnum.PAYMENT_PROCESSING:
+                logger.info(f'Reimbursable expense state changed from {existing_expense_group_setting.expense_state} to {instance.expense_state} for workspace {instance.workspace_id}, so pulling the data from Fyle')
                 async_task('apps.fyle.tasks.create_expense_groups', workspace_id=instance.workspace_id, fund_source=[FundSourceEnum.PERSONAL], task_log=None, imported_from=ExpenseImportSourceEnum.CONFIGURATION_UPDATE)
 
             if configuration.corporate_credit_card_expenses_object and existing_expense_group_setting.ccc_expense_state != instance.ccc_expense_state and existing_expense_group_setting.ccc_expense_state == ExpenseStateEnum.PAID and instance.ccc_expense_state == ExpenseStateEnum.APPROVED:

@@ -505,4 +505,5 @@ def update_task_log_post_import(task_log: TaskLog, status: str, message: str = N
     if task_log:
         task_log.status = status
         task_log.detail = {"message": message} if message else {"error": error}
-        task_log.save()
+        task_log.updated_at = datetime.now()
+        task_log.save(update_fields=['status', 'detail', 'updated_at'])

@@ -199,7 +199,8 @@ def group_expenses_and_save(expenses: List[Dict], task_log: TaskLog | None, work
 
     if task_log:
         task_log.status = 'COMPLETE'
-        task_log.save()
+        task_log.updated_at = datetime.now()
+        task_log.save(update_fields=['status', 'updated_at'])
 
 
 def import_and_export_expenses(report_id: str, org_id: str, is_state_change_event: bool, report_state: str = None, imported_from: ExpenseImportSourceEnum = None) -> None:
