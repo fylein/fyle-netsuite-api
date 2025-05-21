@@ -28,7 +28,7 @@ def test_run_pre_save_expense_group_setting_triggers_reimbursable_state_change(d
     expense_group_settings, _ = ExpenseGroupSettings.objects.update_or_create(
         workspace_id=workspace_id,
         defaults={
-            'reimbursable_export_date_type': ExpenseStateEnum.PAID,
+            'expense_state': ExpenseStateEnum.PAID,
             'ccc_expense_state': ExpenseStateEnum.PAID
         }
     )
@@ -36,7 +36,7 @@ def test_run_pre_save_expense_group_setting_triggers_reimbursable_state_change(d
     mock_async = mocker.patch('apps.fyle.signals.async_task')
 
     # Change reimbursable state
-    expense_group_settings.reimbursable_export_date_type = ExpenseStateEnum.PAYMENT_PROCESSING
+    expense_group_settings.expense_state = ExpenseStateEnum.PAYMENT_PROCESSING
     expense_group_settings.save()
 
     # Verify async_task was called with correct parameters
@@ -58,7 +58,7 @@ def test_run_pre_save_expense_group_setting_triggers_ccc_state_change(db, mocker
     expense_group_settings, _ = ExpenseGroupSettings.objects.update_or_create(
         workspace_id=workspace_id,
         defaults={
-            'reimbursable_export_date_type': ExpenseStateEnum.PAYMENT_PROCESSING,
+            'expense_state': ExpenseStateEnum.PAYMENT_PROCESSING,
             'ccc_expense_state': ExpenseStateEnum.PAID
         }
     )
@@ -89,14 +89,14 @@ def test_run_pre_save_expense_group_setting_triggers_no_configuration(db, mocker
     expense_group_settings, _ = ExpenseGroupSettings.objects.update_or_create(
         workspace_id=workspace_id,
         defaults={
-            'reimbursable_export_date_type': ExpenseStateEnum.PAID,
+            'expense_state': ExpenseStateEnum.PAID,
             'ccc_expense_state': ExpenseStateEnum.PAID
         }
     )
 
     mock_async = mocker.patch('apps.fyle.signals.async_task')
 
-    expense_group_settings.reimbursable_export_date_type = ExpenseStateEnum.PAYMENT_PROCESSING
+    expense_group_settings.expense_state = ExpenseStateEnum.PAYMENT_PROCESSING
     expense_group_settings.ccc_expense_state = ExpenseStateEnum.APPROVED
     expense_group_settings.save()
 
@@ -113,7 +113,7 @@ def test_run_pre_save_expense_group_setting_triggers_no_state_change(db, mocker)
     expense_group_settings, _ = ExpenseGroupSettings.objects.update_or_create(
         workspace_id=workspace_id,
         defaults={
-            'reimbursable_export_date_type': ExpenseStateEnum.PAID,
+            'expense_state': ExpenseStateEnum.PAID,
             'ccc_expense_state': ExpenseStateEnum.PAID
         }
     )
