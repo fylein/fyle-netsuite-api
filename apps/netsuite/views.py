@@ -8,6 +8,7 @@ from rest_framework.views import status
 
 from fyle_accounting_mappings.models import DestinationAttribute
 from fyle_accounting_mappings.serializers import DestinationAttributeSerializer
+from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 
 from apps.workspaces.models import NetSuiteCredentials, Workspace, Configuration
 
@@ -27,7 +28,7 @@ class TriggerExportsView(generics.GenericAPIView):
     Trigger exports creation
     """
     def post(self, request, *args, **kwargs):
-        export_to_netsuite(workspace_id=kwargs['workspace_id'])
+        export_to_netsuite(workspace_id=kwargs['workspace_id'], triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
         return Response(
             status=status.HTTP_200_OK

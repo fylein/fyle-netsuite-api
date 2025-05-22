@@ -38,6 +38,7 @@ data = {
             "interval_hours": 24,
             "emails_selected": ["fyle@fyle.in"],
             "additional_email_options": {},
+            "is_real_time_export_enabled": False
         },
     },
     "response": {
@@ -80,6 +81,7 @@ data = {
             "interval_hours": 24,
             "emails_selected": [],
             "additional_email_options": [],
+            "is_real_time_export_enabled": False
         },
         "workspace_id": 9,
     },
