@@ -1342,10 +1342,10 @@ class NetSuiteConnector:
 
             DestinationAttribute.bulk_create_or_update_destination_attributes(
                 attributes, 'PROJECT', self.workspace_id, True,
-                skip_deletion=self.is_duplicate_deletion_skipped(attribute_type='CUSTOMER'),
+                skip_deletion=self.is_duplicate_deletion_skipped(attribute_type='PROJECT'),
                 app_name=get_app_name(),
-                attribute_disable_callback_path=self.get_attribute_disable_callback_path(attribute_type='CUSTOMER'),
-                is_import_to_fyle_enabled=self.is_import_enabled(attribute_type='CUSTOMER')
+                attribute_disable_callback_path=self.get_attribute_disable_callback_path(attribute_type='PROJECT'),
+                is_import_to_fyle_enabled=self.is_import_enabled(attribute_type='PROJECT')
             )
 
         return []
