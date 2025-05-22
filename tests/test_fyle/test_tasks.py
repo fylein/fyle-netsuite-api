@@ -62,7 +62,7 @@ def test_create_expense_group(mocker, add_fyle_credentials):
         create_expense_groups(1, ['PERSONAL', 'CCC'], task_log, ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
         task_log = TaskLog.objects.get(workspace_id=1)
-        assert task_log.detail['message'] == 'Fyle credentials do not exist in workspace / Invalid token'
+        assert task_log.detail['message'] == 'Fyle credentials do not exist in workspace'
         assert task_log.status == 'FAILED'
 
         expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=1)

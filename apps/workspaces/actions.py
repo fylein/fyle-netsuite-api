@@ -12,14 +12,14 @@ logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
 
-def export_to_netsuite(workspace_id, export_mode=None, expense_group_ids=[], triggered_by: ExpenseImportSourceEnum = None):
+def export_to_netsuite(workspace_id, expense_group_ids=[], triggered_by: ExpenseImportSourceEnum = None):
     configuration = Configuration.objects.get(workspace_id=workspace_id)
     last_export_detail = LastExportDetail.objects.get(workspace_id=workspace_id)
     workspace_schedule = WorkspaceSchedule.objects.filter(workspace_id=workspace_id, interval_hours__gt=0, enabled=True).first()
 
     last_exported_at = datetime.now()
     is_expenses_exported = False
-    export_mode = export_mode or 'MANUAL'
+    export_mode = 'MANUAL' if triggered_by in (ExpenseImportSourceEnum.DASHBOARD_SYNC, ExpenseImportSourceEnum.DIRECT_EXPORT, ExpenseImportSourceEnum.CONFIGURATION_UPDATE) else 'AUTO'
     expense_group_filters = {
         'exported_at__isnull': True,
         'workspace_id': workspace_id
