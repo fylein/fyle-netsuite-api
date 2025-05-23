@@ -1,12 +1,10 @@
 from django.urls import path, include
 
-from .views import ExportToNetsuiteView, LastExportDetailView, WorkspaceView, WorkspaceAdminsView, ReadyView, ConnectFyleView, ConnectNetSuiteView, ScheduleView, ConfigurationsView, SetupE2ETestView
+from .views import ExportToNetsuiteView, LastExportDetailView, WorkspaceView, WorkspaceAdminsView, ReadyView, ConnectFyleView, ConnectNetSuiteView, ConfigurationsView, SetupE2ETestView
 
 workspaces_app_paths = [
     path('', WorkspaceView.as_view({'get': 'get', 'post': 'post'}), name='workspace'),
     path('<int:workspace_id>/', WorkspaceView.as_view({'get': 'get_by_id'}), name='workspace-by-id'),
-    path('<int:workspace_id>/schedule/', ScheduleView.as_view({'post': 'post', 'get': 'get'}),
-         name='workspace-schedule'),
     path('<int:workspace_id>/configuration/', ConfigurationsView.as_view(), name='workspace-configurations'),
     path('ready/', ReadyView.as_view({'get': 'get'}), name='ready'),
     path('<int:workspace_id>/admins/', WorkspaceAdminsView.as_view({'get': 'get'}), name='admin'),

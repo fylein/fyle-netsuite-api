@@ -27,8 +27,8 @@ logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
 
-def schedule_email_notification(workspace_id: int, schedule_enabled: bool):
-    if schedule_enabled:
+def schedule_email_notification(workspace_id: int, schedule_enabled: bool, hours: int):
+    if schedule_enabled and hours:
         schedule, _ = Schedule.objects.update_or_create(
             func='apps.workspaces.tasks.run_email_notification',
             cluster='import',
@@ -48,35 +48,41 @@ def schedule_email_notification(workspace_id: int, schedule_enabled: bool):
         if schedule:
             schedule.delete()
 
-def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int, email_added: List, emails_selected: List):
+def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int, email_added: List, emails_selected: List, is_real_time_export_enabled: bool):
     ws_schedule, _ = WorkspaceSchedule.objects.get_or_create(
         workspace_id=workspace_id
     )
 
-    schedule_email_notification(workspace_id=workspace_id, schedule_enabled=schedule_enabled)
+    schedule_email_notification(workspace_id=workspace_id, schedule_enabled=schedule_enabled, hours=hours)
 
     if schedule_enabled:
         ws_schedule.enabled = schedule_enabled
         ws_schedule.start_datetime = datetime.now()
         ws_schedule.interval_hours = hours
         ws_schedule.emails_selected = emails_selected
-        
+        ws_schedule.is_real_time_export_enabled = is_real_time_export_enabled
+
         if email_added:
             ws_schedule.additional_email_options.append(email_added)
 
-        next_run = datetime.now() + timedelta(hours=hours)
-
-        schedule, _ = Schedule.objects.update_or_create(
-            func='apps.workspaces.tasks.run_sync_schedule',
-            args='{}'.format(workspace_id),
-            defaults={
-                'schedule_type': Schedule.MINUTES,
-                'minutes': hours * 60,
-                'next_run': next_run
-            }
-        )
-
-        ws_schedule.schedule = schedule
+        if is_real_time_export_enabled:
+            # Delete existing schedule since user changed the setting to real time export
+            schedule = ws_schedule.schedule
+            if schedule:
+                ws_schedule.schedule = None
+                ws_schedule.save()
+                schedule.delete()
+        else:
+            schedule, _ = Schedule.objects.update_or_create(
+                func='apps.workspaces.tasks.run_sync_schedule',
+                args='{}'.format(workspace_id),
+                defaults={
+                    'schedule_type': Schedule.MINUTES,
+                    'minutes': hours * 60,
+                    'next_run': datetime.now() + timedelta(hours=hours),
+                }
+            )
+            ws_schedule.schedule = schedule
 
         ws_schedule.save()
 
@@ -106,7 +112,7 @@ def run_sync_schedule(workspace_id):
 
     configuration = Configuration.objects.get(workspace_id=workspace_id)
     fund_source = []
-    
+
     if configuration.reimbursable_expenses_object:
         fund_source.append('PERSONAL')
     if configuration.corporate_credit_card_expenses_object:
@@ -118,7 +124,7 @@ def run_sync_schedule(workspace_id):
         )
 
     if task_log.status == 'COMPLETE':
-        export_to_netsuite(workspace_id, 'AUTO', triggered_by=ExpenseImportSourceEnum.BACKGROUND_SCHEDULE)
+        export_to_netsuite(workspace_id=workspace_id, triggered_by=ExpenseImportSourceEnum.BACKGROUND_SCHEDULE)
 
 def run_email_notification(workspace_id):
 
@@ -162,7 +168,7 @@ def run_email_notification(workspace_id):
                         'workspace_id': workspace_id,
                         'year': date.today().year,
                         'export_time': export_time.date() if export_time else datetime.now(),
-                        'app_url': "{0}/workspaces/{1}/expense_groups".format(settings.FYLE_APP_URL, workspace_id),
+                        'app_url': "{0}/app/admin/#/integrations?integrationIframeTarget=integrations/netsuite".format(settings.FYLE_APP_URL),
                         'integrations_app_url': settings.INTEGRATIONS_APP_URL
                     }
 
