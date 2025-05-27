@@ -2,10 +2,10 @@ from apps.workspaces.models import Configuration, NetSuiteCredentials
 from fyle_accounting_mappings.models import MappingSetting
 from fyle_integrations_imports.dataclasses import TaskSetting
 from fyle_integrations_imports.queues import chain_import_fields_to_fyle
-from apps.mappings.helpers import is_auto_sync_allowed
 from apps.mappings.constants import SYNC_METHODS
 from apps.mappings.models import GeneralMapping
 from apps.netsuite.helpers import get_import_categories_settings, sync_override_tax_items
+
 
 def construct_tasks_and_chain_import_fields_to_fyle(workspace_id: int):
     """
