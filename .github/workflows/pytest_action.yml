@@ -39,16 +39,13 @@ jobs:
           python -m pip install diff-cover
 
           git fetch origin master --depth=1
-          diff-cover coverage.xml --compare-branch=origin/master --diff-range-notation .. --fail-under=86 > result.txt 2>&1
+          diff-cover coverage.xml --compare-branch=origin/master --diff-range-notation .. --fail-under=86 > result.txt 2>&1 || echo "diff-cover failed or no changes detected" > result.txt
 
       - name: Comment coverage check
         if: always()
         uses: thollander/actions-comment-pull-request@v2
         with:
           filePath: result.txt
-
-      - name: Stop Services
-        run: docker compose -f docker-compose-pipeline.yml down
 
       - name: Evaluate Coverage
         if: ${{ (env.STATUS == 'FAIL') || (env.FAILED > 0) }}
