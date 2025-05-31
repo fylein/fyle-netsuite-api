@@ -1,7 +1,11 @@
 import logging
 import traceback
 
-from netsuitesdk import NetSuiteRateLimitError, NetSuiteLoginError, NetSuiteRequestError
+from netsuitesdk import (
+    NetSuiteRateLimitError,
+    NetSuiteLoginError,
+    NetSuiteRequestError
+)
 from fyle.platform.exceptions import (
     WrongParamsError,
     InvalidTokenError,
@@ -116,6 +120,18 @@ def handle_import_exceptions_v2(func):
         except InternalServerError:
             error['message'] = 'Internal server error while importing to Fyle'
             error['alert'] = True
+            import_log.status = 'FAILED'
+
+        except (NetSuiteRateLimitError) as exception:
+            error['message'] = 'NetSuite rate limit reached'
+            error['alert'] = False
+            error['response'] = exception.__dict__
+            import_log.status = 'FAILED'
+
+        except NetSuiteRequestError as exception:
+            error['message'] = 'NetSuite request error - {0}'.format(exception.code)
+            error['response'] = exception.message
+            error['alert'] = False
             import_log.status = 'FAILED'
 
         except (NetSuiteLoginError, NetSuiteCredentials.DoesNotExist) as exception:
