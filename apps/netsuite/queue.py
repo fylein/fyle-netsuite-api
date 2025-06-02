@@ -120,16 +120,12 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str], is_
                 if triggered_by and task_log.triggered_by != triggered_by:
                     task_log.triggered_by = triggered_by
                 task_log.save()
-            
-            last_export = False
-            if expense_groups.count() == index + 1:
-                last_export = True
 
             chain_tasks.append({
                     'target': 'apps.netsuite.tasks.create_bill',
                     'expense_group': expense_group,
                     'task_log_id': task_log.id,
-                    'last_export': last_export
+                    'last_export': (expense_groups.count() == index + 1)
                     })
 
         if len(chain_tasks) > 0:
@@ -189,15 +185,11 @@ def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: L
                     task_log.triggered_by = triggered_by
                 task_log.save()
             
-            last_export = False
-            if expense_groups.count() == index + 1:
-                last_export = True
-
             chain_tasks.append({
                     'target': 'apps.netsuite.tasks.create_credit_card_charge',
                     'expense_group': expense_group,
                     'task_log_id': task_log.id,
-                    'last_export': last_export
+                    'last_export': (expense_groups.count() == index + 1)
                     })
 
         if len(chain_tasks) > 0:
@@ -252,15 +244,11 @@ def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List
                     task_log.triggered_by = triggered_by
                 task_log.save()
             
-            last_export = False
-            if expense_groups.count() == index + 1:
-                last_export = True
-
             chain_tasks.append({
                     'target': 'apps.netsuite.tasks.create_expense_report',
                     'expense_group': expense_group,
                     'task_log_id': task_log.id,
-                    'last_export': last_export
+                    'last_export': (expense_groups.count() == index + 1)
                     })
 
         if len(chain_tasks) > 0:
@@ -314,15 +302,11 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
                     task_log.triggered_by = triggered_by
                 task_log.save()
             
-            last_export = False
-            if expense_groups.count() == index + 1:
-                last_export = True
-
             chain_tasks.append({
                     'target': 'apps.netsuite.tasks.create_journal_entry',
                     'expense_group': expense_group,
                     'task_log_id': task_log.id,
-                    'last_export': last_export
+                    'last_export': (expense_groups.count() == index + 1)
                     })
 
         if len(chain_tasks) > 0:
