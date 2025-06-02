@@ -2,7 +2,7 @@ import pytest
 from apps.fyle.models import ExpenseGroup
 from apps.tasks.models import TaskLog
 from apps.netsuite.models import Bill, BillLineitem, CreditCardCharge, CreditCardChargeLineItem, ExpenseReport, ExpenseReportLineItem, JournalEntry, JournalEntryLineItem
-from apps.workspaces.models import Configuration
+from apps.workspaces.models import Configuration, LastExportDetail
 from apps.netsuite.models import CustomSegment
 from apps.fyle.models import ExpenseGroup, Expense
 from fyle_accounting_mappings.models import  ExpenseAttribute, DestinationAttribute, CategoryMapping
@@ -322,3 +322,14 @@ def add_tax_destination_attributes(db):
             created_at = datetime.now(),
             updated_at = datetime.now(),
         )
+
+@pytest.fixture
+def create_last_export_detail(db):
+    LastExportDetail.objects.create(
+        workspace_id=1,
+        export_mode='MANUAL',
+        total_expense_groups_count=2,
+        successful_expense_groups_count=0,
+        failed_expense_groups_count=0,
+        last_exported_at=datetime.now(),
+    )

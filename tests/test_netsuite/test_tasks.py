@@ -1701,7 +1701,7 @@ def test_upload_attachments_and_update_export(mocker, db):
     assert lineitem.netsuite_receipt_url == 'https://aaa.bbb.cc/x232sds'
 
 
-def test_skipping_bill_creation(db, mocker):
+def test_skipping_bill_creation(db, mocker, create_last_export_detail):
     workspace_id = 1
     mocker.patch(
         'apps.tasks.models.TaskLog.objects.get_or_create',
@@ -1740,7 +1740,7 @@ def test_skipping_bill_creation(db, mocker):
     assert task_log.type == 'CREATING_BILL'
 
 
-def test_skipping_journal_creation(db, mocker):
+def test_skipping_journal_creation(db, mocker, create_last_export_detail):
     workspace_id = 1
     mocker.patch(
         'apps.tasks.models.TaskLog.objects.get_or_create',
@@ -1779,7 +1779,7 @@ def test_skipping_journal_creation(db, mocker):
     assert task_log.type == 'CREATING_JOURNAL_ENTRY'
 
 
-def test_skipping_expense_group_creation(db, mocker):
+def test_skipping_expense_group_creation(db, mocker, create_last_export_detail):
     workspace_id = 1
     mocker.patch(
         'apps.tasks.models.TaskLog.objects.get_or_create',
@@ -1818,7 +1818,7 @@ def test_skipping_expense_group_creation(db, mocker):
     assert task_log.type == 'CREATING_EXPENSE_REPORT'
 
 
-def test_skipping_credit_card_charge_creation(db, mocker):
+def test_skipping_credit_card_charge_creation(db, mocker, create_last_export_detail):
     workspace_id = 1
     mocker.patch(
         'apps.tasks.models.TaskLog.objects.get_or_create',
