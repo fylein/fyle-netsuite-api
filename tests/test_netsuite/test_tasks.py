@@ -1701,7 +1701,7 @@ def test_upload_attachments_and_update_export(mocker, db):
     assert lineitem.netsuite_receipt_url == 'https://aaa.bbb.cc/x232sds'
 
 
-def test_skipping_bill_creation(db, mocker):
+def test_skipping_bill_creation(db, mocker, create_last_export_detail):
     workspace_id = 1
     mocker.patch(
         'apps.tasks.models.TaskLog.objects.get_or_create',
@@ -1740,7 +1740,7 @@ def test_skipping_bill_creation(db, mocker):
     assert task_log.type == 'CREATING_BILL'
 
 
-def test_skipping_journal_creation(db, mocker):
+def test_skipping_journal_creation(db, mocker, create_last_export_detail):
     workspace_id = 1
     mocker.patch(
         'apps.tasks.models.TaskLog.objects.get_or_create',
@@ -1779,7 +1779,7 @@ def test_skipping_journal_creation(db, mocker):
     assert task_log.type == 'CREATING_JOURNAL_ENTRY'
 
 
-def test_skipping_expense_group_creation(db, mocker):
+def test_skipping_expense_group_creation(db, mocker, create_last_export_detail):
     workspace_id = 1
     mocker.patch(
         'apps.tasks.models.TaskLog.objects.get_or_create',
@@ -1818,7 +1818,7 @@ def test_skipping_expense_group_creation(db, mocker):
     assert task_log.type == 'CREATING_EXPENSE_REPORT'
 
 
-def test_skipping_credit_card_charge_creation(db, mocker):
+def test_skipping_credit_card_charge_creation(db, mocker, create_last_export_detail):
     workspace_id = 1
     mocker.patch(
         'apps.tasks.models.TaskLog.objects.get_or_create',
@@ -2078,3 +2078,60 @@ def test_get_or_create_error_with_expense_group_tax_mapping(db):
     assert error.mapping_error_expense_group_ids == [expense_group.id]
     assert error.workspace_id == workspace_id
     assert error.is_resolved == False
+
+def test_handle_skipped_exports(mocker, db, create_last_export_detail):
+    mock_post_summary = mocker.patch('apps.netsuite.queue.post_accounting_export_summary_for_skipped_exports', return_value=None)
+    mock_update_last_export = mocker.patch('apps.netsuite.queue.update_last_export_details')
+    mock_logger = mocker.patch('apps.netsuite.queue.logger')
+    mocker.patch('apps.netsuite.actions.patch_integration_settings', return_value=None)
+    mocker.patch('apps.netsuite.actions.post_accounting_export_summary', return_value=None)
+
+    # Create or get two expense groups
+    eg1 = ExpenseGroup.objects.create(workspace_id=1, fund_source='PERSONAL')
+    eg2 = ExpenseGroup.objects.create(workspace_id=1, fund_source='PERSONAL')
+    expense_groups = ExpenseGroup.objects.filter(id__in=[eg1.id, eg2.id])
+
+    # Create a dummy error
+    error = Error.objects.create(
+        workspace_id=1,
+        type='EMPLOYEE_MAPPING',
+        expense_group=eg1,
+        repetition_count=5,
+        is_resolved=False,
+        error_title='Test Error',
+        error_detail='Test error detail',
+    )
+
+    # Case 1: triggered_by is DIRECT_EXPORT, not last export
+    skip_export_count = 0
+    result = handle_skipped_exports(
+        expense_groups=expense_groups,
+        index=0,
+        skip_export_count=skip_export_count,
+        error=error,
+        expense_group=eg1,
+        triggered_by=ExpenseImportSourceEnum.DIRECT_EXPORT
+    )
+    assert result == 1
+    mock_post_summary.assert_called_once_with(eg1, eg1.workspace_id, is_mapping_error=False)
+    mock_update_last_export.assert_not_called()
+    mock_logger.info.assert_called()
+
+    mock_post_summary.reset_mock()
+    mock_update_last_export.reset_mock()
+    mock_logger.reset_mock()
+
+    # Case 2: last export, skip_export_count == total_count-1, should call update_last_export_details
+    skip_export_count = 1
+    result = handle_skipped_exports(
+        expense_groups=expense_groups,
+        index=1,
+        skip_export_count=skip_export_count,
+        error=None,
+        expense_group=eg2,
+        triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC
+    )
+    assert result == 2
+    mock_post_summary.assert_not_called()
+    mock_update_last_export.assert_called_once_with(eg2.workspace_id)
+    mock_logger.info.assert_called()
