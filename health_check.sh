@@ -58,4 +58,73 @@ else
     echo "PostgreSQL connection is healthy"
 fi
 
+
+# --- RabbitMQ Consumer check ---
+# Check if the RabbitMQ consumer is running
+
+# Extract the queue name from the command line argument or use the default to '' if not provided
+QUEUE_NAME="${1:-${QUEUE_NAME:-}}"
+
+if [ -z "$QUEUE_NAME" ]; then
+    echo "QUEUE_NAME is not set"
+    exit 0
+fi
+
+# Extract parts from AMQP URL
+proto_removed="${RABBITMQ_URL#amqp://}"
+userpass_hostport_vhost="${proto_removed%%\?*}"
+userpass_hostport="${userpass_hostport_vhost%%/*}"
+
+# Parse user, password, host and port
+userpass="${userpass_hostport%@*}"
+hostport="${userpass_hostport#*@}"
+
+unset RABBITMQ_USER
+unset RABBITMQ_PASS
+unset RABBITMQ_HOST
+unset RABBITMQ_PORT_AMQP
+unset VHOST
+
+RABBITMQ_USER="${userpass%%:*}"
+RABBITMQ_PASS="${userpass#*:}"
+RABBITMQ_HOST="${hostport%%:*}"
+RABBITMQ_PORT_AMQP="${hostport#*:}"
+RABBITMQ_PORT=15672  # Management port
+VHOST="%2F"
+
+# --- RabbitMQ Consumer check ---
+# Make the API request
+response=$(curl -s -w "%{http_code}" -u "$RABBITMQ_USER:$RABBITMQ_PASS" \
+  "http://$RABBITMQ_HOST:$RABBITMQ_PORT/api/queues/$VHOST/$QUEUE_NAME")
+
+# Separate response body and HTTP status code
+http_status=$(echo "$response" | tail -c 4)
+body=$(echo "$response" | head -c $(($(echo "$response" | wc -c) - 3)))
+
+# Check for HTTP failure
+if [ "$http_status" -ne 200 ]; then
+    echo "RabbitMQ returned HTTP $http_status - queue may not exist: $QUEUE_NAME"
+    exit 1
+fi
+
+# Extract the number of consumers
+consumer_count=$(echo "$body" | grep -o '"consumers":[0-9]*' | cut -d ':' -f2)
+
+# Validate consumer count is numeric
+case "$consumer_count" in
+    ''|*[!0-9]*)
+        echo "Invalid consumer count for queue $QUEUE_NAME"
+        exit 1
+        ;;
+esac
+
+# Health check result
+if [ "$consumer_count" -eq 0 ]; then
+    echo "No consumer present on queue: $QUEUE_NAME"
+    exit 1
+else
+    echo "Consumer present on queue: $QUEUE_NAME ($consumer_count consumers)"
+    exit 0
+fi
+
 exit 0
