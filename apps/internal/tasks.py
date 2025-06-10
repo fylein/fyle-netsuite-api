@@ -23,6 +23,7 @@ def re_export_stuck_exports():
     task_logs = TaskLog.objects.filter(
         status__in=['ENQUEUED', 'IN_PROGRESS'],
         updated_at__lt=datetime.now() - timedelta(minutes=60),
+        updated_at__gt=datetime.now() - timedelta(days=7),
         expense_group_id__isnull=False,
         workspace_id__in=prod_workspace_ids
     )
