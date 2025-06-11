@@ -7,7 +7,7 @@ from typing import List
 
 from django.conf import settings
 from django.db.models import Q
-from apps.fyle.helpers import post_request
+from apps.fyle.helpers import post_request, patch_request
 from django.template.loader import render_to_string
 from django_q.models import Schedule
 from fyle_accounting_mappings.models import MappingSetting, ExpenseAttribute
