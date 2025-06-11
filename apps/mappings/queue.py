@@ -1,11 +1,13 @@
-from apps.workspaces.models import Configuration, NetSuiteCredentials
+from django.utils.module_loading import import_string
+
 from fyle_accounting_mappings.models import MappingSetting
+
+from apps.workspaces.models import Configuration, NetSuiteCredentials
 from fyle_integrations_imports.dataclasses import TaskSetting
 from fyle_integrations_imports.queues import chain_import_fields_to_fyle
-from apps.mappings.helpers import is_auto_sync_allowed
 from apps.mappings.constants import SYNC_METHODS
 from apps.mappings.models import GeneralMapping
-from apps.netsuite.helpers import get_import_categories_settings, sync_override_tax_items
+
 
 def construct_tasks_and_chain_import_fields_to_fyle(workspace_id: int):
     """
@@ -44,7 +46,7 @@ def construct_tasks_and_chain_import_fields_to_fyle(workspace_id: int):
     ]
 
     if configurations.import_tax_items and general_mappings and general_mappings.override_tax_details:
-        sync_override_tax_items(credentials, workspace_id)
+        import_string('apps.netsuite.helpers.sync_override_tax_items')(credentials, workspace_id)
         task_settings['import_tax'] = {
             'destination_field': 'TAX_ITEM',
             'destination_sync_methods': [],
@@ -60,7 +62,7 @@ def construct_tasks_and_chain_import_fields_to_fyle(workspace_id: int):
         }
 
     if configurations.import_categories:
-        is_3d_mapping_enabled, destination_field, destination_sync_methods = get_import_categories_settings(configurations)
+        is_3d_mapping_enabled, destination_field, destination_sync_methods = import_string('apps.netsuite.helpers.get_import_categories_settings')(configurations)
 
         task_settings['import_categories'] = {
             'destination_field': destination_field,
@@ -71,14 +73,13 @@ def construct_tasks_and_chain_import_fields_to_fyle(workspace_id: int):
             'use_mapping_table': False
         }
 
-    if not configurations.import_items:
-        task_settings['import_items'] = False
+    task_settings['import_items'] = configurations.import_items
 
     if configurations.import_vendors_as_merchants:
         task_settings['import_vendors_as_merchants'] = {
             'destination_field': 'VENDOR',
             'destination_sync_methods': [SYNC_METHODS['VENDOR']],
-            'is_auto_sync_enabled': False,
+            'is_auto_sync_enabled': True,
             'is_3d_mapping': False
         }
 
@@ -96,7 +97,7 @@ def construct_tasks_and_chain_import_fields_to_fyle(workspace_id: int):
                         'destination_field': mapping_setting.destination_field,
                         'is_custom': mapping_setting.is_custom,
                         'destination_sync_methods': destination_sync_methods,
-                        'is_auto_sync_enabled': is_auto_sync_allowed(configurations, mapping_setting)
+                        'is_auto_sync_enabled': True
                     }
                 )
 

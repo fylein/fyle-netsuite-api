@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from typing import Dict, List
-from datetime import datetime, timezone
+from django_q.tasks import async_task
 
 from django.db.models import Q
 from fyle_accounting_mappings.models import MappingSetting, ExpenseAttribute
@@ -61,10 +61,13 @@ class ImportSettingsTrigger:
         expense_group_settings.save()
 
 
-    def post_save_configurations(self, configurations_instance: Configuration):
+    def post_save_configurations(self, configurations_instance: Configuration, old_configurations_instance: Configuration):
         """
         Post save action for workspace general settings
         """
+        if not configurations_instance.import_items and old_configurations_instance.import_items:
+            async_task('fyle_integrations_imports.tasks.disable_items', workspace_id=self.__workspace_id, is_import_enabled=False)
+
         new_schedule_or_delete_fyle_import_tasks(
             configuration_instance=configurations_instance,
             mapping_settings=self.__mapping_settings

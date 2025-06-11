@@ -1,15 +1,33 @@
 import logging
 
+from django.conf import settings
 from apps.tasks.models import TaskLog
-from apps.workspaces.models import LastExportDetail
+from apps.workspaces.models import FyleCredential, LastExportDetail
 from django.db.models import Q
+from apps.fyle.helpers import patch_request
 
-from apps.workspaces.tasks import patch_integration_settings
 from apps.fyle.actions import post_accounting_export_summary
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
+
+def patch_integration_settings(workspace_id: int, errors: int = 0):
+    """
+    Patch integration settings
+    """
+    refresh_token = FyleCredential.objects.get(workspace_id=workspace_id).refresh_token
+    url = '{}/integrations/'.format(settings.INTEGRATIONS_SETTINGS_API)
+    payload = {
+        'tpa_name': 'Fyle Netsuite Integration',
+        'errors_count': errors
+    }
+
+    try:
+        patch_request(url, payload, refresh_token)
+    except Exception as error:
+        logger.error(error, exc_info=True)
+        
 
 def update_last_export_details(workspace_id):
     last_export_detail = LastExportDetail.objects.get(workspace_id=workspace_id)

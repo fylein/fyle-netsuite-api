@@ -115,7 +115,8 @@ class WorkspaceSchedulesSerializer(serializers.ModelSerializer):
             'enabled',
             'interval_hours',
             'additional_email_options',
-            'emails_selected'
+            'emails_selected',
+            'is_real_time_export_enabled'
         ]
 
 class AdvancedSettingsSerializer(serializers.ModelSerializer):

@@ -7,13 +7,13 @@ from tests.test_fyle.fixtures import data as fyle_data
 from unittest.mock import patch
 
 def test_schedule_sync(db):
-    schedule_sync(2, True, 3, ['ashwin.t@fyle.in'], ['ashwin.t@fyle.in'])
+    schedule_sync(2, True, 3, ['ashwin.t@fyle.in'], ['ashwin.t@fyle.in'], False)
 
     ws_schedule = WorkspaceSchedule.objects.filter(workspace_id=2).last()
     assert ws_schedule.interval_hours == 3
     assert ws_schedule.enabled == True
 
-    schedule_sync(2, False, 0, ['ashwin.t@fyle.in'], ['ashwin.t@fyle.in'])
+    schedule_sync(2, False, 0, ['ashwin.t@fyle.in'], ['ashwin.t@fyle.in'], False)
 
     ws_schedule = WorkspaceSchedule.objects.filter(workspace_id=2).last()
     assert ws_schedule.enabled == False

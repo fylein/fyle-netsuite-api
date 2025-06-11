@@ -95,6 +95,7 @@ class WorkspaceSchedule(models.Model):
     error_count = models.IntegerField(null=True, help_text='Number of errors in export')
     additional_email_options = JSONField(default=list, help_text='Email and Name of person to send email', null=True)
     emails_selected = ArrayField(base_field=models.CharField(max_length=255), null=True, help_text='File IDs')
+    is_real_time_export_enabled = models.BooleanField(default=False)
     schedule = models.OneToOneField(Schedule, on_delete=models.PROTECT, null=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True, help_text='Created at datetime')
     updated_at = models.DateTimeField(auto_now=True, null=True, help_text='Updated at datetime')

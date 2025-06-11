@@ -392,7 +392,7 @@ def test_sync_vendors(mocker, db):
         return_value=0
     )
     mocker.patch(
-        'netsuitesdk.api.vendors.Vendors.get_all_generator',
+        'netsuitesdk.api.vendors.Vendors.get_records_generator',
         return_value=data['get_all_vendors']   
     )
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
@@ -630,7 +630,7 @@ def test_sync_departments(mocker, db):
 
 def test_sync_customers(mocker, db):
     mocker.patch(
-        'netsuitesdk.api.customers.Customers.get_all_generator',
+        'netsuitesdk.api.customers.Customers.get_records_generator',
         return_value=data['get_all_projects']  
     )
 

@@ -9,9 +9,10 @@ from fyle_integrations_platform_connector import PlatformConnector
 from fyle.platform.internals.decorators import retry
 from fyle.platform.exceptions import InternalServerError, RetryException
 
-from apps.fyle.models import Expense
+from apps.fyle.models import Expense, ExpenseGroup
 from apps.workspaces.models import Workspace, FyleCredential, Configuration
 from apps.fyle.helpers import get_updated_accounting_export_summary, get_batched_expenses
+from fyle_netsuite_api.logging_middleware import get_logger, get_caller_info
 
 
 logger = logging.getLogger(__name__)
@@ -273,6 +274,9 @@ def post_accounting_export_summary(workspace_id: int, expense_ids: List = None, 
     configuration = Configuration.objects.get(workspace_id=workspace_id)
     if configuration.skip_accounting_export_summary_post:
         return
+    
+    worker_logger = get_logger()
+    caller_info = get_caller_info()
     # Iterate through all expenses which are not synced and post accounting export summary to Fyle in batches
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
     platform = PlatformConnector(fyle_credentials)
@@ -293,7 +297,7 @@ def post_accounting_export_summary(workspace_id: int, expense_ids: List = None, 
     expenses_count = Expense.objects.filter(**filters).count()
 
     accounting_export_summary_batches = []
-    page_size = 200
+    page_size = 20
     for offset in range(0, expenses_count, page_size):
         limit = offset + page_size
         paginated_expenses = Expense.objects.filter(**filters).order_by('id')[offset:limit]
@@ -307,9 +311,18 @@ def post_accounting_export_summary(workspace_id: int, expense_ids: List = None, 
 
         accounting_export_summary_batches.append(payload)
 
-    logger.info(
-        'Posting accounting export summary to Fyle workspace_id: %s, payload: %s',
+    worker_logger.info(
+        'Called from %s, Posting accounting export summary to Fyle workspace_id: %s, payload: %s',
+        caller_info,
         workspace_id,
         accounting_export_summary_batches
     )
     create_generator_and_post_in_batches(accounting_export_summary_batches, platform, workspace_id)
+
+
+def post_accounting_export_summary_for_skipped_exports(expense_group: ExpenseGroup, workspace_id: int, is_mapping_error: bool = True):
+    first_expense = expense_group.expenses.first()
+    update_expenses_in_progress([first_expense])
+    post_accounting_export_summary(workspace_id=workspace_id, expense_ids=[first_expense.id])
+    update_failed_expenses(expense_group.expenses.all(), is_mapping_error)
+    post_accounting_export_summary(workspace_id=workspace_id, expense_ids=[expense.id for expense in expense_group.expenses.all()], is_failed=True)

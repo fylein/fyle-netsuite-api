@@ -24,13 +24,6 @@ class ExportWorker(EventConsumer):
         try:
             logger.info('Processing task for workspace - %s with routing key - %s and payload - %s with delivery tag - %s', payload_dict['workspace_id'], routing_key, payload_dict, delivery_tag)
 
-            # We're gonna retry failed events since this queue is primarily webhook calls from Fyle, if this is a scheduled export, it doesn't necessarily needs to be retried
-            retry_count = payload_dict.get('retry_count', 0)
-            if retry_count >= 2:
-                logger.error('Task failed after %s retries, dropping task', retry_count)
-                self.qconnector.reject_message(delivery_tag, requeue=False)
-                return
-
             handle_exports(payload_dict['data'])
             self.qconnector.acknowledge_message(delivery_tag)
             logger.info('Task processed successfully for workspace - %s with routing key - %s and delivery tag - %s', payload_dict['workspace_id'], routing_key, delivery_tag)

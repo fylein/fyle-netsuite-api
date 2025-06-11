@@ -20,6 +20,8 @@ from tests.helper import dict_compare_keys
 from unittest import mock
 from apps.fyle.actions import mark_expenses_as_skipped
 from fyle.platform.exceptions import InvalidTokenError, InternalServerError
+from apps.fyle.models import ExpenseFilter
+from apps.fyle.tasks import group_expenses_and_save
 
 
 @pytest.mark.django_db()
@@ -60,7 +62,7 @@ def test_create_expense_group(mocker, add_fyle_credentials):
         create_expense_groups(1, ['PERSONAL', 'CCC'], task_log, ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
         task_log = TaskLog.objects.get(workspace_id=1)
-        assert task_log.detail['message'] == 'Fyle credentials do not exist in workspace / Invalid token'
+        assert task_log.detail['message'] == 'Fyle credentials do not exist in workspace'
         assert task_log.status == 'FAILED'
 
         expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=1)
@@ -228,3 +230,56 @@ def test_update_non_exported_expenses(db, create_temp_workspace, mocker, api_cli
     url = reverse('exports', kwargs={'workspace_id': 2})
     response = api_client.post(url, data=payload, format='json')
     assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db()
+def test_group_expenses_and_save(mocker, add_fyle_credentials):
+    test_expenses = data['group_and_save_expense_groups_expenses']
+    task_log, _ = TaskLog.objects.update_or_create(
+        workspace_id=1,
+        type='FETCHING_EXPENSES',
+        defaults={
+            'status': 'IN_PROGRESS'
+        }
+    )
+    workspace = Workspace.objects.get(id=1)
+
+    # Get initial counts
+    initial_expense_count = Expense.objects.filter(workspace_id=1).count()
+    initial_expense_group_count = ExpenseGroup.objects.filter(workspace_id=1).count()
+
+    # Test without expense filters
+    group_expenses_and_save(test_expenses, task_log, workspace)
+    
+    # Verify expense objects were created
+    expenses = Expense.objects.filter(workspace_id=1)
+    assert expenses.count() == initial_expense_count + 2
+    
+    # Verify expense groups were created
+    expense_groups = ExpenseGroup.objects.filter(workspace_id=1)
+    assert expense_groups.count() == initial_expense_group_count + 2
+    
+    # Verify task log was updated
+    task_log.refresh_from_db()
+    assert task_log.status == 'COMPLETE'
+
+    # Test with expense filters
+    # Create an expense filter
+    expense_filter = ExpenseFilter.objects.create(
+        workspace_id=1,
+        condition='employee_email',
+        operator='in',
+        values=['test@fyle.in'],
+        rank=1
+    )
+    # Run with filters
+    group_expenses_and_save(test_expenses, task_log, workspace)
+    
+    # Verify that only one expense is not skipped (the one matching the filter)
+    non_skipped_expenses = expenses.filter(is_skipped=False)
+    assert non_skipped_expenses.count() == 1
+    assert non_skipped_expenses.first().employee_email == 'test2@fyle.in'
+
+    # Verify task log was updated
+    task_log.refresh_from_db()
+    assert task_log.status == 'COMPLETE'

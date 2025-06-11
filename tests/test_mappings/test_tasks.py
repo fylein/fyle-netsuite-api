@@ -99,7 +99,7 @@ def test_async_auto_map_employees(mocker, db):
     )
 
     mocker.patch(
-        'netsuitesdk.api.vendors.Vendors.get_all_generator',
+        'netsuitesdk.api.vendors.Vendors.get_records_generator',
         return_value=netsuite_data['get_all_vendors']    
     )
 
