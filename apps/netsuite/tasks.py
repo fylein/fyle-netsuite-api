@@ -15,7 +15,7 @@ from apps.fyle.helpers import get_filter_credit_expenses
 from apps.netsuite.exceptions import handle_netsuite_exceptions
 from django_q.models import Schedule
 from django_q.tasks import async_task
-from fyle_netsuite_api.utils import generate_netsuite_export_url
+from fyle_netsuite_api.utils import generate_netsuite_export_url, invalidate_netsuite_credentials
 from fyle_netsuite_api.logging_middleware import get_logger
 
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
@@ -422,8 +422,24 @@ def upload_attachments_and_update_export(expenses: List[Expense], task_log: Task
 
         construct_payload_and_update_export(expense_id_receipt_url_map, task_log, workspace, fyle_credentials.cluster_domain, netsuite_connection)
 
-    except (NetSuiteRateLimitError, NetSuiteRequestError, NetSuiteLoginError, InvalidTokenError) as exception:
-        logger.info('Error while uploading attachments to netsuite workspace_id - %s %s', workspace_id, exception.__dict__)
+    except NetSuiteCredentials.DoesNotExist:
+        logger.info('NetSuite credentials not found for workspace_id %s', workspace_id)
+        task_model.is_attachment_upload_failed = True
+        task_model.save()
+
+    except (NetSuiteRateLimitError, NetSuiteRequestError) as exception:
+        logger.info('NetSuite API error while uploading attachments workspace_id - %s %s', workspace_id, exception.__dict__)
+        task_model.is_attachment_upload_failed = True
+        task_model.save()
+
+    except NetSuiteLoginError as exception:
+        logger.info('Invalid NetSuite credentials while uploading attachments workspace_id - %s %s', workspace_id, exception.__dict__)
+        invalidate_netsuite_credentials(workspace_id)
+        task_model.is_attachment_upload_failed = True
+        task_model.save()
+
+    except InvalidTokenError as exception:
+        logger.info('Invalid Fyle token while uploading attachments workspace_id - %s %s', workspace_id, exception.__dict__)
         task_model.is_attachment_upload_failed = True
         task_model.save()
 
