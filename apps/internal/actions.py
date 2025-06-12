@@ -10,7 +10,7 @@ def get_netsuite_connection(query_params: Dict):
     workspace = Workspace.objects.get(fyle_org_id=org_id)
     workspace_id = workspace.id
     try:
-        ns_credentials = NetSuiteCredentials.get_active_sage_intacct_credentials(workspace_id)
+        ns_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
         return NetSuiteConnector(netsuite_credentials=ns_credentials, workspace_id=workspace_id)
     except NetSuiteCredentials.DoesNotExist:
         raise Exception('Netsuite credentials not found')
