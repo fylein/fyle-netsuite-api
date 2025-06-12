@@ -11,6 +11,8 @@ from fyle_accounting_mappings.serializers import DestinationAttributeSerializer
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 
 from apps.workspaces.models import NetSuiteCredentials, Workspace, Configuration
+from netsuitesdk import NetSuiteLoginError
+from fyle_netsuite_api.utils import invalidate_netsuite_credentials
 
 from django_q.tasks import async_task
 
@@ -160,6 +162,14 @@ class SyncNetSuiteDimensionView(generics.ListCreateAPIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
+        except NetSuiteLoginError:
+            invalidate_netsuite_credentials(kwargs['workspace_id'])
+            return Response(
+                data={
+                    'message': 'Invalid NetSuite credentials'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
         except Exception:
             return Response(
                 data={
@@ -196,6 +206,14 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
             return Response(
                 data={
                     'message': 'NetSuite credentials not found in workspace'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except NetSuiteLoginError:
+            invalidate_netsuite_credentials(kwargs['workspace_id'])
+            return Response(
+                data={
+                    'message': 'Invalid NetSuite credentials'
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
