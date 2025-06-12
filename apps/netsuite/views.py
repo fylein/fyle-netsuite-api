@@ -147,7 +147,7 @@ class SyncNetSuiteDimensionView(generics.ListCreateAPIView):
         """
         try:
             workspace = Workspace.objects.get(pk=kwargs['workspace_id'])
-            NetSuiteCredentials.objects.get(workspace_id=workspace.id)
+            NetSuiteCredentials.get_active_netsuite_credentials(workspace.id)
 
             if not check_if_task_exists_in_ormq(func='apps.netsuite.helpers.check_interval_and_sync_dimension', payload=kwargs['workspace_id']):
                 async_task('apps.netsuite.helpers.check_interval_and_sync_dimension', kwargs['workspace_id'])
@@ -190,7 +190,7 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
         try:
             dimensions_to_sync = request.data.get('dimensions_to_sync', [])
             workspace = Workspace.objects.get(pk=kwargs['workspace_id'])
-            NetSuiteCredentials.objects.get(workspace_id=workspace.id)
+            NetSuiteCredentials.get_active_netsuite_credentials(workspace.id)
 
             # If only specified dimensions are to be synced, sync them synchronously
             if dimensions_to_sync:

@@ -104,7 +104,7 @@ def async_auto_map_employees(workspace_id: int):
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
 
     platform.employees.sync()
