@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.12 (Debian 15.12-1.pgdg120+1)
+-- Dumped from database version 15.13 (Debian 15.13-1.pgdg120+1)
 -- Dumped by pg_dump version 15.13 (Debian 15.13-0+deb12u1)
 
 SET statement_timeout = 0;
@@ -1930,7 +1930,8 @@ CREATE TABLE public.expense_attributes_deletion_cache (
     workspace_id integer NOT NULL,
     cost_center_ids character varying(255)[] NOT NULL,
     custom_field_list jsonb NOT NULL,
-    merchant_list character varying(255)[] NOT NULL
+    merchant_list character varying(255)[] NOT NULL,
+    updated_at timestamp with time zone NOT NULL
 );
 
 
@@ -9442,6 +9443,7 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 231	workspaces	0045_configuration_skip_accounting_export_summary_post	2025-04-23 17:56:40.537311+00
 232	rabbitmq	0004_failedevent_is_resolved	2025-05-20 12:14:56.067087+00
 233	workspaces	0046_workspaceschedule_is_real_time_export_enabled	2025-05-20 12:14:56.076774+00
+234	fyle_accounting_mappings	0030_expenseattributesdeletioncache_updated_at	2025-06-16 06:25:15.401331+00
 \.
 
 
@@ -13005,7 +13007,7 @@ COPY public.expense_attributes (id, attribute_type, display_name, value, source_
 -- Data for Name: expense_attributes_deletion_cache; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.expense_attributes_deletion_cache (id, category_ids, project_ids, workspace_id, cost_center_ids, custom_field_list, merchant_list) FROM stdin;
+COPY public.expense_attributes_deletion_cache (id, category_ids, project_ids, workspace_id, cost_center_ids, custom_field_list, merchant_list, updated_at) FROM stdin;
 \.
 
 
@@ -13370,7 +13372,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 48, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 233, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 234, true);
 
 
 --
@@ -15440,3 +15442,4 @@ ALTER TABLE ONLY public.workspace_schedules
 --
 -- PostgreSQL database dump complete
 --
+
