@@ -113,9 +113,6 @@ class NetSuiteConnector:
             - For 'projects' and 'customers', sync is only allowed if count is within SYNC_UPPER_LIMIT
             - For other types, workspaces created after Oct 1, 2024 have stricter limits
         """
-        if attribute_type not in SYNC_UPPER_LIMIT:
-            raise ValueError(f"Invalid attribute_type: {attribute_type}")
-
         # Early return if count is within limits
         if attribute_count <= SYNC_UPPER_LIMIT[attribute_type]:
             return True
