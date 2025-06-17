@@ -5,5 +5,5 @@ sql_files = [
     'fyle-integrations-db-migrations/common/qbo_intacct_netsuite_xero/views/alerts/direct_export_errored_expenses_view_intacct_netsuite.sql'
 ]
 class Migration(migrations.Migration):
-    dependencies = [('internal', '0004_auto_generated_sql')]
+    dependencies = [('internal', '0005_auto_generated_sql')]
     operations = safe_run_sql(sql_files)
