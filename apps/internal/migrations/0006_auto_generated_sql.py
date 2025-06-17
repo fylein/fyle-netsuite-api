@@ -2,7 +2,8 @@
 from django.db import migrations
 from apps.internal.helpers import safe_run_sql
 sql_files = [
-    'fyle-integrations-db-migrations/common/qbo_intacct_netsuite_xero/views/alerts/direct_export_errored_expenses_view_intacct_netsuite.sql'
+    'fyle-integrations-db-migrations/common/qbo_intacct_netsuite_xero/views/alerts/direct_export_errored_expenses_view_intacct_netsuite.sql',
+    'fyle-integrations-db-migrations/common/qbo_intacct_netsuite_xero/views/alerts/_direct_export_errored_expenses_view_intacct_netsuite.sql'
 ]
 class Migration(migrations.Migration):
     dependencies = [('internal', '0005_auto_generated_sql')]
