@@ -37,8 +37,6 @@ sql_files = [
     # Grouped Alert Views
     'fyle-integrations-db-migrations/common/qbo_intacct_netsuite_xero/views/alerts/_django_queue_fatal_tasks_view.sql',
     'fyle-integrations-db-migrations/common/qbo_intacct_netsuite_xero/views/alerts/_django_queue_in_progress_tasks_view.sql',
-    'fyle-integrations-db-migrations/common/qbo_intacct_netsuite_xero/views/alerts/direct_export_errored_expenses_view.sql',
-    'fyle-integrations-db-migrations/common/qbo_intacct_netsuite_xero/views/alerts/_direct_export_errored_expenses_view.sql',
     'fyle-integrations-db-migrations/common/qbo_intacct_netsuite_xero/views/alerts/django_queue_fatal_tasks_view.sql',
     'fyle-integrations-db-migrations/common/qbo_intacct_netsuite_xero/views/alerts/django_queue_in_progress_tasks_view.sql',
     'fyle-integrations-db-migrations/common/qbo_intacct_netsuite_xero/views/alerts/inactive_workspaces_view.sql',
