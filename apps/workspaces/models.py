@@ -60,6 +60,7 @@ class NetSuiteCredentials(models.Model):
     ns_token_id = models.CharField(max_length=255, help_text='NetSuite Token ID')
     ns_token_secret = models.CharField(max_length=255, help_text='NetSuite Token Secret')
     workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
+    is_expired = models.BooleanField(default=False, help_text='Marks if credentials are expired')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime')
 
