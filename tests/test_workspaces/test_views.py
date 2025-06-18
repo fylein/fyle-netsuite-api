@@ -516,7 +516,7 @@ def test_get_and_delete_netsuite_crendentials(api_client, access_token, add_nets
     response = json.loads(response.content)
     assert response['ns_account_id'] == settings.NS_ACCOUNT_ID
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_credentials.delete()
 
     response = api_client.get(url)

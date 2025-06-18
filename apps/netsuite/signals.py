@@ -26,7 +26,7 @@ def sync_custom_segments(sender, instance: CustomSegment, **kwargs):
     :param instance: Row Instance of Sender Class
     :return: None
     """
-    ns_credentials: NetSuiteCredentials = NetSuiteCredentials.objects.get(workspace_id=instance.workspace_id)
+    ns_credentials: NetSuiteCredentials = NetSuiteCredentials.get_active_netsuite_credentials(instance.workspace_id)
     ns_connection = NetSuiteConnector(
         netsuite_credentials=ns_credentials,
         workspace_id=instance.workspace_id
@@ -57,7 +57,7 @@ def validate_custom_segment(sender, instance: CustomSegment, **kwargs):
     :param instance: Row Instance of Sender Class
     :return: None
     """
-    ns_credentials = NetSuiteCredentials.objects.get(workspace_id=instance.workspace_id)
+    ns_credentials = NetSuiteCredentials.get_active_netsuite_credentials(instance.workspace_id)
     ns_connector = NetSuiteConnector(ns_credentials, workspace_id=instance.workspace_id)
   
     try:
