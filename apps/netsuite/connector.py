@@ -98,21 +98,35 @@ class NetSuiteConnector:
         else:
             return '{0} @{1}%'.format(item_id, rate)
 
-    def is_sync_allowed(self, attribute_type: str, attribute_count: int):
+    def is_sync_allowed(self, attribute_type: str, attribute_count: int) -> bool:
         """
-        Checks if the sync is allowed
+        Checks if the sync is allowed based on attribute type and count.
+
+        Args:
+            attribute_type (str): Type of attribute to sync (e.g., 'projects', 'customers')
+            attribute_count (int): Number of attributes to sync
 
         Returns:
-            bool: True
-        """
-        if attribute_count > SYNC_UPPER_LIMIT[attribute_type]:
-            workspace_created_at = Workspace.objects.get(id=self.workspace_id).created_at
-            if workspace_created_at > timezone.make_aware(datetime(2024, 10, 1), timezone.get_current_timezone()):
-                return False
-            else:
-                return True
+            bool: True if sync is allowed, False otherwise
 
-        return True
+        Note:
+            - For 'projects' and 'customers', sync is only allowed if count is within SYNC_UPPER_LIMIT
+            - For other types, workspaces created after Oct 1, 2024 have stricter limits
+        """
+        if attribute_count <= SYNC_UPPER_LIMIT[attribute_type]:
+            return True
+
+        # Special handling for projects and customers
+        if attribute_type in ['projects', 'customers']:
+            return False
+
+        # For other types, check workspace creation date
+        workspace = Workspace.objects.get(id=self.workspace_id)
+        cutoff_date = timezone.make_aware(
+            datetime(2024, 10, 1),
+            timezone.get_current_timezone()
+        )
+        return workspace.created_at <= cutoff_date
 
     def get_generator_params(self, attribute_type: str, display_name: str) -> dict:
         """

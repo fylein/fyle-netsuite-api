@@ -66,7 +66,7 @@ class ImportSettingsTrigger:
         Post save action for workspace general settings
         """
         if not configurations_instance.import_items and old_configurations_instance.import_items:
-            async_task('fyle_integrations_imports.tasks.disable_items', workspace_id=self.__workspace_id, is_import_enabled=False)
+            async_task('fyle_integrations_imports.tasks.disable_items', workspace_id=self.__workspace_id, is_import_enabled=False, q_options={'cluster': 'import'})
 
         new_schedule_or_delete_fyle_import_tasks(
             configuration_instance=configurations_instance,
