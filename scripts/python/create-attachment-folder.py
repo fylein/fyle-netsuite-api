@@ -11,7 +11,7 @@ prod_workspaces = Workspace.objects.exclude(
 
 for workspace in prod_workspaces:
     try:
-        netsuite_credential = NetSuiteCredentials.objects.get(workspace_id=workspace.id)
+        netsuite_credential = NetSuiteCredentials.get_active_netsuite_credentials(workspace.id)
         netsuite_connection = NetSuiteConnector(netsuite_credential, workspace.id)
         netsuite_connection.connection.folders.post({
             'externalId': workspace.fyle_org_id,

@@ -15,7 +15,7 @@ from apps.fyle.helpers import get_filter_credit_expenses
 from apps.netsuite.exceptions import handle_netsuite_exceptions
 from django_q.models import Schedule
 from django_q.tasks import async_task
-from fyle_netsuite_api.utils import generate_netsuite_export_url
+from fyle_netsuite_api.utils import generate_netsuite_export_url, invalidate_netsuite_credentials
 from fyle_netsuite_api.logging_middleware import get_logger
 
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
@@ -172,7 +172,7 @@ def get_or_create_credit_card_vendor(expense_group: ExpenseGroup, merchant: str,
     :param auto_create_merchants: Create merchant if doesn't exist
     :return:
     """
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(expense_group.workspace_id)
     netsuite_connection = NetSuiteConnector(
         netsuite_credentials=netsuite_credentials, workspace_id=int(expense_group.workspace_id))
 
@@ -374,7 +374,7 @@ def upload_attachments_and_update_export(expenses: List[Expense], task_log: Task
     :return: None
     """
     try:
-        netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+        netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
         netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
         workspace = netsuite_credentials.workspace
 
@@ -422,8 +422,24 @@ def upload_attachments_and_update_export(expenses: List[Expense], task_log: Task
 
         construct_payload_and_update_export(expense_id_receipt_url_map, task_log, workspace, fyle_credentials.cluster_domain, netsuite_connection)
 
-    except (NetSuiteRateLimitError, NetSuiteRequestError, NetSuiteLoginError, InvalidTokenError) as exception:
-        logger.info('Error while uploading attachments to netsuite workspace_id - %s %s', workspace_id, exception.__dict__)
+    except NetSuiteCredentials.DoesNotExist:
+        logger.info('NetSuite credentials not found for workspace_id %s', workspace_id)
+        task_model.is_attachment_upload_failed = True
+        task_model.save()
+
+    except (NetSuiteRateLimitError, NetSuiteRequestError) as exception:
+        logger.info('NetSuite API error while uploading attachments workspace_id - %s %s', workspace_id, exception.__dict__)
+        task_model.is_attachment_upload_failed = True
+        task_model.save()
+
+    except NetSuiteLoginError as exception:
+        logger.info('Invalid NetSuite credentials while uploading attachments workspace_id - %s %s', workspace_id, exception.__dict__)
+        invalidate_netsuite_credentials(workspace_id)
+        task_model.is_attachment_upload_failed = True
+        task_model.save()
+
+    except InvalidTokenError as exception:
+        logger.info('Invalid Fyle token while uploading attachments workspace_id - %s %s', workspace_id, exception.__dict__)
         task_model.is_attachment_upload_failed = True
         task_model.save()
 
@@ -471,7 +487,7 @@ def create_bill(expense_group: ExpenseGroup, task_log_id, last_export, is_auto_e
     general_mappings: GeneralMapping = GeneralMapping.objects.filter(workspace_id=expense_group.workspace_id).first()
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=expense_group.workspace_id)
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(expense_group.workspace_id)
 
     netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
@@ -553,7 +569,7 @@ def create_credit_card_charge(expense_group, task_log_id, last_export, is_auto_e
     configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
     general_mappings: GeneralMapping = GeneralMapping.objects.filter(workspace_id=expense_group.workspace_id).first()
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(expense_group.workspace_id)
 
     netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
@@ -652,7 +668,7 @@ def create_expense_report(expense_group, task_log_id, last_export, is_auto_expor
     general_mapping = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=expense_group.workspace_id)
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(expense_group.workspace_id)
     netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
     if configuration.auto_map_employees and configuration.auto_create_destination_entity:
@@ -731,7 +747,7 @@ def create_journal_entry(expense_group, task_log_id, last_export, is_auto_export
 
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=expense_group.workspace_id)
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(expense_group.workspace_id)
 
     netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
@@ -1113,7 +1129,7 @@ def check_expenses_reimbursement_status(expenses, workspace_id, platform, filter
 def create_netsuite_payment_objects(netsuite_objects, object_type, workspace_id):
     netsuite_payment_objects = {}
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
     platform = PlatformConnector(fyle_credentials)
 
@@ -1197,7 +1213,7 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
             entity_object['line'], vendor_payment_object
         )
 
-        netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+        netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
         netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
 
         first_object_id = vendor_payment_lineitems[0].doc_id
@@ -1348,7 +1364,7 @@ def get_all_internal_ids(netsuite_objects):
 
 
 def check_netsuite_object_status(workspace_id):
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
 
     try:
         netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)

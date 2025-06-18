@@ -17,7 +17,7 @@ logger.level = logging.INFO
 
 
 def test_construct_expense_report(create_expense_report):
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
     general_mapping = GeneralMapping.objects.get(workspace_id=1)
 
@@ -30,7 +30,7 @@ def test_construct_expense_report(create_expense_report):
     assert expense_report == data['expense_report_payload'][0]
 
 def test_construct_expense_report_with_tax_balancing(create_expense_report, add_tax_destination_attributes):
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
     general_mapping = GeneralMapping.objects.get(workspace_id=1)
 
@@ -77,7 +77,7 @@ def test_construct_expense_report_with_tax_balancing(create_expense_report, add_
     general_mapping.save()
 
 def test_construct_bill_account_based(create_bill_account_based):
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
     general_mapping = GeneralMapping.objects.get(workspace_id=1)
 
@@ -91,7 +91,7 @@ def test_construct_bill_account_based(create_bill_account_based):
     assert dict_compare_keys(bill_object, data['bill_payload_account_based'][0]) == [], 'construct bill_payload entry api return diffs in keys'
 
 def test_construct_bill_item_based(create_bill_item_based):
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
     general_mapping = GeneralMapping.objects.get(workspace_id=1)
 
@@ -103,7 +103,7 @@ def test_construct_bill_item_based(create_bill_item_based):
 
 
 def test_construct_bill_item_and_account_based(create_bill_item_and_account_based):
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
     general_mapping = GeneralMapping.objects.get(workspace_id=1)
 
@@ -113,7 +113,7 @@ def test_construct_bill_item_and_account_based(create_bill_item_and_account_base
     assert dict_compare_keys(bill_object, data['bill_payload_item_and_account_based']) == [], 'construct bill_payload entry api return diffs in keys'
 
 def test_construct_bill_item_for_tax_balancing(create_bill_account_based, add_tax_destination_attributes):
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
     general_mapping = GeneralMapping.objects.get(workspace_id=1)
 
@@ -156,7 +156,7 @@ def test_construct_bill_item_for_tax_balancing(create_bill_account_based, add_ta
 
 
 def test_construct_journal_entry(create_journal_entry):
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
     configuration = Configuration.objects.get(workspace_id=1)
     general_mapping = GeneralMapping.objects.get(workspace_id=1)
@@ -178,7 +178,7 @@ def test_construct_journal_entry(create_journal_entry):
 
 
 def test_construct_single_itemized_credit_line(create_journal_entry):
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(
         netsuite_credentials=netsuite_credentials, workspace_id=1
     )
@@ -232,7 +232,7 @@ def test_construct_single_itemized_credit_line(create_journal_entry):
 
 
 def test_construct_journal_entry_with_tax_balancing(create_journal_entry, add_tax_destination_attributes):
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
     configuration = Configuration.objects.get(workspace_id=1)
     general_mapping = GeneralMapping.objects.get(workspace_id=1)
@@ -284,7 +284,7 @@ def test_construct_journal_entry_with_tax_balancing(create_journal_entry, add_ta
 
 
 def test_contruct_credit_card_charge(create_credit_card_charge):
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=49)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=49)
     general_mapping = GeneralMapping.objects.get(workspace_id=49)
 
@@ -299,7 +299,7 @@ def test_contruct_credit_card_charge(create_credit_card_charge):
 
 
 def test_contruct_credit_card_charge_with_tax_balancing(create_credit_card_charge, add_tax_destination_attributes):
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=49)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=49)
     general_mapping = GeneralMapping.objects.get(workspace_id=49)
 
@@ -346,7 +346,7 @@ def test_post_vendor(mocker, db):
         'netsuitesdk.api.vendors.Vendors.post',
         return_value=data['post_vendor']
     )
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
     expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
@@ -367,7 +367,7 @@ def test_get_bill(mocker, db):
         'netsuitesdk.api.vendor_bills.VendorBills.get',
         return_value=data['get_bill_response'][0]
     )
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
     bill = netsuite_connection.get_bill(238)
@@ -380,7 +380,7 @@ def test_get_expense_report(mocker, db):
         'netsuitesdk.api.expense_reports.ExpenseReports.get',
         return_value=data['get_expense_report_response'][0]   
     )
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
     expense_report = netsuite_connection.get_expense_report(85327)
@@ -395,7 +395,7 @@ def test_sync_vendors(mocker, db):
         'netsuitesdk.api.vendors.Vendors.get_records_generator',
         return_value=data['get_all_vendors']   
     )
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
     vendors_count = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='VENDOR').count()
@@ -418,7 +418,7 @@ def test_sync_projects(mocker, db):
         return_value=len(data['get_all_projects'][0])
     )
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
     project_count = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='PROJECT').count()
@@ -439,7 +439,7 @@ def test_sync_employees(mocker, db):
         return_value=data['get_all_employees'][0][0]
     )
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
     employee_count = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='EMPLOYEE').count()
@@ -460,7 +460,7 @@ def test_sync_accounts(mocker, db):
         'netsuitesdk.api.accounts.Accounts.get_all_generator',
         return_value=data['get_all_accounts']    
     )
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
     accounts_count = DestinationAttribute.objects.filter(attribute_type='ACCOUNT', workspace_id=1).count()
@@ -481,7 +481,7 @@ def test_sync_items(mocker, db):
 
         mock_call.return_value = data['get_all_items']
 
-        netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+        netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
         netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
         items_count = DestinationAttribute.objects.filter(attribute_type='ACCOUNT',display_name='Item', workspace_id=1).count()
@@ -498,7 +498,7 @@ def test_sync_items(mocker, db):
         configuration.save()
         mock_call.return_value = data['get_all_items']
 
-        netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+        netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
         netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
         netsuite_connection.sync_items()
@@ -520,7 +520,7 @@ def test_sync_expense_categories(mocker, db):
         'netsuitesdk.api.expense_categories.ExpenseCategory.get_all_generator',
         return_value=data['get_all_expense_categories']
     )
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
     expense_categories_count = DestinationAttribute.objects.filter(attribute_type='EXPENSE_CATEGORY', workspace_id=1).count()
@@ -549,7 +549,7 @@ def test_sync_custom_segments(mocker, db):
         return_value=data['get_custom_list']
     )
     
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=49)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=49)
 
     custom_record = DestinationAttribute.objects.filter(attribute_type='FAVOURITE_BANDS', workspace_id=49)
@@ -575,7 +575,7 @@ def test_sync_subsidiaries(mocker, db):
         'netsuitesdk.api.subsidiaries.Subsidiaries.get_all_generator',
         return_value=data['get_all_subsidiaries']
     )
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=49)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=49)
 
     subsidiaries = DestinationAttribute.objects.filter(attribute_type='SUBSIDIARY', workspace_id=49).count()
@@ -595,7 +595,7 @@ def test_sync_locations(mocker, db):
         'netsuitesdk.api.locations.Locations.get_all_generator',
         return_value=data['get_all_locations']
     )
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=49)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=49)
 
     locations = DestinationAttribute.objects.filter(attribute_type='LOCATION', workspace_id=49).count()
@@ -616,7 +616,7 @@ def test_sync_departments(mocker, db):
         'netsuitesdk.api.departments.Departments.get_all_generator',
         return_value=data['get_all_departments']
     )
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=49)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=49)
 
     departments = DestinationAttribute.objects.filter(attribute_type='DEPARTMENT', workspace_id=49).count()
@@ -639,7 +639,7 @@ def test_sync_customers(mocker, db):
         return_value=len(data['get_all_projects'][0])
     )
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
     customers = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='PROJECT').count()
@@ -662,7 +662,7 @@ def test_sync_tax_items(mocker, db):
         return_value=data['get_all_tax_groups']
     )
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
     tax_items = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='TAX_ITEM').count()
@@ -679,7 +679,7 @@ def test_sync_currencies(mocker, db):
         'netsuitesdk.api.currencies.Currencies.get_all_generator',
         return_value=data['get_all_currencies'][0]
     )
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=49)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=49)
 
     currencies = DestinationAttribute.objects.filter(attribute_type='CURRENCY', workspace_id=49).count()
@@ -700,7 +700,7 @@ def test_sync_classifications(mocker, db):
         'netsuitesdk.api.classifications.Classifications.get_all_generator',
         return_value=data['get_all_classifications']
     )
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=49)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=49)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=49)
 
     classifications = DestinationAttribute.objects.filter(attribute_type='CLASS', workspace_id=49).count()
@@ -717,7 +717,7 @@ def test_get_or_create_vendor(mocker, db):
         'netsuitesdk.api.vendors.Vendors.search',
         return_value=data['search_vendor']
     )
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
     expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
 
@@ -753,7 +753,7 @@ def test_get_or_create_employee(mocker, db):
         'netsuitesdk.api.employees.Employees.search',
         return_value=data['get_all_employees'][0]
     )
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
     expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
 
@@ -791,7 +791,7 @@ def test_post_employee(mocker, db):
         'netsuitesdk.api.employees.Employees.post',
         return_value=data['get_all_employees'][0]
     )
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
     expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
@@ -806,7 +806,7 @@ def test_post_employee(mocker, db):
 def test_post_credit_card_charge_exception(db, mocker, create_credit_card_charge):
     workspace_id = 1
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=workspace_id)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
 
     credit_card_charge_transaction, credit_card_charge_transaction_lineitems = create_credit_card_charge
@@ -828,7 +828,7 @@ def test_post_credit_card_charge_exception(db, mocker, create_credit_card_charge
 def test_post_credit_card_charge_bad_ns_response(db, mocker, create_credit_card_charge):
     workspace_id = 1
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=workspace_id)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
 
     credit_card_charge_transaction, credit_card_charge_transaction_lineitems = create_credit_card_charge
@@ -850,7 +850,7 @@ def test_post_credit_card_charge_bad_ns_response(db, mocker, create_credit_card_
 def test_post_bill_exception(db, mocker, create_bill_account_based):
     workspace_id = 1
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=workspace_id)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
     general_mapping = GeneralMapping.objects.get(workspace_id=workspace_id)
 
@@ -868,7 +868,7 @@ def test_post_bill_exception(db, mocker, create_bill_account_based):
 def test_post_expense_report_exception(db, mocker, create_expense_report):
     workspace_id = 1
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=workspace_id)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
     general_mapping = GeneralMapping.objects.get(workspace_id=workspace_id)
 
@@ -886,7 +886,7 @@ def test_post_expense_report_exception(db, mocker, create_expense_report):
 def test_post_journal_entry_exception(db, mocker, create_journal_entry):
     workspace_id = 1
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=workspace_id)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
     general_mapping = GeneralMapping.objects.get(workspace_id=workspace_id)
 
@@ -922,7 +922,7 @@ def test_update_destination_attributes(db, mocker):
     DestinationAttribute.objects.bulk_create(custom_segments_destination_attribute, batch_size=50)
     workspace_id = 1
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=workspace_id)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
 
     custom_records = netsuite_connection.connection.custom_record_types.get_all_by_id('1')
@@ -974,7 +974,7 @@ def test_skip_sync_attributes(mocker, db):
 
     today = datetime.today()
     Workspace.objects.filter(id=1).update(created_at=today)
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
     Mapping.objects.filter(workspace_id=1).delete()
@@ -1023,7 +1023,7 @@ def test_skip_sync_attributes(mocker, db):
     assert new_project_count == 0
 
 def test_constructs_tax_details_list_for_multiple_items(mocker, db):
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
 
     # Create a more complete mock Mapping object

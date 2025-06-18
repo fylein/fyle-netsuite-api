@@ -24,9 +24,7 @@ def construct_tasks_and_chain_import_fields_to_fyle(workspace_id: int):
     general_mappings = GeneralMapping.objects.get(
         workspace_id=workspace_id
     )
-    credentials = NetSuiteCredentials.objects.get(
-        workspace_id=workspace_id
-    )
+    credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
 
     task_settings: TaskSetting = {
         'import_tax': None,

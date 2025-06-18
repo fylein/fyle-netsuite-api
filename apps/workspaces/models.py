@@ -67,6 +67,15 @@ class NetSuiteCredentials(models.Model):
     class Meta:
         db_table = 'netsuite_credentials'
 
+    @staticmethod
+    def get_active_netsuite_credentials(workspace_id: int) -> 'NetSuiteCredentials':
+        """
+        Get active NetSuite credentials
+        :param workspace_id: Workspace ID
+        :return: NetSuite credentials
+        """
+        return NetSuiteCredentials.objects.get(workspace_id=workspace_id, is_expired=False)
+
 
 class FyleCredential(models.Model):
     """
