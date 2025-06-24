@@ -278,6 +278,7 @@ def import_and_export_expenses(report_id: str, org_id: str, is_state_change_even
     :return: None
     """
     logger.info('Import and export expenses report_id: %s, org_id: %s', report_id, org_id)
+    task_log = None
     workspace = Workspace.objects.get(fyle_org_id=org_id)
     expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=workspace.id)
 
