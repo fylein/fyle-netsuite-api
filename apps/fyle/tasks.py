@@ -175,19 +175,19 @@ def create_expense_groups(workspace_id: int, fund_source: List[str], task_log: T
         update_task_log_post_import(task_log, 'FATAL', error=error)
 
 
-def skip_expenses_and_post_accounting_export_summary(expense_ids: List[int], workspace_id: int):
+def skip_expenses_and_post_accounting_export_summary(expense_ids: List[int], workspace: Workspace):
     """
     Skip expenses and post accounting export summary
     :param expense_ids: List of expense ids
-    :param workspace_id: Workspace id
+    :param workspace: Workspace object
     :return: None
     """
-    skipped_expenses = mark_expenses_as_skipped(Q(), expense_ids, workspace_id)
+    skipped_expenses = mark_expenses_as_skipped(Q(), expense_ids, workspace)
     if skipped_expenses:
         try:
-            post_accounting_export_summary(workspace_id=workspace_id, expense_ids=[expense.id for expense in skipped_expenses])
+            post_accounting_export_summary(workspace_id=workspace.id, expense_ids=[expense.id for expense in skipped_expenses])
         except Exception:
-            logger.exception('Error posting accounting export summary for workspace_id: %s', workspace_id)
+            logger.exception('Error posting accounting export summary for workspace_id: %s', workspace.id)
 
 
 def group_expenses_and_save(
@@ -215,7 +215,7 @@ def group_expenses_and_save(
         negative_expense_ids = [e.id for e in expense_objects if e.amount < 0 and not e.is_skipped]
         if negative_expense_ids:
             expense_objects = [e for e in expense_objects if e.id not in negative_expense_ids] 
-            skip_expenses_and_post_accounting_export_summary(negative_expense_ids, workspace.id)
+            skip_expenses_and_post_accounting_export_summary(negative_expense_ids, workspace)
 
     # Skip reimbursable expenses if reimbursable expense settings is not configured
     if not configuration.reimbursable_expenses_object:
@@ -223,7 +223,7 @@ def group_expenses_and_save(
 
         if reimbursable_expense_ids:
             expense_objects = [e for e in expense_objects if e.id not in reimbursable_expense_ids]
-            skip_expenses_and_post_accounting_export_summary(reimbursable_expense_ids, workspace.id)
+            skip_expenses_and_post_accounting_export_summary(reimbursable_expense_ids, workspace)
 
     # Skip corporate credit card expenses if corporate credit card expense settings is not configured
     if not configuration.corporate_credit_card_expenses_object:
@@ -231,7 +231,7 @@ def group_expenses_and_save(
 
         if ccc_expense_ids:
             expense_objects = [e for e in expense_objects if e.id not in ccc_expense_ids]
-            skip_expenses_and_post_accounting_export_summary(ccc_expense_ids, workspace.id)
+            skip_expenses_and_post_accounting_export_summary(ccc_expense_ids, workspace)
 
     filtered_expenses = expense_objects
 
