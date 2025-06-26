@@ -787,6 +787,45 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
+-- Name: configurations; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.configurations (
+    id integer NOT NULL,
+    reimbursable_expenses_object character varying(50),
+    corporate_credit_card_expenses_object character varying(50),
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    workspace_id integer NOT NULL,
+    sync_fyle_to_netsuite_payments boolean NOT NULL,
+    sync_netsuite_to_fyle_payments boolean NOT NULL,
+    import_projects boolean NOT NULL,
+    auto_map_employees character varying(50),
+    import_categories boolean NOT NULL,
+    auto_create_destination_entity boolean NOT NULL,
+    auto_create_merchants boolean NOT NULL,
+    employee_field_mapping character varying(50),
+    import_tax_items boolean NOT NULL,
+    change_accounting_period boolean NOT NULL,
+    memo_structure character varying(100)[] NOT NULL,
+    map_fyle_cards_netsuite_account boolean NOT NULL,
+    import_vendors_as_merchants boolean NOT NULL,
+    import_netsuite_employees boolean NOT NULL,
+    import_items boolean NOT NULL,
+    name_in_journal_entry character varying(100) NOT NULL,
+    allow_intercompany_vendors boolean NOT NULL,
+    je_single_credit_line boolean NOT NULL,
+    is_attachment_upload_enabled boolean NOT NULL,
+    created_by character varying(255),
+    updated_by character varying(255),
+    skip_accounting_export_summary_post boolean NOT NULL,
+    import_classes_with_parent boolean NOT NULL
+);
+
+
+ALTER TABLE public.configurations OWNER TO postgres;
+
+--
 -- Name: expense_groups_expenses; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -932,7 +971,7 @@ CREATE VIEW public._direct_export_errored_expenses_view AS
                    FROM public.expense_groups_expenses
                   WHERE (expense_groups_expenses.expensegroup_id IN ( SELECT task_logs.expense_group_id
                            FROM public.task_logs
-                          WHERE (((task_logs.status)::text = ANY (ARRAY[('FAILED'::character varying)::text, ('FATAL'::character varying)::text])) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
+                          WHERE (((task_logs.status)::text = ANY ((ARRAY['FAILED'::character varying, 'FATAL'::character varying])::text[])) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
                                    FROM prod_workspace_ids))))))))
         ), errored_expenses_in_inprogress_state AS (
          SELECT count(*) AS in_progress_expenses_error_count
@@ -946,9 +985,10 @@ CREATE VIEW public._direct_export_errored_expenses_view AS
                                    FROM prod_workspace_ids))))))))
         ), not_synced_to_platform AS (
          SELECT count(*) AS not_synced_expenses_count
-           FROM public.expenses
-          WHERE ((expenses.workspace_id IN ( SELECT prod_workspace_ids.id
-                   FROM prod_workspace_ids)) AND ((expenses.accounting_export_summary ->> 'synced'::text) = 'false'::text))
+           FROM (public.expenses e
+             JOIN public.configurations c ON ((e.workspace_id = c.workspace_id)))
+          WHERE ((e.workspace_id IN ( SELECT prod_workspace_ids.id
+                   FROM prod_workspace_ids)) AND ((e.accounting_export_summary ->> 'synced'::text) = 'false'::text) AND (c.skip_accounting_export_summary_post = false))
         )
  SELECT errored_expenses_in_complete_state.complete_expenses_error_count,
     errored_expenses_in_error_state.error_expenses_error_count,
@@ -1300,44 +1340,6 @@ ALTER SEQUENCE public.category_mappings_id_seq OWNED BY public.category_mappings
 
 
 --
--- Name: configurations; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.configurations (
-    id integer NOT NULL,
-    reimbursable_expenses_object character varying(50),
-    corporate_credit_card_expenses_object character varying(50),
-    created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL,
-    workspace_id integer NOT NULL,
-    sync_fyle_to_netsuite_payments boolean NOT NULL,
-    sync_netsuite_to_fyle_payments boolean NOT NULL,
-    import_projects boolean NOT NULL,
-    auto_map_employees character varying(50),
-    import_categories boolean NOT NULL,
-    auto_create_destination_entity boolean NOT NULL,
-    auto_create_merchants boolean NOT NULL,
-    employee_field_mapping character varying(50),
-    import_tax_items boolean NOT NULL,
-    change_accounting_period boolean NOT NULL,
-    memo_structure character varying(100)[] NOT NULL,
-    map_fyle_cards_netsuite_account boolean NOT NULL,
-    import_vendors_as_merchants boolean NOT NULL,
-    import_netsuite_employees boolean NOT NULL,
-    import_items boolean NOT NULL,
-    name_in_journal_entry character varying(100) NOT NULL,
-    allow_intercompany_vendors boolean NOT NULL,
-    je_single_credit_line boolean NOT NULL,
-    is_attachment_upload_enabled boolean NOT NULL,
-    created_by character varying(255),
-    updated_by character varying(255),
-    skip_accounting_export_summary_post boolean NOT NULL
-);
-
-
-ALTER TABLE public.configurations OWNER TO postgres;
-
---
 -- Name: credit_card_charge_lineitems; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -1522,7 +1524,7 @@ CREATE VIEW public.direct_export_errored_expenses_view AS
                    FROM public.expense_groups_expenses
                   WHERE (expense_groups_expenses.expensegroup_id IN ( SELECT task_logs.expense_group_id
                            FROM public.task_logs
-                          WHERE (((task_logs.status)::text = ANY (ARRAY[('FAILED'::character varying)::text, ('FATAL'::character varying)::text])) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
+                          WHERE (((task_logs.status)::text = ANY ((ARRAY['FAILED'::character varying, 'FATAL'::character varying])::text[])) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
                                    FROM prod_workspace_ids)) AND (task_logs.updated_at > (now() - '1 day'::interval)) AND (task_logs.updated_at < (now() - '00:45:00'::interval))))))))
         ), errored_expenses_in_inprogress_state AS (
          SELECT count(*) AS in_progress_expenses_error_count
@@ -1532,13 +1534,14 @@ CREATE VIEW public.direct_export_errored_expenses_view AS
                    FROM public.expense_groups_expenses
                   WHERE (expense_groups_expenses.expensegroup_id IN ( SELECT task_logs.expense_group_id
                            FROM public.task_logs
-                          WHERE (((task_logs.status)::text = ANY (ARRAY[('IN_PROGRESS'::character varying)::text, ('ENQUEUED'::character varying)::text])) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
+                          WHERE (((task_logs.status)::text = ANY ((ARRAY['IN_PROGRESS'::character varying, 'ENQUEUED'::character varying])::text[])) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
                                    FROM prod_workspace_ids)) AND (task_logs.updated_at > (now() - '1 day'::interval)) AND (task_logs.updated_at < (now() - '00:45:00'::interval))))))))
         ), not_synced_to_platform AS (
          SELECT count(*) AS not_synced_expenses_count
-           FROM public.expenses
-          WHERE ((expenses.workspace_id IN ( SELECT prod_workspace_ids.id
-                   FROM prod_workspace_ids)) AND ((expenses.accounting_export_summary ->> 'synced'::text) = 'false'::text) AND (expenses.updated_at > (now() - '1 day'::interval)) AND (expenses.updated_at < (now() - '00:45:00'::interval)))
+           FROM (public.expenses e
+             JOIN public.configurations c ON ((e.workspace_id = c.workspace_id)))
+          WHERE ((e.workspace_id IN ( SELECT prod_workspace_ids.id
+                   FROM prod_workspace_ids)) AND ((e.accounting_export_summary ->> 'synced'::text) = 'false'::text) AND (e.updated_at > (now() - '1 day'::interval)) AND (e.updated_at < (now() - '00:45:00'::interval)) AND (c.skip_accounting_export_summary_post = false))
         )
  SELECT errored_expenses_in_complete_state.complete_expenses_error_count,
     errored_expenses_in_error_state.error_expenses_error_count,
@@ -4115,10 +4118,10 @@ COPY public.category_mappings (id, created_at, updated_at, destination_account_i
 -- Data for Name: configurations; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.configurations (id, reimbursable_expenses_object, corporate_credit_card_expenses_object, created_at, updated_at, workspace_id, sync_fyle_to_netsuite_payments, sync_netsuite_to_fyle_payments, import_projects, auto_map_employees, import_categories, auto_create_destination_entity, auto_create_merchants, employee_field_mapping, import_tax_items, change_accounting_period, memo_structure, map_fyle_cards_netsuite_account, import_vendors_as_merchants, import_netsuite_employees, import_items, name_in_journal_entry, allow_intercompany_vendors, je_single_credit_line, is_attachment_upload_enabled, created_by, updated_by, skip_accounting_export_summary_post) FROM stdin;
-1	EXPENSE REPORT	BILL	2021-11-15 08:56:07.193743+00	2021-11-15 08:56:07.193795+00	1	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	MERCHANT	f	f	t	\N	\N	f
-2	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-11-16 04:18:15.836271+00	2021-11-16 04:20:09.969589+00	2	f	f	f	\N	f	f	f	EMPLOYEE	t	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	MERCHANT	f	f	t	\N	\N	f
-3	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-12-03 11:04:00.194287+00	2021-12-03 11:04:00.1943+00	49	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	MERCHANT	f	f	t	\N	\N	f
+COPY public.configurations (id, reimbursable_expenses_object, corporate_credit_card_expenses_object, created_at, updated_at, workspace_id, sync_fyle_to_netsuite_payments, sync_netsuite_to_fyle_payments, import_projects, auto_map_employees, import_categories, auto_create_destination_entity, auto_create_merchants, employee_field_mapping, import_tax_items, change_accounting_period, memo_structure, map_fyle_cards_netsuite_account, import_vendors_as_merchants, import_netsuite_employees, import_items, name_in_journal_entry, allow_intercompany_vendors, je_single_credit_line, is_attachment_upload_enabled, created_by, updated_by, skip_accounting_export_summary_post, import_classes_with_parent) FROM stdin;
+1	EXPENSE REPORT	BILL	2021-11-15 08:56:07.193743+00	2021-11-15 08:56:07.193795+00	1	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	MERCHANT	f	f	t	\N	\N	f	f
+2	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-11-16 04:18:15.836271+00	2021-11-16 04:20:09.969589+00	2	f	f	f	\N	f	f	f	EMPLOYEE	t	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	MERCHANT	f	f	t	\N	\N	f	f
+3	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-12-03 11:04:00.194287+00	2021-12-03 11:04:00.1943+00	49	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	MERCHANT	f	f	t	\N	\N	f	f
 \.
 
 
@@ -9444,6 +9447,8 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 232	rabbitmq	0004_failedevent_is_resolved	2025-05-20 12:14:56.067087+00
 233	workspaces	0046_workspaceschedule_is_real_time_export_enabled	2025-05-20 12:14:56.076774+00
 234	fyle_accounting_mappings	0030_expenseattributesdeletioncache_updated_at	2025-06-16 06:25:15.401331+00
+235	internal	0006_auto_generated_sql	2025-06-26 07:08:24.915475+00
+236	workspaces	0047_configuration_import_classes_with_parent	2025-06-26 07:08:24.926553+00
 \.
 
 
@@ -13372,7 +13377,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 48, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 234, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 236, true);
 
 
 --

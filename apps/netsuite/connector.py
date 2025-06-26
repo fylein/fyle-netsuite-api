@@ -735,11 +735,9 @@ class NetSuiteConnector:
                 if classification['isInactive'] and classification['internalId'] not in destination_ids:
                     continue
 
-                if configuration and configuration.import_classes_with_parent:
-                    if classification['parent']:
-                        value = classification['parent']['name'] + ': ' + classification['name']
-                else:
-                    value = classification['name']
+                value = classification['name']
+                if configuration and configuration.import_classes_with_parent and classification['parent']:
+                    value = f"{classification['parent']['name']}: {classification['name']}"
 
                 classification_attributes.append({
                     'attribute_type': 'CLASS',

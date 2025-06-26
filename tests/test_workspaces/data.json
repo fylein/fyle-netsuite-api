@@ -25,6 +25,7 @@
         "allow_intercompany_vendors": false,
         "je_single_credit_line": false,
         "is_attachment_upload_enabled": true,
+        "import_classes_with_parent": false,
         "created_by": "aksndbkas",
         "updated_by": "asvhdvsaj"
     },
