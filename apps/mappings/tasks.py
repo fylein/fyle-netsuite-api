@@ -187,7 +187,10 @@ def schedule_auto_map_ccc_employees(workspace_id: int):
 
 
 def sync_netsuite_attribute(netsuite_attribute_type: str, workspace_id: int):
-    ns_credentials: NetSuiteCredentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
+    try:
+        ns_credentials: NetSuiteCredentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
+    except NetSuiteCredentials.DoesNotExist:
+        return
 
     ns_connection = NetSuiteConnector(
         netsuite_credentials=ns_credentials,
