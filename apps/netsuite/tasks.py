@@ -487,7 +487,11 @@ def create_bill(expense_group: ExpenseGroup, task_log_id, last_export, is_auto_e
     general_mappings: GeneralMapping = GeneralMapping.objects.filter(workspace_id=expense_group.workspace_id).first()
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=expense_group.workspace_id)
-    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(expense_group.workspace_id)
+    try:
+        netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(expense_group.workspace_id)
+    except NetSuiteCredentials.DoesNotExist:
+        logger.info('NetSuite credentials not found for workspace_id %s', expense_group.workspace_id)
+        return
 
     netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
@@ -569,7 +573,11 @@ def create_credit_card_charge(expense_group, task_log_id, last_export, is_auto_e
     configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
     general_mappings: GeneralMapping = GeneralMapping.objects.filter(workspace_id=expense_group.workspace_id).first()
 
-    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(expense_group.workspace_id)
+    try:
+        netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(expense_group.workspace_id)
+    except NetSuiteCredentials.DoesNotExist:
+        logger.info('NetSuite credentials not found for workspace_id %s', expense_group.workspace_id)
+        return
 
     netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
@@ -668,7 +676,12 @@ def create_expense_report(expense_group, task_log_id, last_export, is_auto_expor
     general_mapping = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=expense_group.workspace_id)
-    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(expense_group.workspace_id)
+    try:
+        netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(expense_group.workspace_id)
+    except NetSuiteCredentials.DoesNotExist:
+        logger.info('NetSuite credentials not found for workspace_id %s', expense_group.workspace_id)
+        return
+        
     netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
     if configuration.auto_map_employees and configuration.auto_create_destination_entity:
@@ -747,7 +760,11 @@ def create_journal_entry(expense_group, task_log_id, last_export, is_auto_export
 
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=expense_group.workspace_id)
-    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(expense_group.workspace_id)
+    try:
+        netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(expense_group.workspace_id)
+    except NetSuiteCredentials.DoesNotExist:
+        logger.info('NetSuite credentials not found for workspace_id %s', expense_group.workspace_id)
+        return
 
     netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
@@ -1129,7 +1146,12 @@ def check_expenses_reimbursement_status(expenses, workspace_id, platform, filter
 def create_netsuite_payment_objects(netsuite_objects, object_type, workspace_id):
     netsuite_payment_objects = {}
 
-    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
+    try:
+        netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
+    except NetSuiteCredentials.DoesNotExist:
+        logger.info('NetSuite credentials not found for workspace_id %s', workspace_id)
+        return
+        
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
     platform = PlatformConnector(fyle_credentials)
 
@@ -1213,7 +1235,12 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
             entity_object['line'], vendor_payment_object
         )
 
-        netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
+        try:
+            netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
+        except NetSuiteCredentials.DoesNotExist:
+            logger.info('NetSuite credentials not found for workspace_id %s', workspace_id)
+            return
+            
         netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
 
         first_object_id = vendor_payment_lineitems[0].doc_id
@@ -1364,7 +1391,11 @@ def get_all_internal_ids(netsuite_objects):
 
 
 def check_netsuite_object_status(workspace_id):
-    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
+    try:
+        netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
+    except NetSuiteCredentials.DoesNotExist:
+        logger.info('NetSuite credentials not found for workspace_id %s', workspace_id)
+        return
 
     try:
         netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)

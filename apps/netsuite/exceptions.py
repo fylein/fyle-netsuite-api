@@ -119,12 +119,15 @@ def handle_netsuite_exceptions(payment=False):
             except NetSuiteCredentials.DoesNotExist:
                     __handle_netsuite_connection_error(expense_group, task_log, workspace_id)
 
-            except NetSuiteRequestError as exception:
+            except (NetSuiteRequestError, NetSuiteLoginError) as exception:
                 all_details = []
                 is_parsed = False
                 logger.info({'error': exception})
                 detail = json.dumps(exception.__dict__)
                 detail = json.loads(detail)
+
+                if isinstance(exception, NetSuiteLoginError):
+                    invalidate_netsuite_credentials(workspace_id if payment else expense_group.workspace_id)
 
                 task_log.status = 'FAILED'
 
@@ -159,48 +162,6 @@ def handle_netsuite_exceptions(payment=False):
                 if not payment:
                     update_failed_expenses(expense_group.expenses.all(), False)
 
-            except NetSuiteLoginError as exception:
-                all_details = []
-                is_parsed = False
-                logger.info({'error': exception})
-                detail = json.dumps(exception.__dict__)
-                detail = json.loads(detail)
-
-                # Add credential invalidation
-                invalidate_netsuite_credentials(workspace_id if payment else expense_group.workspace_id)
-
-                task_log.status = 'FAILED'
-
-                all_details.append({
-                    'value': netsuite_error_message,
-                    'type': detail['code'],
-                    'message': detail['message']
-                })
-                if not payment:
-                    parsed_message, article_link = parse_error(detail['message'], expense_group.workspace_id, expense_group)
-                    if parsed_message:
-                        is_parsed = True
-                        all_details[-1]['message'] = parsed_message
-                    error, created = Error.objects.update_or_create(
-                        workspace_id=expense_group.workspace_id,
-                        expense_group=expense_group,
-                        defaults={
-                                'type': 'NETSUITE_ERROR',
-                                'error_title': netsuite_error_message,
-                                'error_detail': parsed_message if is_parsed else detail['message'],
-                                'is_resolved': False,
-                                'is_parsed': is_parsed,
-                                'article_link': article_link
-                            }
-                        )
-
-                    error.increase_repetition_count_by_one(created)
-
-                task_log.detail = all_details
-
-                task_log.save()
-                if not payment:
-                    update_failed_expenses(expense_group.expenses.all(), False)
 
             except BulkError as exception:
                 logger.info(exception.response)

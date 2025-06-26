@@ -26,7 +26,11 @@ def sync_custom_segments(sender, instance: CustomSegment, **kwargs):
     :param instance: Row Instance of Sender Class
     :return: None
     """
-    ns_credentials: NetSuiteCredentials = NetSuiteCredentials.get_active_netsuite_credentials(instance.workspace_id)
+    try:
+        ns_credentials: NetSuiteCredentials = NetSuiteCredentials.get_active_netsuite_credentials(instance.workspace_id)
+    except NetSuiteCredentials.DoesNotExist:
+        return
+        
     ns_connection = NetSuiteConnector(
         netsuite_credentials=ns_credentials,
         workspace_id=instance.workspace_id
@@ -57,7 +61,11 @@ def validate_custom_segment(sender, instance: CustomSegment, **kwargs):
     :param instance: Row Instance of Sender Class
     :return: None
     """
-    ns_credentials = NetSuiteCredentials.get_active_netsuite_credentials(instance.workspace_id)
+    try:
+        ns_credentials = NetSuiteCredentials.get_active_netsuite_credentials(instance.workspace_id)
+    except NetSuiteCredentials.DoesNotExist:
+        raise NotFound('NetSuite credentials not found')
+        
     ns_connector = NetSuiteConnector(ns_credentials, workspace_id=instance.workspace_id)
   
     try:

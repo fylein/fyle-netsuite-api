@@ -147,7 +147,11 @@ def run_pre_mapping_settings_triggers(sender, instance: MappingSetting, **kwargs
                     last_successful_run_at = offset_aware_time_difference
                     import_log.save()
 
-            netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
+            try:
+                netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
+            except NetSuiteCredentials.DoesNotExist:
+                return
+
             netsuite_connection = NetSuiteConnector(
                 netsuite_credentials=netsuite_credentials,
                 workspace_id=workspace_id
