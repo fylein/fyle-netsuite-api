@@ -27,7 +27,7 @@ pytest-django==4.9.0
 pytest-mock==3.14.0
 python-dateutil==2.8.2
 pytz==2024.2
-requests==2.32.3
+requests==2.32.4
 requests-oauthlib==2.0.0
 psutil==5.9.5
 sentry-sdk==2.19.2
