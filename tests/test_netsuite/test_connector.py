@@ -755,7 +755,7 @@ def test_sync_classifications(mocker, db):
         workspace_id=49, 
         destination_id='3'
     ).first()
-    assert office_classification.value == 'Furniture: Office'
+    assert office_classification.value == 'Furniture : Office'
 
     # Reset configuration for other tests
     configuration.import_classes_with_parent = False

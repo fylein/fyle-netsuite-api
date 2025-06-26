@@ -737,7 +737,7 @@ class NetSuiteConnector:
 
                 value = classification['name']
                 if configuration and configuration.import_classes_with_parent and classification['parent']:
-                    value = f"{classification['parent']['name']}: {classification['name']}"
+                    value = f"{classification['parent']['name']} : {classification['name']}"
 
                 classification_attributes.append({
                     'attribute_type': 'CLASS',
