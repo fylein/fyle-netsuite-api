@@ -8,7 +8,7 @@ try:
     count = 0
     for id in expense_groups_ids:
         expense_group: ExpenseGroup = ExpenseGroup.objects.get(id=id)
-        netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(expense_group.workspace_id)
+        netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
         netsuite_export_url = generate_netsuite_export_url(expense_group.response_logs, netsuite_credentials)
         expense_group.export_url = netsuite_export_url
         expense_group.save()
