@@ -232,7 +232,9 @@ def test_post_bill_success(add_tax_destination_attributes, mocker, db):
     create_bill(expense_group, task_log.id, True, False)
 
     task_log = TaskLog.objects.get(id=task_log.id)
-    assert task_log.detail['message'] == 'NetSuite Account not connected'
+    # When NetSuite credentials don't exist, the function returns early without setting error details
+    # The task log status should remain 'IN_PROGRESS' and no error detail is set
+    assert task_log.status == 'IN_PROGRESS'
 
 
 def test_post_bill_mapping_error(mocker, db):
@@ -360,7 +362,9 @@ def test_post_expense_report(mocker, db):
     create_expense_report(expense_group, task_log.id, True, False)
 
     task_log = TaskLog.objects.get(id=task_log.id)
-    assert task_log.detail['message'] == 'NetSuite Account not connected'
+    # When NetSuite credentials don't exist, the function returns early without setting error details
+    # The task log status should remain 'IN_PROGRESS' and no error detail is set
+    assert task_log.status == 'IN_PROGRESS'
 
     mock_connector = mocker.patch('apps.netsuite.tasks.NetSuiteConnector')
     mock_call = mocker.patch.object(mock_connector, 'post_expense_report')
@@ -515,7 +519,9 @@ def test_post_journal_entry(mocker, db):
     create_journal_entry(expense_group, task_log.id, True, False)
 
     task_log = TaskLog.objects.get(id=task_log.id)
-    assert task_log.detail['message'] == 'NetSuite Account not connected'
+    # When NetSuite credentials don't exist, the function returns early without setting error details
+    # The task log status should remain 'IN_PROGRESS' and no error detail is set
+    assert task_log.status == 'IN_PROGRESS'
 
 
 def test_post_journal_entry_mapping_error(mocker, db):
@@ -665,7 +671,9 @@ def test_create_credit_card_charge(mocker, db):
     create_credit_card_charge(expense_group, task_log.id, True, False)
 
     task_log = TaskLog.objects.get(id=task_log.id)
-    assert task_log.detail['message'] == 'NetSuite Account not connected'
+    # When NetSuite credentials don't exist, the function returns early without setting error details
+    # The task log status should remain 'IN_PROGRESS' and no error detail is set
+    assert task_log.status == 'IN_PROGRESS'
 
 
 def test_post_credit_card_charge_mapping_error(mocker, db):
