@@ -706,10 +706,60 @@ def test_sync_classifications(mocker, db):
     classifications = DestinationAttribute.objects.filter(attribute_type='CLASS', workspace_id=49).count()
     assert classifications == 18
 
+    # Test without import_classes_with_parent (default behavior)
     netsuite_connection.sync_classifications()
 
     classifications = DestinationAttribute.objects.filter(attribute_type='CLASS', workspace_id=49).count()
     assert classifications == 19
+
+    # Verify that classifications without parents keep their original names
+    hardware_classification = DestinationAttribute.objects.filter(
+        attribute_type='CLASS', 
+        workspace_id=49, 
+        destination_id='992djj'
+    ).first()
+    assert hardware_classification.value == 'Hardware Fartware'
+
+    # Verify that classifications with parents also keep their original names (no parent prefix)
+    office_classification = DestinationAttribute.objects.filter(
+        attribute_type='CLASS', 
+        workspace_id=49, 
+        destination_id='3'
+    ).first()
+    assert office_classification.value == 'Office'
+
+    # Test with import_classes_with_parent enabled
+    configuration = Configuration.objects.get(workspace_id=49)
+    configuration.import_classes_with_parent = True
+    configuration.save()
+
+    # Clear existing classifications to test fresh import
+    DestinationAttribute.objects.filter(attribute_type='CLASS', workspace_id=49).delete()
+
+    netsuite_connection.sync_classifications()
+
+    classifications = DestinationAttribute.objects.filter(attribute_type='CLASS', workspace_id=49).count()
+    assert classifications == 5  # Total classifications from test data
+
+    # Verify that classifications without parents keep their original names
+    hardware_classification = DestinationAttribute.objects.filter(
+        attribute_type='CLASS', 
+        workspace_id=49, 
+        destination_id='992djj'
+    ).first()
+    assert hardware_classification.value == 'Hardware Fartware'
+
+    # Verify that classifications with parents get formatted with parent name
+    office_classification = DestinationAttribute.objects.filter(
+        attribute_type='CLASS', 
+        workspace_id=49, 
+        destination_id='3'
+    ).first()
+    assert office_classification.value == 'Furniture : Office'
+
+    # Reset configuration for other tests
+    configuration.import_classes_with_parent = False
+    configuration.save()
 
 
 def test_get_or_create_vendor(mocker, db):
