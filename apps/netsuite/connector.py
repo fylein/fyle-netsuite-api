@@ -714,6 +714,7 @@ class NetSuiteConnector:
         """
         Sync classification
         """
+        configuration = Configuration.objects.filter(workspace_id=self.workspace_id).first()
         attribute_count = self.connection.classifications.count()
         if not self.is_sync_allowed(attribute_type = 'classes', attribute_count = attribute_count):
             logger.info('Skipping sync of classes for workspace %s as it has %s counts which is over the limit', self.workspace_id, attribute_count)
@@ -734,10 +735,14 @@ class NetSuiteConnector:
                 if classification['isInactive'] and classification['internalId'] not in destination_ids:
                     continue
 
+                value = classification['name']
+                if configuration and configuration.import_classes_with_parent and classification['parent']:
+                    value = f"{classification['parent']['name']} : {classification['name']}"
+
                 classification_attributes.append({
                     'attribute_type': 'CLASS',
                     'display_name': 'Class',
-                    'value': classification['name'],
+                    'value': value,
                     'destination_id': classification['internalId'],
                     'active': not classification['isInactive']
                 })
