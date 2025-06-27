@@ -39,7 +39,7 @@ jobs:
           python -m pip install diff-cover
 
           git fetch origin master --depth=1
-          diff-cover coverage.xml --compare-branch=origin/master --diff-range-notation .. --fail-under=86 > result.txt 2>&1 || echo "diff-cover failed or no changes detected" > result.txt
+          diff-cover coverage.xml --compare-branch=origin/master --diff-range-notation .. --fail-under=98 > result.txt 2>&1 || echo "diff-cover failed or no changes detected" > result.txt
 
       - name: Comment coverage check
         if: always()
