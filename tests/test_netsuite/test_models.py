@@ -474,7 +474,7 @@ def test_support_post_date_integrations(mocker, db):
     
     expense_group = ExpenseGroup.objects.filter(workspace_id=workspace_id, fund_source='CCC').first()
     expense_group.description['posted_at'] = '2021-12-22T07:30:26'
-    create_bill(expense_group, task_log.id, True, False)
+    create_bill(expense_group.id, task_log.id, True, False)
     
     task_log = TaskLog.objects.get(pk=task_log.id)
     bill = Bill.objects.get(expense_group_id=expense_group.id)
