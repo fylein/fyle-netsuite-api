@@ -55,7 +55,10 @@ def check_interval_and_sync_dimension(workspace_id):
     :param workspace_id: Workspace ID
     """
     workspace = Workspace.objects.get(pk=workspace_id)
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace.id)
+    try:
+        netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace.id)
+    except NetSuiteCredentials.DoesNotExist:
+        return
 
     if workspace.destination_synced_at:
         time_interval = datetime.now(timezone.utc) - workspace.source_synced_at
@@ -113,7 +116,10 @@ def get_import_categories_settings(configurations: Configuration):
 def handle_refresh_dimensions(workspace_id, dimensions_to_sync):
 
     workspace = Workspace.objects.get(pk=workspace_id)
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace.id)
+    try:
+        netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace.id)
+    except NetSuiteCredentials.DoesNotExist:
+        return
 
     configurations = Configuration.objects.filter(workspace_id=workspace.id).first()
     workspace_id = workspace.id

@@ -88,8 +88,7 @@ class PostCountryView(generics.CreateAPIView):
 
         try:
             subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=kwargs['workspace_id'])
-                                
-            netsuite_credentials: NetSuiteCredentials = NetSuiteCredentials.objects.get(workspace_id=kwargs['workspace_id'])
+            netsuite_credentials: NetSuiteCredentials = NetSuiteCredentials.get_active_netsuite_credentials(kwargs['workspace_id'])
             netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=kwargs['workspace_id'])
             
             country_name = netsuite_connection.connection.subsidiaries.get(internalId=subsidiary_mapping.internal_id)['country']
@@ -99,6 +98,14 @@ class PostCountryView(generics.CreateAPIView):
             return Response(
                 data=self.serializer_class(subsidiary_mapping).data,
                 status=status.HTTP_200_OK
+            )
+
+        except NetSuiteCredentials.DoesNotExist:
+            return Response(
+                {
+                    'message': 'NetSuite Credentials not found in this workspace'
+                },
+                status=status.HTTP_400_BAD_REQUEST
             )
 
         except SubsidiaryMapping.DoesNotExist:
