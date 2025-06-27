@@ -3,6 +3,7 @@ from rest_framework.serializers import ValidationError
 import logging
 from collections import OrderedDict
 from apps.workspaces.models import NetSuiteCredentials
+from apps.workspaces.tasks import patch_integration_settings
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -56,3 +57,14 @@ def generate_netsuite_export_url(response_logs : OrderedDict, netsuite_credentia
         except Exception as exception:
             logger.exception({'error': exception})
     return None
+    
+
+def invalidate_netsuite_credentials(workspace_id, netsuite_credentials=None):
+    if not netsuite_credentials:
+        netsuite_credentials = NetSuiteCredentials.objects.filter(workspace_id=workspace_id, is_expired=False).first()
+
+    if netsuite_credentials:
+        if not netsuite_credentials.is_expired:
+            patch_integration_settings(workspace_id, is_token_expired=True)
+        netsuite_credentials.is_expired = True
+        netsuite_credentials.save()
