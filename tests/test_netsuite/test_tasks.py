@@ -512,7 +512,7 @@ def test_post_journal_entry(mocker, db):
     task_log.status = 'READY'
     task_log.save()
 
-    create_journal_entry(expense_group, task_log.id, True, False)
+    create_journal_entry(expense_group.id, task_log.id, True, False)
 
     task_log = TaskLog.objects.get(id=task_log.id)
     assert task_log.detail['message'] == 'NetSuite Account not connected'
