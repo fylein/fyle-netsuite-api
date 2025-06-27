@@ -448,8 +448,9 @@ def resolve_errors_for_exported_expense_group(expense_group, workspace_id=None):
 
 
 @handle_netsuite_exceptions(payment=False)
-def create_bill(expense_group: ExpenseGroup, task_log_id, last_export, is_auto_export: bool):
+def create_bill(expense_group_id: int, task_log_id: int, last_export: bool, is_auto_export: bool):
     task_log = TaskLog.objects.get(id=task_log_id)
+    expense_group = ExpenseGroup.objects.get(id=expense_group_id, workspace_id=task_log.workspace_id)
     logger.info('Creating Bill for Expense Group %s, current state is %s', expense_group.id, task_log.status)
 
     if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
@@ -530,9 +531,10 @@ def create_bill(expense_group: ExpenseGroup, task_log_id, last_export, is_auto_e
         
 
 @handle_netsuite_exceptions(payment=False)
-def create_credit_card_charge(expense_group, task_log_id, last_export, is_auto_export: bool):
+def create_credit_card_charge(expense_group_id: int, task_log_id: int, last_export: bool, is_auto_export: bool):
     worker_logger = get_logger()
     task_log = TaskLog.objects.get(id=task_log_id)
+    expense_group = ExpenseGroup.objects.get(id=expense_group_id, workspace_id=task_log.workspace_id)
     worker_logger.info('Creating Credit Card Charge for Expense Group %s, current state is %s', expense_group.id, task_log.status)
 
     if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
@@ -628,9 +630,10 @@ def create_credit_card_charge(expense_group, task_log_id, last_export, is_auto_e
 
 
 @handle_netsuite_exceptions(payment=False)
-def create_expense_report(expense_group, task_log_id, last_export, is_auto_export: bool):
+def create_expense_report(expense_group_id: int, task_log_id: int, last_export: bool, is_auto_export: bool):
     worker_logger = get_logger()
     task_log = TaskLog.objects.get(id=task_log_id)
+    expense_group = ExpenseGroup.objects.get(id=expense_group_id, workspace_id=task_log.workspace_id)
     worker_logger.info('Creating Expense Report for Expense Group %s, current state is %s', expense_group.id, task_log.status)
 
     if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
@@ -706,9 +709,10 @@ def create_expense_report(expense_group, task_log_id, last_export, is_auto_expor
 
 
 @handle_netsuite_exceptions(payment=False)
-def create_journal_entry(expense_group, task_log_id, last_export, is_auto_export: bool):
+def create_journal_entry(expense_group_id: int, task_log_id: int, last_export: bool, is_auto_export: bool):
     worker_logger = get_logger()
     task_log = TaskLog.objects.get(id=task_log_id)
+    expense_group = ExpenseGroup.objects.get(id=expense_group_id, workspace_id=task_log.workspace_id)
     worker_logger.info('Creating Journal Entry for Expense Group %s, current state is %s', expense_group.id, task_log.status)
 
     if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:

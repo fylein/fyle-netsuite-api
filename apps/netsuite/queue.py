@@ -6,8 +6,11 @@ from django.db.models import Q
 from django_q.tasks import Chain
 
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
+from fyle_accounting_library.rabbitmq.data_class import Task
+from fyle_accounting_library.rabbitmq.helpers import TaskChainRunner
 
 from apps.fyle.models import ExpenseGroup
+from apps.fyle.helpers import check_interval_and_sync_dimension
 from apps.fyle.actions import post_accounting_export_summary_for_skipped_exports
 from apps.netsuite.actions import update_last_export_details
 from apps.tasks.models import TaskLog, Error
@@ -16,23 +19,31 @@ logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
 
-def __create_chain_and_run(workspace_id: int, chain_tasks: List[dict], is_auto_export: bool) -> None:
+def __create_chain_and_run(workspace_id: int, chain_tasks: List[dict], run_in_rabbitmq_worker: bool) -> None:
     """
     Create chain and run
     :param workspace_id: workspace id
     :param chain_tasks: List of chain tasks
     :param is_auto_export: Is auto export
+    :param run_in_rabbitmq_worker: Run in rabbitmq worker
     :return: None
     """
-    chain = Chain()
+    if run_in_rabbitmq_worker:
+        # This function checks intervals and triggers sync if needed, syncing dimension for all exports is overkill
+        check_interval_and_sync_dimension(workspace_id)
 
-    chain.append('apps.fyle.helpers.sync_dimensions', workspace_id, True)
+        task_executor = TaskChainRunner()
+        task_executor.run(chain_tasks, workspace_id)
+    else:
+        chain = Chain()
 
-    for task in chain_tasks:
-        logger.info('Chain task %s, Chain Expense Group %s, Chain Task Log %s', task['target'], task['expense_group'], task['task_log_id'])
-        chain.append(task['target'], task['expense_group'], task['task_log_id'], task['last_export'], is_auto_export)
+        chain.append('apps.fyle.helpers.sync_dimensions', workspace_id, True)
 
-    chain.run()
+        for task in chain_tasks:
+            logger.info('Chain task %s, Chain Expense Group %s, Chain Task Log %s', task.target, task.args[0], task.args[1])
+            chain.append(task.target, *task.args)
+
+        chain.run()
 
 
 def validate_failing_export(is_auto_export: bool, interval_hours: int, error: Error, expense_group: ExpenseGroup):
@@ -74,7 +85,7 @@ def handle_skipped_exports(expense_groups: List[ExpenseGroup], index: int, skip_
     return skip_export_count
 
 
-def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str, interval_hours: int, triggered_by: ExpenseImportSourceEnum):
+def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str, interval_hours: int, triggered_by: ExpenseImportSourceEnum, run_in_rabbitmq_worker: bool):
     """
     Schedule bills creation
     :param expense_group_ids: List of expense group ids
@@ -121,18 +132,16 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str], is_
                     task_log.triggered_by = triggered_by
                 task_log.save()
 
-            chain_tasks.append({
-                    'target': 'apps.netsuite.tasks.create_bill',
-                    'expense_group': expense_group,
-                    'task_log_id': task_log.id,
-                    'last_export': (expense_groups.count() == index + 1)
-                    })
+            chain_tasks.append(Task(
+                target='apps.netsuite.tasks.create_bill',
+                args=[expense_group.id, task_log.id, (expense_groups.count() == index + 1), is_auto_export]
+            ))
 
         if len(chain_tasks) > 0:
-            __create_chain_and_run(workspace_id, chain_tasks, is_auto_export)
+            __create_chain_and_run(workspace_id, chain_tasks, run_in_rabbitmq_worker)
 
 
-def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str, interval_hours: int, triggered_by: ExpenseImportSourceEnum):
+def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str, interval_hours: int, triggered_by: ExpenseImportSourceEnum, run_in_rabbitmq_worker: bool):
     """
     Schedule Credit Card Charge creation
     :param expense_group_ids: List of expense group ids
@@ -185,18 +194,16 @@ def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: L
                     task_log.triggered_by = triggered_by
                 task_log.save()
             
-            chain_tasks.append({
-                    'target': 'apps.netsuite.tasks.create_credit_card_charge',
-                    'expense_group': expense_group,
-                    'task_log_id': task_log.id,
-                    'last_export': (expense_groups.count() == index + 1)
-                    })
+            chain_tasks.append(Task(
+                target='apps.netsuite.tasks.create_credit_card_charge',
+                args=[expense_group.id, task_log.id, (expense_groups.count() == index + 1), is_auto_export]
+            ))
 
         if len(chain_tasks) > 0:
-            __create_chain_and_run(workspace_id, chain_tasks, is_auto_export)
+            __create_chain_and_run(workspace_id, chain_tasks, run_in_rabbitmq_worker)
 
 
-def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str, interval_hours: int, triggered_by: ExpenseImportSourceEnum):
+def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str, interval_hours: int, triggered_by: ExpenseImportSourceEnum, run_in_rabbitmq_worker: bool):
     """
     Schedule expense reports creation
     :param expense_group_ids: List of expense group ids
@@ -244,18 +251,16 @@ def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List
                     task_log.triggered_by = triggered_by
                 task_log.save()
             
-            chain_tasks.append({
-                    'target': 'apps.netsuite.tasks.create_expense_report',
-                    'expense_group': expense_group,
-                    'task_log_id': task_log.id,
-                    'last_export': (expense_groups.count() == index + 1)
-                    })
+            chain_tasks.append(Task(
+                target='apps.netsuite.tasks.create_expense_report',
+                args=[expense_group.id, task_log.id, (expense_groups.count() == index + 1), is_auto_export]
+            ))
 
         if len(chain_tasks) > 0:
-            __create_chain_and_run(workspace_id, chain_tasks, is_auto_export)
+            __create_chain_and_run(workspace_id, chain_tasks, run_in_rabbitmq_worker)
 
 
-def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str, interval_hours: int, triggered_by: ExpenseImportSourceEnum):
+def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str, interval_hours: int, triggered_by: ExpenseImportSourceEnum, run_in_rabbitmq_worker: bool):
     """
     Schedule journal entries creation
     :param expense_group_ids: List of expense group ids
@@ -302,12 +307,10 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
                     task_log.triggered_by = triggered_by
                 task_log.save()
             
-            chain_tasks.append({
-                    'target': 'apps.netsuite.tasks.create_journal_entry',
-                    'expense_group': expense_group,
-                    'task_log_id': task_log.id,
-                    'last_export': (expense_groups.count() == index + 1)
-                    })
+            chain_tasks.append(Task(
+                target='apps.netsuite.tasks.create_journal_entry',
+                args=[expense_group.id, task_log.id, (expense_groups.count() == index + 1), is_auto_export]
+            ))
 
         if len(chain_tasks) > 0:
-            __create_chain_and_run(workspace_id, chain_tasks, is_auto_export)
+            __create_chain_and_run(workspace_id, chain_tasks, run_in_rabbitmq_worker)
