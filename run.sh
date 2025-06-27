@@ -1,5 +1,9 @@
 #!/bin/bash
 
+if [ "$STRICT_MODE" != "false" ]; then
+  set -e
+fi
+
 # Run db migrations
 python manage.py migrate
 
