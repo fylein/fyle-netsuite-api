@@ -35,6 +35,7 @@ services:
       NS_CONSUMER_KEY: ''
       NS_CONSUMER_SECRET: ''
       RABBITMQ_URL: amqp://admin:password@rabbitmq:5673/?heartbeat=0
+      STRICT_MODE: "false"
   db:
     image: "postgres:15"
     environment: 
