@@ -212,7 +212,7 @@ def test_post_bill_success(add_tax_destination_attributes, mocker, db):
     for expenses in expense_group.expenses.all():
         expenses.workspace_id = 2
         expenses.save()
-    create_bill(expense_group, task_log.id, True, False)
+    create_bill(expense_group.id, task_log.id, True, False)
     
     task_log = TaskLog.objects.get(pk=task_log.id)
     bill = Bill.objects.get(expense_group_id=expense_group.id)
@@ -229,7 +229,7 @@ def test_post_bill_success(add_tax_destination_attributes, mocker, db):
     task_log.save()
 
     expense_group = ExpenseGroup.objects.filter(workspace_id=workspace_id, fund_source='CCC').first()
-    create_bill(expense_group, task_log.id, True, False)
+    create_bill(expense_group.id, task_log.id, True, False)
 
     task_log = TaskLog.objects.get(id=task_log.id)
     assert task_log.detail['message'] == 'NetSuite Account not connected'
@@ -267,7 +267,7 @@ def test_post_bill_mapping_error(mocker, db):
     created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
 
     expense_group = ExpenseGroup.objects.filter(workspace_id=workspace_id, fund_source='CCC').first()
-    create_bill(expense_group, task_log.id, True, False)
+    create_bill(expense_group.id, task_log.id, True, False)
 
     task_log = TaskLog.objects.filter(pk=task_log.id).first()
 
@@ -304,7 +304,7 @@ def test_accounting_period_working_bill(db, mocker):
 
     with mock.patch('apps.netsuite.connector.NetSuiteConnector.post_bill') as mock_call:
         mock_call.side_effect = NetSuiteRequestError(message='An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.')
-        create_bill(expense_group, task_log.id, True, False)
+        create_bill(expense_group.id, task_log.id, True, False)
 
         task_log = TaskLog.objects.get(pk=task_log.id)
 
@@ -312,7 +312,7 @@ def test_accounting_period_working_bill(db, mocker):
         assert task_log.status=='FAILED'
 
         mock_call.side_effect = Exception()
-        create_bill(expense_group, task_log.id, True, False)
+        create_bill(expense_group.id, task_log.id, True, False)
 
         task_log = TaskLog.objects.get(pk=task_log.id)
         assert task_log.status=='FATAL'
@@ -341,7 +341,7 @@ def test_post_expense_report(mocker, db):
     successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
     created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
     
-    create_expense_report(expense_group, task_log.id, True, False)
+    create_expense_report(expense_group.id, task_log.id, True, False)
     
     task_log = TaskLog.objects.get(pk=task_log.id)
     expense_report = ExpenseReport.objects.get(expense_group_id=expense_group.id)
@@ -357,7 +357,7 @@ def test_post_expense_report(mocker, db):
     task_log.status = 'READY'
     task_log.save()
 
-    create_expense_report(expense_group, task_log.id, True, False)
+    create_expense_report(expense_group.id, task_log.id, True, False)
 
     task_log = TaskLog.objects.get(id=task_log.id)
     assert task_log.detail['message'] == 'NetSuite Account not connected'
@@ -366,7 +366,7 @@ def test_post_expense_report(mocker, db):
     mock_call = mocker.patch.object(mock_connector, 'post_expense_report')
 
     mock_call.side_effect = zeep.exceptions.Fault('INVALID_KEY_OR_REF', 'An error occured in a upsert request: Invalid apacct reference key 223.')
-    create_expense_report(expense_group, task_log.id, True, False)
+    create_expense_report(expense_group.id, task_log.id, True, False)
 
     mock_call.call_count == 1
 
@@ -391,7 +391,7 @@ def test_post_expense_report_mapping_error(mocker, db):
     successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
     created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
 
-    create_expense_report(expense_group, task_log.id, True, False)
+    create_expense_report(expense_group.id, task_log.id, True, False)
 
     task_log = TaskLog.objects.filter(pk=task_log.id).first()
 
@@ -424,7 +424,7 @@ def test_accounting_period_working_expense_report(mocker, db):
 
     with mock.patch('apps.netsuite.connector.NetSuiteConnector.post_expense_report') as mock_call:
         mock_call.side_effect = NetSuiteRequestError(message='An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.')
-        create_expense_report(expense_group, task_log.id, True, False)
+        create_expense_report(expense_group.id, task_log.id, True, False)
 
         task_log = TaskLog.objects.get(pk=task_log.id)
 
@@ -432,7 +432,7 @@ def test_accounting_period_working_expense_report(mocker, db):
         assert task_log.status=='FAILED'
 
         mock_call.side_effect = Exception()
-        create_expense_report(expense_group, task_log.id, True, False)
+        create_expense_report(expense_group.id, task_log.id, True, False)
 
         task_log = TaskLog.objects.get(pk=task_log.id)
         assert task_log.status=='FATAL'
@@ -470,7 +470,7 @@ def test_post_journal_entry(mocker, db):
     successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
     created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
     
-    create_journal_entry(expense_group, task_log.id, True, False)
+    create_journal_entry(expense_group.id, task_log.id, True, False)
 
     task_log = TaskLog.objects.get(pk=task_log.id)
     journal_entry = JournalEntry.objects.get(expense_group_id=expense_group.id)
@@ -491,7 +491,7 @@ def test_post_journal_entry(mocker, db):
     configuration.employee_field_mapping = 'VENDOR'
     configuration.save()
 
-    create_journal_entry(expense_group, task_log.id, True, False)
+    create_journal_entry(expense_group.id, task_log.id, True, False)
 
     # journal_entry = JournalEntry.objects.get(expense_group__id=expense_group.id)
     # expense_group.id = random.randint(50, 1000)
@@ -504,7 +504,7 @@ def test_post_journal_entry(mocker, db):
     configuration.employee_field_mapping = 'EMPLOYEE'
     configuration.save()
 
-    create_journal_entry(expense_group, task_log.id, True, False)
+    create_journal_entry(expense_group.id, task_log.id, True, False)
 
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
     netsuite_credentials.delete()
@@ -512,7 +512,7 @@ def test_post_journal_entry(mocker, db):
     task_log.status = 'READY'
     task_log.save()
 
-    create_journal_entry(expense_group, task_log.id, True, False)
+    create_journal_entry(expense_group.id, task_log.id, True, False)
 
     task_log = TaskLog.objects.get(id=task_log.id)
     assert task_log.detail['message'] == 'NetSuite Account not connected'
@@ -538,7 +538,7 @@ def test_post_journal_entry_mapping_error(mocker, db):
     successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
     created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
 
-    create_journal_entry(expense_group, task_log.id, True, False)
+    create_journal_entry(expense_group.id, task_log.id, True, False)
 
     task_log = TaskLog.objects.filter(pk=task_log.id).first()
 
@@ -569,7 +569,7 @@ def test_accounting_period_working_create_journal_entry(mocker, db):
     
     with mock.patch('apps.netsuite.connector.NetSuiteConnector.post_journal_entry') as mock_call:
         mock_call.side_effect = NetSuiteRequestError(message='An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.')
-        create_journal_entry(expense_group, task_log.id, True, False)
+        create_journal_entry(expense_group.id, task_log.id, True, False)
 
         task_log = TaskLog.objects.get(pk=task_log.id)
 
@@ -577,7 +577,7 @@ def test_accounting_period_working_create_journal_entry(mocker, db):
         assert task_log.status=='FAILED'
 
         mock_call.side_effect = Exception()
-        create_journal_entry(expense_group, task_log.id, True, False)
+        create_journal_entry(expense_group.id, task_log.id, True, False)
 
         task_log = TaskLog.objects.get(pk=task_log.id)
         assert task_log.status=='FATAL'
@@ -631,7 +631,7 @@ def test_create_credit_card_charge(mocker, db):
     successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
     created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
 
-    create_credit_card_charge(expense_group, task_log.id, True, False)
+    create_credit_card_charge(expense_group.id, task_log.id, True, False)
     
     task_log = TaskLog.objects.get(pk=task_log.id)
     credit_card_charge = CreditCardCharge.objects.get(expense_group_id=expense_group.id)
@@ -650,7 +650,7 @@ def test_create_credit_card_charge(mocker, db):
         expense.amount = -1.00
         expense.save()
 
-    create_credit_card_charge(expense_group, task_log.id, True, False)
+    create_credit_card_charge(expense_group.id, task_log.id, True, False)
 
     expense_group = ExpenseGroup.objects.filter(id=expense_group.id).first()
     created_credit_card_charge = expense_group.response_logs
@@ -662,7 +662,7 @@ def test_create_credit_card_charge(mocker, db):
     task_log.status = 'READY'
     task_log.save()
 
-    create_credit_card_charge(expense_group, task_log.id, True, False)
+    create_credit_card_charge(expense_group.id, task_log.id, True, False)
 
     task_log = TaskLog.objects.get(id=task_log.id)
     assert task_log.detail['message'] == 'NetSuite Account not connected'
@@ -699,7 +699,7 @@ def test_post_credit_card_charge_mapping_error(mocker, db):
     successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
     created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
 
-    create_credit_card_charge(expense_group, task_log.id, True, False)
+    create_credit_card_charge(expense_group.id, task_log.id, True, False)
 
     task_log = TaskLog.objects.filter(pk=task_log.id).first()
 
@@ -744,7 +744,7 @@ def test_accounting_period_working_credit_card_charge(mocker, db):
     
     with mock.patch('apps.netsuite.connector.NetSuiteConnector.post_credit_card_charge') as mock_call:
         mock_call.side_effect = NetSuiteRequestError(message='An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.')
-        create_credit_card_charge(expense_group, task_log.id, True, False)
+        create_credit_card_charge(expense_group.id, task_log.id, True, False)
 
         task_log = TaskLog.objects.get(pk=task_log.id)
 
@@ -752,7 +752,7 @@ def test_accounting_period_working_credit_card_charge(mocker, db):
         assert task_log.status=='FAILED'
 
         mock_call.side_effect = Exception()
-        create_credit_card_charge(expense_group, task_log.id, True, False)
+        create_credit_card_charge(expense_group.id, task_log.id, True, False)
 
         task_log = TaskLog.objects.get(pk=task_log.id)
         assert task_log.status=='FATAL'
@@ -1330,7 +1330,7 @@ def test_schedule_netsuite_entity_creation(db):
 
     expense_group = ExpenseGroup.objects.get(id=1)
 
-    schedule_expense_reports_creation(1, ['1'], False, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
+    schedule_expense_reports_creation(1, ['1'], False, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
 
     task_logs = TaskLog.objects.get(workspace_id=1, expense_group=expense_group)
 
@@ -1339,7 +1339,7 @@ def test_schedule_netsuite_entity_creation(db):
 
     expense_group = ExpenseGroup.objects.get(id=3)
 
-    schedule_journal_entry_creation(2, ['3'], False, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
+    schedule_journal_entry_creation(2, ['3'], False, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
 
     task_logs = TaskLog.objects.get(workspace_id=2, expense_group=expense_group)
 
@@ -1349,7 +1349,7 @@ def test_schedule_netsuite_entity_creation(db):
 
     expense_group = ExpenseGroup.objects.get(id=2)
 
-    schedule_bills_creation(1, ['2'], False, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
+    schedule_bills_creation(1, ['2'], False, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
 
     task_logs = TaskLog.objects.get(workspace_id=1, expense_group=expense_group)
 
@@ -1358,7 +1358,7 @@ def test_schedule_netsuite_entity_creation(db):
 
     expense_group = ExpenseGroup.objects.get(id=48)
 
-    schedule_credit_card_charge_creation(49, ['48'], False, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
+    schedule_credit_card_charge_creation(49, ['48'], False, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
 
     task_logs = TaskLog.objects.get(workspace_id=49, expense_group=expense_group)
 
@@ -1487,7 +1487,7 @@ def test_schedule_bills_creation(db, mocker):
     expense_group = expense_group
     task_log.save()
 
-    schedule_bills_creation(workspace_id, [1], False, 'CCC', 0, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
+    schedule_bills_creation(workspace_id, [1], False, 'CCC', 0, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
     assert task_log.type == 'CREATING_BILL'
@@ -1513,7 +1513,7 @@ def test_schedule_credit_card_charge_creation(db, mocker):
     expense_group = expense_group
     task_log.save()
 
-    schedule_credit_card_charge_creation(workspace_id, [1], False, 'CCC', 0, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
+    schedule_credit_card_charge_creation(workspace_id, [1], False, 'CCC', 0, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
     assert task_log.type == 'CREATING_CREDIT_CARD_REFUND'
@@ -1535,7 +1535,7 @@ def test_schedule_expense_reports_creation(db, mocker):
     expense_group = expense_group
     task_log.save()
 
-    schedule_expense_reports_creation(workspace_id, [1], False, 'CCC', 0, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
+    schedule_expense_reports_creation(workspace_id, [1], False, 'CCC', 0, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
     assert task_log.type == 'CREATING_EXPENSE_REPORT'
@@ -1557,7 +1557,7 @@ def test_schedule_journal_entry_creation(db, mocker):
     expense_group = expense_group
     task_log.save()
 
-    schedule_journal_entry_creation(workspace_id, [1], False, 'CCC', 0, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
+    schedule_journal_entry_creation(workspace_id, [1], False, 'CCC', 0, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
     assert task_log.type == 'CREATING_JOURNAL_ENTRY'
@@ -1727,14 +1727,14 @@ def test_skipping_bill_creation(db, mocker, create_last_export_detail):
     expense_group = expense_group
     task_log.save()
 
-    schedule_bills_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
+    schedule_bills_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first()
     assert task_log.type == 'FETCHING_EXPENSES'
 
     Error.objects.filter(id=error.id).update(updated_at=datetime(2024, 8, 20))
 
-    schedule_bills_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
+    schedule_bills_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
     assert task_log.type == 'CREATING_BILL'
@@ -1766,14 +1766,14 @@ def test_skipping_journal_creation(db, mocker, create_last_export_detail):
     expense_group = expense_group
     task_log.save()
 
-    schedule_journal_entry_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
+    schedule_journal_entry_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first()
     assert task_log.type == 'FETCHING_EXPENSES'
 
     Error.objects.filter(id=error.id).update(updated_at=datetime(2024, 8, 20))
 
-    schedule_journal_entry_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
+    schedule_journal_entry_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
     assert task_log.type == 'CREATING_JOURNAL_ENTRY'
@@ -1805,14 +1805,14 @@ def test_skipping_expense_group_creation(db, mocker, create_last_export_detail):
     expense_group = expense_group
     task_log.save()
 
-    schedule_expense_reports_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
+    schedule_expense_reports_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first()
     assert task_log.type == 'FETCHING_EXPENSES'
 
     Error.objects.filter(id=error.id).update(updated_at=datetime(2024, 8, 20))
 
-    schedule_expense_reports_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
+    schedule_expense_reports_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
     assert task_log.type == 'CREATING_EXPENSE_REPORT'
@@ -1844,14 +1844,14 @@ def test_skipping_credit_card_charge_creation(db, mocker, create_last_export_det
     expense_group = expense_group
     task_log.save()
 
-    schedule_credit_card_charge_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
+    schedule_credit_card_charge_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first()
     assert task_log.type == 'FETCHING_EXPENSES'
 
     Error.objects.filter(id=error.id).update(updated_at=datetime(2024, 8, 20))
 
-    schedule_credit_card_charge_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
+    schedule_credit_card_charge_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
     assert task_log.type == 'CREATING_CREDIT_CARD_CHARGE'
