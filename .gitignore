@@ -12,6 +12,7 @@ debugger
 
 # IDEs
 .idea
+.cursor
 
 # Distribution / packaging
 .Python

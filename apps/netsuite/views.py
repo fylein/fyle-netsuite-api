@@ -11,6 +11,8 @@ from fyle_accounting_mappings.serializers import DestinationAttributeSerializer
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 
 from apps.workspaces.models import NetSuiteCredentials, Workspace, Configuration
+from netsuitesdk import NetSuiteLoginError
+from fyle_netsuite_api.utils import invalidate_netsuite_credentials
 
 from django_q.tasks import async_task
 
@@ -145,7 +147,7 @@ class SyncNetSuiteDimensionView(generics.ListCreateAPIView):
         """
         try:
             workspace = Workspace.objects.get(pk=kwargs['workspace_id'])
-            NetSuiteCredentials.objects.get(workspace_id=workspace.id)
+            NetSuiteCredentials.get_active_netsuite_credentials(workspace.id)
 
             if not check_if_task_exists_in_ormq(func='apps.netsuite.helpers.check_interval_and_sync_dimension', payload=kwargs['workspace_id']):
                 async_task('apps.netsuite.helpers.check_interval_and_sync_dimension', kwargs['workspace_id'])
@@ -157,6 +159,14 @@ class SyncNetSuiteDimensionView(generics.ListCreateAPIView):
             return Response(
                 data={
                     'message': 'NetSuite credentials not found in workspace'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except NetSuiteLoginError:
+            invalidate_netsuite_credentials(kwargs['workspace_id'])
+            return Response(
+                data={
+                    'message': 'Invalid NetSuite credentials'
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
@@ -180,7 +190,7 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
         try:
             dimensions_to_sync = request.data.get('dimensions_to_sync', [])
             workspace = Workspace.objects.get(pk=kwargs['workspace_id'])
-            NetSuiteCredentials.objects.get(workspace_id=workspace.id)
+            NetSuiteCredentials.get_active_netsuite_credentials(workspace.id)
 
             # If only specified dimensions are to be synced, sync them synchronously
             if dimensions_to_sync:
@@ -196,6 +206,14 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
             return Response(
                 data={
                     'message': 'NetSuite credentials not found in workspace'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except NetSuiteLoginError:
+            invalidate_netsuite_credentials(kwargs['workspace_id'])
+            return Response(
+                data={
+                    'message': 'Invalid NetSuite credentials'
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )

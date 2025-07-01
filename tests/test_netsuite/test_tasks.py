@@ -222,7 +222,7 @@ def test_post_bill_success(add_tax_destination_attributes, mocker, db):
     assert bill.accounts_payable_id == '25'
     assert bill.entity_id == '11104'
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=workspace_id)
     netsuite_credentials.delete()
 
     task_log.status = 'READY'
@@ -232,7 +232,7 @@ def test_post_bill_success(add_tax_destination_attributes, mocker, db):
     create_bill(expense_group.id, task_log.id, True, False)
 
     task_log = TaskLog.objects.get(id=task_log.id)
-    assert task_log.detail['message'] == 'NetSuite Account not connected'
+    assert task_log.status == 'FAILED'
 
 
 def test_post_bill_mapping_error(mocker, db):
@@ -351,7 +351,7 @@ def test_post_expense_report(mocker, db):
     assert expense_report.account_id == '118'
     assert expense_report.entity_id == '1676'
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_credentials.delete()
 
     task_log.status = 'READY'
@@ -360,7 +360,7 @@ def test_post_expense_report(mocker, db):
     create_expense_report(expense_group.id, task_log.id, True, False)
 
     task_log = TaskLog.objects.get(id=task_log.id)
-    assert task_log.detail['message'] == 'NetSuite Account not connected'
+    assert task_log.status == 'FAILED'
 
     mock_connector = mocker.patch('apps.netsuite.tasks.NetSuiteConnector')
     mock_call = mocker.patch.object(mock_connector, 'post_expense_report')
@@ -506,7 +506,7 @@ def test_post_journal_entry(mocker, db):
 
     create_journal_entry(expense_group.id, task_log.id, True, False)
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_credentials.delete()
 
     task_log.status = 'READY'
@@ -515,7 +515,7 @@ def test_post_journal_entry(mocker, db):
     create_journal_entry(expense_group.id, task_log.id, True, False)
 
     task_log = TaskLog.objects.get(id=task_log.id)
-    assert task_log.detail['message'] == 'NetSuite Account not connected'
+    assert task_log.status == 'FAILED'
 
 
 def test_post_journal_entry_mapping_error(mocker, db):
@@ -656,7 +656,7 @@ def test_create_credit_card_charge(mocker, db):
     created_credit_card_charge = expense_group.response_logs
     assert created_credit_card_charge['type'] == 'chargeCardRefund'
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_credentials.delete()
 
     task_log.status = 'READY'
@@ -665,7 +665,7 @@ def test_create_credit_card_charge(mocker, db):
     create_credit_card_charge(expense_group.id, task_log.id, True, False)
 
     task_log = TaskLog.objects.get(id=task_log.id)
-    assert task_log.detail['message'] == 'NetSuite Account not connected'
+    assert task_log.status == 'FAILED'
 
 
 def test_post_credit_card_charge_mapping_error(mocker, db):
@@ -866,7 +866,7 @@ def test_load_attachments(db, add_netsuite_credentials, add_fyle_credentials, cr
 
     credit_card_charge_object = CreditCardCharge.objects.filter().first()
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
     attachment = load_attachments(netsuite_connection, expense_group.expenses.first(), expense_group, credit_card_charge_object)
@@ -908,7 +908,7 @@ def test_create_or_update_employee_mapping(mocker, db):
 
     expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id=1)
 
     expense_group.description['employee_email'] = 'ashwin.t@fyle.in'

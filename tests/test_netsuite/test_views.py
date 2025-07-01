@@ -180,7 +180,7 @@ def test_sync_netsuite_dimensions(api_client, access_token, add_netsuite_credent
       assert response.status_code == 400
       assert response.data['message'] == 'Error in syncing Dimensions'
 
-   netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=2)
+   netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=2)
    netsuite_credentials.delete()
 
    response = api_client.post(url)
@@ -234,7 +234,7 @@ def test_refresh_netsuite_dimensions(api_client, access_token, add_netsuite_cred
       assert response.status_code == 400
       assert response.data['message'] == 'Error in refreshing Dimensions'
 
-   netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=2)
+   netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=2)
    netsuite_credentials.delete()
 
    response = api_client.post(url)

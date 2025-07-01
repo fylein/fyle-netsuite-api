@@ -90,7 +90,7 @@ def test_sync_dimensions(mocker, db):
     assert project_count == 1086
     assert category_count == 33
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     sync_dimensions(netsuite_credentials, 1)
 
     employee_count = DestinationAttribute.objects.filter(attribute_type='EMPLOYEE', workspace_id=1).count()
