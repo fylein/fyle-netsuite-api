@@ -107,10 +107,11 @@ def handle_netsuite_exceptions(payment=False):
                     }
                 )
             else:
-                expense_group = args[0]
-                workspace_id=expense_group.workspace_id
                 task_log_id = args[1]
                 task_log = TaskLog.objects.get(id=task_log_id)
+                expense_group_id = args[0]
+                expense_group = ExpenseGroup.objects.get(id=expense_group_id, workspace_id=task_log.workspace_id)
+                workspace_id=expense_group.workspace_id
                 last_export = args[2]
             
             try:
