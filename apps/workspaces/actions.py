@@ -123,6 +123,6 @@ def export_to_netsuite(workspace_id, expense_group_ids=[], triggered_by: Expense
         last_export_detail.export_mode = export_mode or 'MANUAL'
 
         if workspace_schedule:
-            last_export_detail.next_export_at = last_exported_at + timedelta(hours=workspace_schedule.interval_hours)
+            last_export_detail.next_export = last_exported_at + timedelta(hours=workspace_schedule.interval_hours)
 
-        last_export_detail.save()
+        last_export_detail.save(update_fields=['last_exported_at', 'export_mode', 'next_export'])
