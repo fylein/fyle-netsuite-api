@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# cursor rules
+.cursor
+
 # developer notes
 notes*
 debugger
