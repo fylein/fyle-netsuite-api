@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 15.12 (Debian 15.12-1.pgdg120+1)
+-- Dumped from database version 15.13 (Debian 15.13-1.pgdg120+1)
 -- Dumped by pg_dump version 15.13 (Debian 15.13-0+deb12u1)
 
 SET statement_timeout = 0;
@@ -787,6 +787,45 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
+-- Name: configurations; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.configurations (
+    id integer NOT NULL,
+    reimbursable_expenses_object character varying(50),
+    corporate_credit_card_expenses_object character varying(50),
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    workspace_id integer NOT NULL,
+    sync_fyle_to_netsuite_payments boolean NOT NULL,
+    sync_netsuite_to_fyle_payments boolean NOT NULL,
+    import_projects boolean NOT NULL,
+    auto_map_employees character varying(50),
+    import_categories boolean NOT NULL,
+    auto_create_destination_entity boolean NOT NULL,
+    auto_create_merchants boolean NOT NULL,
+    employee_field_mapping character varying(50),
+    import_tax_items boolean NOT NULL,
+    change_accounting_period boolean NOT NULL,
+    memo_structure character varying(100)[] NOT NULL,
+    map_fyle_cards_netsuite_account boolean NOT NULL,
+    import_vendors_as_merchants boolean NOT NULL,
+    import_netsuite_employees boolean NOT NULL,
+    import_items boolean NOT NULL,
+    name_in_journal_entry character varying(100) NOT NULL,
+    allow_intercompany_vendors boolean NOT NULL,
+    je_single_credit_line boolean NOT NULL,
+    is_attachment_upload_enabled boolean NOT NULL,
+    created_by character varying(255),
+    updated_by character varying(255),
+    skip_accounting_export_summary_post boolean NOT NULL,
+    import_classes_with_parent boolean NOT NULL
+);
+
+
+ALTER TABLE public.configurations OWNER TO postgres;
+
+--
 -- Name: expense_groups_expenses; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -932,7 +971,7 @@ CREATE VIEW public._direct_export_errored_expenses_view AS
                    FROM public.expense_groups_expenses
                   WHERE (expense_groups_expenses.expensegroup_id IN ( SELECT task_logs.expense_group_id
                            FROM public.task_logs
-                          WHERE (((task_logs.status)::text = ANY (ARRAY[('FAILED'::character varying)::text, ('FATAL'::character varying)::text])) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
+                          WHERE (((task_logs.status)::text = ANY ((ARRAY['FAILED'::character varying, 'FATAL'::character varying])::text[])) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
                                    FROM prod_workspace_ids))))))))
         ), errored_expenses_in_inprogress_state AS (
          SELECT count(*) AS in_progress_expenses_error_count
@@ -946,9 +985,10 @@ CREATE VIEW public._direct_export_errored_expenses_view AS
                                    FROM prod_workspace_ids))))))))
         ), not_synced_to_platform AS (
          SELECT count(*) AS not_synced_expenses_count
-           FROM public.expenses
-          WHERE ((expenses.workspace_id IN ( SELECT prod_workspace_ids.id
-                   FROM prod_workspace_ids)) AND ((expenses.accounting_export_summary ->> 'synced'::text) = 'false'::text))
+           FROM (public.expenses e
+             JOIN public.configurations c ON ((e.workspace_id = c.workspace_id)))
+          WHERE ((e.workspace_id IN ( SELECT prod_workspace_ids.id
+                   FROM prod_workspace_ids)) AND ((e.accounting_export_summary ->> 'synced'::text) = 'false'::text) AND (c.skip_accounting_export_summary_post = false))
         )
  SELECT errored_expenses_in_complete_state.complete_expenses_error_count,
     errored_expenses_in_error_state.error_expenses_error_count,
@@ -1300,44 +1340,6 @@ ALTER SEQUENCE public.category_mappings_id_seq OWNED BY public.category_mappings
 
 
 --
--- Name: configurations; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.configurations (
-    id integer NOT NULL,
-    reimbursable_expenses_object character varying(50),
-    corporate_credit_card_expenses_object character varying(50),
-    created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL,
-    workspace_id integer NOT NULL,
-    sync_fyle_to_netsuite_payments boolean NOT NULL,
-    sync_netsuite_to_fyle_payments boolean NOT NULL,
-    import_projects boolean NOT NULL,
-    auto_map_employees character varying(50),
-    import_categories boolean NOT NULL,
-    auto_create_destination_entity boolean NOT NULL,
-    auto_create_merchants boolean NOT NULL,
-    employee_field_mapping character varying(50),
-    import_tax_items boolean NOT NULL,
-    change_accounting_period boolean NOT NULL,
-    memo_structure character varying(100)[] NOT NULL,
-    map_fyle_cards_netsuite_account boolean NOT NULL,
-    import_vendors_as_merchants boolean NOT NULL,
-    import_netsuite_employees boolean NOT NULL,
-    import_items boolean NOT NULL,
-    name_in_journal_entry character varying(100) NOT NULL,
-    allow_intercompany_vendors boolean NOT NULL,
-    je_single_credit_line boolean NOT NULL,
-    is_attachment_upload_enabled boolean NOT NULL,
-    created_by character varying(255),
-    updated_by character varying(255),
-    skip_accounting_export_summary_post boolean NOT NULL
-);
-
-
-ALTER TABLE public.configurations OWNER TO postgres;
-
---
 -- Name: credit_card_charge_lineitems; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -1522,7 +1524,7 @@ CREATE VIEW public.direct_export_errored_expenses_view AS
                    FROM public.expense_groups_expenses
                   WHERE (expense_groups_expenses.expensegroup_id IN ( SELECT task_logs.expense_group_id
                            FROM public.task_logs
-                          WHERE (((task_logs.status)::text = ANY (ARRAY[('FAILED'::character varying)::text, ('FATAL'::character varying)::text])) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
+                          WHERE (((task_logs.status)::text = ANY ((ARRAY['FAILED'::character varying, 'FATAL'::character varying])::text[])) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
                                    FROM prod_workspace_ids)) AND (task_logs.updated_at > (now() - '1 day'::interval)) AND (task_logs.updated_at < (now() - '00:45:00'::interval))))))))
         ), errored_expenses_in_inprogress_state AS (
          SELECT count(*) AS in_progress_expenses_error_count
@@ -1532,13 +1534,14 @@ CREATE VIEW public.direct_export_errored_expenses_view AS
                    FROM public.expense_groups_expenses
                   WHERE (expense_groups_expenses.expensegroup_id IN ( SELECT task_logs.expense_group_id
                            FROM public.task_logs
-                          WHERE (((task_logs.status)::text = ANY (ARRAY[('IN_PROGRESS'::character varying)::text, ('ENQUEUED'::character varying)::text])) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
+                          WHERE (((task_logs.status)::text = ANY ((ARRAY['IN_PROGRESS'::character varying, 'ENQUEUED'::character varying])::text[])) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
                                    FROM prod_workspace_ids)) AND (task_logs.updated_at > (now() - '1 day'::interval)) AND (task_logs.updated_at < (now() - '00:45:00'::interval))))))))
         ), not_synced_to_platform AS (
          SELECT count(*) AS not_synced_expenses_count
-           FROM public.expenses
-          WHERE ((expenses.workspace_id IN ( SELECT prod_workspace_ids.id
-                   FROM prod_workspace_ids)) AND ((expenses.accounting_export_summary ->> 'synced'::text) = 'false'::text) AND (expenses.updated_at > (now() - '1 day'::interval)) AND (expenses.updated_at < (now() - '00:45:00'::interval)))
+           FROM (public.expenses e
+             JOIN public.configurations c ON ((e.workspace_id = c.workspace_id)))
+          WHERE ((e.workspace_id IN ( SELECT prod_workspace_ids.id
+                   FROM prod_workspace_ids)) AND ((e.accounting_export_summary ->> 'synced'::text) = 'false'::text) AND (e.updated_at > (now() - '1 day'::interval)) AND (e.updated_at < (now() - '00:45:00'::interval)) AND (c.skip_accounting_export_summary_post = false))
         )
  SELECT errored_expenses_in_complete_state.complete_expenses_error_count,
     errored_expenses_in_error_state.error_expenses_error_count,
@@ -1930,7 +1933,8 @@ CREATE TABLE public.expense_attributes_deletion_cache (
     workspace_id integer NOT NULL,
     cost_center_ids character varying(255)[] NOT NULL,
     custom_field_list jsonb NOT NULL,
-    merchant_list character varying(255)[] NOT NULL
+    merchant_list character varying(255)[] NOT NULL,
+    updated_at timestamp with time zone NOT NULL
 );
 
 
@@ -2982,8 +2986,7 @@ CREATE TABLE public.netsuite_credentials (
     ns_token_secret character varying(255) NOT NULL,
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
-    workspace_id integer NOT NULL,
-    is_expired boolean NOT NULL
+    workspace_id integer NOT NULL
 );
 
 
@@ -4115,10 +4118,10 @@ COPY public.category_mappings (id, created_at, updated_at, destination_account_i
 -- Data for Name: configurations; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.configurations (id, reimbursable_expenses_object, corporate_credit_card_expenses_object, created_at, updated_at, workspace_id, sync_fyle_to_netsuite_payments, sync_netsuite_to_fyle_payments, import_projects, auto_map_employees, import_categories, auto_create_destination_entity, auto_create_merchants, employee_field_mapping, import_tax_items, change_accounting_period, memo_structure, map_fyle_cards_netsuite_account, import_vendors_as_merchants, import_netsuite_employees, import_items, name_in_journal_entry, allow_intercompany_vendors, je_single_credit_line, is_attachment_upload_enabled, created_by, updated_by, skip_accounting_export_summary_post) FROM stdin;
-1	EXPENSE REPORT	BILL	2021-11-15 08:56:07.193743+00	2021-11-15 08:56:07.193795+00	1	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	MERCHANT	f	f	t	\N	\N	f
-2	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-11-16 04:18:15.836271+00	2021-11-16 04:20:09.969589+00	2	f	f	f	\N	f	f	f	EMPLOYEE	t	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	MERCHANT	f	f	t	\N	\N	f
-3	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-12-03 11:04:00.194287+00	2021-12-03 11:04:00.1943+00	49	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	MERCHANT	f	f	t	\N	\N	f
+COPY public.configurations (id, reimbursable_expenses_object, corporate_credit_card_expenses_object, created_at, updated_at, workspace_id, sync_fyle_to_netsuite_payments, sync_netsuite_to_fyle_payments, import_projects, auto_map_employees, import_categories, auto_create_destination_entity, auto_create_merchants, employee_field_mapping, import_tax_items, change_accounting_period, memo_structure, map_fyle_cards_netsuite_account, import_vendors_as_merchants, import_netsuite_employees, import_items, name_in_journal_entry, allow_intercompany_vendors, je_single_credit_line, is_attachment_upload_enabled, created_by, updated_by, skip_accounting_export_summary_post, import_classes_with_parent) FROM stdin;
+1	EXPENSE REPORT	BILL	2021-11-15 08:56:07.193743+00	2021-11-15 08:56:07.193795+00	1	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	MERCHANT	f	f	t	\N	\N	f	f
+2	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-11-16 04:18:15.836271+00	2021-11-16 04:20:09.969589+00	2	f	f	f	\N	f	f	f	EMPLOYEE	t	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	MERCHANT	f	f	t	\N	\N	f	f
+3	JOURNAL ENTRY	CREDIT CARD CHARGE	2021-12-03 11:04:00.194287+00	2021-12-03 11:04:00.1943+00	49	f	f	f	\N	f	f	f	EMPLOYEE	f	f	{employee_email,category,spent_on,report_number,purpose}	t	f	f	f	MERCHANT	f	f	t	\N	\N	f	f
 \.
 
 
@@ -9443,6 +9446,9 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 231	workspaces	0045_configuration_skip_accounting_export_summary_post	2025-04-23 17:56:40.537311+00
 232	rabbitmq	0004_failedevent_is_resolved	2025-05-20 12:14:56.067087+00
 233	workspaces	0046_workspaceschedule_is_real_time_export_enabled	2025-05-20 12:14:56.076774+00
+234	fyle_accounting_mappings	0030_expenseattributesdeletioncache_updated_at	2025-06-16 06:25:15.401331+00
+235	internal	0006_auto_generated_sql	2025-06-26 07:08:24.915475+00
+236	workspaces	0047_configuration_import_classes_with_parent	2025-06-26 07:08:24.926553+00
 \.
 
 
@@ -13006,7 +13012,7 @@ COPY public.expense_attributes (id, attribute_type, display_name, value, source_
 -- Data for Name: expense_attributes_deletion_cache; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.expense_attributes_deletion_cache (id, category_ids, project_ids, workspace_id, cost_center_ids, custom_field_list, merchant_list) FROM stdin;
+COPY public.expense_attributes_deletion_cache (id, category_ids, project_ids, workspace_id, cost_center_ids, custom_field_list, merchant_list, updated_at) FROM stdin;
 \.
 
 
@@ -13192,7 +13198,7 @@ COPY public.mappings (id, source_type, destination_type, created_at, updated_at,
 -- Data for Name: netsuite_credentials; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.netsuite_credentials (id, ns_account_id, ns_consumer_key, ns_consumer_secret, ns_token_id, ns_token_secret, created_at, updated_at, workspace_id, is_expired) FROM stdin;
+COPY public.netsuite_credentials (id, ns_account_id, ns_consumer_key, ns_consumer_secret, ns_token_id, ns_token_secret, created_at, updated_at, workspace_id) FROM stdin;
 \.
 
 
@@ -13322,14 +13328,14 @@ SELECT pg_catalog.setval('public.bill_lineitems_id_seq', 31, true);
 -- Name: bills_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.bills_id_seq', 35, true);
+SELECT pg_catalog.setval('public.bills_id_seq', 33, true);
 
 
 --
 -- Name: category_mappings_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.category_mappings_id_seq', 13, true);
+SELECT pg_catalog.setval('public.category_mappings_id_seq', 9, true);
 
 
 --
@@ -13350,7 +13356,7 @@ SELECT pg_catalog.setval('public.credit_card_charges_id_seq', 11, true);
 -- Name: custom_segments_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.custom_segments_id_seq', 633, true);
+SELECT pg_catalog.setval('public.custom_segments_id_seq', 357, true);
 
 
 --
@@ -13371,42 +13377,42 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 48, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 233, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 236, true);
 
 
 --
 -- Name: django_q_ormq_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_q_ormq_id_seq', 80, true);
+SELECT pg_catalog.setval('public.django_q_ormq_id_seq', 75, true);
 
 
 --
 -- Name: django_q_schedule_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_q_schedule_id_seq', 135, true);
+SELECT pg_catalog.setval('public.django_q_schedule_id_seq', 132, true);
 
 
 --
 -- Name: employee_mappings_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.employee_mappings_id_seq', 92, true);
+SELECT pg_catalog.setval('public.employee_mappings_id_seq', 89, true);
 
 
 --
 -- Name: errors_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.errors_id_seq', 33, true);
+SELECT pg_catalog.setval('public.errors_id_seq', 27, true);
 
 
 --
 -- Name: expense_attributes_deletion_cache_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.expense_attributes_deletion_cache_id_seq', 2, true);
+SELECT pg_catalog.setval('public.expense_attributes_deletion_cache_id_seq', 1, true);
 
 
 --
@@ -13420,7 +13426,7 @@ SELECT pg_catalog.setval('public.expense_fields_id_seq', 1, false);
 -- Name: expense_filters_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.expense_filters_id_seq', 6, true);
+SELECT pg_catalog.setval('public.expense_filters_id_seq', 3, true);
 
 
 --
@@ -13448,56 +13454,56 @@ SELECT pg_catalog.setval('public.failed_events_id_seq', 2, true);
 -- Name: fyle_accounting_mappings_destinationattribute_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.fyle_accounting_mappings_destinationattribute_id_seq', 5158, true);
+SELECT pg_catalog.setval('public.fyle_accounting_mappings_destinationattribute_id_seq', 5105, true);
 
 
 --
 -- Name: fyle_accounting_mappings_expenseattribute_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.fyle_accounting_mappings_expenseattribute_id_seq', 3820, true);
+SELECT pg_catalog.setval('public.fyle_accounting_mappings_expenseattribute_id_seq', 3778, true);
 
 
 --
 -- Name: fyle_accounting_mappings_mapping_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.fyle_accounting_mappings_mapping_id_seq', 29, true);
+SELECT pg_catalog.setval('public.fyle_accounting_mappings_mapping_id_seq', 28, true);
 
 
 --
 -- Name: fyle_accounting_mappings_mappingsetting_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.fyle_accounting_mappings_mappingsetting_id_seq', 41, true);
+SELECT pg_catalog.setval('public.fyle_accounting_mappings_mappingsetting_id_seq', 40, true);
 
 
 --
 -- Name: fyle_expense_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.fyle_expense_id_seq', 228, true);
+SELECT pg_catalog.setval('public.fyle_expense_id_seq', 213, true);
 
 
 --
 -- Name: fyle_expensegroup_expenses_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.fyle_expensegroup_expenses_id_seq', 164, true);
+SELECT pg_catalog.setval('public.fyle_expensegroup_expenses_id_seq', 160, true);
 
 
 --
 -- Name: fyle_expensegroup_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.fyle_expensegroup_id_seq', 82, true);
+SELECT pg_catalog.setval('public.fyle_expensegroup_id_seq', 80, true);
 
 
 --
 -- Name: fyle_expensegroupsettings_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.fyle_expensegroupsettings_id_seq', 81, true);
+SELECT pg_catalog.setval('public.fyle_expensegroupsettings_id_seq', 78, true);
 
 
 --
@@ -13539,14 +13545,14 @@ SELECT pg_catalog.setval('public.journal_entry_lineitems_id_seq', 12, true);
 -- Name: last_export_details_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.last_export_details_id_seq', 32, true);
+SELECT pg_catalog.setval('public.last_export_details_id_seq', 26, true);
 
 
 --
 -- Name: reimbursements_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.reimbursements_id_seq', 548, true);
+SELECT pg_catalog.setval('public.reimbursements_id_seq', 547, true);
 
 
 --
@@ -13560,14 +13566,14 @@ SELECT pg_catalog.setval('public.subsidiary_mappings_id_seq', 3, true);
 -- Name: tasks_tasklog_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.tasks_tasklog_id_seq', 618, true);
+SELECT pg_catalog.setval('public.tasks_tasklog_id_seq', 419, true);
 
 
 --
 -- Name: update_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.update_logs_id_seq', 203, true);
+SELECT pg_catalog.setval('public.update_logs_id_seq', 186, true);
 
 
 --
@@ -13595,14 +13601,14 @@ SELECT pg_catalog.setval('public.vendor_payments_id_seq', 9, true);
 -- Name: workspaces_fylecredential_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.workspaces_fylecredential_id_seq', 2126, true);
+SELECT pg_catalog.setval('public.workspaces_fylecredential_id_seq', 794, true);
 
 
 --
 -- Name: workspaces_netsuitecredentials_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.workspaces_netsuitecredentials_id_seq', 1294, true);
+SELECT pg_catalog.setval('public.workspaces_netsuitecredentials_id_seq', 775, true);
 
 
 --
