@@ -275,7 +275,7 @@ class ConnectNetSuiteView(viewsets.ViewSet):
         """
         try:
             workspace = Workspace.objects.get(pk=kwargs['workspace_id'])
-            netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace)
+            netsuite_credentials = NetSuiteCredentials.objects.get(workspace=workspace)
 
             if netsuite_credentials:
                 return Response(
