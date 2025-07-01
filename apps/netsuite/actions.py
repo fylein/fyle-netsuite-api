@@ -36,12 +36,15 @@ def update_last_export_details(workspace_id):
         ~Q(type__in=['CREATING_VENDOR_PAYMENT','FETCHING_EXPENSES']), workspace_id=workspace_id, status__in=['FAILED', 'FATAL']
     ).count()
 
-    successful_exports = TaskLog.objects.filter(
-        ~Q(type__in=['CREATING_VENDOR_PAYMENT', 'FETCHING_EXPENSES']),
-        workspace_id=workspace_id,
-        status='COMPLETE',
-        updated_at__gt=last_export_detail.last_exported_at
-    ).count()
+    filters = {
+        'workspace_id': workspace_id,
+        'status': 'COMPLETE'
+    }
+
+    if last_export_detail.last_exported_at:
+        filters['updated_at__gt'] = last_export_detail.last_exported_at
+
+    successful_exports = TaskLog.objects.filter(~Q(type__in=['CREATING_VENDOR_PAYMENT', 'FETCHING_EXPENSES']), **filters).count()
 
     last_export_detail.failed_expense_groups_count = failed_exports
     last_export_detail.successful_expense_groups_count = successful_exports
