@@ -971,7 +971,7 @@ CREATE VIEW public._direct_export_errored_expenses_view AS
                    FROM public.expense_groups_expenses
                   WHERE (expense_groups_expenses.expensegroup_id IN ( SELECT task_logs.expense_group_id
                            FROM public.task_logs
-                          WHERE (((task_logs.status)::text = ANY ((ARRAY['FAILED'::character varying, 'FATAL'::character varying])::text[])) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
+                          WHERE (((task_logs.status)::text = ANY (ARRAY[('FAILED'::character varying)::text, ('FATAL'::character varying)::text])) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
                                    FROM prod_workspace_ids))))))))
         ), errored_expenses_in_inprogress_state AS (
          SELECT count(*) AS in_progress_expenses_error_count
@@ -1524,7 +1524,7 @@ CREATE VIEW public.direct_export_errored_expenses_view AS
                    FROM public.expense_groups_expenses
                   WHERE (expense_groups_expenses.expensegroup_id IN ( SELECT task_logs.expense_group_id
                            FROM public.task_logs
-                          WHERE (((task_logs.status)::text = ANY ((ARRAY['FAILED'::character varying, 'FATAL'::character varying])::text[])) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
+                          WHERE (((task_logs.status)::text = ANY (ARRAY[('FAILED'::character varying)::text, ('FATAL'::character varying)::text])) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
                                    FROM prod_workspace_ids)) AND (task_logs.updated_at > (now() - '1 day'::interval)) AND (task_logs.updated_at < (now() - '00:45:00'::interval))))))))
         ), errored_expenses_in_inprogress_state AS (
          SELECT count(*) AS in_progress_expenses_error_count
@@ -1534,7 +1534,7 @@ CREATE VIEW public.direct_export_errored_expenses_view AS
                    FROM public.expense_groups_expenses
                   WHERE (expense_groups_expenses.expensegroup_id IN ( SELECT task_logs.expense_group_id
                            FROM public.task_logs
-                          WHERE (((task_logs.status)::text = ANY ((ARRAY['IN_PROGRESS'::character varying, 'ENQUEUED'::character varying])::text[])) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
+                          WHERE (((task_logs.status)::text = ANY (ARRAY[('IN_PROGRESS'::character varying)::text, ('ENQUEUED'::character varying)::text])) AND (task_logs.workspace_id IN ( SELECT prod_workspace_ids.id
                                    FROM prod_workspace_ids)) AND (task_logs.updated_at > (now() - '1 day'::interval)) AND (task_logs.updated_at < (now() - '00:45:00'::interval))))))))
         ), not_synced_to_platform AS (
          SELECT count(*) AS not_synced_expenses_count
@@ -2986,7 +2986,8 @@ CREATE TABLE public.netsuite_credentials (
     ns_token_secret character varying(255) NOT NULL,
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
-    workspace_id integer NOT NULL
+    workspace_id integer NOT NULL,
+    is_expired boolean NOT NULL
 );
 
 
@@ -9449,6 +9450,7 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 234	fyle_accounting_mappings	0030_expenseattributesdeletioncache_updated_at	2025-06-16 06:25:15.401331+00
 235	internal	0006_auto_generated_sql	2025-06-26 07:08:24.915475+00
 236	workspaces	0047_configuration_import_classes_with_parent	2025-06-26 07:08:24.926553+00
+237	workspaces	0048_netsuitecredentials_is_expired	2025-07-01 15:40:20.594974+00
 \.
 
 
@@ -13198,7 +13200,7 @@ COPY public.mappings (id, source_type, destination_type, created_at, updated_at,
 -- Data for Name: netsuite_credentials; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.netsuite_credentials (id, ns_account_id, ns_consumer_key, ns_consumer_secret, ns_token_id, ns_token_secret, created_at, updated_at, workspace_id) FROM stdin;
+COPY public.netsuite_credentials (id, ns_account_id, ns_consumer_key, ns_consumer_secret, ns_token_id, ns_token_secret, created_at, updated_at, workspace_id, is_expired) FROM stdin;
 \.
 
 
@@ -13377,7 +13379,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 48, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 236, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 237, true);
 
 
 --

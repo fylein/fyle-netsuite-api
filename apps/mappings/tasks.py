@@ -104,7 +104,11 @@ def async_auto_map_employees(workspace_id: int):
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+    try:
+        netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
+    except NetSuiteCredentials.DoesNotExist:
+        return
+        
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
 
     platform.employees.sync()
@@ -183,7 +187,10 @@ def schedule_auto_map_ccc_employees(workspace_id: int):
 
 
 def sync_netsuite_attribute(netsuite_attribute_type: str, workspace_id: int):
-    ns_credentials: NetSuiteCredentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+    try:
+        ns_credentials: NetSuiteCredentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
+    except NetSuiteCredentials.DoesNotExist:
+        return
 
     ns_connection = NetSuiteConnector(
         netsuite_credentials=ns_credentials,

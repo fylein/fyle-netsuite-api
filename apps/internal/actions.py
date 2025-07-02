@@ -9,9 +9,11 @@ def get_netsuite_connection(query_params: Dict):
 
     workspace = Workspace.objects.get(fyle_org_id=org_id)
     workspace_id = workspace.id
-    ns_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace.id)
-
-    return NetSuiteConnector(netsuite_credentials=ns_credentials, workspace_id=workspace_id)
+    try:
+        ns_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
+        return NetSuiteConnector(netsuite_credentials=ns_credentials, workspace_id=workspace_id)
+    except NetSuiteCredentials.DoesNotExist:
+        raise Exception('Netsuite credentials not found')
 
 
 def get_accounting_fields(query_params: Dict):

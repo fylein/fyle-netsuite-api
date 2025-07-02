@@ -1,9 +1,10 @@
 import pytest
 from apps.fyle.models import Expense, ExpenseGroup
 from apps.tasks.models import TaskLog
-from apps.workspaces.models import Configuration, WorkspaceSchedule
+from apps.workspaces.models import Configuration, WorkspaceSchedule, FyleCredential, Workspace
 from apps.workspaces.tasks import *
 from tests.test_fyle.fixtures import data as fyle_data
+from unittest.mock import patch
 
 def test_schedule_sync(db):
     schedule_sync(2, True, 3, ['ashwin.t@fyle.in'], ['ashwin.t@fyle.in'], False)
@@ -136,3 +137,62 @@ def test_post_to_integration_settings(mocker):
 
     # If exception is raised, this test will fail
     assert no_exception
+
+
+@pytest.mark.django_db(databases=['default'])
+def test_patch_integration_settings(mocker):
+    """
+    Test patch_integration_settings task
+    """
+    
+    workspace_id = 1
+
+    refresh_token = 'dummy_refresh_token'
+    fyle_credential = FyleCredential.objects.get(workspace_id=workspace_id)
+    fyle_credential.refresh_token = refresh_token
+    fyle_credential.save()
+
+    patch_request_mock = mocker.patch('apps.workspaces.tasks.patch_request')
+
+    patch_integration_settings(workspace_id, errors=5)
+    
+    patch_request_mock.assert_called_with(
+        mocker.ANY,  # URL
+        {
+            'tpa_name': 'Fyle Netsuite Integration',
+            'errors_count': 5
+        },
+        refresh_token
+    )
+
+    patch_request_mock.reset_mock()
+    patch_integration_settings(workspace_id, is_token_expired=True)
+
+    patch_request_mock.assert_called_with(
+        mocker.ANY,  # URL
+        {
+            'tpa_name': 'Fyle Netsuite Integration',
+            'is_token_expired': True
+        },
+        refresh_token
+    )
+    
+    patch_request_mock.reset_mock()
+    patch_integration_settings(workspace_id, errors=10, is_token_expired=False)
+
+    patch_request_mock.assert_called_with(
+        mocker.ANY,  # URL
+        {
+            'tpa_name': 'Fyle Netsuite Integration',
+            'errors_count': 10,
+            'is_token_expired': False
+        },
+        refresh_token
+    )
+
+    patch_request_mock.reset_mock()
+    patch_request_mock.side_effect = Exception('Test exception')
+
+    patch_integration_settings(workspace_id, errors=15)
+
+    patch_request_mock.assert_called_once()

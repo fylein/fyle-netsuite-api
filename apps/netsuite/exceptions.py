@@ -12,10 +12,10 @@ from apps.workspaces.models import Configuration, LastExportDetail, NetSuiteCred
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
 from netsuitesdk import NetSuiteRateLimitError, NetSuiteLoginError
 from fyle_netsuite_api.exceptions import BulkError
+from fyle_netsuite_api.utils import invalidate_netsuite_credentials
 
 from .actions import update_last_export_details
 from apps.fyle.actions import update_failed_expenses, post_accounting_export_summary
-
 
 from .errors import error_matcher, get_entity_values, replace_destination_id_with_values
 
@@ -127,6 +127,9 @@ def handle_netsuite_exceptions(payment=False):
                 detail = json.dumps(exception.__dict__)
                 detail = json.loads(detail)
 
+                if isinstance(exception, NetSuiteLoginError):
+                    invalidate_netsuite_credentials(workspace_id if payment else expense_group.workspace_id)
+
                 task_log.status = 'FAILED'
 
                 all_details.append({
@@ -159,6 +162,7 @@ def handle_netsuite_exceptions(payment=False):
                 task_log.save()
                 if not payment:
                     update_failed_expenses(expense_group.expenses.all(), False)
+
 
             except BulkError as exception:
                 logger.info(exception.response)

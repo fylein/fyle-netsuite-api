@@ -1,19 +1,87 @@
 import pytest
 import json
 from unittest import mock
-from datetime import datetime
+from datetime import datetime, timedelta
+from unittest.mock import MagicMock
+from django.core.cache import cache
 
 from fyle_netsuite_api.tests import settings
 from django.urls import reverse
 from django.db.models import Q
 from apps.tasks.models import TaskLog
-from apps.workspaces.models import Configuration, FyleCredential, NetSuiteCredentials, WorkspaceSchedule, LastExportDetail
+from apps.workspaces.models import Configuration, FyleCredential, NetSuiteCredentials, WorkspaceSchedule, LastExportDetail, Workspace
 from .fixtures import *
 from fyle_accounting_mappings.models import ExpenseAttribute
 from tests.test_netsuite.fixtures import data as netsuite_data
 from tests.test_fyle.fixtures import data as fyle_data
 from tests.helper import dict_compare_keys, get_response_dict
 from fyle.platform import exceptions as fyle_exc
+
+
+@pytest.mark.django_db(databases=['default'])
+def test_token_health_view(api_client, access_token, mocker):
+    workspace_id = 1
+
+    url = f"/api/workspaces/{workspace_id}/token_health/"
+    api_client.credentials(HTTP_AUTHORIZATION="Bearer {}".format(access_token))
+
+    # Clean cache before test
+    cache_key = f'HEALTH_CHECK_CACHE_{workspace_id}'
+    cache.delete(cache_key)
+
+    NetSuiteCredentials.objects.filter(workspace=workspace_id).delete()
+    response = api_client.get(url)
+
+    assert response.status_code == 400
+    assert response.data["message"] == "Netsuite credentials not found"
+
+    workspace = Workspace.objects.get(id=workspace_id)
+    NetSuiteCredentials.objects.all().delete()
+    NetSuiteCredentials.objects.create(workspace=workspace, is_expired=True)
+    response = api_client.get(url)
+
+    assert response.status_code == 400
+    assert response.data["message"] == "Netsuite connection expired"
+
+    NetSuiteCredentials.objects.all().delete()
+    NetSuiteCredentials.objects.create(workspace=workspace, is_expired=False)
+
+    mock_connector = mocker.patch('apps.workspaces.views.NetSuiteConnector')
+    mock_instance = MagicMock()
+    mock_connector.return_value = mock_instance
+    mock_instance.connection.locations.count.side_effect = Exception("Invalid")
+    
+    # Mocking invalidate function
+    mocker.patch('apps.workspaces.views.invalidate_netsuite_credentials', return_value=None)
+
+    response = api_client.get(url)
+    
+    assert response.status_code == 400
+    assert response.data["message"] == "Netsuite connection expired"
+    
+    # Reseting mocks for successful connection test
+    mocker.resetall()
+    mock_connector = mocker.patch('apps.workspaces.views.NetSuiteConnector')
+    mock_instance = MagicMock()
+    mock_connector.return_value = mock_instance
+    mock_instance.connection.locations.count.return_value = 1
+    
+    response = api_client.get(url)
+
+    assert response.status_code == 200
+    assert response.data["message"] == "Netsuite connection is active"
+    
+    cache.set(cache_key, True, timeout=timedelta(hours=24).total_seconds())
+
+    # Assert cache is present and true
+    assert cache.get(cache_key) == True
+    
+    mock_connector.reset_mock()
+    response = api_client.get(url)
+    
+    assert response.status_code == 200
+    assert response.data["message"] == "Netsuite connection is active"
+    mock_connector.assert_not_called()
 
 
 @pytest.mark.django_db(databases=['default'])
@@ -33,6 +101,7 @@ def test_get_workspace(api_client, access_token):
     response = json.loads(response.content)
     expected_response = get_response_dict('test_workspaces/data.json')
     assert dict_compare_keys(response, expected_response['workspace']) == [], 'workspaces api returns a diff in the keys'
+
 
 @pytest.mark.django_db(databases=['default'])
 def test_get_workspace_by_id(api_client, access_token):
@@ -447,7 +516,7 @@ def test_get_and_delete_netsuite_crendentials(api_client, access_token, add_nets
     response = json.loads(response.content)
     assert response['ns_account_id'] == settings.NS_ACCOUNT_ID
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=1)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_credentials.delete()
 
     response = api_client.get(url)

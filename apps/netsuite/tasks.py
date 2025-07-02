@@ -15,7 +15,7 @@ from apps.fyle.helpers import get_filter_credit_expenses
 from apps.netsuite.exceptions import handle_netsuite_exceptions
 from django_q.models import Schedule
 from django_q.tasks import async_task
-from fyle_netsuite_api.utils import generate_netsuite_export_url
+from fyle_netsuite_api.utils import generate_netsuite_export_url, invalidate_netsuite_credentials
 from fyle_netsuite_api.logging_middleware import get_logger
 
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
@@ -172,7 +172,7 @@ def get_or_create_credit_card_vendor(expense_group: ExpenseGroup, merchant: str,
     :param auto_create_merchants: Create merchant if doesn't exist
     :return:
     """
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(expense_group.workspace_id)
     netsuite_connection = NetSuiteConnector(
         netsuite_credentials=netsuite_credentials, workspace_id=int(expense_group.workspace_id))
 
@@ -374,7 +374,7 @@ def upload_attachments_and_update_export(expenses: List[Expense], task_log: Task
     :return: None
     """
     try:
-        netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+        netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
         netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
         workspace = netsuite_credentials.workspace
 
@@ -422,8 +422,24 @@ def upload_attachments_and_update_export(expenses: List[Expense], task_log: Task
 
         construct_payload_and_update_export(expense_id_receipt_url_map, task_log, workspace, fyle_credentials.cluster_domain, netsuite_connection)
 
-    except (NetSuiteRateLimitError, NetSuiteRequestError, NetSuiteLoginError, InvalidTokenError) as exception:
-        logger.info('Error while uploading attachments to netsuite workspace_id - %s %s', workspace_id, exception.__dict__)
+    except NetSuiteCredentials.DoesNotExist:
+        logger.info('NetSuite credentials not found for workspace_id %s', workspace_id)
+        task_model.is_attachment_upload_failed = True
+        task_model.save()
+
+    except (NetSuiteRateLimitError, NetSuiteRequestError) as exception:
+        logger.info('NetSuite API error while uploading attachments workspace_id - %s %s', workspace_id, exception.__dict__)
+        task_model.is_attachment_upload_failed = True
+        task_model.save()
+
+    except NetSuiteLoginError as exception:
+        logger.info('Invalid NetSuite credentials while uploading attachments workspace_id - %s %s', workspace_id, exception.__dict__)
+        invalidate_netsuite_credentials(workspace_id)
+        task_model.is_attachment_upload_failed = True
+        task_model.save()
+
+    except InvalidTokenError as exception:
+        logger.info('Invalid Fyle token while uploading attachments workspace_id - %s %s', workspace_id, exception.__dict__)
         task_model.is_attachment_upload_failed = True
         task_model.save()
 
@@ -472,7 +488,7 @@ def create_bill(expense_group_id: int, task_log_id: int, last_export: bool, is_a
     general_mappings: GeneralMapping = GeneralMapping.objects.filter(workspace_id=expense_group.workspace_id).first()
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=expense_group.workspace_id)
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(expense_group.workspace_id)
 
     netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
@@ -555,7 +571,8 @@ def create_credit_card_charge(expense_group_id: int, task_log_id: int, last_expo
     configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
     general_mappings: GeneralMapping = GeneralMapping.objects.filter(workspace_id=expense_group.workspace_id).first()
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
+    fyle_credentials = FyleCredential.objects.get(workspace_id=expense_group.workspace_id)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(expense_group.workspace_id)
 
     netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
@@ -655,7 +672,8 @@ def create_expense_report(expense_group_id: int, task_log_id: int, last_export: 
     general_mapping = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=expense_group.workspace_id)
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(expense_group.workspace_id)
+
     netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
     if configuration.auto_map_employees and configuration.auto_create_destination_entity:
@@ -735,7 +753,7 @@ def create_journal_entry(expense_group_id: int, task_log_id: int, last_export: b
 
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=expense_group.workspace_id)
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=expense_group.workspace_id)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(expense_group.workspace_id)
 
     netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
@@ -1117,7 +1135,8 @@ def check_expenses_reimbursement_status(expenses, workspace_id, platform, filter
 def create_netsuite_payment_objects(netsuite_objects, object_type, workspace_id):
     netsuite_payment_objects = {}
 
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
+
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
     platform = PlatformConnector(fyle_credentials)
 
@@ -1201,7 +1220,8 @@ def process_vendor_payment(entity_object, workspace_id, object_type):
             entity_object['line'], vendor_payment_object
         )
 
-        netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
+        netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
+            
         netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
 
         first_object_id = vendor_payment_lineitems[0].doc_id
@@ -1267,50 +1287,61 @@ def validate_for_skipping_payment(entity_object, workspace_id, object_type):
     return False
 
 def create_vendor_payment(workspace_id):
-    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-
     try:
-        platform = PlatformConnector(fyle_credentials=fyle_credentials)
-    except InvalidTokenError:
-        logger.info('Invalid Fyle refresh token for workspace %s', workspace_id)
+        fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+
+        try:
+            platform = PlatformConnector(fyle_credentials=fyle_credentials)
+        except InvalidTokenError:
+            logger.info('Invalid Fyle refresh token for workspace %s', workspace_id)
+            return
+
+        bills = Bill.objects.filter(
+            payment_synced=False, expense_group__workspace_id=workspace_id,
+            expense_group__fund_source='PERSONAL', expense_group__exported_at__isnull=False, is_retired=False
+        ).all()
+
+        expense_reports = ExpenseReport.objects.filter(
+            payment_synced=False, expense_group__workspace_id=workspace_id,
+            expense_group__fund_source='PERSONAL', expense_group__exported_at__isnull=False, is_retired=False
+        ).all()
+
+        if bills:
+            bill_entity_map = create_netsuite_payment_objects(bills, 'BILL', workspace_id)
+
+            if bill_entity_map:
+                for entity_object_key in bill_entity_map:
+                    entity_id = entity_object_key
+                    entity_object = bill_entity_map[entity_id]
+
+                    skip_payment = validate_for_skipping_payment(entity_object=entity_object, workspace_id=workspace_id, object_type='BILL')
+                    if skip_payment:
+                        continue
+
+                    process_vendor_payment(entity_object, workspace_id, 'BILL')
+
+        if expense_reports:
+            expense_report_entity_map = create_netsuite_payment_objects(
+                expense_reports, 'EXPENSE REPORT', workspace_id)
+
+            if expense_report_entity_map:
+                for entity_object_key in expense_report_entity_map:
+                    entity_id = entity_object_key
+                    entity_object = expense_report_entity_map[entity_id]
+
+                    skip_payment = validate_for_skipping_payment(entity_object=entity_object, workspace_id=workspace_id, object_type='EXPENSE REPORT')
+                    if skip_payment:
+                        continue
+
+                    process_vendor_payment(entity_object, workspace_id, 'EXPENSE REPORT')
+
+    except NetSuiteCredentials.DoesNotExist:
+        logger.info('NetSuite credentials not found for workspace_id %s', workspace_id)
         return
-
-    bills = Bill.objects.filter(
-        payment_synced=False, expense_group__workspace_id=workspace_id,
-        expense_group__fund_source='PERSONAL', expense_group__exported_at__isnull=False, is_retired=False
-    ).all()
-
-    expense_reports = ExpenseReport.objects.filter(
-        payment_synced=False, expense_group__workspace_id=workspace_id,
-        expense_group__fund_source='PERSONAL', expense_group__exported_at__isnull=False, is_retired=False
-    ).all()
-
-    if bills:
-        bill_entity_map = create_netsuite_payment_objects(bills, 'BILL', workspace_id)
-
-        for entity_object_key in bill_entity_map:
-            entity_id = entity_object_key
-            entity_object = bill_entity_map[entity_id]
-
-            skip_payment = validate_for_skipping_payment(entity_object=entity_object, workspace_id=workspace_id, object_type='BILL')
-            if skip_payment:
-                continue
-
-            process_vendor_payment(entity_object, workspace_id, 'BILL')
-
-    if expense_reports:
-        expense_report_entity_map = create_netsuite_payment_objects(
-            expense_reports, 'EXPENSE REPORT', workspace_id)
-
-        for entity_object_key in expense_report_entity_map:
-            entity_id = entity_object_key
-            entity_object = expense_report_entity_map[entity_id]
-
-            skip_payment = validate_for_skipping_payment(entity_object=entity_object, workspace_id=workspace_id, object_type='EXPENSE REPORT')
-            if skip_payment:
-                continue
-
-            process_vendor_payment(entity_object, workspace_id, 'EXPENSE REPORT')
+    
+    except Exception as e:
+        logger.error('Error in create_vendor_payment for workspace_id %s: %s', workspace_id, str(e))
+        logger.error('Full traceback: %s', traceback.format_exc())
 
 
 def schedule_vendor_payment_creation(sync_fyle_to_netsuite_payments, workspace_id):
@@ -1352,10 +1383,13 @@ def get_all_internal_ids(netsuite_objects):
 
 
 def check_netsuite_object_status(workspace_id):
-    netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
 
     try:
+        netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
         netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
+    except NetSuiteCredentials.DoesNotExist:
+        logger.info('NetSuite credentials not found for workspace_id %s', workspace_id)
+        return
     except NetSuiteRateLimitError:
         logger.info('Rate limit error, workspace_id - %s', workspace_id)
         return
