@@ -436,11 +436,11 @@ def re_run_skip_export_rule(workspace: Workspace) -> None:
             if last_export_detail:
                 last_export_detail.failed_expense_groups_count = max(
                     0,
-                    last_export_detail.failed_expense_groups_count - deleted_failed_expense_groups_count
+                    (last_export_detail.failed_expense_groups_count or 0) - deleted_failed_expense_groups_count
                 )
                 last_export_detail.total_expense_groups_count = max(
                     0,
-                    last_export_detail.total_expense_groups_count - deleted_total_expense_groups_count
+                    (last_export_detail.total_expense_groups_count or 0) - deleted_total_expense_groups_count
                 )
                 last_export_detail.save()
             try:
