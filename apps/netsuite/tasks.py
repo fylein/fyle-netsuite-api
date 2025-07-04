@@ -260,10 +260,10 @@ def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_conn
             if existing_employee_mapping and existing_employee_mapping.destination_card_account:
                 destination['destination_card_account_id'] = existing_employee_mapping.destination_card_account.id
 
-            if 'destination_employee_id' not in destination or not destination['destination_employee_id']:
+            if ('destination_employee_id' not in destination or not destination['destination_employee_id']) and employee_field_mapping == 'EMPLOYEE':
                 destination['destination_employee_id'] = created_entity.id
 
-            if 'destination_vendor_id' not in destination or not destination['destination_vendor_id']:
+            if ('destination_vendor_id' not in destination or not destination['destination_vendor_id']) and employee_field_mapping == 'VENDOR':
                 destination['destination_vendor_id'] = created_entity.id
 
             mapping = EmployeeMapping.create_or_update_employee_mapping(
