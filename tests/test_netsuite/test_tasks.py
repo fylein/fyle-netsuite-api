@@ -187,10 +187,6 @@ def test_post_bill_success(add_tax_destination_attributes, mocker, db):
         return_value={}
     )
     mocker.patch(
-        'apps.netsuite.connector.NetSuiteConnector.get_or_create_employee',
-        return_value=DestinationAttribute.objects.get(value='James Bond')
-    )
-    mocker.patch(
         'apps.netsuite.tasks.load_attachments',
         return_value='https://aaa.bbb.cc/x232sds'
     )
@@ -202,6 +198,7 @@ def test_post_bill_success(add_tax_destination_attributes, mocker, db):
     configuration = Configuration.objects.get(workspace_id=workspace_id)
     configuration.auto_map_employees = 'EMAIL'
     configuration.auto_create_destination_entity = True
+    configuration.employee_field_mapping = 'VENDOR'
     configuration.save()
 
     LastExportDetail.objects.create(workspace_id=2, export_mode='MANUAL', total_expense_groups_count=2, 
@@ -220,7 +217,7 @@ def test_post_bill_success(add_tax_destination_attributes, mocker, db):
     assert task_log.status=='COMPLETE'
     assert bill.currency == '1'
     assert bill.accounts_payable_id == '25'
-    assert bill.entity_id == '11104'
+    assert bill.entity_id == '7'
 
     netsuite_credentials = NetSuiteCredentials.objects.get(workspace_id=workspace_id)
     netsuite_credentials.delete()
