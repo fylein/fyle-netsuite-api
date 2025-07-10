@@ -512,13 +512,6 @@ class NetSuiteConnector:
         changed_destination_attributes = []
         custom_segment_attributes = []
 
-        """
-        value a with destination_id 1 -> in db
-        they update a with destination_id 2 in the api response
-        another update a with destination_id 3 in the api response
-
-        we want to save the last updated destination_id in the db
-        """
         
         value_to_attribute_map = {}
         
