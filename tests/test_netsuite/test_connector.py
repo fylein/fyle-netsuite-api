@@ -991,6 +991,50 @@ def test_update_destination_attributes(db, mocker):
            assert custom_type_destination_attribute.destination_id == '4'
 
 
+def test_update_destination_attributes_with_duplicate_values(db, mocker):
+    """
+    Test the scenario mentioned in the comments:
+    - value 'Duplicate Type' with destination_id '1' -> in db
+    - they update 'Duplicate Type' with destination_id '2' in the api response
+    - another update 'Duplicate Type' with destination_id '3' in the api response
+    - we want to save the last updated destination_id ('3') in the db
+    """
+    mocker.patch(
+        'netsuitesdk.api.custom_record_types.CustomRecordTypes.get_all_by_id',
+        return_value=data['custom_records_with_duplicates']
+    )
+
+    workspace = Workspace.objects.get(id=1)
+    DestinationAttribute.objects.create(
+        attribute_type='CUSTOM_TYPE',
+        display_name='custom_type',
+        value='Duplicate Type',
+        destination_id='1',
+        auto_created=False,
+        active=True,
+        detail={},
+        workspace=workspace
+    )
+
+    workspace_id = 1
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=workspace_id)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
+
+    custom_records = netsuite_connection.connection.custom_record_types.get_all_by_id('1')
+    netsuite_connection.update_destination_attributes('CUSTOM_TYPE', custom_records)
+
+    duplicate_type_attributes = DestinationAttribute.objects.filter(
+        attribute_type='CUSTOM_TYPE',
+        workspace_id=1,
+        value='Duplicate Type'
+    )
+
+    assert duplicate_type_attributes.count() == 1
+
+    duplicate_type_attribute = duplicate_type_attributes.first()
+    assert duplicate_type_attribute.destination_id == '3'
+
+
 def test_skip_sync_attributes(mocker, db):
     mocker.patch(
         'netsuitesdk.api.projects.Projects.count',

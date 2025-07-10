@@ -511,17 +511,22 @@ class NetSuiteConnector:
         """
         changed_destination_attributes = []
         custom_segment_attributes = []
+
+        
+        value_to_attribute_map = {}
         
         for field in custom_records:
-            custom_segment_attributes.append(
-                {
-                    'attribute_type': attribute_type,
-                    'display_name': custom_records[0]['recType']['name'],
-                    'value': field['name'],
-                    'destination_id': field['internalId'],
-                    'active': not field['isInactive']
-                }
-            )
+            attribute_data = {
+                'attribute_type': attribute_type,
+                'display_name': custom_records[0]['recType']['name'],
+                'value': field['name'],
+                'destination_id': field['internalId'],
+                'active': not field['isInactive']
+            }
+        
+            value_to_attribute_map[field['name']] = attribute_data
+        
+        custom_segment_attributes = list(value_to_attribute_map.values())
 
         for custom_segment_attribute in custom_segment_attributes:
             existing = DestinationAttribute.objects.filter(
