@@ -560,7 +560,7 @@ class NetSuiteConnector:
             DestinationAttribute.objects.bulk_update(updated_destination_attributes, ['destination_id', 'updated_at'], batch_size=100)
 
     def get_custom_record_attributes(self, attribute_type: str, internal_id: str):
-        custom_segment_attributes = []
+        custom_segment_attributes = {}
         custom_records = self.connection.custom_record_types.get_all_by_id(internal_id)
 
         self.update_destination_attributes(attribute_type=attribute_type, custom_records=custom_records)
@@ -580,15 +580,13 @@ class NetSuiteConnector:
             }
 
         for field in custom_records:
-            custom_segment_attributes.append(
-                {
-                    'attribute_type': attribute_type,
-                    'display_name': custom_records[0]['recType']['name'],
-                    'value': field['name'],
-                    'destination_id': field['internalId'],
-                    'active': not field['isInactive']
-                }
-            )
+            custom_segment_attributes[field['name']] = {
+                'attribute_type': attribute_type,
+                'display_name': custom_records[0]['recType']['name'],
+                'value': field['name'],
+                'destination_id': field['internalId'],
+                'active': not field['isInactive']
+            }
 
             # Pop the value from the map if it exists
             if field['internalId'] in disabled_fields_map:
@@ -596,17 +594,16 @@ class NetSuiteConnector:
 
         # Add the disabled fields to the list
         for key, value in disabled_fields_map.items():
-            custom_segment_attributes.append(
-                {
+            if value not in custom_segment_attributes:
+                custom_segment_attributes[value['value']] = {
                     'attribute_type': attribute_type,
                     'display_name': custom_records[0]['recType']['name'],
                     'value': value['value'],
                     'destination_id': key,
                     'active': False
                 }
-            )
 
-        return custom_segment_attributes
+        return list(custom_segment_attributes.values())
 
     def sync_custom_segments(self):
         """
