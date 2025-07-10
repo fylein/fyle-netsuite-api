@@ -511,17 +511,29 @@ class NetSuiteConnector:
         """
         changed_destination_attributes = []
         custom_segment_attributes = []
+
+        """
+        value a with destination_id 1 -> in db
+        they update a with destination_id 2 in the api response
+        another update a with destination_id 3 in the api response
+
+        we want to save the last updated destination_id in the db
+        """
+        
+        value_to_attribute_map = {}
         
         for field in custom_records:
-            custom_segment_attributes.append(
-                {
-                    'attribute_type': attribute_type,
-                    'display_name': custom_records[0]['recType']['name'],
-                    'value': field['name'],
-                    'destination_id': field['internalId'],
-                    'active': not field['isInactive']
-                }
-            )
+            attribute_data = {
+                'attribute_type': attribute_type,
+                'display_name': custom_records[0]['recType']['name'],
+                'value': field['name'],
+                'destination_id': field['internalId'],
+                'active': not field['isInactive']
+            }
+        
+            value_to_attribute_map[field['name']] = attribute_data
+        
+        custom_segment_attributes = list(value_to_attribute_map.values())
 
         for custom_segment_attribute in custom_segment_attributes:
             existing = DestinationAttribute.objects.filter(

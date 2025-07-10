@@ -1813,6 +1813,26 @@ data = {
             'isInactive': False
         }
     ],
+    'custom_records_with_duplicates': [
+        {
+            'recType': {'name': 'custom_type'},
+            'name': 'Duplicate Type',
+            'internalId': '2',
+            'isInactive': False
+        },
+        {
+            'recType': {'name': 'custom_type'},
+            'name': 'Duplicate Type',
+            'internalId': '3',
+            'isInactive': False
+        },
+        {
+            'recType': {'name': 'custom_type'},
+            'name': 'Unique Type',
+            'internalId': '10',
+            'isInactive': False
+        }
+    ],
     'custom_segment_destination_attributes':[
         {
             'attribute_type': 'CUSTOM_TYPE',
