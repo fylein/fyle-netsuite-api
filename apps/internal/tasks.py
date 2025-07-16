@@ -15,6 +15,8 @@ from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
+target_func = ['apps.netsuite.tasks.create_bill', 'apps.netsuite.tasks.create_expense_report', 'apps.netsuite.tasks.create_credit_card_charge', 'apps.netsuite.tasks.create_journal_entry']
+
 
 def re_export_stuck_exports():
     prod_workspace_ids = Workspace.objects.filter(
@@ -36,10 +38,10 @@ def re_export_stuck_exports():
         for orm in ormqs:
             if 'chain' in orm.task and orm.task['chain']:
                 for chain in orm.task['chain']:
-                    if len(chain) > 1 and isinstance(chain[1], list) and isinstance(chain[1][0], ExpenseGroup):
-                        if chain[1][0].id in expense_group_ids:
-                            logger.info('Skipping Re Export For Expense group %s', chain[1][0].id)
-                            expense_group_ids.remove(chain[1][0].id)
+                    if len(chain) > 1 and chain[0] in target_func and isinstance(chain[1][0], int):
+                        if chain[1][0] in expense_group_ids:
+                            logger.info('Skipping Re Export For Expense group %s', chain[1][0])
+                            expense_group_ids.remove(chain[1][0])
 
         logger.info('Re-exporting Expense Group IDs: %s', expense_group_ids)
         expense_groups = ExpenseGroup.objects.filter(id__in=expense_group_ids)
