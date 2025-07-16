@@ -16,7 +16,7 @@ from apps.netsuite.exceptions import handle_netsuite_exceptions
 from django_q.models import Schedule
 from django_q.tasks import async_task
 from fyle_netsuite_api.utils import generate_netsuite_export_url, invalidate_netsuite_credentials
-from fyle_netsuite_api.logging_middleware import get_logger
+from fyle_netsuite_api.logging_middleware import get_caller_info, get_logger
 
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
 from netsuitesdk import NetSuiteRateLimitError, NetSuiteLoginError
@@ -465,15 +465,18 @@ def resolve_errors_for_exported_expense_group(expense_group, workspace_id=None):
 
 @handle_netsuite_exceptions(payment=False)
 def create_bill(expense_group_id: int, task_log_id: int, last_export: bool, is_auto_export: bool):
-    task_log = TaskLog.objects.get(id=task_log_id)
-    expense_group = ExpenseGroup.objects.get(id=expense_group_id, workspace_id=task_log.workspace_id)
-    logger.info('Creating Bill for Expense Group %s, current state is %s', expense_group.id, task_log.status)
+    called_from = get_caller_info()
+    with transaction.atomic():
+        task_log = TaskLog.objects.select_for_update().get(id=task_log_id)
+        expense_group = ExpenseGroup.objects.get(id=expense_group_id, workspace_id=task_log.workspace_id)
+        logger.info('Creating Bill for Expense Group %s, current state is %s, triggered by %s, called from %s', expense_group.id, task_log.status, task_log.triggered_by, called_from)
 
-    if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
-        task_log.status = 'IN_PROGRESS'
-        task_log.save()
-    else:
-        return
+        if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
+            task_log.status = 'IN_PROGRESS'
+            task_log.save()
+        else:
+            logger.info('Task log %s is already in %s state, workspace id %s, so skipping the task', task_log_id, task_log.status, task_log.workspace_id)
+            return
     
     in_progress_expenses = []
     # Don't include expenses with previous export state as ERROR and it's an auto import/export run
@@ -549,15 +552,18 @@ def create_bill(expense_group_id: int, task_log_id: int, last_export: bool, is_a
 @handle_netsuite_exceptions(payment=False)
 def create_credit_card_charge(expense_group_id: int, task_log_id: int, last_export: bool, is_auto_export: bool):
     worker_logger = get_logger()
-    task_log = TaskLog.objects.get(id=task_log_id)
-    expense_group = ExpenseGroup.objects.get(id=expense_group_id, workspace_id=task_log.workspace_id)
-    worker_logger.info('Creating Credit Card Charge for Expense Group %s, current state is %s', expense_group.id, task_log.status)
+    called_from = get_caller_info()
+    with transaction.atomic():
+        task_log = TaskLog.objects.select_for_update().get(id=task_log_id)
+        expense_group = ExpenseGroup.objects.get(id=expense_group_id, workspace_id=task_log.workspace_id)
+        worker_logger.info('Creating Credit Card Charge for Expense Group %s, current state is %s, triggered by %s, called from %s', expense_group.id, task_log.status, task_log.triggered_by, called_from)
 
-    if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
-        task_log.status = 'IN_PROGRESS'
-        task_log.save()
-    else:
-        return
+        if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
+            task_log.status = 'IN_PROGRESS'
+            task_log.save()
+        else:
+            worker_logger.info('Task log %s is already in %s state, workspace id %s, so skipping the task', task_log_id, task_log.status, task_log.workspace_id)
+            return
     
     in_progress_expenses = []
     # Don't include expenses with previous export state as ERROR and it's an auto import/export run
@@ -649,15 +655,18 @@ def create_credit_card_charge(expense_group_id: int, task_log_id: int, last_expo
 @handle_netsuite_exceptions(payment=False)
 def create_expense_report(expense_group_id: int, task_log_id: int, last_export: bool, is_auto_export: bool):
     worker_logger = get_logger()
-    task_log = TaskLog.objects.get(id=task_log_id)
-    expense_group = ExpenseGroup.objects.get(id=expense_group_id, workspace_id=task_log.workspace_id)
-    worker_logger.info('Creating Expense Report for Expense Group %s, current state is %s', expense_group.id, task_log.status)
+    called_from = get_caller_info()
+    with transaction.atomic():
+        task_log = TaskLog.objects.select_for_update().get(id=task_log_id)
+        expense_group = ExpenseGroup.objects.get(id=expense_group_id, workspace_id=task_log.workspace_id)
+        worker_logger.info('Creating Expense Report for Expense Group %s, current state is %s, triggered by %s, called from %s', expense_group.id, task_log.status, task_log.triggered_by, called_from)
 
-    if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
-        task_log.status = 'IN_PROGRESS'
-        task_log.save()
-    else:
-        return
+        if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
+            task_log.status = 'IN_PROGRESS'
+            task_log.save()
+        else:
+            worker_logger.info('Task log %s is already in %s state, workspace id %s, so skipping the task', task_log_id, task_log.status, task_log.workspace_id)
+            return
     
     in_progress_expenses = []
     # Don't include expenses with previous export state as ERROR and it's an auto import/export run
@@ -729,15 +738,18 @@ def create_expense_report(expense_group_id: int, task_log_id: int, last_export: 
 @handle_netsuite_exceptions(payment=False)
 def create_journal_entry(expense_group_id: int, task_log_id: int, last_export: bool, is_auto_export: bool):
     worker_logger = get_logger()
-    task_log = TaskLog.objects.get(id=task_log_id)
-    expense_group = ExpenseGroup.objects.get(id=expense_group_id, workspace_id=task_log.workspace_id)
-    worker_logger.info('Creating Journal Entry for Expense Group %s, current state is %s', expense_group.id, task_log.status)
+    called_from = get_caller_info()
+    with transaction.atomic():
+        task_log = TaskLog.objects.select_for_update().get(id=task_log_id)
+        expense_group = ExpenseGroup.objects.get(id=expense_group_id, workspace_id=task_log.workspace_id)
+        worker_logger.info('Creating Journal Entry for Expense Group %s, current state is %s, triggered by %s, called from %s', expense_group.id, task_log.status, task_log.triggered_by, called_from)
 
-    if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
-        task_log.status = 'IN_PROGRESS'
-        task_log.save()
-    else:
-        return
+        if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
+            task_log.status = 'IN_PROGRESS'
+            task_log.save()
+        else:
+            worker_logger.info('Task log %s is already in %s state, workspace id %s, so skipping the task', task_log_id, task_log.status, task_log.workspace_id)
+            return
 
     in_progress_expenses = []
     # Don't include expenses with previous export state as ERROR and it's an auto import/export run
