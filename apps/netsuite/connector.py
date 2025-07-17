@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 from django.utils import timezone
 from django.db import transaction
+from django_q.tasks import async_task
 
 from typing import List, Dict, Optional
 import logging
@@ -306,6 +307,7 @@ class NetSuiteConnector:
         Sync Expense Categories
         """
         categories_generator = self.connection.expense_categories.get_all_generator()
+        is_expense_category_import_enabled = self.is_import_enabled(attribute_type='EXPENSE_CATEGORY')
 
         for categories in categories_generator:
             attributes = {
@@ -350,10 +352,20 @@ class NetSuiteConnector:
                     skip_deletion=self.is_duplicate_deletion_skipped(attribute_type='EXPENSE_CATEGORY'),
                     app_name=get_app_name(),
                     attribute_disable_callback_path=self.get_attribute_disable_callback_path(attribute_type='EXPENSE_CATEGORY'),
-                    is_import_to_fyle_enabled=self.is_import_enabled(attribute_type='EXPENSE_CATEGORY')
+                    is_import_to_fyle_enabled=is_expense_category_import_enabled
                 )
+
+        if not is_expense_category_import_enabled:
+            async_task(
+                'apps.mappings.tasks.check_and_create_ccc_mappings',
+                workspace_id=self.workspace_id,
+                q_options={
+                    'cluster': 'import'
+                }
+            )
+
         return []
-    
+
     def sync_items(self):
         """
         Sync Items

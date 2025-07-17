@@ -97,6 +97,7 @@ def get_import_categories_settings(configurations: Configuration):
         destination_sync_methods.append(SYNC_METHODS['ITEM'])
 
     if (configurations.reimbursable_expenses_object and configurations.reimbursable_expenses_object == 'EXPENSE REPORT') or configurations.corporate_credit_card_expenses_object == 'EXPENSE REPORT':
+        destination_sync_methods.append(SYNC_METHODS['ACCOUNT'])
         destination_sync_methods.append(SYNC_METHODS['EXPENSE_CATEGORY'])
         destination_field = 'EXPENSE_CATEGORY'
 
