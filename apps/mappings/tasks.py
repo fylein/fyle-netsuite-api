@@ -406,3 +406,18 @@ def schedule_netsuite_employee_creation_on_fyle(import_netsuite_employees, works
 
         if schedule:
             schedule.delete()
+
+
+def check_and_create_ccc_mappings(workspace_id: int) -> None:
+    """
+    Check and Create CCC Mappings
+    :param workspace_id: Workspace Id
+    :return: None
+    """
+    configuration = Configuration.objects.filter(workspace_id=workspace_id).first()
+    if configuration and (
+        configuration.reimbursable_expenses_object == 'EXPENSE REPORT'
+        and configuration.corporate_credit_card_expenses_object in ('BILL', 'CREDIT CARD CHARGE', 'JOURNAL ENTRY')
+    ):
+        logger.info('Creating CCC Mappings for workspace_id - %s', workspace_id)
+        CategoryMapping.bulk_create_ccc_category_mappings(workspace_id)
