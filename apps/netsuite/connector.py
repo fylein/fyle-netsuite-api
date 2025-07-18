@@ -958,7 +958,7 @@ class NetSuiteConnector:
 
                 modified = False
                 
-                if 'representingsubsidiary' in error_message and not attempted_modifications['representingSubsidiary']:
+                if ('representingsubsidiary' in error_message or 'Represents Subsidiary must be different than Subsidiary' in error_message) and not attempted_modifications['representingSubsidiary']:
                     vendor['representingSubsidiary']['internalId'] = None
                     attempted_modifications['representingSubsidiary'] = True
                     modified = True
