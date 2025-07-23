@@ -241,7 +241,7 @@ def post_to_integration_settings(workspace_id: int, active: bool):
         logger.error(error)
 
 
-def patch_integration_settings(workspace_id: int, errors: int = None, is_token_expired = None):
+def patch_integration_settings(workspace_id: int, errors: int = None, unmapped_card_count: int = None, is_token_expired = None):
     """
     Patch integration settings
     """
@@ -254,6 +254,9 @@ def patch_integration_settings(workspace_id: int, errors: int = None, is_token_e
 
     if errors is not None:
         payload['errors_count'] = errors
+
+    if unmapped_card_count is not None:
+        payload['unmapped_card_count'] = unmapped_card_count
 
     if is_token_expired is not None:
         payload['is_token_expired'] = is_token_expired

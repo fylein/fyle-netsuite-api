@@ -3,6 +3,7 @@ import logging
 import traceback
 import requests
 from datetime import datetime, timezone
+from apps.workspaces.tasks import patch_integration_settings
 from fyle_integrations_platform_connector import PlatformConnector
 
 from django.conf import settings
