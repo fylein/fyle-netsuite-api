@@ -1,6 +1,7 @@
 import re
 import json
 import copy
+from random import randint
 from datetime import datetime, timedelta
 
 from django.utils import timezone
@@ -929,10 +930,11 @@ class NetSuiteConnector:
         attempted_modifications = {
             'representingSubsidiary': False,
             'isPerson': False,
-            'entityId': False
+            'entityId': False,
+            'updateExternalId': False
         }
         
-        max_retries = 3
+        max_retries = 4
         retry_count = 0
         
         while retry_count < max_retries:
@@ -977,7 +979,13 @@ class NetSuiteConnector:
                     attempted_modifications['entityId'] = True
                     modified = True
                     logger.info('Retrying vendor creation without entityId')
-                
+
+                elif 'That record does not exist' in error_message and not attempted_modifications['updateExternalId']:
+                    vendor['externalId'] = '{}_{}'.format(vendor['externalId'], randint(1, 100))
+                    attempted_modifications['updateExternalId'] = True
+                    modified = True
+                    logger.info('Retrying vendor creation with updated externalId')
+
                 if not modified or retry_count >= max_retries:
                     logger.info('Failed to create vendor after %s attempts', retry_count)
                     raise
