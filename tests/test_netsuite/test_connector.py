@@ -360,6 +360,12 @@ def test_post_vendor(mocker, db):
             'message': {'isperson': True}
         }), None]
         netsuite_connection.post_vendor(expense_group=expense_group, merchant='Nilesh')
+
+    with mock.patch('netsuitesdk.api.vendors.Vendors.post') as mock_call:
+        mock_call.side_effect = [NetSuiteRequestError({
+            'message': 'That record does not exist'
+        }), None]
+        netsuite_connection.post_vendor(expense_group=expense_group, merchant='Nilesh')
     
 
 def test_get_bill(mocker, db):
