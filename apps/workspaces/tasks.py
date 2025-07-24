@@ -245,8 +245,8 @@ def patch_integration_settings(workspace_id: int, errors: int = None, unmapped_c
     """
     Patch integration settings
     """
-
-    refresh_token = FyleCredential.objects.get(workspace_id=workspace_id).refresh_token
+    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+    refresh_token = fyle_credentials.refresh_token
     url = '{}/integrations/'.format(settings.INTEGRATIONS_SETTINGS_API)
     payload = {
         'tpa_name': 'Fyle Netsuite Integration'
@@ -262,7 +262,8 @@ def patch_integration_settings(workspace_id: int, errors: int = None, unmapped_c
         payload['is_token_expired'] = is_token_expired
         
     try:
-        patch_request(url, payload, refresh_token)
+        if fyle_credentials.workspace.onboarding_state == 'COMPLETE':
+            patch_request(url, payload, refresh_token)
     except Exception as error:
         logger.error(error, exc_info=True)
 

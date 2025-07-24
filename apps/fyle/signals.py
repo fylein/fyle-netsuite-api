@@ -2,8 +2,6 @@ import logging
 
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
-
-from apps.workspaces.tasks import patch_integration_settings
 from django_q.tasks import async_task
 
 from rest_framework.exceptions import ValidationError
@@ -17,19 +15,6 @@ from fyle_accounting_mappings.models import ExpenseAttribute
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
-
-
-@receiver(pre_save, sender=Workspace)
-def run_pre_save_workspace_triggers(sender, instance: Workspace, **kwargs):
-    """
-    Run pre save workspace triggers
-    """
-    old_instance = Workspace.objects.filter(id=instance.id).first()
-    if old_instance and old_instance.source_synced_at != instance.source_synced_at:
-        unmapped_card_count = ExpenseAttribute.objects.filter(
-            attribute_type="CORPORATE_CARD", workspace_id=instance.id, active=True, mapping__isnull=True
-        ).count()
-        async_task('apps.workspaces.tasks.patch_integration_settings', instance.id, unmapped_card_count=unmapped_card_count)
 
 
 @receiver(post_save, sender=ExpenseFilter)

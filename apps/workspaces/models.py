@@ -219,6 +219,7 @@ class LastExportDetail(models.Model):
     total_expense_groups_count = models.IntegerField(help_text='Total count of expense groups exported', null=True)
     successful_expense_groups_count = models.IntegerField(help_text='count of successful expense_groups ', null=True)
     failed_expense_groups_count = models.IntegerField(help_text='count of failed expense_groups ', null=True)
+    unmapped_card_count = models.IntegerField(help_text='count of unmapped card', default=0)
     workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime')
