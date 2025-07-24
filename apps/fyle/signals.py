@@ -11,8 +11,7 @@ from fyle_accounting_library.fyle_platform.enums import FundSourceEnum, ExpenseI
 
 from apps.fyle.models import ExpenseFilter, ExpenseGroupSettings
 from apps.fyle.tasks import re_run_skip_export_rule
-from apps.workspaces.models import Configuration, Workspace
-from fyle_accounting_mappings.models import ExpenseAttribute
+from apps.workspaces.models import Configuration
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
