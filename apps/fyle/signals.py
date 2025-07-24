@@ -19,13 +19,13 @@ logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
 
-@receiver(post_save, sender=Workspace)
+@receiver(pre_save, sender=Workspace)
 def run_pre_save_workspace_triggers(sender, instance: Workspace, **kwargs):
     """
     Run pre save workspace triggers
     """
-    old_instance = Workspace.objects.get(id=instance.id)
-    if old_instance.source_synced_at != instance.source_synced_at:
+    old_instance = Workspace.objects.filter(id=instance.id).first()
+    if old_instance and old_instance.source_synced_at != instance.source_synced_at:
         unmapped_card_count = ExpenseAttribute.objects.filter(
             attribute_type="CORPORATE_CARD", workspace_id=instance.id, active=True, mapping__isnull=True
         ).count()
