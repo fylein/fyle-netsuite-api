@@ -337,7 +337,7 @@ def sync_dimensions(workspace_id: int, is_export: bool = False) -> None:
     if unmapped_card_count != last_export_detail.unmapped_card_count:
         if configuration.corporate_credit_card_expenses_object == 'CREDIT CARD CHARGE':
             last_export_detail.unmapped_card_count = unmapped_card_count
-            last_export_detail.save()
+            last_export_detail.save(update_fields=['unmapped_card_count', 'updated_at'])
             async_task('apps.workspaces.tasks.patch_integration_settings', workspace_id, unmapped_card_count=unmapped_card_count)
     
     if is_export:

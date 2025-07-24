@@ -17,7 +17,7 @@ from apps.mappings.helpers import schedule_or_delete_auto_mapping_tasks
 from apps.mappings.schedules import new_schedule_or_delete_fyle_import_tasks
 from fyle_accounting_mappings.models import ExpenseAttribute, MappingSetting
 
-from .models import Configuration, NetSuiteCredentials
+from apps.workspaces.models import Configuration, NetSuiteCredentials, LastExportDetail
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -34,6 +34,9 @@ def run_post_configration_triggers(sender, instance: Configuration, **kwargs):
         unmapped_card_count = ExpenseAttribute.objects.filter(
             attribute_type="CORPORATE_CARD", workspace_id=instance.workspace_id, active=True, mapping__isnull=True
         ).count()
+        last_export_detail = LastExportDetail.objects.get(workspace_id=instance.workspace_id)
+        last_export_detail.unmapped_card_count = unmapped_card_count
+        last_export_detail.save(update_fields=['unmapped_card_count', 'updated_at'])
         async_task('apps.workspaces.tasks.patch_integration_settings', instance.workspace_id, unmapped_card_count=unmapped_card_count)
     else:
         async_task('apps.workspaces.tasks.patch_integration_settings', instance.workspace_id, unmapped_card_count=0)
