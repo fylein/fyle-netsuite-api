@@ -264,8 +264,10 @@ def patch_integration_settings(workspace_id: int, errors: int = None, is_token_e
     try:
         if fyle_credentials.workspace.onboarding_state == 'COMPLETE':
             patch_request(url, payload, refresh_token)
+        return True
     except Exception as error:
         logger.error(error, exc_info=True)
+        return False
 
 
 def patch_integration_settings_for_unmapped_cards(workspace_id: int, unmapped_card_count: int) -> None:
@@ -276,14 +278,11 @@ def patch_integration_settings_for_unmapped_cards(workspace_id: int, unmapped_ca
     return: None
     """
     last_export_detail = LastExportDetail.objects.get(workspace_id=workspace_id)
-    try:
-        if unmapped_card_count != last_export_detail.unmapped_card_count:
-            patch_integration_settings(workspace_id=workspace_id, unmapped_card_count=unmapped_card_count)
+    if unmapped_card_count != last_export_detail.unmapped_card_count:
+        is_patched = patch_integration_settings(workspace_id=workspace_id, unmapped_card_count=unmapped_card_count)
+        if is_patched:
             last_export_detail.unmapped_card_count = unmapped_card_count
             last_export_detail.save(update_fields=['unmapped_card_count', 'updated_at'])
-    except Exception as e:
-        logger.info('Error while patching integration settings for workspace_id {}'.format(workspace_id))
-        logger.info(e)
 
 
 def async_update_fyle_credentials(fyle_org_id: str, refresh_token: str):
