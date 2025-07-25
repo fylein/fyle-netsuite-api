@@ -140,4 +140,4 @@ class LastExportDetailSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = LastExportDetail
-        fields = '__all__'
+        exclude = ['unmapped_card_count']
