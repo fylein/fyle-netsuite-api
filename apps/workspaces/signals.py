@@ -31,15 +31,16 @@ def run_post_configration_triggers(sender, instance: Configuration, **kwargs):
     """
     if instance.corporate_credit_card_expenses_object == 'CREDIT CARD CHARGE':
         add_expense_id_to_expense_group_settings(int(instance.workspace_id))
+
+        last_export_detail = LastExportDetail.objects.get(workspace_id=instance.workspace_id)
         unmapped_card_count = ExpenseAttribute.objects.filter(
             attribute_type="CORPORATE_CARD", workspace_id=instance.workspace_id, active=True, mapping__isnull=True
         ).count()
-        last_export_detail = LastExportDetail.objects.get(workspace_id=instance.workspace_id)
+        patch_integration_settings(instance.workspace_id, unmapped_card_count=unmapped_card_count)
         last_export_detail.unmapped_card_count = unmapped_card_count
         last_export_detail.save(update_fields=['unmapped_card_count', 'updated_at'])
-        async_task('apps.workspaces.tasks.patch_integration_settings', instance.workspace_id, unmapped_card_count=unmapped_card_count)
     else:
-        async_task('apps.workspaces.tasks.patch_integration_settings', instance.workspace_id, unmapped_card_count=0)
+        patch_integration_settings(instance.workspace_id, unmapped_card_count=0)
 
     if instance.employee_field_mapping != 'EMPLOYEE':
         update_use_employee_attributes_flag(instance.workspace_id)

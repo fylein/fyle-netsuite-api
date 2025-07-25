@@ -241,7 +241,7 @@ def post_to_integration_settings(workspace_id: int, active: bool):
         logger.error(error)
 
 
-def patch_integration_settings(workspace_id: int, errors: int = None, unmapped_card_count: int = None, is_token_expired = None):
+def patch_integration_settings(workspace_id: int, errors: int = None, is_token_expired = None, unmapped_card_count: int = None):
     """
     Patch integration settings
     """
@@ -262,7 +262,7 @@ def patch_integration_settings(workspace_id: int, errors: int = None, unmapped_c
         payload['is_token_expired'] = is_token_expired
         
     try:
-        if fyle_credentials.workspace.onboarding_state == 'COMPLETE':
+        if (errors is not None or unmapped_card_count is not None) and fyle_credentials.workspace.onboarding_state == 'COMPLETE':
             patch_request(url, payload, refresh_token)
     except Exception as error:
         logger.error(error, exc_info=True)
