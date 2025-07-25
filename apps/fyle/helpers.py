@@ -7,7 +7,6 @@ from fyle_integrations_platform_connector import PlatformConnector
 
 from django.conf import settings
 from django.db.models import Q
-from django_q.tasks import async_task
 from rest_framework.exceptions import ValidationError
 from fyle_accounting_mappings.models import ExpenseAttribute
 
