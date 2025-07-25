@@ -5,9 +5,7 @@ import logging
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from apps.workspaces.tasks import patch_integration_settings
-from django_q.models import Schedule
-from django_q.tasks import async_task
+from apps.workspaces.tasks import patch_integration_settings_for_unmapped_cards
 
 from apps.fyle.helpers import add_expense_id_to_expense_group_settings, update_import_card_credits_flag, \
     update_use_employee_attributes_flag
@@ -32,15 +30,12 @@ def run_post_configration_triggers(sender, instance: Configuration, **kwargs):
     if instance.corporate_credit_card_expenses_object == 'CREDIT CARD CHARGE':
         add_expense_id_to_expense_group_settings(int(instance.workspace_id))
 
-        last_export_detail = LastExportDetail.objects.get(workspace_id=instance.workspace_id)
         unmapped_card_count = ExpenseAttribute.objects.filter(
             attribute_type="CORPORATE_CARD", workspace_id=instance.workspace_id, active=True, mapping__isnull=True
         ).count()
-        patch_integration_settings(instance.workspace_id, unmapped_card_count=unmapped_card_count)
-        last_export_detail.unmapped_card_count = unmapped_card_count
-        last_export_detail.save(update_fields=['unmapped_card_count', 'updated_at'])
+        patch_integration_settings_for_unmapped_cards(workspace_id=instance.workspace_id, unmapped_card_count=unmapped_card_count)
     else:
-        patch_integration_settings(instance.workspace_id, unmapped_card_count=0)
+        patch_integration_settings_for_unmapped_cards(workspace_id=instance.workspace_id, unmapped_card_count=0)
 
     if instance.employee_field_mapping != 'EMPLOYEE':
         update_use_employee_attributes_flag(instance.workspace_id)
