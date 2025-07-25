@@ -278,7 +278,7 @@ def patch_integration_settings_for_unmapped_cards(workspace_id: int, unmapped_ca
     last_export_detail = LastExportDetail.objects.get(workspace_id=workspace_id)
     try:
         if unmapped_card_count != last_export_detail.unmapped_card_count:
-            patch_integration_settings(workspace_id, unmapped_card_count=unmapped_card_count)
+            patch_integration_settings(workspace_id=workspace_id, unmapped_card_count=unmapped_card_count)
             last_export_detail.unmapped_card_count = unmapped_card_count
             last_export_detail.save(update_fields=['unmapped_card_count', 'updated_at'])
     except Exception as e:
