@@ -16,7 +16,6 @@ def test_update_last_export_details(mocker, db):
     workspace_id = 1
     mocked_patch = MagicMock()
     mocker.patch('apps.fyle.helpers.requests.patch', side_effect=mocked_patch)
-    LastExportDetail.objects.create(workspace_id=workspace_id, last_exported_at=datetime.now(tz=timezone.utc))
 
     mock_task_logs = data['task_logs']
 
