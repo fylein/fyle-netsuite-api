@@ -222,7 +222,7 @@ def test_patch_integration_settings_for_unmapped_cards(mocker):
     fyle_credential.save()
     
     last_export_detail = LastExportDetail.objects.get(workspace_id=workspace_id)
-    last_export_detail.unmapped_card_count = 10
+    last_export_detail.unmapped_card_count = 0
     last_export_detail.save()
 
     patch_integration_settings_mock = mocker.patch('apps.workspaces.tasks.patch_integration_settings')
