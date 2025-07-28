@@ -384,7 +384,7 @@ def filter_expense_groups(
             item for item in expenses if item.id in expense_group_expenses_ids
         ]
         if 'expense_id' not in expense_group_fields and (
-            reimbursable_export_type in ('EXPENSE', 'BILL') or ccc_export_type == 'BILL'
+            reimbursable_export_type in ('EXPENSE REPORT', 'BILL') or ccc_export_type == 'BILL'
         ):
             total_amount = 0
             if "spent_at" in expense_group_fields:
