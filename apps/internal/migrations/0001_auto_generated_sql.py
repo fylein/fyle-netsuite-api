@@ -57,6 +57,7 @@ class Migration(migrations.Migration):
         ('users', '0002_auto_20201228_0754'),
         ('netsuite', '0027_auto_20240924_0820'),
         ('tasks', '0012_alter_tasklog_expense_group'),
-        ('mappings', '0017_alter_generalmapping_is_tax_balancing_enabled')
+        ('mappings', '0017_alter_generalmapping_is_tax_balancing_enabled'),
+        ('workspaces', '0048_netsuitecredentials_is_expired')
     ]
     operations = safe_run_sql(sql_files)
