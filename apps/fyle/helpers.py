@@ -7,6 +7,7 @@ from fyle_integrations_platform_connector import PlatformConnector
 
 from django.conf import settings
 from django.db.models import Q
+from django.utils.module_loading import import_string
 from rest_framework.exceptions import ValidationError
 from fyle_accounting_mappings.models import ExpenseAttribute
 
@@ -324,10 +325,17 @@ def check_interval_and_sync_dimension(workspace_id: int):
 
 def sync_dimensions(workspace_id: int, is_export: bool = False) -> None:
     workspace = Workspace.objects.get(id=workspace_id)
+    configuration = Configuration.objects.filter(workspace_id=workspace_id).first()
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
 
     platform = PlatformConnector(fyle_credentials)
     platform.import_fyle_dimensions(is_export=is_export)
+    unmapped_card_count = ExpenseAttribute.objects.filter(
+        attribute_type="CORPORATE_CARD", workspace_id=workspace_id, active=True, mapping__isnull=True
+    ).count()
+    if configuration and configuration.corporate_credit_card_expenses_object == 'CREDIT CARD CHARGE':
+        import_string('apps.workspaces.tasks.patch_integration_settings_for_unmapped_cards')(workspace_id=workspace_id, unmapped_card_count=unmapped_card_count)
+    
     if is_export:
         categories_count = platform.categories.get_count()
 

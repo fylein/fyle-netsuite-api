@@ -1,10 +1,9 @@
 import pytest
 from apps.fyle.models import Expense, ExpenseGroup
-from apps.tasks.models import TaskLog
-from apps.workspaces.models import Configuration, WorkspaceSchedule, FyleCredential, Workspace
+from apps.workspaces.models import Configuration, WorkspaceSchedule, FyleCredential, Workspace, LastExportDetail
 from apps.workspaces.tasks import *
 from tests.test_fyle.fixtures import data as fyle_data
-from unittest.mock import patch
+
 
 def test_schedule_sync(db):
     schedule_sync(2, True, 3, ['ashwin.t@fyle.in'], ['ashwin.t@fyle.in'], False)
@@ -21,10 +20,6 @@ def test_schedule_sync(db):
 def test_run_sync_schedule(db, access_token, add_fyle_credentials, add_netsuite_credentials, mocker):
     expense_group_count = ExpenseGroup.objects.filter(workspace_id=1).count()
     expenses_count = Expense.objects.filter(org_id='or79Cob97KSh').count()
-
-    LastExportDetail.objects.create(workspace_id=1, export_mode='MANUAL', total_expense_groups_count=2, 
-    successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
-    created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
 
     mocker.patch(
         'fyle_integrations_platform_connector.apis.Expenses.get',
@@ -46,10 +41,6 @@ def test_run_sync_schedule(db, access_token, add_fyle_credentials, add_netsuite_
     expenses = Expense.objects.filter(org_id='or79Cob97KSh').count()
     assert expense_group == expense_group_count+2
     assert expenses == expenses_count+2
-
-    LastExportDetail.objects.create(workspace_id=2, export_mode='MANUAL', total_expense_groups_count=2, 
-    successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
-    created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
 
     run_sync_schedule(2)
 
@@ -144,7 +135,7 @@ def test_patch_integration_settings(mocker):
     """
     Test patch_integration_settings task
     """
-    
+
     workspace_id = 1
 
     refresh_token = 'dummy_refresh_token'
@@ -154,6 +145,15 @@ def test_patch_integration_settings(mocker):
 
     patch_request_mock = mocker.patch('apps.workspaces.tasks.patch_request')
 
+    patch_integration_settings(workspace_id, errors=5)
+
+    patch_request_mock.assert_not_called()
+
+    workspace = Workspace.objects.get(id=workspace_id)
+    workspace.onboarding_state = 'COMPLETE'
+    workspace.save()
+
+    patch_request_mock.reset_mock()
     patch_integration_settings(workspace_id, errors=5)
     
     patch_request_mock.assert_called_with(
@@ -196,3 +196,65 @@ def test_patch_integration_settings(mocker):
     patch_integration_settings(workspace_id, errors=15)
 
     patch_request_mock.assert_called_once()
+
+    patch_request_mock.reset_mock()
+    patch_integration_settings(workspace_id, unmapped_card_count=10)
+
+    patch_request_mock.assert_called_with(
+        mocker.ANY,  # URL
+        {
+            'tpa_name': 'Fyle Netsuite Integration',
+            'unmapped_card_count': 10
+        },
+        refresh_token
+    )
+
+
+@pytest.mark.django_db(databases=['default'])
+def test_patch_integration_settings_for_unmapped_cards(mocker):
+    """
+    Test patch_integration_settings_for_unmapped_cards task
+    """
+    workspace_id = 1
+    refresh_token = 'dummy_refresh_token'
+    fyle_credential = FyleCredential.objects.get(workspace_id=workspace_id)
+    fyle_credential.refresh_token = refresh_token
+    fyle_credential.save()
+    
+    last_export_detail = LastExportDetail.objects.get(workspace_id=workspace_id)
+    last_export_detail.unmapped_card_count = 0
+    last_export_detail.save()
+
+    patch_integration_settings_mock = mocker.patch('apps.workspaces.tasks.patch_integration_settings')
+    patch_integration_settings_mock.return_value = True
+
+    patch_integration_settings_for_unmapped_cards(workspace_id, unmapped_card_count=10)
+    patch_integration_settings_mock.assert_called_once_with(
+        workspace_id=workspace_id, 
+        unmapped_card_count=10
+    )
+    last_export_detail.refresh_from_db()
+    assert last_export_detail.unmapped_card_count == 10
+
+    patch_integration_settings_mock.reset_mock()
+    patch_integration_settings_for_unmapped_cards(workspace_id, unmapped_card_count=10)
+    patch_integration_settings_mock.assert_not_called()
+
+    patch_integration_settings_mock.return_value = False
+    patch_integration_settings_mock.reset_mock()
+
+    patch_integration_settings_for_unmapped_cards(workspace_id, unmapped_card_count=15)
+    last_export_detail.refresh_from_db()
+    assert last_export_detail.unmapped_card_count == 10
+
+    patch_integration_settings_mock.return_value = True
+    patch_integration_settings_mock.reset_mock()
+
+    patch_integration_settings_for_unmapped_cards(workspace_id, unmapped_card_count=0)
+    patch_integration_settings_mock.assert_called_once_with(
+        workspace_id=workspace_id, 
+        unmapped_card_count=0
+    )
+
+    last_export_detail.refresh_from_db()
+    assert last_export_detail.unmapped_card_count == 0

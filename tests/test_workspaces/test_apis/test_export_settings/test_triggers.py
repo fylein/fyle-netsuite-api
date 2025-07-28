@@ -7,7 +7,6 @@ from apps.fyle.models import ExpenseGroup
 
 def test_post_save_configuration_trigger(mocker, db):
     workspace_id = 1
-    LastExportDetail.objects.create(workspace_id=workspace_id, last_exported_at=datetime.now(tz=timezone.utc))
     configuration, _ = Configuration.objects.update_or_create(
         workspace_id=workspace_id,
         defaults={
@@ -40,7 +39,6 @@ def test_post_save_configuration_trigger(mocker, db):
 
 def test_post_save_configuration_trigger_2(mocker, db):
     workspace_id = 1
-    LastExportDetail.objects.create(workspace_id=workspace_id, last_exported_at=datetime.now(tz=timezone.utc))
     configuration, _ = Configuration.objects.update_or_create(
         workspace_id=workspace_id,
         defaults={

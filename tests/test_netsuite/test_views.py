@@ -89,10 +89,6 @@ def test_custom_segment_view(api_client, access_token):
 
 
 def test_trigger_export_view(api_client, access_token, mocker):
-   LastExportDetail.objects.create(workspace_id=1, export_mode='MANUAL', total_expense_groups_count=2, 
-    successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
-    created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
-
    url = reverse('trigger-exports',
       kwargs={
          'workspace_id': 1
