@@ -149,7 +149,6 @@ class Expense(models.Model):
         expense_objects = []
 
         for expense in expenses:
-            print("expense", expense)
             for custom_property_field in expense['custom_properties']:
                 if expense['custom_properties'][custom_property_field] == '':
                     expense['custom_properties'][custom_property_field] = None
