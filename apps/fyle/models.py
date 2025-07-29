@@ -149,6 +149,7 @@ class Expense(models.Model):
         expense_objects = []
 
         for expense in expenses:
+            print("expense", expense)
             for custom_property_field in expense['custom_properties']:
                 if expense['custom_properties'][custom_property_field] == '':
                     expense['custom_properties'][custom_property_field] = None
@@ -162,9 +163,6 @@ class Expense(models.Model):
                     'expense_created_at': expense['expense_created_at'],
                     'expense_updated_at': expense['expense_updated_at']
                 }
-
-            if expense['tax_group_id'] is not None and expense['tax_amount'] is None:
-                expense['tax_amount'] = 0
 
             defaults = {
                 'employee_email': expense['employee_email'],
