@@ -241,12 +241,12 @@ def post_to_integration_settings(workspace_id: int, active: bool):
         logger.error(error)
 
 
-def patch_integration_settings(workspace_id: int, errors: int = None, is_token_expired = None):
+def patch_integration_settings(workspace_id: int, errors: int = None, is_token_expired = None, unmapped_card_count: int = None):
     """
     Patch integration settings
     """
-
-    refresh_token = FyleCredential.objects.get(workspace_id=workspace_id).refresh_token
+    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+    refresh_token = fyle_credentials.refresh_token
     url = '{}/integrations/'.format(settings.INTEGRATIONS_SETTINGS_API)
     payload = {
         'tpa_name': 'Fyle Netsuite Integration'
@@ -255,13 +255,34 @@ def patch_integration_settings(workspace_id: int, errors: int = None, is_token_e
     if errors is not None:
         payload['errors_count'] = errors
 
+    if unmapped_card_count is not None:
+        payload['unmapped_card_count'] = unmapped_card_count
+
     if is_token_expired is not None:
         payload['is_token_expired'] = is_token_expired
         
     try:
-        patch_request(url, payload, refresh_token)
+        if fyle_credentials.workspace.onboarding_state == 'COMPLETE':
+            patch_request(url, payload, refresh_token)
+        return True
     except Exception as error:
         logger.error(error, exc_info=True)
+        return False
+
+
+def patch_integration_settings_for_unmapped_cards(workspace_id: int, unmapped_card_count: int) -> None:
+    """
+    Patch integration settings for unmapped cards
+    :param workspace_id: Workspace id
+    :param unmapped_card_count: Unmapped card count
+    return: None
+    """
+    last_export_detail = LastExportDetail.objects.get(workspace_id=workspace_id)
+    if unmapped_card_count != last_export_detail.unmapped_card_count:
+        is_patched = patch_integration_settings(workspace_id=workspace_id, unmapped_card_count=unmapped_card_count)
+        if is_patched:
+            last_export_detail.unmapped_card_count = unmapped_card_count
+            last_export_detail.save(update_fields=['unmapped_card_count', 'updated_at'])
 
 
 def async_update_fyle_credentials(fyle_org_id: str, refresh_token: str):

@@ -570,9 +570,15 @@ def test_export_to_netsuite(mocker, api_client, access_token):
 def test_last_export_detail_view(api_client, access_token):
 
     workspace_id = 1
-    LastExportDetail.objects.create(workspace_id=1, export_mode='MANUAL', total_expense_groups_count=2, 
-                successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
-                created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
+    LastExportDetail.objects.update_or_create(workspace_id=1, defaults={
+        'export_mode': 'MANUAL',
+        'total_expense_groups_count': 2,
+        'successful_expense_groups_count': 0,
+        'failed_expense_groups_count': 0,
+        'last_exported_at': '2023-07-07 11:57:53.184441+00',
+        'created_at': '2023-07-07 11:57:53.184441+00',
+        'updated_at': '2023-07-07 11:57:53.184441+00'
+    })
 
     url = '/api/workspaces/{}/export_detail/'.format(workspace_id)
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
@@ -604,7 +610,10 @@ def test_last_export_detail_2(mocker, api_client, access_token):
         HTTP_AUTHORIZATION="Bearer {}".format(access_token)
     )
 
-    LastExportDetail.objects.create(workspace_id=workspace_id, last_exported_at=datetime.now(), total_expense_groups_count=1)
+    LastExportDetail.objects.update_or_create(workspace_id=workspace_id, defaults={
+        'last_exported_at': datetime.now(),
+        'total_expense_groups_count': 1
+    })
 
     TaskLog.objects.create(type='CREATING_EXPENSE_REPORT', status='COMPLETE', workspace_id=workspace_id)
 
