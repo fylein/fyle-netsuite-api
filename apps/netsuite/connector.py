@@ -1999,6 +1999,7 @@ class NetSuiteConnector:
         elif configuration.change_accounting_period:
             logger.info('Charge Card Error - %s', raw_response.text)
 
+            error_message = None
             try:
                 error_message = parse_error_and_get_message(raw_response.text)
             except Exception as e:
