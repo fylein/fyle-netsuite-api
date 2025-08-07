@@ -1,4 +1,5 @@
 import logging
+import traceback
 
 from django.contrib.auth import get_user_model
 from django.conf import settings
@@ -38,6 +39,7 @@ from apps.workspaces.actions import export_to_netsuite
 from .serializers import LastExportDetailSerializer, WorkspaceSerializer, FyleCredentialSerializer, NetSuiteCredentialSerializer, \
     ConfigurationSerializer, WorkspaceScheduleSerializer
 from .permissions import IsAuthenticatedForInternalAPI
+from netsuitesdk import NetSuiteLoginError
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -95,10 +97,16 @@ class TokenHealthView(viewsets.ViewSet):
                     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
                     netsuite_connection.connection.locations.count()
                     cache.set(cache_key, True, timeout=timedelta(hours=24).total_seconds())
-            except Exception as e:
-                invalidate_netsuite_credentials(workspace_id, netsuite_credentials)
+
+            except NetSuiteLoginError as exception:
+                invalidate_netsuite_credentials(workspace_id)
                 status_code = status.HTTP_400_BAD_REQUEST
                 message = "Netsuite connection expired"
+                logger.info("Invalid Netsuite credentials for workspace_id %s %s", workspace_id, traceback.format_exc())
+            except Exception:
+                status_code = status.HTTP_400_BAD_REQUEST
+                message = "Netsuite connection expired"
+                logger.error("Something went wrong for workspace_id %s %s", workspace_id, traceback.format_exc())
 
         return Response({"message": message}, status=status_code)
 
