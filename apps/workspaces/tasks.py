@@ -9,6 +9,7 @@ from django.conf import settings
 from django.db.models import Q
 from apps.fyle.helpers import post_request, patch_request
 from django.template.loader import render_to_string
+from apps.fyle.models import ExpenseGroup
 from django_q.models import Schedule
 from fyle_accounting_mappings.models import MappingSetting, ExpenseAttribute
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
@@ -129,7 +130,19 @@ def run_sync_schedule(workspace_id):
         )
 
     if task_log.status == 'COMPLETE':
-        export_to_netsuite(workspace_id=workspace_id, triggered_by=ExpenseImportSourceEnum.BACKGROUND_SCHEDULE)
+        eligible_expense_group_ids = ExpenseGroup.objects.filter(
+            workspace_id=workspace_id,
+            exported_at__isnull=True
+        ).filter(
+            Q(tasklog__isnull=True)
+            | Q(tasklog__type__in=['CREATING_BILLS', 'CREATING_EXPENSE_REPORTS', 'CREATING_JOURNAL_ENTRIES', 'CREATING_CHARGE_CARD_TRANSACTIONS'])
+        ).exclude(
+            tasklog__status='FAILED',
+            tasklog__re_attempt_export=False
+        ).values_list('id', flat=True).distinct()
+
+        if eligible_expense_group_ids:
+            export_to_netsuite(workspace_id=workspace_id, triggered_by=ExpenseImportSourceEnum.BACKGROUND_SCHEDULE)
 
 def run_email_notification(workspace_id):
 
