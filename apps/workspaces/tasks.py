@@ -135,7 +135,7 @@ def run_sync_schedule(workspace_id):
             exported_at__isnull=True
         ).filter(
             Q(tasklog__isnull=True)
-            | Q(tasklog__type__in=['CREATING_BILLS', 'CREATING_EXPENSE_REPORTS', 'CREATING_JOURNAL_ENTRIES', 'CREATING_CHARGE_CARD_TRANSACTIONS'])
+            | Q(tasklog__type__in=['CREATING_BILL', 'CREATING_EXPENSE_REPORT', 'CREATING_JOURNAL_ENTRY', 'CREATING_CREDIT_CARD_CHARGE', 'CREATING_CREDIT_CARD_REFUND'])
         ).exclude(
             tasklog__status='FAILED',
             tasklog__re_attempt_export=False
