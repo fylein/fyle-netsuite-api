@@ -1,0 +1,74 @@
+name: Deploy Private Branch to Any Environment
+
+on:
+  pull_request:
+    types: [labeled]
+
+jobs:
+  private_deploy:
+    if: github.event_name == 'pull_request' && github.event.action == 'labeled' && (github.event.label.name == 'staging_deploy' || github.event.label.name == 'drstrange_deploy' || github.event.label.name == 'c1_qa_deploy' || github.event.label.name == 'c1_staging_deploy')
+    runs-on: ubuntu-latest
+    environment: ${{
+      github.event.label.name == 'staging_deploy' && 'Staging' ||
+      github.event.label.name == 'drstrange_deploy' && 'Staging' ||
+      github.event.label.name == 'c1_qa_deploy' && 'QA' ||
+      github.event.label.name == 'c1_staging_deploy' && 'Staging' ||
+      'Staging'
+    }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: push to dockerhub
+        uses: fylein/docker-release-action@master
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_TOKEN }}
+          IMAGE_NAME: fyle_netsuite-api
+
+      - name: Install kustomize
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
+
+      - name: Clone another repository
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ vars.STAGING_DEPLOY_REPO }}
+          ref: master
+          path: ${{ vars.STAGING_DEPLOY_REPO }}
+          persist-credentials: false
+          token: ${{ secrets.DEPLOY_GIT_ACCESS_TOKEN }}
+
+      - name: Update Image Tag
+        run: |
+          NEW_TAG="v$(git rev-parse --short HEAD)"
+          if [[ "${{ github.event.label.name }}" == "staging_deploy" ]]; then
+            cd ${{ vars.STAGING_DEPLOY_REPO }}/${{ vars.STAGING_DEPLOY_DIR }}/staging/integrations
+          elif [[ "${{ github.event.label.name }}" == "drstrange_deploy" ]]; then
+            cd ${{ vars.STAGING_DEPLOY_REPO }}/${{ vars.STAGING_DEPLOY_DIR }}/drstrange/integrations
+          elif [[ "${{ github.event.label.name }}" == "c1_qa_deploy" ]]; then
+            cd ${{ vars.STAGING_DEPLOY_REPO }}/${{ vars.C1_STAGING_DEPLOY_DIR }}/qa/integrations
+          elif [[ "${{ github.event.label.name }}" == "c1_staging_deploy" ]]; then
+            cd ${{ vars.STAGING_DEPLOY_REPO }}/${{ vars.C1_STAGING_DEPLOY_DIR }}/staging/integrations
+          fi
+          kustomize edit set image docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api:$NEW_TAG
+
+      - name: Commit and push changes
+        run: |
+          cd ${{ vars.STAGING_DEPLOY_REPO }}/
+          git config --global user.email "integrations@fylehq.com"
+          git config --global user.name "GitHub Actions"
+          git add .
+          if [[ "${{ github.event.label.name }}" == "staging_deploy" ]]; then
+            git commit -m "Deployed fyle_netsuite-api-staging:$NEW_TAG to staging"
+          elif [[ "${{ github.event.label.name }}" == "drstrange_deploy" ]]; then
+            git commit -m "Deployed fyle_netsuite-api-drstrange:$NEW_TAG to drstrange"
+          elif [[ "${{ github.event.label.name }}" == "c1_qa_deploy" ]]; then
+            git commit -m "Deployed fyle_netsuite-api-c1-qa:$NEW_TAG to c1-qa"
+          elif [[ "${{ github.event.label.name }}" == "c1_staging_deploy" ]]; then
+            git commit -m "Deployed fyle_netsuite-api-c1-staging:$NEW_TAG to c1-staging"
+          fi
+          git remote set-url origin https://x-access-token:${{ secrets.DEPLOY_GIT_ACCESS_TOKEN }}@github.com/${{ vars.STAGING_DEPLOY_REPO }}
+          git pull origin master
+          git push origin master

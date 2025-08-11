@@ -4,12 +4,9 @@ on:
   push:
     branches:
       - master
-  pull_request:
-    types: [labeled]
 
 jobs:
   staging_deploy:
-    if: (github.event_name != 'pull_request') || (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'deploy')
     runs-on: ubuntu-latest
     environment: Staging
     steps:
