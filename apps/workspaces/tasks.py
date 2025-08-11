@@ -142,7 +142,7 @@ def run_sync_schedule(workspace_id):
         ).values_list('id', flat=True).distinct()
 
         if eligible_expense_group_ids:
-            export_to_netsuite(workspace_id=workspace_id, triggered_by=ExpenseImportSourceEnum.BACKGROUND_SCHEDULE)
+            export_to_netsuite(workspace_id=workspace_id, expense_group_ids=eligible_expense_group_ids, triggered_by=ExpenseImportSourceEnum.BACKGROUND_SCHEDULE)
 
 def run_email_notification(workspace_id):
 
