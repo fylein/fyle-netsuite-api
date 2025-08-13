@@ -61,13 +61,13 @@ jobs:
           git config --global user.name "GitHub Actions"
           git add .
           if [[ "${{ github.event.label.name }}" == "staging_deploy" ]]; then
-            git commit -m "Deployed fyle_netsuite-api-staging:$NEW_TAG to staging"
+            git commit -m "Deployed fyle_netsuite-api:$NEW_TAG to staging"
           elif [[ "${{ github.event.label.name }}" == "drstrange_deploy" ]]; then
-            git commit -m "Deployed fyle_netsuite-api-drstrange:$NEW_TAG to drstrange"
+            git commit -m "Deployed fyle_netsuite-api:$NEW_TAG to drstrange"
           elif [[ "${{ github.event.label.name }}" == "c1_qa_deploy" ]]; then
-            git commit -m "Deployed fyle_netsuite-api-c1-qa:$NEW_TAG to c1-qa"
+            git commit -m "Deployed fyle_netsuite-api:$NEW_TAG to c1-qa"
           elif [[ "${{ github.event.label.name }}" == "c1_staging_deploy" ]]; then
-            git commit -m "Deployed fyle_netsuite-api-c1-staging:$NEW_TAG to c1-staging"
+            git commit -m "Deployed fyle_netsuite-api:$NEW_TAG to c1-staging"
           fi
           git remote set-url origin https://x-access-token:${{ secrets.DEPLOY_GIT_ACCESS_TOKEN }}@github.com/${{ vars.STAGING_DEPLOY_REPO }}
           git pull origin master
