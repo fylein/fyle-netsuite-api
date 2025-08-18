@@ -6,15 +6,10 @@ on:
 
 jobs:
   private_deploy:
-    if: github.event_name == 'pull_request' && github.event.action == 'labeled' && (github.event.label.name == 'staging_deploy' || github.event.label.name == 'drstrange_deploy' || github.event.label.name == 'c1_qa_deploy' || github.event.label.name == 'c1_staging_deploy')
+    if: github.event_name == 'pull_request' && github.event.action == 'labeled' && contains(fromJSON('["staging_deploy","drstrange_deploy","c1_qa_deploy","c1_staging_deploy"]'), github.event.label.name)
     runs-on: ubuntu-latest
-    environment: ${{
-      github.event.label.name == 'staging_deploy' && 'Staging' ||
-      github.event.label.name == 'drstrange_deploy' && 'Staging' ||
-      github.event.label.name == 'c1_qa_deploy' && 'QA' ||
-      github.event.label.name == 'c1_staging_deploy' && 'Staging' ||
-      'Staging'
-    }}
+    environment:
+      name: ${{ github.event.label.name == 'c1_qa_deploy' && 'QA' || 'Staging' }}
     steps:
       - uses: actions/checkout@v2
         with:
