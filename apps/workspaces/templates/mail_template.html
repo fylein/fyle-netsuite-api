@@ -1,206 +1,425 @@
 <!DOCTYPE html>
 <html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Fyle</title>
+  </head>
 
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <title>Fyle</title>
-</head>
-
-<body style="margin: 0; padding: 0;">
-  <div itemscope itemtype="http://schema.org/EmailMessage">
-    <div itemprop="potentialAction" itemscope itemtype="http://schema.org/ViewAction">
-      <link itemprop="target" href="{{ global_cta.url }}" />
-      <meta itemprop="name" content="{{ global_cta.text }}" />
+  <body style="margin: 0; padding: 0">
+    <div itemscope itemtype="http://schema.org/EmailMessage">
+      <div
+        itemprop="potentialAction"
+        itemscope
+        itemtype="http://schema.org/ViewAction"
+      >
+        <link itemprop="target" href="{{ global_cta.url }}" />
+        <meta itemprop="name" content="{{ global_cta.text }}" />
+      </div>
+      <meta itemprop="description" content="{{ global_cta.text }}" />
     </div>
-    <meta itemprop="description" content="{{ global_cta.text }}" />
-  </div>
 
-  <table border="0" cellpadding="10" cellspacing="10" align="center" width="100%" style="background-color: #f6f7f9;">
-    <tr>
-      <td>
-        <table align="center" border="0" cellpadding="0" cellspacing="0" width="600"
-          style="font-family: Helvetica,Arial; border-collapse: collapse; background-color: #ffffff; border-radius: 4px; border: solid 1px #d8d8d8;">
-          <tr>
-            <td bgcolor="#f3f5f6"
-              background="{{integrations_app_url}}/assets/logos/email/background.png"
-              style="padding: 10px 25px 10px 25px;" width="600" height="50">
-
-              <table width="35%">
-                <tr>
-                  <td>
-                    <img src="{{integrations_app_url}}/assets/logos/email/fyle_logo_black_full.png" alt="Fyle" title="Fyle"
-                      style="display:block" height="23" width="67" />
-                  </td>
-                  <td align="right">
-                    <span style="margin-left: 5px;margin-right: 5px;">+</span>
-                  </td>
-                  <td align="right">
-                    <img
-                      src="{{integrations_app_url}}/assets/logos/email/netsuite.png"
-                      alt="{{org_logo.title}}" title="{{org_logo.title}}" style="display:block" height="23" />
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 35px 25px 0px 15px;">
-              <table width="100%" cellspacing="10">
-                <tr align="center">
-                  <td>
-                    <img style="height: 150px;"
-                      src="{{integrations_app_url}}/assets/logos/email/icon.png">
-                  </td>
-                </tr>
-                <tr align="center">
-                  <td
-                    style="font-size: 20px; padding-bottom: 30px; font-family: Aktiv Grotesk; color: #161528; font-weight: bold; padding-top: 40px;">
-                    {{ errors }} Expense Groups Failed To Export
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <table
-                      style="font-family: Aktiv Grotesk; padding-left: 10px;  background:#F5F5F5; border-radius: 8px;"
-                      width="100%" cellspacing="10">
-                      <tr style="font-style: normal;
-                          font-weight: 500;
-                          font-size: 14px;
-                          line-height: 15px;
-                          letter-spacing: 0.02em;
-                          color: #5A5D72;">
-                        <td>FYLE ORGANIZATION</td>
-                        <td>NETSUITE SUBSDIARY</td>
-                      </tr>
-                      <tr style="font-family: Aktiv Grotesk;
-                          font-style: normal;
-                          font-weight: 500;
-                          font-size: 14px;
-                          line-height: 20px;   
-                          color: #161528;">
-                        <td>{{ fyle_company }}</td>
-                        <td>{{ netsuite_subsidiary }}</td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <table style="padding: 24px 0px 24px 0px; font-family: Aktiv Grotesk">
-                      <tr align="left">
-                        <td style="font-size: 15px; line-height: 18px; color: #2C304E;">
-                          Dear {{ name }},
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="font-size: 15px; line-height: 18px; padding-top: 5px; color: #2C304E;">
-                          <span style="font-weight: bold">{{ errors }} expense groups</span> failed to export from your
-                          Fyle org
-                          to Netsuite Subsidiary
-                        </td>
-                      </tr>
-                      <tr>
-                        <td
-                          style="font-size: 15px; font-weight: bold; padding-top: 5px; line-height: 18px; color: #2C304E;">
-                          Export time - {{ export_time }}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="font-size: 15px; line-height: 18px; padding-top: 5px; color: #2C304E;">
-                          Typically, expenses fail to export because of missing mapping or Netsuite authorization issues
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="font-size: 15px; line-height: 18px; padding-top: 5px; color: #2C304E;">
-                          However, you can resolve the errors by checking the message details of the failed expenses
-                          from the integration and retry export
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-                <tr align="center">
-                  <td>
-                    <table style="width: 250px" border="0" cellspacing="0" cellpadding="0">
-                      <tr align="center">
-                        <td align="center" style="border-radius: 32px;" bgcolor="#007E45">
-                           <a href="{{app_url}}"
+    <table
+      border="0"
+      cellpadding="0"
+      cellspacing="0"
+      align="center"
+      width="100%"
+      style="background-color: #f6f7f9"
+    >
+      <tr>
+        <td>
+          <table
+            align="center"
+            border="0"
+            cellpadding="0"
+            cellspacing="0"
+            width="600"
+            style="
+              font-family: Helvetica, Arial;
+              border-collapse: collapse;
+              background-color: #ffffff;
+              border-radius: 4px;
+              border: solid 1px #d8d8d8;
+            "
+          >
+            <tr>
+              <td
+                align="center"
+                bgcolor="#000"
+                style="padding: 30px"
+                width="600"
+                height="50"
+              >
+                <table width="35%">
+                  <tr>
+                    <td>
+                      <img
+                        src="{{integrations_app_url}}/assets/logos/email/fyle_logo_white_full.png"
+                        alt="Fyle"
+                        title="Fyle"
+                        style="display: block"
+                        height="30"
+                        width="90"
+                      />
+                    </td>
+                    <td align="right">
+                      <span style="padding: 0 8px; color: #ffffff">+</span>
+                    </td>
+                    <td align="right">
+                      <img
+                        src="{{integrations_app_url}}/assets/logos/email/netsuite.png"
+                        alt="{{org_logo.title}}"
+                        title="{{org_logo.title}}"
+                        height="23"
+                        style="
+                          display: block;
+                          padding: 8px 10px;
+                          background-color: #fff;
+                          border-radius: 4px;
+                        "
+                      />
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr style="color: #1a1a1a; font-size: 14px">
+              <td style="padding: 40px">
+                <table>
+                  <tr>
+                    <td
+                      style="
+                        font-size: 14px;
+                        padding-bottom: 40px;
+                        font-weight: 700;
+                      "
+                    >
+                      {{ errors }} Expense Groups Failed To Export
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <table
+                        style="
+                          padding: 12px;
+                          background: #f2f5f6;
+                          border-radius: 2px;
+                        "
+                        width="100%"
+                        cellspacing="10"
+                      >
+                        <tr
+                          style="
+                            font-style: normal;
+                            font-weight: 500;
+                            font-size: 14px;
+                            line-height: 15px;
+                            letter-spacing: 0.02em;
+                            color: #5a5d72;
+                          "
+                        >
+                          <td>Fyle organization</td>
+                          <td>Netsuite subsidiary</td>
+                        </tr>
+                        <tr
+                          style="
+                            font-style: normal;
+                            font-weight: 600;
+                            line-height: 20px;
+                          "
+                        >
+                          <td>{{ fyle_company }}</td>
+                          <td>{{ netsuite_subsidiary }}</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <table style="padding: 40px 0px 40px 0px">
+                        <tr align="left">
+                          <td style="line-height: 18px">Dear {{ name }},</td>
+                        </tr>
+                        <tr>
+                          <td style="line-height: 22px; padding-top: 15px">
+                            {{ errors }} expense groups failed to export from
+                            your Fyle org to Netsuite subsidiary
+                          </td>
+                        </tr>
+                        <tr>
+                          <td
+                            style="
+                              padding-top: 15px;
+                              line-height: 18px;
+                              color: #595959;
+                            "
+                          >
+                            Export time -
+                            <span style="color: #1a1a1a; font-weight: 500"
+                              >{{ export_time }}</span
+                            >
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="line-height: 22px; padding-top: 15px">
+                            Typically, expenses fail to export because of
+                            missing mapping or Netsuite authorization issues
+                          </td>
+                        </tr>
+                        <tr>
+                          <td
+                            style="
+                              font-style: normal;
+                              line-height: 18px;
+                              padding-top: 15px;
+                            "
+                          >
+                            However, you can resolve the errors by checking the
+                            message details of the failed expenses from the
+                            integration and retry export
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr align="left">
+                    <td>
+                      <table border="0" cellspacing="0" cellpadding="0">
+                        <tr align="left">
+                          <td
+                            align="center"
+                            style="background: #007e45; border-radius: 32px"
+                          >
+                            <a
+                              href="{{app_url}}"
                               target="_blank"
-                              style="font-size: 12px; color: #ffffff; text-decoration: none; text-decoration: none;border-radius: 32px; padding: 12px 18px; display: inline-block;">
-                              <b>Visit Integration</b>
-                            </a>      
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-                <tr align="center">
-                  <td>
-                    <table style="padding: 0;" cellspacing="10">
-                      <tr>
-                        <td
-                          style="font-size: 12px; font-weight: normal; font-stretch: normal; font-style: normal; line-height: normal; letter-spacing: normal; text-align: center; color: #a5a5a5; padding: 20px 0px 0px 0px"
-                          colspan=5>
-                          Experience One Click Easy Fyling
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 0px 5px;">
-                          <a href="https://itunes.apple.com/in/app/fyle-track-report-expenses/id1137906166">
-                            <img alt="Appstore" title="Appstore"
-                              src="{{integrations_app_url}}/assets/logos/email/Apple_logo_grey.png"
-                              height="18" width="16">
-                          </a>
-                        <td style="padding: 0px 5px;">
-                          <a href="https://play.google.com/store/apps/details?id=com.ionicframework.fyle595781">
-                            <img alt="Playstore" title="Playstore"
-                              src="{{integrations_app_url}}/assets/logos/email/playstore.png"
-                              height="16" width="16">
-                          </a>
+                              style="
+                                font-size: 14px;
+                                color: #ffffff;
+                                text-decoration: none;
+                                padding: 12px 24px;
+                                display: block;
+                                font-weight: 400;
+                              "
+                            >
+                              Visit integration
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <!-- Footer -->
+            <tr align="left" style="background: #000">
+              <td style="padding: 40px">
+                <table>
+                  <tr>
+                    <td
+                      colspan="5"
+                      style="
+                        font-size: 12px;
+                        line-height: normal;
+                        color: rgba(255, 255, 255, 0.9);
+                        padding: 0;
+                      "
+                    >
+                      Track expenses with our mobile app:
+                      <a
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        href="https://itunes.apple.com/in/app/fyle-track-report-expenses/id1137906166"
+                        style="
+                          padding: 0 4px;
+                          color: inherit;
+                          text-decoration: none;
+                          display: inline-block;
+                          vertical-align: middle;
+                          font-size: 12px;
+                        "
+                      >
+                        <img
+                          alt="Appstore"
+                          title="Appstore"
+                          src="{{integrations_app_url}}/assets/logos/email/apple_logo_white.png"
+                          height="16"
+                          width="16"
+                          style="
+                            vertical-align: middle;
+                            padding-right: 2px;
+                            padding-bottom: 4px;
+                          "
+                        />
+                        <span style="text-decoration: underline">iOS</span>
+                      </a>
+                      <span
+                        style="
+                          display: inline-block;
+                          height: 16px;
+                          border-left: 1px solid rgba(255, 255, 255, 0.9);
+                          vertical-align: middle;
+                        "
+                      ></span>
+                      <a
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        href="https://play.google.com/store/apps/details?id=com.ionicframework.fyle595781"
+                        style="
+                          padding: 0 4px;
+                          color: inherit;
+                          text-decoration: none;
+                          display: inline-block;
+                          vertical-align: middle;
+                        "
+                      >
+                        <img
+                          alt="Playstore"
+                          title="Playstore"
+                          src="{{integrations_app_url}}/assets/logos/email/playstore_colours.png"
+                          height="14"
+                          width="14"
+                          style="
+                            vertical-align: middle;
+                            padding-right: 2px;
+                            padding-bottom: 3px;
+                          "
+                        />
+                        <span style="text-decoration: underline">Android</span>
+                      </a>
+                    </td>
+                  </tr>
 
-                        </td>
-                        <td style="height: 20px; border-left: 1px solid #d8d8d8; padding: 0px 5px;">
-                        </td>
-                        <td style="padding: 0px 5px;">
-                          <a
-                            href="https://chrome.google.com/webstore/detail/fyle-expense-tracking-rep/abggpefphmldapcoknbcaadbpdjjmjgk">
-                            <img alt="Gmail" title="Gmail"
-                              src="{{integrations_app_url}}/assets/logos/email/gmail.png"
-                              height="18" width="20">
-                          </a>
-
-                        </td>
-                        <td style="padding: 0px 5px;">
-                          <a href="https://appsource.microsoft.com/en-us/product/office/WA104380673">
-                            <img alt="Outlook" title="Outlook"
-                              src="{{integrations_app_url}}/assets/logos/email/outlook.png"
-                              height="18" width="16">
-                          </a>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          <tr>
-            <td
-              background="{{integrations_app_url}}/assets/logos/email/background.png"
-              style="padding: 10px 10px 8px 5px; background-color: #f3f5f6;">
-              <table align="center">
-                <tr style="color: #4A4A4A; font-size: 12px; text-align: center; line-height: 20px;">
-                  <td>
-                    {{year}} Fyle. All Rights Reserved.
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-
+                  <tr style="color: rgba(255, 255, 255, 0.9)">
+                    <td style="font-size: 12px">
+                      Also available on:
+                      <a
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style="color: rgba(255, 255, 255, 0.9)"
+                        href="https://chrome.google.com/webstore/detail/fyle-expense-tracking-rep/abggpefphmldapcoknbcaadbpdjjmjgk"
+                      >
+                        Gmail
+                      </a>
+                      <span
+                        style="
+                          margin: 0 4px;
+                          height: 20px;
+                          border-left: 1px solid rgba(255, 255, 255, 0.9);
+                        "
+                      ></span>
+                      <a
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style="color: rgba(255, 255, 255, 0.9)"
+                        href="https://appsource.microsoft.com/en-us/product/office/WA104380673"
+                      >
+                        Outlook
+                      </a>
+                      <span
+                        style="
+                          margin: 0 4px;
+                          height: 20px;
+                          border-left: 1px solid rgba(255, 255, 255, 0.9);
+                        "
+                      ></span>
+                      <a
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style="color: rgba(255, 255, 255, 0.9)"
+                        href="https://slack.com/apps/AN82A0P1B-fyle"
+                      >
+                        Slack
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td colspan="5" style="padding: 0 40px; background: #000">
+                <table
+                  width="100%"
+                  cellpadding="0"
+                  cellspacing="0"
+                  role="presentation"
+                >
+                  <tr>
+                    <td
+                      height="2"
+                      style="
+                        background: #00d639;
+                        line-height: 2px;
+                        font-size: 2px;
+                      "
+                    >
+                      &nbsp;
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr align="left" style="background: #000">
+              <td style="padding: 40px">
+                <table>
+                  <tr style="color: rgba(255, 255, 255, 0.9)">
+                    <td style="font-size: 12px">
+                      <a
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style="color: rgba(255, 255, 255, 0.9)"
+                        href="https://www.fylehq.com/privacy/privacy-policy"
+                      >
+                        Privacy policy
+                      </a>
+                      <span
+                        style="
+                          margin: 0 8px;
+                          height: 20px;
+                          border-left: 1px solid rgba(255, 255, 255, 0.9);
+                        "
+                      ></span>
+                      <a
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style="color: rgba(255, 255, 255, 0.9)"
+                        href="https://www.fylehq.com/help/en"
+                      >
+                        Help center
+                      </a>
+                      <span
+                        style="
+                          margin: 0 8px;
+                          height: 20px;
+                          border-left: 1px solid rgba(255, 255, 255, 0.9);
+                        "
+                      ></span>
+                      <a
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style="color: rgba(255, 255, 255, 0.9)"
+                        href="https://app.fylehq.com/app/settings/#/profile/notifications"
+                      >
+                        Email notification preferences
+                      </a>
+                    </td>
+                  </tr>
+                  <tr
+                    style="
+                      color: rgba(255, 255, 255, 0.9);
+                      font-size: 12px;
+                      line-height: 15px;
+                    "
+                  >
+                    <td>{{ year }} Fyle. All Rights Reserved.</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
 </html>
