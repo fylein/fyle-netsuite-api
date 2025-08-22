@@ -342,6 +342,7 @@ def import_and_export_expenses(report_id: str, org_id: str, is_state_change_even
 
         task_log.detail = {'message': 'Configuration not found'}
         task_log.status = 'FAILED'
+        task_log.re_attempt_export = False
         task_log.save()
 
     except Exception:

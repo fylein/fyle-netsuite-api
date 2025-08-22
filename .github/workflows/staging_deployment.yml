@@ -4,12 +4,9 @@ on:
   push:
     branches:
       - master
-  pull_request:
-    types: [labeled]
 
 jobs:
   staging_deploy:
-    if: (github.event_name != 'pull_request') || (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'deploy')
     runs-on: ubuntu-latest
     environment: Staging
     steps:
@@ -53,6 +50,12 @@ jobs:
         run: |
           NEW_TAG="v$(git rev-parse --short HEAD)"
           cd ${{ vars.STAGING_DEPLOY_REPO }}/${{ vars.C1_STAGING_DEPLOY_DIR }}/staging/integrations
+          kustomize edit set image docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api:$NEW_TAG
+
+      - name: Update Image Tag - drstrange staging
+        run: |
+          NEW_TAG="v$(git rev-parse --short HEAD)"
+          cd ${{ vars.STAGING_DEPLOY_REPO }}/${{ vars.STAGING_DEPLOY_DIR }}/drstrange/integrations
           kustomize edit set image docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api:$NEW_TAG
 
       - name: Commit and push changes

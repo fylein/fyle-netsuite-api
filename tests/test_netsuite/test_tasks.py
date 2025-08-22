@@ -201,10 +201,6 @@ def test_post_bill_success(add_tax_destination_attributes, mocker, db):
     configuration.employee_field_mapping = 'VENDOR'
     configuration.save()
 
-    LastExportDetail.objects.create(workspace_id=2, export_mode='MANUAL', total_expense_groups_count=2, 
-    successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
-    created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
-
     expense_group = ExpenseGroup.objects.filter(workspace_id=workspace_id, fund_source='PERSONAL').first()
     for expenses in expense_group.expenses.all():
         expenses.workspace_id = 2
@@ -259,10 +255,6 @@ def test_post_bill_mapping_error(mocker, db):
     general_mappings.use_employee_department = True
     general_mappings.save()
 
-    LastExportDetail.objects.create(workspace_id=1, export_mode='MANUAL', total_expense_groups_count=2, 
-    successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
-    created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
-
     expense_group = ExpenseGroup.objects.filter(workspace_id=workspace_id, fund_source='CCC').first()
     create_bill(expense_group.id, task_log.id, True, False)
 
@@ -288,10 +280,6 @@ def test_accounting_period_working_bill(db, mocker):
     configuration.save()
     expense_group.id = 1
     expense_group.save()
-
-    LastExportDetail.objects.create(workspace_id=1, export_mode='MANUAL', total_expense_groups_count=2, 
-    successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
-    created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
 
     for expense in expenses:
         expense.expense_group_id = expense_group.id
@@ -333,10 +321,6 @@ def test_post_expense_report(mocker, db):
     configuration.auto_map_employees = True
     configuration.auto_create_destination_entity = True
     configuration.save()
-
-    LastExportDetail.objects.create(workspace_id=1, export_mode='MANUAL', total_expense_groups_count=2, 
-    successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
-    created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
     
     create_expense_report(expense_group.id, task_log.id, True, False)
     
@@ -384,10 +368,6 @@ def test_post_expense_report_mapping_error(mocker, db):
     expense_group.description.update({'employee_email': 'sam@fyle.in'})
     expense_group.save()
 
-    LastExportDetail.objects.create(workspace_id=1, export_mode='MANUAL', total_expense_groups_count=2, 
-    successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
-    created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
-
     create_expense_report(expense_group.id, task_log.id, True, False)
 
     task_log = TaskLog.objects.filter(pk=task_log.id).first()
@@ -408,10 +388,6 @@ def test_accounting_period_working_expense_report(mocker, db):
 
     expense_group.id = random.randint(100, 1500000)
     expense_group.save()
-
-    LastExportDetail.objects.create(workspace_id=1, export_mode='MANUAL', total_expense_groups_count=2, 
-    successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
-    created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
 
     for expense in expenses:
         expense.expense_group_id = expense_group.id
@@ -463,10 +439,6 @@ def test_post_journal_entry(mocker, db):
     configuration.auto_create_destination_entity = True
     configuration.save()
 
-    LastExportDetail.objects.create(workspace_id=1, export_mode='MANUAL', total_expense_groups_count=2, 
-    successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
-    created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
-    
     create_journal_entry(expense_group.id, task_log.id, True, False)
 
     task_log = TaskLog.objects.get(pk=task_log.id)
@@ -531,10 +503,6 @@ def test_post_journal_entry_mapping_error(mocker, db):
     expense_group.description.update({'employee_email': 'sam@fyle.in'})
     expense_group.save()
 
-    LastExportDetail.objects.create(workspace_id=1, export_mode='MANUAL', total_expense_groups_count=2, 
-    successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
-    created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
-
     create_journal_entry(expense_group.id, task_log.id, True, False)
 
     task_log = TaskLog.objects.filter(pk=task_log.id).first()
@@ -555,10 +523,6 @@ def test_accounting_period_working_create_journal_entry(mocker, db):
 
     expense_group.id = 1
     expense_group.save()
-
-    LastExportDetail.objects.create(workspace_id=1, export_mode='MANUAL', total_expense_groups_count=2, 
-    successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
-    created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
 
     for expense in expenses:
         expense.expense_group_id = expense_group.id
@@ -624,10 +588,6 @@ def test_create_credit_card_charge(mocker, db):
     general_mappings.use_employee_department = True
     general_mappings.save()
 
-    LastExportDetail.objects.create(workspace_id=1, export_mode='MANUAL', total_expense_groups_count=2, 
-    successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
-    created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
-
     create_credit_card_charge(expense_group.id, task_log.id, True, False)
     
     task_log = TaskLog.objects.get(pk=task_log.id)
@@ -692,10 +652,6 @@ def test_post_credit_card_charge_mapping_error(mocker, db):
     expense_group.description.update({'employee_email': 'sam@fyle.in'})
     expense_group.save()
 
-    LastExportDetail.objects.create(workspace_id=49, export_mode='MANUAL', total_expense_groups_count=2, 
-    successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
-    created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
-
     create_credit_card_charge(expense_group.id, task_log.id, True, False)
 
     task_log = TaskLog.objects.filter(pk=task_log.id).first()
@@ -729,10 +685,6 @@ def test_accounting_period_working_credit_card_charge(mocker, db):
 
     expense_group.id = 1
     expense_group.save()
-
-    LastExportDetail.objects.create(workspace_id=1, export_mode='MANUAL', total_expense_groups_count=2, 
-    successful_expense_groups_count=0, failed_expense_groups_count=0, last_exported_at='2023-07-07 11:57:53.184441+00', 
-    created_at='2023-07-07 11:57:53.184441+00', updated_at='2023-07-07 11:57:53.184441+00')
 
     for expense in expenses:
         expense.expense_group_id = expense_group.id
@@ -1698,162 +1650,6 @@ def test_upload_attachments_and_update_export(mocker, db):
     assert lineitem.netsuite_receipt_url == 'https://aaa.bbb.cc/x232sds'
 
 
-def test_skipping_bill_creation(db, mocker, create_last_export_detail):
-    workspace_id = 1
-    mocker.patch(
-        'apps.tasks.models.TaskLog.objects.get_or_create',
-        return_value=[TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first(),None]
-    )
-
-    expense_group = ExpenseGroup.objects.get(id=1)
-    expense_group.exported_at = None
-    expense_group.save()
-
-    error = Error.objects.create(
-        workspace_id=workspace_id,
-        type='NETSUITE_ERROR',
-        error_title='NetSuite System Error',
-        error_detail='An error occured in a upsert request: Please enter value(s) for: Location',
-        expense_group=expense_group,
-        is_parsed=True,
-        repetition_count=106
-    )
-
-    task_log = TaskLog.objects.filter(workspace_id=workspace_id).first()
-    task_log.status = 'READY'
-    expense_group = expense_group
-    task_log.save()
-
-    schedule_bills_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
-
-    task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first()
-    assert task_log.type == 'FETCHING_EXPENSES'
-
-    Error.objects.filter(id=error.id).update(updated_at=datetime(2024, 8, 20))
-
-    schedule_bills_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
-
-    task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
-    assert task_log.type == 'CREATING_BILL'
-
-
-def test_skipping_journal_creation(db, mocker, create_last_export_detail):
-    workspace_id = 1
-    mocker.patch(
-        'apps.tasks.models.TaskLog.objects.get_or_create',
-        return_value=[TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first(),None]
-    )
-
-    expense_group = ExpenseGroup.objects.get(id=1)
-    expense_group.exported_at = None
-    expense_group.save()
-
-    error = Error.objects.create(
-        workspace_id=workspace_id,
-        type='NETSUITE_ERROR',
-        error_title='NetSuite System Error',
-        error_detail='An error occured in a upsert request: Please enter value(s) for: Location',
-        expense_group=expense_group,
-        is_parsed=True,
-        repetition_count=106
-    )
-
-    task_log = TaskLog.objects.filter(workspace_id=workspace_id).first()
-    task_log.status = 'READY'
-    expense_group = expense_group
-    task_log.save()
-
-    schedule_journal_entry_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
-
-    task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first()
-    assert task_log.type == 'FETCHING_EXPENSES'
-
-    Error.objects.filter(id=error.id).update(updated_at=datetime(2024, 8, 20))
-
-    schedule_journal_entry_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
-
-    task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
-    assert task_log.type == 'CREATING_JOURNAL_ENTRY'
-
-
-def test_skipping_expense_group_creation(db, mocker, create_last_export_detail):
-    workspace_id = 1
-    mocker.patch(
-        'apps.tasks.models.TaskLog.objects.get_or_create',
-        return_value=[TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first(),None]
-    )
-
-    expense_group = ExpenseGroup.objects.get(id=1)
-    expense_group.exported_at = None
-    expense_group.save()
-
-    error = Error.objects.create(
-        workspace_id=workspace_id,
-        type='NETSUITE_ERROR',
-        error_title='NetSuite System Error',
-        error_detail='An error occured in a upsert request: Please enter value(s) for: Location',
-        expense_group=expense_group,
-        is_parsed=True,
-        repetition_count=106
-    )
-
-    task_log = TaskLog.objects.filter(workspace_id=workspace_id).first()
-    task_log.status = 'READY'
-    expense_group = expense_group
-    task_log.save()
-
-    schedule_expense_reports_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
-
-    task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first()
-    assert task_log.type == 'FETCHING_EXPENSES'
-
-    Error.objects.filter(id=error.id).update(updated_at=datetime(2024, 8, 20))
-
-    schedule_expense_reports_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
-
-    task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
-    assert task_log.type == 'CREATING_EXPENSE_REPORT'
-
-
-def test_skipping_credit_card_charge_creation(db, mocker, create_last_export_detail):
-    workspace_id = 1
-    mocker.patch(
-        'apps.tasks.models.TaskLog.objects.get_or_create',
-        return_value=[TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first(),None]
-    )
-
-    expense_group = ExpenseGroup.objects.get(id=1)
-    expense_group.exported_at = None
-    expense_group.save()
-
-    error = Error.objects.create(
-        workspace_id=workspace_id,
-        type='NETSUITE_ERROR',
-        error_title='NetSuite System Error',
-        error_detail='An error occured in a upsert request: Please enter value(s) for: Location',
-        expense_group=expense_group,
-        is_parsed=True,
-        repetition_count=106
-    )
-
-    task_log = TaskLog.objects.filter(workspace_id=workspace_id).first()
-    task_log.status = 'READY'
-    expense_group = expense_group
-    task_log.save()
-
-    schedule_credit_card_charge_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
-
-    task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first()
-    assert task_log.type == 'FETCHING_EXPENSES'
-
-    Error.objects.filter(id=error.id).update(updated_at=datetime(2024, 8, 20))
-
-    schedule_credit_card_charge_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
-
-    task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
-    assert task_log.type == 'CREATING_CREDIT_CARD_CHARGE'
-
-
 def test_skipping_vendor_payment(mocker, db):
     mocker.patch(
         'fyle_integrations_platform_connector.apis.Reimbursements.sync',
@@ -2076,7 +1872,7 @@ def test_get_or_create_error_with_expense_group_tax_mapping(db):
     assert error.workspace_id == workspace_id
     assert error.is_resolved == False
 
-def test_handle_skipped_exports(mocker, db, create_last_export_detail):
+def test_handle_skipped_exports(mocker, db):
     mock_post_summary = mocker.patch('apps.netsuite.queue.post_accounting_export_summary_for_skipped_exports', return_value=None)
     mock_update_last_export = mocker.patch('apps.netsuite.queue.update_last_export_details')
     mock_logger = mocker.patch('apps.netsuite.queue.logger')

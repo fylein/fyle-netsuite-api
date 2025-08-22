@@ -939,7 +939,8 @@ CREATE TABLE public.task_logs (
     journal_entry_id integer,
     vendor_payment_id integer,
     credit_card_charge_id integer,
-    triggered_by character varying(255)
+    triggered_by character varying(255),
+    re_attempt_export boolean NOT NULL
 );
 
 
@@ -2439,7 +2440,8 @@ CREATE TABLE public.last_export_details (
     failed_expense_groups_count integer,
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
-    workspace_id integer NOT NULL
+    workspace_id integer NOT NULL,
+    unmapped_card_count integer NOT NULL
 );
 
 
@@ -9451,6 +9453,8 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 235	internal	0006_auto_generated_sql	2025-06-26 07:08:24.915475+00
 236	workspaces	0047_configuration_import_classes_with_parent	2025-06-26 07:08:24.926553+00
 237	workspaces	0048_netsuitecredentials_is_expired	2025-07-01 15:40:20.594974+00
+238	workspaces	0049_lastexportdetail_unmapped_card_count	2025-07-28 13:16:28.00999+00
+239	tasks	0016_tasklog_re_attempt_export	2025-08-11 08:55:34.351258+00
 \.
 
 
@@ -13160,7 +13164,10 @@ COPY public.journal_entry_lineitems (id, debit_account_id, account_id, departmen
 -- Data for Name: last_export_details; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.last_export_details (id, last_exported_at, next_export, export_mode, total_expense_groups_count, successful_expense_groups_count, failed_expense_groups_count, created_at, updated_at, workspace_id) FROM stdin;
+COPY public.last_export_details (id, last_exported_at, next_export, export_mode, total_expense_groups_count, successful_expense_groups_count, failed_expense_groups_count, created_at, updated_at, workspace_id, unmapped_card_count) FROM stdin;
+1	\N	\N	\N	\N	\N	\N	2021-11-15 08:46:16.062858+00	2021-11-15 08:46:16.062858+00	1	0
+2	\N	\N	\N	\N	\N	\N	2021-11-16 04:16:57.840307+00	2021-11-16 04:16:57.840307+00	2	0
+3	\N	\N	\N	\N	\N	\N	2021-12-03 11:00:33.634494+00	2021-12-03 11:00:33.634494+00	49	0
 \.
 
 
@@ -13228,8 +13235,8 @@ COPY public.subsidiary_mappings (id, subsidiary_name, internal_id, created_at, u
 -- Data for Name: task_logs; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.task_logs (id, type, task_id, status, detail, created_at, updated_at, bill_id, expense_group_id, workspace_id, expense_report_id, journal_entry_id, vendor_payment_id, credit_card_charge_id, triggered_by) FROM stdin;
-141	FETCHING_EXPENSES	\N	COMPLETE	{"default": "default value"}	2021-12-03 11:26:57.1744+00	2021-12-03 11:26:58.747868+00	\N	\N	49	\N	\N	\N	\N	\N
+COPY public.task_logs (id, type, task_id, status, detail, created_at, updated_at, bill_id, expense_group_id, workspace_id, expense_report_id, journal_entry_id, vendor_payment_id, credit_card_charge_id, triggered_by, re_attempt_export) FROM stdin;
+141	FETCHING_EXPENSES	\N	COMPLETE	{"default": "default value"}	2021-12-03 11:26:57.1744+00	2021-12-03 11:26:58.747868+00	\N	\N	49	\N	\N	\N	\N	\N	f
 \.
 
 
@@ -13379,7 +13386,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 48, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 237, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 239, true);
 
 
 --

@@ -5,8 +5,7 @@ import logging
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from django_q.models import Schedule
-from django_q.tasks import async_task
+from apps.workspaces.tasks import patch_integration_settings_for_unmapped_cards
 
 from apps.fyle.helpers import add_expense_id_to_expense_group_settings, update_import_card_credits_flag, \
     update_use_employee_attributes_flag
@@ -14,9 +13,9 @@ from apps.netsuite.helpers import schedule_payment_sync
 from apps.netsuite.connector import NetSuiteConnector
 from apps.mappings.helpers import schedule_or_delete_auto_mapping_tasks
 from apps.mappings.schedules import new_schedule_or_delete_fyle_import_tasks
-from fyle_accounting_mappings.models import MappingSetting
+from fyle_accounting_mappings.models import ExpenseAttribute, MappingSetting
 
-from .models import Configuration, NetSuiteCredentials
+from apps.workspaces.models import Configuration, NetSuiteCredentials, LastExportDetail
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -30,6 +29,13 @@ def run_post_configration_triggers(sender, instance: Configuration, **kwargs):
     """
     if instance.corporate_credit_card_expenses_object == 'CREDIT CARD CHARGE':
         add_expense_id_to_expense_group_settings(int(instance.workspace_id))
+
+        unmapped_card_count = ExpenseAttribute.objects.filter(
+            attribute_type="CORPORATE_CARD", workspace_id=instance.workspace_id, active=True, mapping__isnull=True
+        ).count()
+        patch_integration_settings_for_unmapped_cards(workspace_id=instance.workspace_id, unmapped_card_count=unmapped_card_count)
+    else:
+        patch_integration_settings_for_unmapped_cards(workspace_id=instance.workspace_id, unmapped_card_count=0)
 
     if instance.employee_field_mapping != 'EMPLOYEE':
         update_use_employee_attributes_flag(instance.workspace_id)

@@ -9,6 +9,7 @@ from django.conf import settings
 from django.db.models import Q
 from apps.fyle.helpers import post_request, patch_request
 from django.template.loader import render_to_string
+from apps.fyle.models import ExpenseGroup
 from django_q.models import Schedule
 from fyle_accounting_mappings.models import MappingSetting, ExpenseAttribute
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
@@ -129,7 +130,19 @@ def run_sync_schedule(workspace_id):
         )
 
     if task_log.status == 'COMPLETE':
-        export_to_netsuite(workspace_id=workspace_id, triggered_by=ExpenseImportSourceEnum.BACKGROUND_SCHEDULE)
+        eligible_expense_group_ids = ExpenseGroup.objects.filter(
+            workspace_id=workspace_id,
+            exported_at__isnull=True
+        ).filter(
+            Q(tasklog__isnull=True)
+            | Q(tasklog__type__in=['CREATING_BILL', 'CREATING_EXPENSE_REPORT', 'CREATING_JOURNAL_ENTRY', 'CREATING_CREDIT_CARD_CHARGE', 'CREATING_CREDIT_CARD_REFUND'])
+        ).exclude(
+            tasklog__status='FAILED',
+            tasklog__re_attempt_export=False
+        ).values_list('id', flat=True).distinct()
+
+        if eligible_expense_group_ids.exists():
+            export_to_netsuite(workspace_id=workspace_id, expense_group_ids=list(eligible_expense_group_ids), triggered_by=ExpenseImportSourceEnum.BACKGROUND_SCHEDULE)
 
 def run_email_notification(workspace_id):
 
@@ -241,12 +254,12 @@ def post_to_integration_settings(workspace_id: int, active: bool):
         logger.error(error)
 
 
-def patch_integration_settings(workspace_id: int, errors: int = None, is_token_expired = None):
+def patch_integration_settings(workspace_id: int, errors: int = None, is_token_expired = None, unmapped_card_count: int = None):
     """
     Patch integration settings
     """
-
-    refresh_token = FyleCredential.objects.get(workspace_id=workspace_id).refresh_token
+    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+    refresh_token = fyle_credentials.refresh_token
     url = '{}/integrations/'.format(settings.INTEGRATIONS_SETTINGS_API)
     payload = {
         'tpa_name': 'Fyle Netsuite Integration'
@@ -255,13 +268,34 @@ def patch_integration_settings(workspace_id: int, errors: int = None, is_token_e
     if errors is not None:
         payload['errors_count'] = errors
 
+    if unmapped_card_count is not None:
+        payload['unmapped_card_count'] = unmapped_card_count
+
     if is_token_expired is not None:
         payload['is_token_expired'] = is_token_expired
         
     try:
-        patch_request(url, payload, refresh_token)
+        if fyle_credentials.workspace.onboarding_state == 'COMPLETE':
+            patch_request(url, payload, refresh_token)
+            return True
     except Exception as error:
         logger.error(error, exc_info=True)
+        return False
+
+
+def patch_integration_settings_for_unmapped_cards(workspace_id: int, unmapped_card_count: int) -> None:
+    """
+    Patch integration settings for unmapped cards
+    :param workspace_id: Workspace id
+    :param unmapped_card_count: Unmapped card count
+    return: None
+    """
+    last_export_detail = LastExportDetail.objects.get(workspace_id=workspace_id)
+    if unmapped_card_count != last_export_detail.unmapped_card_count:
+        is_patched = patch_integration_settings(workspace_id=workspace_id, unmapped_card_count=unmapped_card_count)
+        if is_patched:
+            last_export_detail.unmapped_card_count = unmapped_card_count
+            last_export_detail.save(update_fields=['unmapped_card_count', 'updated_at'])
 
 
 def async_update_fyle_credentials(fyle_org_id: str, refresh_token: str):
