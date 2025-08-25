@@ -77,7 +77,8 @@ def test_clear_workspace_errors_with_mapping_errors(add_workspace_with_settings)
         expense_attribute=employee_attr,
         mapping_error_expense_group_ids=[201, 202],
         error_title='test.employee@example.com',
-        error_detail='Employee mapping is missing'
+        error_detail='Employee mapping is missing',
+        is_resolved=False
     )
 
     direct_error = Error.objects.create(
@@ -100,13 +101,10 @@ def test_clear_workspace_errors_with_mapping_errors(add_workspace_with_settings)
         'corporate_credit_card_expenses_object': 'CHARGE_CARD_TRANSACTION'
     }
 
-    new_config, _ = Configuration.objects.get_or_create(
-        workspace_id=workspace_id,
-        defaults={
-            'reimbursable_expenses_object': 'BILL',
-            'corporate_credit_card_expenses_object': 'CHARGE_CARD_TRANSACTION'
-        }
-    )
+    new_config = Configuration.objects.get(workspace_id=workspace_id)
+    new_config.reimbursable_expenses_object = 'BILL'
+    new_config.corporate_credit_card_expenses_object = 'CHARGE_CARD_TRANSACTION'
+    new_config.save()
 
     clear_workspace_errors_on_export_type_change(
         workspace_id, old_config, new_config
