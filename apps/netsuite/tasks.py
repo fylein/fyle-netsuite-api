@@ -467,17 +467,21 @@ def resolve_errors_for_exported_expense_group(expense_group, workspace_id=None):
 def create_bill(expense_group_id: int, task_log_id: int, last_export: bool, is_auto_export: bool):
     caller_info = get_caller_info()
     worker_logger = get_logger()
-    with transaction.atomic():
-        task_log = TaskLog.objects.select_for_update().get(id=task_log_id)
-        expense_group = ExpenseGroup.objects.get(id=expense_group_id, workspace_id=task_log.workspace_id)
-        worker_logger.info('Creating Bill for Expense Group %s, current state is %s, triggered by %s, called from %s', expense_group.id, task_log.status, task_log.triggered_by, caller_info)
+    try:
+        with transaction.atomic():
+            task_log = TaskLog.objects.select_for_update().get(id=task_log_id)
+            expense_group = ExpenseGroup.objects.get(id=expense_group_id, workspace_id=task_log.workspace_id)
+            worker_logger.info('Creating Bill for Expense Group %s, current state is %s, triggered by %s, called from %s', expense_group.id, task_log.status, task_log.triggered_by, caller_info)
 
-        if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
-            task_log.status = 'IN_PROGRESS'
-            task_log.save()
-        else:
-            worker_logger.info('Task log %s is already in %s state, workspace id %s, so skipping the task', task_log_id, task_log.status, task_log.workspace_id)
-            return
+            if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
+                task_log.status = 'IN_PROGRESS'
+                task_log.save()
+            else:
+                worker_logger.info('Task log %s is already in %s state, workspace id %s, so skipping the task', task_log_id, task_log.status, task_log.workspace_id)
+                return
+    except TaskLog.DoesNotExist:
+        worker_logger.info('Task log %s no longer exists, skipping bill creation', task_log_id)
+        return
     
     in_progress_expenses = []
     # Don't include expenses with previous export state as ERROR and it's an auto import/export run
