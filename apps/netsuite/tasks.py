@@ -554,17 +554,21 @@ def create_bill(expense_group_id: int, task_log_id: int, last_export: bool, is_a
 def create_credit_card_charge(expense_group_id: int, task_log_id: int, last_export: bool, is_auto_export: bool):
     caller_info = get_caller_info()
     worker_logger = get_logger()
-    with transaction.atomic():
-        task_log = TaskLog.objects.select_for_update().get(id=task_log_id)
-        expense_group = ExpenseGroup.objects.get(id=expense_group_id, workspace_id=task_log.workspace_id)
-        worker_logger.info('Creating Credit Card Charge for Expense Group %s, current state is %s, triggered by %s, called from %s', expense_group.id, task_log.status, task_log.triggered_by, caller_info)
+    try:
+        with transaction.atomic():
+            task_log = TaskLog.objects.select_for_update().get(id=task_log_id)
+            expense_group = ExpenseGroup.objects.get(id=expense_group_id, workspace_id=task_log.workspace_id)
+            worker_logger.info('Creating Credit Card Charge for Expense Group %s, current state is %s, triggered by %s, called from %s', expense_group.id, task_log.status, task_log.triggered_by, caller_info)
 
-        if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
-            task_log.status = 'IN_PROGRESS'
-            task_log.save()
-        else:
-            worker_logger.info('Task log %s is already in %s state, workspace id %s, so skipping the task', task_log_id, task_log.status, task_log.workspace_id)
-            return
+            if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
+                task_log.status = 'IN_PROGRESS'
+                task_log.save()
+            else:
+                worker_logger.info('Task log %s is already in %s state, workspace id %s, so skipping the task', task_log_id, task_log.status, task_log.workspace_id)
+                return
+    except TaskLog.DoesNotExist:
+        worker_logger.info('Task log %s no longer exists, skipping credit card charge creation', task_log_id)
+        return
     
     in_progress_expenses = []
     # Don't include expenses with previous export state as ERROR and it's an auto import/export run
@@ -657,17 +661,21 @@ def create_credit_card_charge(expense_group_id: int, task_log_id: int, last_expo
 def create_expense_report(expense_group_id: int, task_log_id: int, last_export: bool, is_auto_export: bool):
     worker_logger = get_logger()
     caller_info = get_caller_info()
-    with transaction.atomic():
-        task_log = TaskLog.objects.select_for_update().get(id=task_log_id)
-        expense_group = ExpenseGroup.objects.get(id=expense_group_id, workspace_id=task_log.workspace_id)
-        worker_logger.info('Creating Expense Report for Expense Group %s, current state is %s, triggered by %s, called from %s', expense_group.id, task_log.status, task_log.triggered_by, caller_info)
+    try:
+        with transaction.atomic():
+            task_log = TaskLog.objects.select_for_update().get(id=task_log_id)
+            expense_group = ExpenseGroup.objects.get(id=expense_group_id, workspace_id=task_log.workspace_id)
+            worker_logger.info('Creating Expense Report for Expense Group %s, current state is %s, triggered by %s, called from %s', expense_group.id, task_log.status, task_log.triggered_by, caller_info)
 
-        if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
-            task_log.status = 'IN_PROGRESS'
-            task_log.save()
-        else:
-            worker_logger.info('Task log %s is already in %s state, workspace id %s, so skipping the task', task_log_id, task_log.status, task_log.workspace_id)
-            return
+            if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
+                task_log.status = 'IN_PROGRESS'
+                task_log.save()
+            else:
+                worker_logger.info('Task log %s is already in %s state, workspace id %s, so skipping the task', task_log_id, task_log.status, task_log.workspace_id)
+                return
+    except TaskLog.DoesNotExist:
+        worker_logger.info('Task log %s no longer exists, skipping expense report creation', task_log_id)
+        return
     
     in_progress_expenses = []
     # Don't include expenses with previous export state as ERROR and it's an auto import/export run
@@ -740,17 +748,21 @@ def create_expense_report(expense_group_id: int, task_log_id: int, last_export: 
 def create_journal_entry(expense_group_id: int, task_log_id: int, last_export: bool, is_auto_export: bool):
     worker_logger = get_logger()
     caller_info = get_caller_info()
-    with transaction.atomic():
-        task_log = TaskLog.objects.select_for_update().get(id=task_log_id)
-        expense_group = ExpenseGroup.objects.get(id=expense_group_id, workspace_id=task_log.workspace_id)
-        worker_logger.info('Creating Journal Entry for Expense Group %s, current state is %s, triggered by %s, called from %s', expense_group.id, task_log.status, task_log.triggered_by, caller_info)
+    try:
+        with transaction.atomic():
+            task_log = TaskLog.objects.select_for_update().get(id=task_log_id)
+            expense_group = ExpenseGroup.objects.get(id=expense_group_id, workspace_id=task_log.workspace_id)
+            worker_logger.info('Creating Journal Entry for Expense Group %s, current state is %s, triggered by %s, called from %s', expense_group.id, task_log.status, task_log.triggered_by, caller_info)
 
-        if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
-            task_log.status = 'IN_PROGRESS'
-            task_log.save()
-        else:
-            worker_logger.info('Task log %s is already in %s state, workspace id %s, so skipping the task', task_log_id, task_log.status, task_log.workspace_id)
-            return
+            if task_log.status not in ['IN_PROGRESS', 'COMPLETE']:
+                task_log.status = 'IN_PROGRESS'
+                task_log.save()
+            else:
+                worker_logger.info('Task log %s is already in %s state, workspace id %s, so skipping the task', task_log_id, task_log.status, task_log.workspace_id)
+                return
+    except TaskLog.DoesNotExist:
+        worker_logger.info('Task log %s no longer exists, skipping journal entry creation', task_log_id)
+        return
 
     in_progress_expenses = []
     # Don't include expenses with previous export state as ERROR and it's an auto import/export run
@@ -1214,14 +1226,19 @@ def create_netsuite_payment_objects(netsuite_objects, object_type, workspace_id)
 
 @handle_netsuite_exceptions(payment=True)
 def process_vendor_payment(entity_object, workspace_id, object_type):
-    task_log, _ = TaskLog.objects.update_or_create(
-        workspace_id=workspace_id,
-        task_id='PAYMENT_{}'.format(entity_object['unique_id']),
-        defaults={
-            'status': 'IN_PROGRESS',
-            'type': 'CREATING_VENDOR_PAYMENT'
-        }
-    )
+    try:
+        with transaction.atomic():
+            task_log, _ = TaskLog.objects.update_or_create(
+                workspace_id=workspace_id,
+                task_id='PAYMENT_{}'.format(entity_object['unique_id']),
+                defaults={
+                    'status': 'IN_PROGRESS',
+                    'type': 'CREATING_VENDOR_PAYMENT'
+                }
+            )
+    except Exception as e:
+        logger.info('Error creating/updating task log for payment %s: %s', entity_object['unique_id'], str(e))
+        return
 
     with transaction.atomic():
 
