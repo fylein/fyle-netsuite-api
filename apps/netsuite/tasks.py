@@ -1226,19 +1226,14 @@ def create_netsuite_payment_objects(netsuite_objects, object_type, workspace_id)
 
 @handle_netsuite_exceptions(payment=True)
 def process_vendor_payment(entity_object, workspace_id, object_type):
-    try:
-        with transaction.atomic():
-            task_log, _ = TaskLog.objects.update_or_create(
-                workspace_id=workspace_id,
-                task_id='PAYMENT_{}'.format(entity_object['unique_id']),
-                defaults={
-                    'status': 'IN_PROGRESS',
-                    'type': 'CREATING_VENDOR_PAYMENT'
-                }
-            )
-    except Exception as e:
-        logger.info('Error creating/updating task log for payment %s: %s', entity_object['unique_id'], str(e))
-        return
+    task_log, _ = TaskLog.objects.update_or_create(
+        workspace_id=workspace_id,
+        task_id='PAYMENT_{}'.format(entity_object['unique_id']),
+        defaults={
+            'status': 'IN_PROGRESS',
+            'type': 'CREATING_VENDOR_PAYMENT'
+        }
+    )
 
     with transaction.atomic():
 
