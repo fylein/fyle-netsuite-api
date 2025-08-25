@@ -126,6 +126,12 @@ class ExportSettingsSerializer(serializers.ModelSerializer):
         workspace_id = instance.id
 
         pre_save_configurations = Configuration.objects.filter(workspace_id=workspace_id).first()
+        old_configurations = {}
+        if pre_save_configurations:
+            old_configurations = {
+                'reimbursable_expenses_object': pre_save_configurations.reimbursable_expenses_object,
+                'corporate_credit_card_expenses_object': pre_save_configurations.corporate_credit_card_expenses_object,
+            }
 
         configuration_instance, _ = Configuration.objects.update_or_create(
             workspace_id=workspace_id,
@@ -141,7 +147,8 @@ class ExportSettingsSerializer(serializers.ModelSerializer):
 
         exports_trigger = ExportSettingsTrigger(
             workspace_id=workspace_id,
-            configuration=configuration_instance
+            configuration=configuration_instance,
+            old_configurations=old_configurations
         )
 
         is_category_mapping_changed = False

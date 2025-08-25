@@ -1,10 +1,10 @@
 from datetime import datetime, timezone
 
+from apps.workspaces.apis.export_settings.helpers import clear_workspace_errors_on_export_type_change
 from apps.workspaces.models import Configuration, LastExportDetail
 from apps.netsuite.exceptions import update_last_export_details
 from fyle_accounting_mappings.models import MappingSetting, ExpenseAttribute
 from apps.fyle.models import ExpenseGroup
-from apps.tasks.models import TaskLog, Error
 from fyle_integrations_imports.models import ImportLog
 
 
@@ -12,9 +12,10 @@ class ExportSettingsTrigger:
     """
     Class containing all triggers for export_settings
     """
-    def __init__(self, workspace_id: int, configuration: Configuration):
+    def __init__(self, workspace_id: int, configuration: Configuration, old_configurations: dict):
         self.__workspace_id = workspace_id
         self.__configuration = configuration
+        self.__old_configurations = old_configurations
 
     def __delete_or_create_card_mapping_setting(self):
         enable_card_mapping = False
@@ -57,14 +58,9 @@ class ExportSettingsTrigger:
 
         self.__delete_or_create_card_mapping_setting()
 
-        expense_group_ids = ExpenseGroup.objects.filter(
-            workspace_id=self.__workspace_id,
-            exported_at__isnull=True
-        ).exclude(fund_source__in=fund_source).values_list('id', flat=True)
+        if self.__old_configurations and self.__configuration:
+            clear_workspace_errors_on_export_type_change(self.__workspace_id, self.__old_configurations, self.__configuration)
 
-        if expense_group_ids:
-            Error.objects.filter(workspace_id=self.__workspace_id, expense_group_id__in=expense_group_ids).delete()
-            TaskLog.objects.filter(workspace_id=self.__workspace_id, expense_group_id__in=expense_group_ids, status__in=['FAILED', 'FATAL']).delete()
-            last_export_detail = LastExportDetail.objects.filter(workspace_id=self.__workspace_id).first()
-            if last_export_detail.last_exported_at:
-                update_last_export_details(self.__workspace_id)
+        last_export_detail = LastExportDetail.objects.filter(workspace_id=self.__workspace_id).first()
+        if last_export_detail.last_exported_at:
+            update_last_export_details(self.__workspace_id)
