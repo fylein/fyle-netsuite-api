@@ -43,58 +43,16 @@ def test_clear_workspace_errors_no_changes(add_workspace_with_settings):
     assert enqueued_exists is True
 
 
-def test_clear_workspace_errors_with_mapping_errors(add_workspace_with_settings):
+def test_clear_workspace_errors_with_mapping_errors(add_workspace_with_settings, create_test_expense_groups_and_errors):
     """
     Test mapping error handling when reimbursable expenses object changes
     """
     workspace_id = 2
     add_workspace_with_settings(workspace_id)
-
-    _ = ExpenseGroup.objects.create(
-        id=201,
-        workspace_id=workspace_id,
-        fund_source='PERSONAL',
-        exported_at=None
-    )
-
-    _ = ExpenseGroup.objects.create(
-        id=202,
-        workspace_id=workspace_id,
-        fund_source='CCC',
-        exported_at=None
-    )
-
-    employee_attr = ExpenseAttribute.objects.create(
-        workspace_id=workspace_id,
-        attribute_type='EMPLOYEE',
-        display_name='Employee',
-        value='test.employee2@example.com'
-    )
-
-    mapping_error = Error.objects.create(
-        workspace_id=workspace_id,
-        type='EMPLOYEE_MAPPING',
-        expense_attribute=employee_attr,
-        mapping_error_expense_group_ids=[201, 202],
-        error_title='test.employee@example.com',
-        error_detail='Employee mapping is missing',
-        is_resolved=False
-    )
-
-    direct_error = Error.objects.create(
-        workspace_id=workspace_id,
-        type='INTACCT_ERROR',
-        expense_group_id=201,
-        error_title='Export failed',
-        error_detail='Some export error'
-    )
-
-    TaskLog.objects.create(
-        workspace_id=workspace_id,
-        expense_group_id=201,
-        status='FAILED',
-        type='CREATING_EXPENSE_REPORT'
-    )
+    
+    test_data = create_test_expense_groups_and_errors(workspace_id)
+    mapping_error = test_data['mapping_error']
+    direct_error = test_data['direct_error']
 
     old_config = {
         'reimbursable_expenses_object': 'EXPENSE_REPORT',

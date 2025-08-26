@@ -61,14 +61,12 @@ def clear_workspace_errors_on_export_type_change(
                         expense_group_id__in=affected_expense_group_ids
                     )
                     if expense_group_errors.exists():
-                        deleted_direct_errors, deleted_direct_errors_count = expense_group_errors.delete()
+                        deleted_direct_errors, _ = expense_group_errors.delete()
                         total_deleted_errors += deleted_direct_errors
-                        logger.info("Cleared %s direct expense group errors", deleted_direct_errors)
-                        logger.info("Deleted direct errors data: %s", deleted_direct_errors_count)
 
                     mapping_errors = Error.objects.filter(
                         workspace_id=workspace_id,
-                        type__in=['EMPLOYEE_MAPPING', 'CATEGORY_MAPPING'],
+                        type__in=['EMPLOYEE_MAPPING', 'CATEGORY_MAPPING', 'TAX_MAPPING'],
                         is_resolved=False
                     )
 
@@ -96,12 +94,11 @@ def clear_workspace_errors_on_export_type_change(
 
                     mapping_errors_deleted = 0
                     if mapping_errors_to_delete:
-                        mapping_errors_deleted, mapping_errors_data = Error.objects.filter(
+                        mapping_errors_deleted, _ = Error.objects.filter(
                             workspace_id=workspace_id,
                             id__in=mapping_errors_to_delete,
                             is_resolved=False
                         ).delete()
-                        logger.info("Deleted mapping errors data: %s", mapping_errors_data)
 
                     if mapping_errors_updated > 0:
                         logger.info("Updated %s mapping errors by removing affected expense group IDs", mapping_errors_updated)
