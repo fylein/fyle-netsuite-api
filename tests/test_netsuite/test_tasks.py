@@ -1928,3 +1928,43 @@ def test_handle_skipped_exports(mocker, db):
     mock_post_summary.assert_not_called()
     mock_update_last_export.assert_called_once_with(eg2.workspace_id)
     mock_logger.info.assert_called()
+
+
+@pytest.mark.django_db()
+def test_create_journal_entry_task_log_does_not_exist(mocker, db):
+    """
+    Test create_journal_entry when TaskLog.DoesNotExist is raised
+    Case: TaskLog with given task_log_id does not exist
+    """
+    with pytest.raises(TaskLog.DoesNotExist):
+        create_journal_entry(1, 99999, True, False)
+
+
+@pytest.mark.django_db()
+def test_create_expense_report_task_log_does_not_exist(mocker, db):
+    """
+    Test create_expense_report when TaskLog.DoesNotExist is raised
+    Case: TaskLog with given task_log_id does not exist
+    """
+    with pytest.raises(TaskLog.DoesNotExist):
+        create_expense_report(1, 99999, True, False)
+
+
+@pytest.mark.django_db()
+def test_create_bill_task_log_does_not_exist(mocker, db):
+    """
+    Test create_bill when TaskLog.DoesNotExist is raised
+    Case: TaskLog with given task_log_id does not exist
+    """
+    with pytest.raises(TaskLog.DoesNotExist):
+        create_bill(1, 99999, True, False)
+
+
+@pytest.mark.django_db()
+def test_create_credit_card_charge_task_log_does_not_exist(mocker, db):
+    """
+    Test create_credit_card_charge when TaskLog.DoesNotExist is raised
+    Case: TaskLog with given task_log_id does not exist
+    """
+    with pytest.raises(TaskLog.DoesNotExist):
+        create_credit_card_charge(1, 99999, True, False)
