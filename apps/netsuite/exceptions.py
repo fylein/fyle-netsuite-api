@@ -119,7 +119,9 @@ def handle_netsuite_exceptions(payment=False):
                 func(*args)
             
             except NetSuiteCredentials.DoesNotExist:
-                    __handle_netsuite_connection_error(expense_group, task_log, workspace_id)
+                __handle_netsuite_connection_error(expense_group, task_log, workspace_id)
+                if not payment:
+                    update_failed_expenses(expense_group.expenses.all(), False)
 
             except (NetSuiteRequestError, NetSuiteLoginError) as exception:
                 all_details = []
