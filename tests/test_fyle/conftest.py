@@ -54,29 +54,30 @@ def update_config_for_split_expense_grouping(db):
 def setup_expense_groups_for_deletion_test(db):
     """
     Create expense groups and task logs for deletion test
+    Use workspace_id=2 to avoid conflicts with other tests that use workspace_id=1
     """
 
-    workspace_id = 1
+    workspace_id = 2
 
     # Create expense groups for testing
     expense_group_1 = ExpenseGroup.objects.create(
-        id=101,
+        id=201,
         workspace_id=workspace_id,
         fund_source='PERSONAL',
         employee_name='Test Employee 1'
     )
 
     expense_group_2 = ExpenseGroup.objects.create(
-        id=102,
+        id=202,
         workspace_id=workspace_id,
         fund_source='PERSONAL',
         employee_name='Test Employee 2'
     )
 
     expense_group_3 = ExpenseGroup.objects.create(
-        id=103,
+        id=203,
         workspace_id=workspace_id,
-        fund_source='CCC', 
+        fund_source='CCC',
         employee_name='Test Employee 3'
     )
 
@@ -90,7 +91,7 @@ def setup_expense_groups_for_deletion_test(db):
 
     ap_payment_task_log = TaskLog.objects.create(
         workspace_id=workspace_id,
-        type='CREATING_AP_PAYMENT', 
+        type='CREATING_AP_PAYMENT',
         expense_group_id=expense_group_3.id,
         status='FAILED'
     )
@@ -109,5 +110,6 @@ def setup_expense_groups_for_deletion_test(db):
         'expense_group_3': expense_group_3,
         'reimbursement_task_log': reimbursement_task_log,
         'ap_payment_task_log': ap_payment_task_log,
-        'regular_task_log': regular_task_log
+        'regular_task_log': regular_task_log,
+        'workspace_id': workspace_id
     }

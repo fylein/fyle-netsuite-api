@@ -1153,7 +1153,7 @@ def test_delete_expense_group_with_reimbursement_task_log(setup_expense_groups_f
     reimbursement_task_log = test_data['reimbursement_task_log'] 
     ap_payment_task_log = test_data['ap_payment_task_log']
     regular_task_log = test_data['regular_task_log']
-    workspace_id = 1
+    workspace_id = test_data['workspace_id']
 
     mocker.patch(
         'apps.fyle.tasks.recreate_expense_groups',
