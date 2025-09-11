@@ -56,26 +56,69 @@ def access_token(db):
 
 @pytest.fixture(autouse=True)
 def add_netsuite_credentials(db):
+    from apps.fyle.models import ExpenseGroupSettings
+    from apps.workspaces.models import Configuration
+    from datetime import datetime, timezone
 
     workspaces = [1,2,49]
     for workspace_id in workspaces:
-        NetSuiteCredentials.objects.create(
-            ns_account_id=Workspace.objects.get(id=workspace_id).ns_account_id,
-            ns_consumer_key=settings.NS_CONSUMER_KEY,
-            ns_consumer_secret=settings.NS_CONSUMER_SECRET,
-            ns_token_id=settings.NS_TOKEN_ID,
-            ns_token_secret=settings.NS_TOKEN_SECRET,
-            workspace_id=workspace_id
+
+        workspace, _ = Workspace.objects.get_or_create(
+            id=workspace_id,
+            defaults={
+                'name': f'Test Workspace {workspace_id}',
+                'fyle_org_id': f'or79Cob97KSh{workspace_id}',
+                'ns_account_id': settings.NS_ACCOUNT_ID,
+                'last_synced_at': None,
+                'source_synced_at': None,
+                'destination_synced_at': None,
+                'created_at': datetime.now(tz=timezone.utc),
+                'updated_at': datetime.now(tz=timezone.utc)
+            }
+        )
+        
+        ExpenseGroupSettings.objects.get_or_create(
+            workspace_id=workspace_id,
+            defaults={
+                'reimbursable_expense_group_fields': ['employee_email', 'report_id', 'claim_number', 'fund_source'],
+                'corporate_credit_card_expense_group_fields': ['fund_source', 'employee_email', 'claim_number', 'expense_id', 'report_id'],
+                'expense_state': 'PAYMENT_PROCESSING',
+                'import_card_credits': False
+            }
+        )
+        
+        from apps.workspaces.models import LastExportDetail
+        LastExportDetail.objects.get_or_create(workspace_id=workspace_id)
+        
+        NetSuiteCredentials.objects.get_or_create(
+            workspace_id=workspace_id,
+            defaults={
+                'ns_account_id': workspace.ns_account_id,
+                'ns_consumer_key': settings.NS_CONSUMER_KEY,
+                'ns_consumer_secret': settings.NS_CONSUMER_SECRET,
+                'ns_token_id': settings.NS_TOKEN_ID,
+                'ns_token_secret': settings.NS_TOKEN_SECRET,
+            }
+        )
+        
+        Configuration.objects.get_or_create(
+            workspace_id=workspace_id,
+            defaults={
+                'reimbursable_expenses_object': 'EXPENSE REPORT',
+                'corporate_credit_card_expenses_object': 'CREDIT CARD CHARGE'
+            }
         )
 
 @pytest.fixture(autouse=True)
 def add_fyle_credentials(db):
     workspaces = [1,2,49]
     for workspace_id in workspaces:
-        FyleCredential.objects.create(
-            refresh_token=settings.FYLE_REFRESH_TOKEN,
+        FyleCredential.objects.get_or_create(
             workspace_id=workspace_id,
-            cluster_domain='https://staging.fyle.tech'
+            defaults={
+                'refresh_token': settings.FYLE_REFRESH_TOKEN,
+                'cluster_domain': 'https://staging.fyle.tech'
+            }
         )
 
 @pytest.fixture(scope="session", autouse=True)
@@ -139,3 +182,5 @@ def mock_rabbitmq():
         mock_instance.connect.return_value = None
         mock_rabbitmq.return_value = mock_instance
         yield mock_rabbitmq
+
+
