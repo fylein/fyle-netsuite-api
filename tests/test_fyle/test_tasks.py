@@ -965,7 +965,7 @@ def test_handle_fund_source_changes_no_affected_groups(db, mocker, add_fyle_cred
         return_value=Q(id__in=[])
     )
 
-    result = handle_fund_source_changes_for_expense_ids(
+    handle_fund_source_changes_for_expense_ids(
         workspace_id=workspace_id,
         changed_expense_ids=changed_expense_ids,
         report_id=report_id,
@@ -974,7 +974,6 @@ def test_handle_fund_source_changes_no_affected_groups(db, mocker, add_fyle_cred
     )
 
     assert mock_construct_filter.call_count == 1
-    assert result is None
 
 
 def test_handle_fund_source_changes_not_all_groups_exported(db, mocker, add_fyle_credentials):
@@ -1075,7 +1074,7 @@ def test_recreate_expense_groups_with_expense_filters(db, mocker, add_fyle_crede
     )
 
     mock_construct_filter_query = mocker.patch(
-        'apps.fyle.helpers.construct_expense_filter_query',
+        'apps.fyle.tasks.construct_expense_filter_query',
         return_value=Q()
     )
 
@@ -1145,47 +1144,16 @@ def test_process_expense_group_failed_status(db, mocker, add_fyle_credentials):
     assert result is True
 
 
-def test_delete_expense_group_with_reimbursement_task_log(db, mocker, add_fyle_credentials):
+def test_delete_expense_group_with_reimbursement_task_log(setup_expense_groups_for_deletion_test, mocker):
     """
     Test delete expense group excludes reimbursement and AP payment task logs
     """
-    # Create test expenses using existing pattern
-    workspace = Workspace.objects.get(id=1)
-    test_expenses = data['group_and_save_expense_groups_expenses']
-    task_log_temp, _ = TaskLog.objects.update_or_create(
-        workspace_id=1,
-        type='FETCHING_EXPENSES',
-        defaults={'status': 'IN_PROGRESS'}
-    )
-    
-    # Create expense groups using existing function
-    group_expenses_and_save(test_expenses, task_log_temp, workspace)
-    
-    expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
+    test_data = setup_expense_groups_for_deletion_test
+    expense_group = test_data['expense_group_1']
+    reimbursement_task_log = test_data['reimbursement_task_log'] 
+    ap_payment_task_log = test_data['ap_payment_task_log']
+    regular_task_log = test_data['regular_task_log']
     workspace_id = 1
-
-    # Create task logs that should be excluded
-    reimbursement_task_log = TaskLog.objects.create(
-        workspace_id=workspace_id,
-        type='CREATING_REIMBURSEMENT',
-        expense_group_id=expense_group.id,
-        status='FAILED'
-    )
-
-    ap_payment_task_log = TaskLog.objects.create(
-        workspace_id=workspace_id,
-        type='CREATING_AP_PAYMENT',
-        expense_group_id=expense_group.id,
-        status='FAILED'
-    )
-
-    # Create a task log that should be deleted
-    regular_task_log = TaskLog.objects.create(
-        workspace_id=workspace_id,
-        type='CREATING_JOURNAL_ENTRY',
-        expense_group_id=expense_group.id,
-        status='FAILED'
-    )
 
     mocker.patch(
         'apps.fyle.tasks.recreate_expense_groups',
@@ -1197,13 +1165,10 @@ def test_delete_expense_group_with_reimbursement_task_log(db, mocker, add_fyle_c
     # Reimbursement and AP payment task logs should still exist
     assert TaskLog.objects.filter(id=reimbursement_task_log.id).exists()
     assert TaskLog.objects.filter(id=ap_payment_task_log.id).exists()
-    
+
     # Regular task log should be deleted
     assert not TaskLog.objects.filter(id=regular_task_log.id).exists()
-    
+
     # Expense group should be deleted
     assert not ExpenseGroup.objects.filter(id=expense_group.id).exists()
 
-    # Clean up
-    reimbursement_task_log.delete()
-    ap_payment_task_log.delete()

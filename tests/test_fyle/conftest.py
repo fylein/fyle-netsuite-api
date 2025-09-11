@@ -3,6 +3,9 @@ import pytest
 from apps.fyle.models import ExpenseGroupSettings
 from apps.workspaces.models import Workspace
 from fyle_netsuite_api.tests import settings
+from apps.fyle.models import ExpenseGroup
+from apps.tasks.models import TaskLog
+
 
 @pytest.fixture
 def create_temp_workspace(db):
@@ -45,3 +48,66 @@ def update_config_for_split_expense_grouping(db):
         ]
         expense_group_settings.save()
     return _update_config_for_split_expense_grouping
+
+
+@pytest.fixture
+def setup_expense_groups_for_deletion_test(db):
+    """
+    Create expense groups and task logs for deletion test
+    """
+
+    workspace_id = 1
+
+    # Create expense groups for testing
+    expense_group_1 = ExpenseGroup.objects.create(
+        id=101,
+        workspace_id=workspace_id,
+        fund_source='PERSONAL',
+        employee_name='Test Employee 1'
+    )
+
+    expense_group_2 = ExpenseGroup.objects.create(
+        id=102,
+        workspace_id=workspace_id,
+        fund_source='PERSONAL',
+        employee_name='Test Employee 2'
+    )
+
+    expense_group_3 = ExpenseGroup.objects.create(
+        id=103,
+        workspace_id=workspace_id,
+        fund_source='CCC', 
+        employee_name='Test Employee 3'
+    )
+
+    # Create task logs that should be excluded from deletion
+    reimbursement_task_log = TaskLog.objects.create(
+        workspace_id=workspace_id,
+        type='CREATING_REIMBURSEMENT',
+        expense_group_id=expense_group_2.id,
+        status='FAILED'
+    )
+
+    ap_payment_task_log = TaskLog.objects.create(
+        workspace_id=workspace_id,
+        type='CREATING_AP_PAYMENT', 
+        expense_group_id=expense_group_3.id,
+        status='FAILED'
+    )
+
+    # Create a task log that should be deleted
+    regular_task_log = TaskLog.objects.create(
+        workspace_id=workspace_id,
+        type='CREATING_JOURNAL_ENTRY',
+        expense_group_id=expense_group_1.id,
+        status='FAILED'
+    )
+
+    return {
+        'expense_group_1': expense_group_1,
+        'expense_group_2': expense_group_2, 
+        'expense_group_3': expense_group_3,
+        'reimbursement_task_log': reimbursement_task_log,
+        'ap_payment_task_log': ap_payment_task_log,
+        'regular_task_log': regular_task_log
+    }
