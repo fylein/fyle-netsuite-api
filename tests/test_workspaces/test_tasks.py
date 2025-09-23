@@ -3,7 +3,7 @@ from django.db.models import Q
 from apps.fyle.models import Expense, ExpenseGroup
 from apps.tasks.models import TaskLog
 from apps.workspaces.models import Configuration, WorkspaceSchedule, FyleCredential, Workspace, LastExportDetail
-from apps.workspaces.tasks import run_sync_schedule, schedule_sync, delete_cards_mapping_settings, run_email_notification, async_create_admin_subcriptions, post_to_integration_settings, patch_integration_settings, patch_integration_settings_for_unmapped_cards, async_update_workspace_name
+from apps.workspaces.tasks import run_sync_schedule, schedule_sync, delete_cards_mapping_settings, run_email_notification, async_create_admin_subscriptions, post_to_integration_settings, patch_integration_settings, patch_integration_settings_for_unmapped_cards, async_update_workspace_name
 from fyle_accounting_mappings.models import ExpenseAttribute
 from tests.test_fyle.fixtures import data as fyle_data
 
@@ -111,12 +111,12 @@ def test_async_update_workspace_name(mocker):
     assert workspace.name == 'Test Org'
 
 
-def test_async_create_admin_subcriptions(db, mocker):
+def test_async_create_admin_subscriptions(db, mocker):
     mocker.patch(
         'fyle.platform.apis.v1.admin.Subscriptions.post',
         return_value={}
     )
-    async_create_admin_subcriptions(1)
+    async_create_admin_subscriptions(1)
 
 
 @pytest.mark.django_db(databases=['default'])
