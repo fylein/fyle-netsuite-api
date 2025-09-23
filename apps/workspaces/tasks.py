@@ -219,7 +219,7 @@ def delete_cards_mapping_settings(configuration: Configuration):
             mapping_setting.delete()
 
 
-def async_create_admin_subcriptions(workspace_id: int) -> None:
+def async_create_admin_subscriptions(workspace_id: int) -> None:
     """
     Create admin subscriptions
     :param workspace_id: workspace id
