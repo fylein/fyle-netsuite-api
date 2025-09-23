@@ -128,7 +128,7 @@ def test_handle_post_accounting_export_summary_exception(db):
         expense_id,
         'IN_PROGRESS',
         None,
-        '{}/main/dashboard'.format(settings.INTACCT_INTEGRATION_APP_URL),
+        '{}/main/dashboard'.format(settings.NETSUITE_INTEGRATION_APP_URL),
         False
     )
     expense.save()
