@@ -101,17 +101,20 @@ def test_handle_post_accounting_export_summary_exception(db):
     expense_id = expense.expense_id
 
     with mock.patch('fyle.platform.apis.v1.admin.Expenses.post_bulk_accounting_export_summary') as mock_call:
-        mock_call.side_effect = WrongParamsError('Some of the parameters are wrong', {
-            'data': [
-                {
-                    'message': 'Permission denied to perform this action.',
-                    'key': expense_id
-                }
-            ]
-        })
-        create_generator_and_post_in_batches([{
-            'id': expense_id
-        }], platform, 1)
+        with mock.patch('fyle_integrations_platform_connector.apis.expenses.Expenses.get') as mock_expense_get:
+            mock_call.side_effect = WrongParamsError('Some of the parameters are wrong', {
+                'data': [
+                    {
+                        'message': 'Permission denied to perform this action.',
+                        'key': expense_id
+                    }
+                ]
+            })
+            mock_expense_get.return_value = None
+
+            create_generator_and_post_in_batches([{
+                'id': expense_id
+            }], platform, 1)
 
     expense = Expense.objects.get(expense_id=expense_id)
 
@@ -119,6 +122,36 @@ def test_handle_post_accounting_export_summary_exception(db):
     assert expense.accounting_export_summary['state'] == 'DELETED'
     assert expense.accounting_export_summary['error_type'] == None
     assert expense.accounting_export_summary['url'] == '{}/main/dashboard'.format(settings.NETSUITE_INTEGRATION_APP_URL)
+    assert expense.accounting_export_summary['id'] == expense_id
+
+    expense.accounting_export_summary = get_updated_accounting_export_summary(
+        expense_id,
+        'IN_PROGRESS',
+        None,
+        '{}/main/dashboard'.format(settings.NETSUITE_INTEGRATION_APP_URL),
+        False
+    )
+    expense.save()
+
+    with mock.patch('fyle.platform.apis.v1.admin.Expenses.post_bulk_accounting_export_summary') as mock_call:
+        with mock.patch('fyle_integrations_platform_connector.apis.expenses.Expenses.get') as mock_expense_get:
+            mock_call.side_effect = WrongParamsError('Some of the parameters are wrong', {
+                'data': [
+                    {
+                        'message': 'Permission denied to perform this action.',
+                        'key': expense_id
+                    }
+                ]
+            })
+            mock_expense_get.return_value = [{'id': expense_id, 'state': 'APPROVED'}]
+
+            create_generator_and_post_in_batches([{
+                'id': expense_id
+            }], platform, 1)
+
+    expense = Expense.objects.get(expense_id=expense_id)
+    assert expense.accounting_export_summary['synced'] == False
+    assert expense.accounting_export_summary['state'] == 'IN_PROGRESS'
     assert expense.accounting_export_summary['id'] == expense_id
 
 
