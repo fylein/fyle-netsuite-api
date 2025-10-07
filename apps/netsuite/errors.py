@@ -59,6 +59,9 @@ def error_matcher(message, export_type, configuration: Configuration):
             
             if value == 'entity':
                 value = configuration.employee_field_mapping
+                # If employee_field_mapping is not configured, return empty list to show original error
+                if value is None:
+                    return [], ''
 
             #we are using error_mapping as some of the errors attribute are not accurate like 'taxcode'.
             if value in error_mappings.items():
@@ -97,6 +100,9 @@ def get_entity_values(error_dict, workspace_id, configuration: Configuration):
     """
     destination_attributes = []
     for errors in error_dict:
+        if errors['attribute_type'] is None:
+            return []
+            
         query = DestinationAttribute.objects.filter(
             destination_id=errors['destination_id'],
             attribute_type=errors['attribute_type'].upper(),
