@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Fyle</title>
+    <title>{{ brand_name}}</title>
   </head>
 
   <body style="margin: 0; padding: 0">
@@ -54,12 +54,11 @@
                   <tr>
                     <td>
                       <img
-                        src="{{integrations_app_url}}/assets/logos/email/fyle_logo_white_full.png"
-                        alt="Fyle"
-                        title="Fyle"
+                        src="{{integrations_app_url}}/assets/logos/email/{% if is_rebranded %}sage_logo_white_full.png{% else %}fyle_logo_white_full.png{% endif %}"
+                        alt="{{ brand_name }}"
+                        title="{{ brand_name }}"
                         style="display: block"
-                        height="30"
-                        width="90"
+                        height="35"
                       />
                     </td>
                     <td align="right">
@@ -118,8 +117,8 @@
                             color: #5a5d72;
                           "
                         >
-                          <td>Fyle organization</td>
-                          <td>Netsuite subsidiary</td>
+                          <td style="vertical-align: top;">{{ brand_name }} ORGANIZATION</td>
+                          <td style="vertical-align: top;">Netsuite subsidiary</td>
                         </tr>
                         <tr
                           style="
@@ -128,8 +127,8 @@
                             line-height: 20px;
                           "
                         >
-                          <td>{{ fyle_company }}</td>
-                          <td>{{ netsuite_subsidiary }}</td>
+                          <td style="vertical-align: top;">{{ fyle_company }}</td>
+                          <td style="vertical-align: top;">{{ netsuite_subsidiary }}</td>
                         </tr>
                       </table>
                     </td>
@@ -143,7 +142,7 @@
                         <tr>
                           <td style="line-height: 22px; padding-top: 15px">
                             {{ errors }} expense groups failed to export from
-                            your Fyle org to Netsuite subsidiary
+                            your {{ brand_name }} org to Netsuite subsidiary
                           </td>
                         </tr>
                         <tr>
@@ -412,7 +411,7 @@
                       line-height: 15px;
                     "
                   >
-                    <td>{{ year }} Fyle. All Rights Reserved.</td>
+                    <td>{{ year }} {{ brand_name }}. All Rights Reserved.</td>
                   </tr>
                 </table>
               </td>
