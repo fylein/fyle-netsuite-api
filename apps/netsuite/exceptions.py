@@ -55,6 +55,7 @@ def __handle_netsuite_connection_error(expense_group: ExpenseGroup, task_log: Ta
         error.increase_repetition_count_by_one(created)
 
     task_log.status = 'FAILED'
+    task_log.re_attempt_export = False
     task_log.detail = detail
 
     task_log.save()
@@ -87,6 +88,10 @@ def parse_error(message, workspace_id, expense_group):
 
     error_dict, article_link = error_matcher(message, export_type, configuration)
     entities = get_entity_values(error_dict, workspace_id, configuration)
+
+    if not entities:
+        return None, None
+
     message = replace_destination_id_with_values(message, entities)
     return message, article_link
 
@@ -118,7 +123,9 @@ def handle_netsuite_exceptions(payment=False):
                 func(*args)
             
             except NetSuiteCredentials.DoesNotExist:
-                    __handle_netsuite_connection_error(expense_group, task_log, workspace_id)
+                __handle_netsuite_connection_error(expense_group, task_log, workspace_id)
+                if not payment:
+                    update_failed_expenses(expense_group.expenses.all(), False)
 
             except (NetSuiteRequestError, NetSuiteLoginError) as exception:
                 all_details = []
@@ -131,6 +138,7 @@ def handle_netsuite_exceptions(payment=False):
                     invalidate_netsuite_credentials(workspace_id if payment else expense_group.workspace_id)
 
                 task_log.status = 'FAILED'
+                task_log.re_attempt_export = False
 
                 all_details.append({
                     'value': netsuite_error_message,
@@ -168,6 +176,7 @@ def handle_netsuite_exceptions(payment=False):
                 logger.info(exception.response)
                 detail = exception.response
                 task_log.status = 'FAILED'
+                task_log.re_attempt_export = False
                 task_log.detail = detail
 
                 task_log.save()
@@ -190,6 +199,7 @@ def handle_netsuite_exceptions(payment=False):
 
                 logger.info('Rate limit error, workspace_id - %s', workspace_id if payment else expense_group.workspace_id)
                 task_log.status = 'FAILED'
+                task_log.re_attempt_export = False
                 task_log.detail = {
                     'error': 'Rate limit error'
                 }
@@ -200,6 +210,7 @@ def handle_netsuite_exceptions(payment=False):
 
             except zeep_exceptions.Fault as exception:
                 task_log.status = 'FAILED'
+                task_log.re_attempt_export = False
                 detail = 'Zeep Fault error'
                 logger.info(f'Error while exporting: {exception.__dict__}')
                 try:

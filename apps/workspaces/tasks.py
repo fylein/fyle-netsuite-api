@@ -9,6 +9,7 @@ from django.conf import settings
 from django.db.models import Q
 from apps.fyle.helpers import post_request, patch_request
 from django.template.loader import render_to_string
+from apps.fyle.models import ExpenseGroup
 from django_q.models import Schedule
 from fyle_accounting_mappings.models import MappingSetting, ExpenseAttribute
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
@@ -129,7 +130,19 @@ def run_sync_schedule(workspace_id):
         )
 
     if task_log.status == 'COMPLETE':
-        export_to_netsuite(workspace_id=workspace_id, triggered_by=ExpenseImportSourceEnum.BACKGROUND_SCHEDULE)
+        eligible_expense_group_ids = ExpenseGroup.objects.filter(
+            workspace_id=workspace_id,
+            exported_at__isnull=True
+        ).filter(
+            Q(tasklog__isnull=True)
+            | Q(tasklog__type__in=['CREATING_BILL', 'CREATING_EXPENSE_REPORT', 'CREATING_JOURNAL_ENTRY', 'CREATING_CREDIT_CARD_CHARGE', 'CREATING_CREDIT_CARD_REFUND'])
+        ).exclude(
+            tasklog__status='FAILED',
+            tasklog__re_attempt_export=False
+        ).values_list('id', flat=True).distinct()
+
+        if eligible_expense_group_ids.exists():
+            export_to_netsuite(workspace_id=workspace_id, expense_group_ids=list(eligible_expense_group_ids), triggered_by=ExpenseImportSourceEnum.BACKGROUND_SCHEDULE)
 
 def run_email_notification(workspace_id):
 
@@ -208,7 +221,7 @@ def delete_cards_mapping_settings(configuration: Configuration):
             mapping_setting.delete()
 
 
-def async_create_admin_subcriptions(workspace_id: int) -> None:
+def async_create_admin_subscriptions(workspace_id: int) -> None:
     """
     Create admin subscriptions
     :param workspace_id: workspace id
@@ -218,7 +231,20 @@ def async_create_admin_subcriptions(workspace_id: int) -> None:
     platform = PlatformConnector(fyle_credentials)
     payload = {
         'is_enabled': True,
-        'webhook_url': '{}/workspaces/{}/fyle/exports/'.format(settings.API_URL, workspace_id)
+        'webhook_url': '{}/workspaces/{}/fyle/exports/'.format(settings.API_URL, workspace_id),
+        'subscribed_resources': [
+            'EXPENSE',
+            'REPORT',
+            'CATEGORY',
+            'PROJECT',
+            'COST_CENTER',
+            'EXPENSE_FIELD',
+            'DEPENDENT_EXPENSE_FIELD',
+            'CORPORATE_CARD',
+            'EMPLOYEE',
+            'TAX_GROUP',
+            'ORG_SETTING'
+        ]
     }
     platform.subscriptions.post(payload)
 

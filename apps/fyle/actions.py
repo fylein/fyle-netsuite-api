@@ -56,20 +56,20 @@ def update_expenses_in_progress(in_progress_expenses: List[Expense]) -> None:
     """
     expense_to_be_updated = []
     for expense in in_progress_expenses:
-        url = __get_redirection_url(expense.workspace_id, 'IN_PROGRESS')
-
-        expense_to_be_updated.append(
-            Expense(
-                id=expense.id,
-                accounting_export_summary=get_updated_accounting_export_summary(
-                    expense.expense_id,
-                    'IN_PROGRESS',
-                    None,
-                    url,
-                    False
+        if expense.accounting_export_summary.get('state') != 'DELETED':
+            url = __get_redirection_url(expense.workspace_id, 'IN_PROGRESS')
+            expense_to_be_updated.append(
+                Expense(
+                    id=expense.id,
+                    accounting_export_summary=get_updated_accounting_export_summary(
+                        expense.expense_id,
+                        'IN_PROGRESS',
+                        None,
+                        url,
+                        False
+                    )
                 )
             )
-        )
 
     __bulk_update_expenses(expense_to_be_updated)
 
@@ -91,19 +91,20 @@ def mark_expenses_as_skipped(final_query: Q, expenses_object_ids: List, workspac
     skipped_expenses_list = list(expenses_to_be_skipped)
     expense_to_be_updated = []
     for expense in expenses_to_be_skipped:
-        expense_to_be_updated.append(
-            Expense(
-                id=expense.id,
-                is_skipped=True,
-                accounting_export_summary=get_updated_accounting_export_summary(
-                    expense.expense_id,
-                    'SKIPPED',
-                    None,
-                    '{}/main/export_log'.format(settings.NETSUITE_INTEGRATION_APP_URL),
-                    False
+        if expense.accounting_export_summary.get('state') != 'DELETED':
+            expense_to_be_updated.append(
+                Expense(
+                    id=expense.id,
+                    is_skipped=True,
+                    accounting_export_summary=get_updated_accounting_export_summary(
+                        expense.expense_id,
+                        'SKIPPED',
+                        None,
+                        '{}/main/export_log'.format(settings.NETSUITE_INTEGRATION_APP_URL),
+                        False
+                    )
                 )
             )
-        )
 
     if expense_to_be_updated:
         __bulk_update_expenses(expense_to_be_updated)
@@ -146,8 +147,8 @@ def update_failed_expenses(failed_expenses: List[Expense], is_mapping_error: boo
         error_type = 'MAPPING' if is_mapping_error else 'ACCOUNTING_INTEGRATION_ERROR'
         url = __get_redirection_url(expense.workspace_id, 'ERROR')
         # Skip dummy updates (if it is already in error state with the same error type)
-        if not (expense.accounting_export_summary.get('state') == 'ERROR' and \
-            expense.accounting_export_summary.get('error_type') == error_type):
+        if (expense.accounting_export_summary.get('state') not in ['ERROR', 'DELETED'] and \
+            expense.accounting_export_summary.get('error_type') != error_type):
             expense_to_be_updated.append(
                 Expense(
                     id=expense.id,
@@ -173,18 +174,19 @@ def update_complete_expenses(exported_expenses: List[Expense], url: str) -> None
     """
     expense_to_be_updated = []
     for expense in exported_expenses:
-        expense_to_be_updated.append(
-            Expense(
-                id=expense.id,
-                accounting_export_summary=get_updated_accounting_export_summary(
-                    expense.expense_id,
-                    'COMPLETE',
-                    None,
-                    url,
-                    False
+        if expense.accounting_export_summary.get('state') != 'DELETED':
+            expense_to_be_updated.append(
+                Expense(
+                    id=expense.id,
+                    accounting_export_summary=get_updated_accounting_export_summary(
+                        expense.expense_id,
+                        'COMPLETE',
+                        None,
+                        url,
+                        False
+                    )
                 )
             )
-        )
 
     __bulk_update_expenses(expense_to_be_updated)
 
@@ -209,19 +211,23 @@ def __handle_post_accounting_export_summary_exception(exception: Exception, work
 
             if expense['message'] == 'Permission denied to perform this action.':
                 expense_instance = Expense.objects.get(expense_id=expense['key'], workspace_id=workspace_id)
-                expense_to_be_updated.append(
-                    Expense(
-                        id=expense_instance.id,
-                        accounting_export_summary=get_updated_accounting_export_summary(
-                            expense_instance.expense_id,
-                            'DELETED',
-                            None,
-                            url,
-                            True
-                        ),
-                        updated_at=current_time
+                fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+                platform = PlatformConnector(fyle_credentials)
+                platform_expense = platform.expenses.get(source_account_type=['PERSONAL_CASH_ACCOUNT', 'PERSONAL_CORPORATE_CREDIT_CARD_ACCOUNT'], expense_id=expense['key'])
+                if not platform_expense:
+                    expense_to_be_updated.append(
+                        Expense(
+                            id=expense_instance.id,
+                            accounting_export_summary=get_updated_accounting_export_summary(
+                                expense_instance.expense_id,
+                                'DELETED',
+                                None,
+                                url,
+                                True
+                            ),
+                            updated_at=current_time
+                        )
                     )
-                )
         if expense_to_be_updated:
             Expense.objects.bulk_update(expense_to_be_updated, ['accounting_export_summary', 'updated_at'], batch_size=50)
     else:

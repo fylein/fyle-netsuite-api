@@ -1650,162 +1650,6 @@ def test_upload_attachments_and_update_export(mocker, db):
     assert lineitem.netsuite_receipt_url == 'https://aaa.bbb.cc/x232sds'
 
 
-def test_skipping_bill_creation(db, mocker):
-    workspace_id = 1
-    mocker.patch(
-        'apps.tasks.models.TaskLog.objects.get_or_create',
-        return_value=[TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first(),None]
-    )
-
-    expense_group = ExpenseGroup.objects.get(id=1)
-    expense_group.exported_at = None
-    expense_group.save()
-
-    error = Error.objects.create(
-        workspace_id=workspace_id,
-        type='NETSUITE_ERROR',
-        error_title='NetSuite System Error',
-        error_detail='An error occured in a upsert request: Please enter value(s) for: Location',
-        expense_group=expense_group,
-        is_parsed=True,
-        repetition_count=106
-    )
-
-    task_log = TaskLog.objects.filter(workspace_id=workspace_id).first()
-    task_log.status = 'READY'
-    expense_group = expense_group
-    task_log.save()
-
-    schedule_bills_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
-
-    task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first()
-    assert task_log.type == 'FETCHING_EXPENSES'
-
-    Error.objects.filter(id=error.id).update(updated_at=datetime(2024, 8, 20))
-
-    schedule_bills_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
-
-    task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
-    assert task_log.type == 'CREATING_BILL'
-
-
-def test_skipping_journal_creation(db, mocker):
-    workspace_id = 1
-    mocker.patch(
-        'apps.tasks.models.TaskLog.objects.get_or_create',
-        return_value=[TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first(),None]
-    )
-
-    expense_group = ExpenseGroup.objects.get(id=1)
-    expense_group.exported_at = None
-    expense_group.save()
-
-    error = Error.objects.create(
-        workspace_id=workspace_id,
-        type='NETSUITE_ERROR',
-        error_title='NetSuite System Error',
-        error_detail='An error occured in a upsert request: Please enter value(s) for: Location',
-        expense_group=expense_group,
-        is_parsed=True,
-        repetition_count=106
-    )
-
-    task_log = TaskLog.objects.filter(workspace_id=workspace_id).first()
-    task_log.status = 'READY'
-    expense_group = expense_group
-    task_log.save()
-
-    schedule_journal_entry_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
-
-    task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first()
-    assert task_log.type == 'FETCHING_EXPENSES'
-
-    Error.objects.filter(id=error.id).update(updated_at=datetime(2024, 8, 20))
-
-    schedule_journal_entry_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
-
-    task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
-    assert task_log.type == 'CREATING_JOURNAL_ENTRY'
-
-
-def test_skipping_expense_group_creation(db, mocker):
-    workspace_id = 1
-    mocker.patch(
-        'apps.tasks.models.TaskLog.objects.get_or_create',
-        return_value=[TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first(),None]
-    )
-
-    expense_group = ExpenseGroup.objects.get(id=1)
-    expense_group.exported_at = None
-    expense_group.save()
-
-    error = Error.objects.create(
-        workspace_id=workspace_id,
-        type='NETSUITE_ERROR',
-        error_title='NetSuite System Error',
-        error_detail='An error occured in a upsert request: Please enter value(s) for: Location',
-        expense_group=expense_group,
-        is_parsed=True,
-        repetition_count=106
-    )
-
-    task_log = TaskLog.objects.filter(workspace_id=workspace_id).first()
-    task_log.status = 'READY'
-    expense_group = expense_group
-    task_log.save()
-
-    schedule_expense_reports_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
-
-    task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first()
-    assert task_log.type == 'FETCHING_EXPENSES'
-
-    Error.objects.filter(id=error.id).update(updated_at=datetime(2024, 8, 20))
-
-    schedule_expense_reports_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
-
-    task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
-    assert task_log.type == 'CREATING_EXPENSE_REPORT'
-
-
-def test_skipping_credit_card_charge_creation(db, mocker):
-    workspace_id = 1
-    mocker.patch(
-        'apps.tasks.models.TaskLog.objects.get_or_create',
-        return_value=[TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first(),None]
-    )
-
-    expense_group = ExpenseGroup.objects.get(id=1)
-    expense_group.exported_at = None
-    expense_group.save()
-
-    error = Error.objects.create(
-        workspace_id=workspace_id,
-        type='NETSUITE_ERROR',
-        error_title='NetSuite System Error',
-        error_detail='An error occured in a upsert request: Please enter value(s) for: Location',
-        expense_group=expense_group,
-        is_parsed=True,
-        repetition_count=106
-    )
-
-    task_log = TaskLog.objects.filter(workspace_id=workspace_id).first()
-    task_log.status = 'READY'
-    expense_group = expense_group
-    task_log.save()
-
-    schedule_credit_card_charge_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
-
-    task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first()
-    assert task_log.type == 'FETCHING_EXPENSES'
-
-    Error.objects.filter(id=error.id).update(updated_at=datetime(2024, 8, 20))
-
-    schedule_credit_card_charge_creation(workspace_id, [1], True, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
-
-    task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
-    assert task_log.type == 'CREATING_CREDIT_CARD_CHARGE'
-
-
 def test_skipping_vendor_payment(mocker, db):
     mocker.patch(
         'fyle_integrations_platform_connector.apis.Reimbursements.sync',
@@ -2084,3 +1928,43 @@ def test_handle_skipped_exports(mocker, db):
     mock_post_summary.assert_not_called()
     mock_update_last_export.assert_called_once_with(eg2.workspace_id)
     mock_logger.info.assert_called()
+
+
+@pytest.mark.django_db()
+def test_create_journal_entry_task_log_does_not_exist(mocker, db):
+    """
+    Test create_journal_entry when TaskLog.DoesNotExist is raised
+    Case: TaskLog with given task_log_id does not exist
+    """
+    with pytest.raises(TaskLog.DoesNotExist):
+        create_journal_entry(1, 99999, True, False)
+
+
+@pytest.mark.django_db()
+def test_create_expense_report_task_log_does_not_exist(mocker, db):
+    """
+    Test create_expense_report when TaskLog.DoesNotExist is raised
+    Case: TaskLog with given task_log_id does not exist
+    """
+    with pytest.raises(TaskLog.DoesNotExist):
+        create_expense_report(1, 99999, True, False)
+
+
+@pytest.mark.django_db()
+def test_create_bill_task_log_does_not_exist(mocker, db):
+    """
+    Test create_bill when TaskLog.DoesNotExist is raised
+    Case: TaskLog with given task_log_id does not exist
+    """
+    with pytest.raises(TaskLog.DoesNotExist):
+        create_bill(1, 99999, True, False)
+
+
+@pytest.mark.django_db()
+def test_create_credit_card_charge_task_log_does_not_exist(mocker, db):
+    """
+    Test create_credit_card_charge when TaskLog.DoesNotExist is raised
+    Case: TaskLog with given task_log_id does not exist
+    """
+    with pytest.raises(TaskLog.DoesNotExist):
+        create_credit_card_charge(1, 99999, True, False)
