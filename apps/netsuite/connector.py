@@ -20,7 +20,7 @@ from requests_oauthlib import OAuth1Session
 from apps.workspaces.helpers import get_app_name
 from netsuitesdk import NetSuiteConnection, NetSuiteRequestError
 
-import unidecode
+import text_unidecode
 
 from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute, MappingSetting
 
@@ -269,7 +269,7 @@ class NetSuiteConnector:
                         attributes['account'].append({
                             'attribute_type': 'ACCOUNT',
                             'display_name': 'Account',
-                            'value': unidecode.unidecode(u'{0}'.format(account['acctName'])).replace('/', '-'),
+                            'value': text_unidecode.unidecode(u'{0}'.format(account['acctName'])).replace('/', '-'),
                             'destination_id': account['internalId'],
                             'active': not account['isInactive']
                         })
@@ -277,7 +277,7 @@ class NetSuiteConnector:
                         attributes['account'].append({
                             'attribute_type': 'ACCOUNT',
                             'display_name': 'Account',
-                            'value': unidecode.unidecode(u'{0}'.format(account['acctName'])).replace('/', '-'),
+                            'value': text_unidecode.unidecode(u'{0}'.format(account['acctName'])).replace('/', '-'),
                             'destination_id': account['internalId'],
                             'active': True
                         })
@@ -329,7 +329,7 @@ class NetSuiteConnector:
                         {
                             'attribute_type': 'EXPENSE_CATEGORY',
                             'display_name': 'Expense Category',
-                            'value': unidecode.unidecode(u'{0}'.format(category['name'])).replace('/', '-'),
+                            'value': text_unidecode.unidecode(u'{0}'.format(category['name'])).replace('/', '-'),
                             'destination_id': category['internalId'],
                             'detail': detail,
                             'active': not category['isInactive']
@@ -340,7 +340,7 @@ class NetSuiteConnector:
                         {
                             'attribute_type': 'EXPENSE_CATEGORY',
                             'display_name': 'Expense Category',
-                            'value': unidecode.unidecode(u'{0}'.format(category['name'])).replace('/', '-'),
+                            'value': text_unidecode.unidecode(u'{0}'.format(category['name'])).replace('/', '-'),
                             'destination_id': category['internalId'],
                             'detail': detail,
                             'active': True
@@ -845,7 +845,7 @@ class NetSuiteConnector:
                         attributes.append({
                             'attribute_type': 'VENDOR',
                             'display_name': 'Vendor',
-                            'value': unidecode.unidecode(u'{0}'.format(vendor['entityId'])),
+                            'value': text_unidecode.unidecode(u'{0}'.format(vendor['entityId'])),
                             'destination_id': vendor['internalId'],
                             'detail': detail,
                             'active': not vendor['isInactive']
@@ -854,7 +854,7 @@ class NetSuiteConnector:
                     attributes.append({
                         'attribute_type': 'VENDOR',
                         'display_name': 'Vendor',
-                        'value': unidecode.unidecode(u'{0}'.format(vendor['entityId'])),
+                        'value': text_unidecode.unidecode(u'{0}'.format(vendor['entityId'])),
                         'destination_id': vendor['internalId'],
                         'detail': detail,
                         'active': not vendor['isInactive']
