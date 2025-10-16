@@ -1,6 +1,7 @@
 import hashlib
 import pytest
 import json
+from datetime import datetime, timezone
 from django.db.models import Q
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 from django_q.models import Schedule
@@ -19,7 +20,10 @@ from apps.fyle.tasks import (
     delete_expense_group_and_related_data,
     recreate_expense_groups,
     schedule_task_for_expense_group_fund_source_change,
-    cleanup_scheduled_task
+    cleanup_scheduled_task,
+    handle_expense_report_change,
+    _delete_expense_groups_for_report,
+    _handle_expense_ejected_from_report
 )
 from apps.workspaces.models import Configuration, FyleCredential, Workspace
 from .fixtures import data
@@ -1193,4 +1197,252 @@ def test_delete_expense_group_with_reimbursement_task_log(setup_expense_groups_f
 
     # Expense group should be deleted
     assert not ExpenseGroup.objects.filter(id=expense_group.id).exists()
+
+
+def test_handle_expense_report_change_added_to_report(db, mocker):
+    """
+    Test handle_expense_report_change with ADDED_TO_REPORT action
+    """
+    workspace = Workspace.objects.get(id=1)
+
+    expense_data = {
+        'id': 'tx1234567890',
+        'org_id': workspace.fyle_org_id,
+        'report_id': 'rp1234567890'
+    }
+
+    mock_delete = mocker.patch('apps.fyle.tasks._delete_expense_groups_for_report')
+
+    handle_expense_report_change(expense_data, 'ADDED_TO_REPORT')
+
+    mock_delete.assert_called_once()
+    args = mock_delete.call_args[0]
+    assert args[0] == 'rp1234567890'
+    assert args[1].id == workspace.id
+
+
+def test_handle_expense_report_change_ejected_from_report(db, mocker, add_expense_report_data):
+    """
+    Test handle_expense_report_change with EJECTED_FROM_REPORT action
+    """
+    workspace = Workspace.objects.get(id=1)
+    expense = add_expense_report_data['expenses'][0]
+
+    expense_data = {
+        'id': expense.expense_id,
+        'org_id': workspace.fyle_org_id,
+        'report_id': expense.report_id
+    }
+
+    mock_handle = mocker.patch('apps.fyle.tasks._handle_expense_ejected_from_report')
+
+    handle_expense_report_change(expense_data, 'EJECTED_FROM_REPORT')
+
+    mock_handle.assert_called_once()
+
+
+def test_delete_expense_groups_for_report_basic(db, mocker, add_expense_report_data):
+    """
+    Test _delete_expense_groups_for_report deletes non-exported expense groups
+    """
+    workspace = Workspace.objects.get(id=1)
+
+    expense = add_expense_report_data['expenses'][0]
+    report_id = expense.report_id
+
+    mock_delete = mocker.patch('apps.fyle.tasks.delete_expense_group_and_related_data')
+
+    _delete_expense_groups_for_report(report_id, workspace)
+
+    assert mock_delete.called
+
+
+def test_delete_expense_groups_for_report_no_expenses(db, mocker):
+    """
+    Test _delete_expense_groups_for_report with no expenses in database
+    Case: Non-existent report_id
+    """
+    workspace = Workspace.objects.get(id=1)
+    report_id = 'rpNonExistent123'
+
+    _delete_expense_groups_for_report(report_id, workspace)
+
+
+def test_delete_expense_groups_for_report_with_active_task_logs(db, mocker, add_expense_report_data):
+    """
+    Test _delete_expense_groups_for_report skips groups with active task logs
+    """
+    workspace = Workspace.objects.get(id=1)
+    expense_group = add_expense_report_data['expense_group']
+
+    TaskLog.objects.create(
+        workspace_id=workspace.id,
+        expense_group_id=expense_group.id,
+        type='CREATING_BILL',
+        status='IN_PROGRESS'
+    )
+
+    report_id = expense_group.expenses.first().report_id
+
+    mock_delete = mocker.patch('apps.fyle.tasks.delete_expense_group_and_related_data')
+
+    _delete_expense_groups_for_report(report_id, workspace)
+
+    assert not mock_delete.called
+
+
+def test_delete_expense_groups_for_report_preserves_exported(db, mocker, add_expense_report_data):
+    """
+    Test _delete_expense_groups_for_report preserves exported expense groups
+    """
+    workspace = Workspace.objects.get(id=1)
+
+    expense_group = add_expense_report_data['expense_group']
+
+    expense_group.exported_at = datetime.now(tz=timezone.utc)
+    expense_group.save()
+
+    report_id = expense_group.expenses.first().report_id
+
+    mock_delete = mocker.patch('apps.fyle.tasks.delete_expense_group_and_related_data')
+
+    _delete_expense_groups_for_report(report_id, workspace)
+
+    assert not mock_delete.called
+
+
+def test_handle_expense_ejected_from_report_removes_from_group(db, add_expense_report_data):
+    """
+    Test _handle_expense_ejected_from_report removes expense from group
+    """
+    workspace = Workspace.objects.get(id=1)
+
+    expense_group = add_expense_report_data['expense_group']
+    expenses = add_expense_report_data['expenses']
+
+    expense_to_remove = expenses[0]
+
+    expense_data = {
+        'id': expense_to_remove.expense_id,
+        'report_id': None
+    }
+
+    initial_expense_count = expense_group.expenses.count()
+
+    _handle_expense_ejected_from_report(expense_to_remove, expense_data, workspace)
+
+    expense_group.refresh_from_db()
+
+    assert expense_group.expenses.count() == initial_expense_count - 1
+    assert expense_to_remove not in expense_group.expenses.all()
+    assert ExpenseGroup.objects.filter(id=expense_group.id).exists()
+
+
+def test_handle_expense_ejected_from_report_deletes_empty_group(db, add_expense_report_data):
+    """
+    Test _handle_expense_ejected_from_report deletes group when last expense is removed
+    """
+    workspace = Workspace.objects.get(id=1)
+
+    expense_group = add_expense_report_data['expense_group']
+    expense = add_expense_report_data['expenses'][0]
+    expense_group.expenses.set([expense])
+
+    expense_data = {
+        'id': expense.expense_id,
+        'report_id': None
+    }
+
+    group_id = expense_group.id
+
+    _handle_expense_ejected_from_report(expense, expense_data, workspace)
+
+    assert not ExpenseGroup.objects.filter(id=group_id).exists()
+
+
+def test_handle_expense_ejected_from_report_no_group_found(db, add_expense_report_data):
+    """
+    Test _handle_expense_ejected_from_report when expense has no group
+    """
+    workspace = Workspace.objects.get(id=1)
+    expense = add_expense_report_data['expenses'][0]
+
+    # Remove expense from its group to simulate orphaned expense
+    expense_group = add_expense_report_data['expense_group']
+    expense_group.expenses.remove(expense)
+
+    expense_data = {
+        'id': expense.expense_id,
+        'report_id': None
+    }
+
+    _handle_expense_ejected_from_report(expense, expense_data, workspace)
+
+
+def test_handle_expense_ejected_from_report_with_active_task_log(db, add_expense_report_data):
+    """
+    Test _handle_expense_ejected_from_report skips removal when task log is active
+    """
+    workspace = Workspace.objects.get(id=1)
+
+    expense_group = add_expense_report_data['expense_group']
+    expense = add_expense_report_data['expenses'][0]
+    initial_count = expense_group.expenses.count()
+
+    TaskLog.objects.create(
+        workspace_id=workspace.id,
+        expense_group_id=expense_group.id,
+        type='CREATING_BILL',
+        status='ENQUEUED'
+    )
+
+    expense_data = {
+        'id': expense.expense_id,
+        'report_id': None
+    }
+
+    _handle_expense_ejected_from_report(expense, expense_data, workspace)
+
+    expense_group.refresh_from_db()
+
+    assert expense_group.expenses.count() == initial_count
+    assert expense in expense_group.expenses.all()
+
+
+def test_handle_expense_report_change_ejected_expense_not_found(db, mocker):
+    """
+    Test handle_expense_report_change when expense doesn't exist in workspace (EJECTED_FROM_REPORT)
+    """
+    workspace = Workspace.objects.get(id=1)
+
+    expense_data = {
+        'id': 'txNonExistent999',
+        'org_id': workspace.fyle_org_id,
+        'report_id': None
+    }
+
+    handle_expense_report_change(expense_data, 'EJECTED_FROM_REPORT')
+
+
+def test_handle_expense_report_change_ejected_from_exported_group(db, add_expense_report_data):
+    """
+    Test handle_expense_report_change skips when expense is part of exported group (EJECTED_FROM_REPORT)
+    """
+    workspace = Workspace.objects.get(id=1)
+    expense_group = add_expense_report_data['expense_group']
+    expense = add_expense_report_data['expenses'][0]
+
+    expense_group.exported_at = datetime.now(tz=timezone.utc)
+    expense_group.save()
+
+    expense_data = {
+        'id': expense.expense_id,
+        'org_id': workspace.fyle_org_id,
+        'report_id': None
+    }
+
+    handle_expense_report_change(expense_data, 'EJECTED_FROM_REPORT')
+
+    expense_group.refresh_from_db()
+    assert expense in expense_group.expenses.all()
 

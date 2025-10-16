@@ -4,8 +4,6 @@ from apps.workspaces.models import Workspace
 from apps.netsuite.queue import __create_chain_and_run
 from apps.fyle.queue import async_import_and_export_expenses
 
-from apps.workspaces.models import Workspace
-
 
 # This test is just for cov :D
 def test_create_chain_and_run(db):
@@ -53,3 +51,40 @@ def test_async_import_and_export_expenses_2(db):
     )
 
     async_import_and_export_expenses(body, worksapce.id)
+
+
+def test_async_import_and_export_expenses_ejected_from_report(db):
+    """
+    Test async_import_and_export_expenses for EJECTED_FROM_REPORT action
+    """
+    body = {
+        'action': 'EJECTED_FROM_REPORT',
+        'resource': 'EXPENSE',
+        'data': {
+            'id': 'txExpense123',
+            'org_id': 'or79Cob97KSh'
+        }
+    }
+
+    workspace = Workspace.objects.get(id=1)
+
+    async_import_and_export_expenses(body, workspace.id)
+
+
+def test_async_import_and_export_expenses_added_to_report(db):
+    """
+    Test async_import_and_export_expenses for ADDED_TO_REPORT action
+    """
+    body = {
+        'action': 'ADDED_TO_REPORT',
+        'resource': 'EXPENSE',
+        'data': {
+            'id': 'txExpense456',
+            'org_id': 'or79Cob97KSh',
+            'report_id': 'rpReport123'
+        }
+    }
+
+    workspace = Workspace.objects.get(id=1)
+
+    async_import_and_export_expenses(body, workspace.id)

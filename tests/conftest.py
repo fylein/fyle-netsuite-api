@@ -1,4 +1,3 @@
-import os
 from datetime import datetime, timezone
 from unittest import mock
 import pytest
@@ -11,6 +10,7 @@ from apps.fyle.helpers import get_access_token
 from fyle_netsuite_api.tests import settings
 
 from .test_fyle.fixtures import data as fyle_data
+from apps.fyle.models import Expense, ExpenseGroup
 
 
 @pytest.fixture
@@ -184,3 +184,105 @@ def mock_rabbitmq():
         yield mock_rabbitmq
 
 
+
+@pytest.fixture
+def add_expense_report_data(db):
+    """
+    Create test data for expense report change tests
+    """
+    workspace = Workspace.objects.get(id=1)
+
+    # Create test expenses
+    expense1 = Expense.objects.create(
+        workspace_id=workspace.id,
+        expense_id='tx_report_test_1',
+        employee_email='test@fyle.in',
+        employee_name='Test Employee',
+        category='Meals',
+        sub_category='Team Meals',
+        project='Test Project',
+        expense_number='E/2024/01/T/1',
+        claim_number='C/2024/01/R/1',
+        amount=100.0,
+        currency='USD',
+        foreign_amount=100.0,
+        foreign_currency='USD',
+        settlement_id='setl_test_1',
+        reimbursable=True,
+        billable=False,
+        state='APPROVED',
+        vendor='Test Vendor',
+        cost_center='Test Cost Center',
+        purpose='Test meal expense',
+        report_id='rp_test_report_1',
+        report_title='Test Report 1',
+        spent_at='2024-01-01T00:00:00Z',
+        approved_at='2024-01-01T00:00:00Z',
+        expense_created_at='2024-01-01T00:00:00Z',
+        expense_updated_at='2024-01-01T00:00:00Z',
+        created_at='2024-01-01T00:00:00Z',
+        updated_at='2024-01-01T00:00:00Z',
+        fund_source='PERSONAL',
+        verified_at='2024-01-01T00:00:00Z',
+        custom_properties={},
+        org_id=workspace.fyle_org_id,
+        file_ids=[],
+        accounting_export_summary={}
+    )
+
+    expense2 = Expense.objects.create(
+        workspace_id=workspace.id,
+        expense_id='tx_report_test_2',
+        employee_email='test@fyle.in',
+        employee_name='Test Employee',
+        category='Travel',
+        sub_category='Flight',
+        project='Test Project',
+        expense_number='E/2024/01/T/2',
+        claim_number='C/2024/01/R/1',
+        amount=200.0,
+        currency='USD',
+        foreign_amount=200.0,
+        foreign_currency='USD',
+        settlement_id='setl_test_2',
+        reimbursable=True,
+        billable=False,
+        state='APPROVED',
+        vendor='Test Airline',
+        cost_center='Test Cost Center',
+        purpose='Test travel expense',
+        report_id='rp_test_report_1',
+        report_title='Test Report 1',
+        spent_at='2024-01-01T00:00:00Z',
+        approved_at='2024-01-01T00:00:00Z',
+        expense_created_at='2024-01-01T00:00:00Z',
+        expense_updated_at='2024-01-01T00:00:00Z',
+        created_at='2024-01-01T00:00:00Z',
+        updated_at='2024-01-01T00:00:00Z',
+        fund_source='PERSONAL',
+        verified_at='2024-01-01T00:00:00Z',
+        custom_properties={},
+        org_id=workspace.fyle_org_id,
+        file_ids=[],
+        accounting_export_summary={}
+    )
+
+    # Create non-exported expense group
+    expense_group = ExpenseGroup.objects.create(
+        workspace_id=workspace.id,
+        fund_source='PERSONAL',
+        exported_at=None,
+        description={
+            'report_id': 'rp_test_report_1',
+            'employee_email': 'test@fyle.in',
+            'claim_number': 'C/2024/01/R/1',
+            'fund_source': 'PERSONAL'
+        }
+    )
+    expense_group.expenses.add(expense1, expense2)
+
+    return {
+        'workspace': workspace,
+        'expenses': [expense1, expense2],
+        'expense_group': expense_group
+    }

@@ -344,7 +344,7 @@ def import_and_export_expenses(report_id: str, org_id: str, is_state_change_even
                 if not is_real_time_export_enabled or not feature_configuration.feature.real_time_export_1hr_orgs:
                     return
 
-            logger.info(f'Exporting expenses for workspace {workspace.id} with expense group ids {expense_group_ids}, triggered by {imported_from}')
+            logger.info('Exporting expenses for workspace %s with expense group ids %s, triggered by %s', workspace.id, expense_group_ids, imported_from)
             export_to_netsuite(
                 workspace_id=workspace.id,
                 expense_group_ids=expense_group_ids,
@@ -685,6 +685,144 @@ def delete_expenses_in_db(expense_ids: List[int], workspace_id: int) -> None:
     worker_logger = get_logger()
     deleted_count = Expense.objects.filter(id__in=expense_ids, workspace_id=workspace_id).delete()[0]
     worker_logger.info("Deleted %s expenses in workspace %s", deleted_count, workspace_id)
+
+
+def handle_expense_report_change(expense_data: dict, action_type: str) -> None:
+    """
+    Handle expense report changes (EJECTED_FROM_REPORT, ADDED_TO_REPORT)
+    :param expense_data: Expense data from webhook
+    :param action_type: Type of action (EJECTED_FROM_REPORT or ADDED_TO_REPORT)
+    :return: None
+    """
+    worker_logger = get_logger()
+    org_id = expense_data['org_id']
+    expense_id = expense_data['id']
+    workspace = Workspace.objects.get(fyle_org_id=org_id)
+
+    if action_type == 'ADDED_TO_REPORT':
+        report_id = expense_data.get('report_id')
+
+        worker_logger.info("Processing ADDED_TO_REPORT for expense %s in workspace %s, report_id: %s", expense_id, workspace.id, report_id)
+        _delete_expense_groups_for_report(report_id, workspace)
+        return
+
+    elif action_type == 'EJECTED_FROM_REPORT':
+        expense = Expense.objects.filter(workspace_id=workspace.id, expense_id=expense_id).first()
+
+        if not expense:
+            worker_logger.warning("Expense %s not found in workspace %s for action %s", expense_id, workspace.id, action_type)
+            return
+
+        expense_group = ExpenseGroup.objects.filter(
+            expenses=expense,
+            workspace_id=workspace.id,
+            exported_at__isnull=False
+        ).first()
+
+        if expense_group:
+            worker_logger.info("Skipping %s for expense %s as it's part of exported expense group %s", action_type, expense_id, expense_group.id)
+            return
+
+        worker_logger.info("Processing %s for expense %s in workspace %s", action_type, expense_id, workspace.id)
+        _handle_expense_ejected_from_report(expense, expense_data, workspace)
+
+
+def _delete_expense_groups_for_report(report_id: str, workspace: Workspace) -> None:
+    """
+    Delete all non-exported expense groups for a report
+    When expenses are added to a report, the report goes to SUBMITTED state which is not importable.
+    This function deletes all expense groups for the report so they can be recreated when the report
+    changes to an importable state (APPROVED/PAYMENT_PROCESSING/PAID) via state change webhook.
+
+    :param report_id: Report ID
+    :param workspace: Workspace object
+    :return: None
+    """
+    worker_logger = get_logger()
+    worker_logger.info("Deleting expense groups for report %s in workspace %s", report_id, workspace.id)
+
+    expense_ids = Expense.objects.filter(
+        workspace_id=workspace.id,
+        report_id=report_id
+    ).values_list('id', flat=True)
+
+    if not expense_ids:
+        worker_logger.info("No expenses found for report %s in workspace %s", report_id, workspace.id)
+        return
+
+    expense_groups = ExpenseGroup.objects.filter(
+        expenses__id__in=expense_ids,
+        workspace_id=workspace.id,
+        exported_at__isnull=True
+    ).distinct()
+
+    deleted_count = 0
+    skipped_count = 0
+
+    for expense_group in expense_groups:
+        active_task_logs = TaskLog.objects.filter(
+            expense_group_id=expense_group.id,
+            workspace_id=workspace.id,
+            status__in=['ENQUEUED', 'IN_PROGRESS']
+        ).exists()
+
+        if active_task_logs:
+            worker_logger.warning("Skipping deletion of expense group %s - active task logs exist", expense_group.id)
+            skipped_count += 1
+            continue
+
+        worker_logger.info("Deleting expense group %s for report %s", expense_group.id, report_id)
+
+        with transaction.atomic():
+            delete_expense_group_and_related_data(expense_group, workspace.id)
+
+        deleted_count += 1
+
+    worker_logger.info("Completed deletion for report %s in workspace %s - deleted: %s, skipped: %s",
+                report_id, workspace.id, deleted_count, skipped_count)
+
+
+def _handle_expense_ejected_from_report(expense: Expense, expense_data: dict, workspace: Workspace) -> None:
+    """
+    Handle expense ejected from report
+    :param expense: Expense object
+    :param expense_data: Expense data from webhook
+    :param workspace: Workspace object
+    :return: None
+    """
+    worker_logger = get_logger()
+    worker_logger.info("Handling expense %s ejected from report in workspace %s", expense.expense_id, workspace.id)
+
+    expense_group = ExpenseGroup.objects.filter(
+        expenses=expense,
+        workspace_id=workspace.id,
+        exported_at__isnull=True
+    ).first()
+
+    if not expense_group:
+        worker_logger.info("No expense group found for expense %s in workspace %s", expense.expense_id, workspace.id)
+        return
+
+    worker_logger.info("Removing expense %s from expense group %s", expense.expense_id, expense_group.id)
+
+    active_task_logs = TaskLog.objects.filter(
+        expense_group_id=expense_group.id,
+        workspace_id=workspace.id,
+        status__in=['ENQUEUED', 'IN_PROGRESS']
+    ).exists()
+
+    if active_task_logs:
+        worker_logger.warning("Cannot remove expense %s from group %s - active task logs exist", expense.expense_id, expense_group.id)
+        return
+
+    with transaction.atomic():
+        expense_group.expenses.remove(expense)
+
+        if not expense_group.expenses.exists():
+            worker_logger.info("Deleting empty expense group %s after removing expense %s", expense_group.id, expense.expense_id)
+            delete_expense_group_and_related_data(expense_group, workspace.id)
+        else:
+            worker_logger.info("Expense group %s still has expenses after removing %s", expense_group.id, expense.expense_id)
 
 
 def update_non_exported_expenses(data: Dict) -> None:
