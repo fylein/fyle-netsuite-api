@@ -1,6 +1,7 @@
 """
 Workspace Models
 """
+from functools import cache
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import ArrayField
@@ -8,6 +9,7 @@ from django.contrib.postgres.fields import ArrayField
 from django_q.models import Schedule
 from django.db.models import JSONField
 from fyle_accounting_mappings.mixins import AutoAddCreateUpdateInfoMixin
+from fyle_accounting_library.fyle_platform.enums import CacheKeyEnum
 
 User = get_user_model()
 
@@ -226,3 +228,44 @@ class LastExportDetail(models.Model):
 
     class Meta:
         db_table = 'last_export_details'
+
+
+class FeatureConfig(models.Model):
+    """
+    Table to store Feature configs
+    """
+    id = models.AutoField(primary_key=True)
+    workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
+    export_via_rabbitmq = models.BooleanField(default=False, help_text='Enable export via rabbitmq')
+    fyle_webhook_sync_enabled = models.BooleanField(default=False, help_text='Enable fyle attribute webhook sync')
+    created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')
+    updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime')
+
+    @classmethod
+    def get_feature_config(cls, workspace_id: int, key: str):
+        """
+        Get cached feature config value for workspace
+        Cache for 48 hours (172800 seconds)
+        :param workspace_id: workspace id
+        :param key: feature config key (export_via_rabbitmq, import_via_rabbitmq, fyle_webhook_sync_enabled)
+        :return: Boolean value for the requested feature
+        """
+        cache_key_map = {
+            'export_via_rabbitmq': CacheKeyEnum.FEATURE_CONFIG_EXPORT_VIA_RABBITMQ,
+            'fyle_webhook_sync_enabled': CacheKeyEnum.FEATURE_CONFIG_FYLE_WEBHOOK_SYNC_ENABLED
+        }
+
+        cache_key_enum = cache_key_map.get(key)
+        cache_key = cache_key_enum.value.format(workspace_id=workspace_id)
+        cached_value = cache.get(cache_key)
+
+        if cached_value is not None:
+            return cached_value
+
+        feature_config = cls.objects.get(workspace_id=workspace_id)
+        value = getattr(feature_config, key)
+        cache.set(cache_key, value, 172800)
+        return value
+
+    class Meta:
+        db_table = 'feature_configs'
