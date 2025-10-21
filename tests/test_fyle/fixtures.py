@@ -56082,4 +56082,119 @@ data = {
             ]
         }
     ],
+
+    # Expense report change webhook test data
+    "expense_report_change_webhooks": {
+        "ejected_from_report": {
+            "action": "EJECTED_FROM_REPORT",
+            "resource": "EXPENSE",
+            "data": {
+                "id": "tx4fasdasdfyIsv",
+                "employee_email": "jhonsnow@fyle.in",
+                "employee_name": "John Snow",
+                "category": "Meals",
+                "sub_category": "Team Meals",
+                "project": "Test Project",
+                "project_id": 263589,
+                "expense_number": "E/2021/12/T/7",
+                "org_id": "or79Cob97KSh",
+                "claim_number": None,
+                "amount": 150,
+                "currency": "USD",
+                "reimbursable": True,
+                "billable": False,
+                "state": "DRAFT",
+                "vendor": None,
+                "cost_center": None,
+                "purpose": "Team lunch",
+                "report_id": None,
+                "spent_at": "2021-12-22T07:30:26.289842+00:00",
+                "approved_at": None,
+                "posted_at": None,
+                "expense_created_at": "2021-12-23T07:14:13.990650+00:00",
+                "expense_updated_at": "2021-12-27T05:26:43.954470+00:00",
+                "source_account_type": "PERSONAL_CASH_ACCOUNT",
+                "verified_at": None,
+                "custom_properties": {},
+                "is_posted_at_null": True
+            }
+        },
+        "added_to_report": {
+            "action": "ADDED_TO_REPORT",
+            "resource": "EXPENSE",
+            "data": {
+                "id": "tx4fasdasdfyIsv",
+                "employee_email": "jhonsnow@fyle.in",
+                "employee_name": "John Snow",
+                "category": "Meals",
+                "sub_category": "Team Meals",
+                "project": "Test Project",
+                "project_id": 263589,
+                "expense_number": "E/2021/12/T/7",
+                "org_id": "or79Cob97KSh",
+                "claim_number": "C/2023/12/R/2",
+                "amount": 150,
+                "currency": "USD",
+                "reimbursable": True,
+                "billable": False,
+                "state": "SUBMITTED",
+                "vendor": None,
+                "cost_center": None,
+                "purpose": "Team lunch",
+                "report_id": "rp1s1L3QtMpF",
+                "spent_at": "2021-12-22T07:30:26.289842+00:00",
+                "approved_at": None,
+                "posted_at": None,
+                "expense_created_at": "2021-12-23T07:14:13.990650+00:00",
+                "expense_updated_at": "2021-12-27T05:26:43.954470+00:00",
+                "source_account_type": "PERSONAL_CASH_ACCOUNT",
+                "verified_at": None,
+                "custom_properties": {},
+                "is_posted_at_null": True
+            }
+        }
+    },
+
+    # Test expense group data for report change tests
+    "test_expense_group_data": {
+        "non_exported_group": {
+            "workspace_id": 1,
+            "fund_source": "PERSONAL",
+            "exported_at": None,
+            "description": {
+                "employee_email": "test@fyle.in",
+                "settlement_id": "set123456",
+                "fund_source": "PERSONAL"
+            }
+        },
+        "exported_group": {
+            "workspace_id": 1,
+            "fund_source": "PERSONAL",
+            "exported_at": "2023-01-01T00:00:00+00:00",
+            "description": {
+                "employee_email": "test@fyle.in",
+                "settlement_id": "set123456",
+                "fund_source": "PERSONAL"
+            }
+        }
+    },
+
+    # Test task log data
+    "test_task_log_data": {
+        "active_task": {
+            "workspace_id": 1,
+            "type": "CREATING_BILLS",
+            "status": "IN_PROGRESS"
+        },
+        "completed_task": {
+            "workspace_id": 1,
+            "type": "CREATING_BILLS",
+            "status": "COMPLETE"
+        },
+        "failed_task": {
+            "workspace_id": 1,
+            "type": "CREATING_BILLS",
+            "status": "FAILED"
+        }
+    }
 }
