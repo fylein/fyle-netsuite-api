@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
             name='FeatureConfig',
             fields=[
                 ('id', models.AutoField(primary_key=True, serialize=False)),
-                ('export_via_rabbitmq', models.BooleanField(default=True, help_text='Enable export via rabbitmq')),
+                ('export_via_rabbitmq', models.BooleanField(default=False, help_text='Enable export via rabbitmq')),
                 ('fyle_webhook_sync_enabled', models.BooleanField(default=False, help_text='Enable fyle attribute webhook sync')),
                 ('created_at', models.DateTimeField(auto_now_add=True, help_text='Created at datetime')),
                 ('updated_at', models.DateTimeField(auto_now=True, help_text='Updated at datetime')),
