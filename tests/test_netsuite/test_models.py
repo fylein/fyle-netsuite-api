@@ -482,4 +482,116 @@ def test_support_post_date_integrations(mocker, db):
     assert bill.entity_id == '1674'
     assert bill.transaction_date.strftime("%m/%d/%Y") == expense_objects.posted_at.strftime("%m/%d/%Y")
 
+
+def test_default_class_in_bill_lineitems(db):
+    """
+    Test that default class from GeneralMapping is applied to BillLineitem
+    when no class mapping exists and class_level is TRANSACTION_LINE or ALL
+    """
+    expense_group = ExpenseGroup.objects.get(id=2)
+
+    general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
+    general_mappings.class_id = '999'
+    general_mappings.class_level = 'TRANSACTION_LINE'
+    general_mappings.save()
+
+    bill = Bill.create_bill(expense_group)
+    configuration = Configuration.objects.get(workspace_id=1)
+    bill_lineitems = BillLineitem.create_bill_lineitems(expense_group, configuration)
     
+    for bill_lineitem in bill_lineitems:
+        assert bill_lineitem.class_id == '999', 'Default class should be applied to bill lineitem'
+
+    general_mappings.class_level = 'ALL'
+    general_mappings.save()
+
+    bill_lineitems = BillLineitem.create_bill_lineitems(expense_group, configuration)
+    for bill_lineitem in bill_lineitems:
+        assert bill_lineitem.class_id == '999', 'Default class should be applied when class_level is ALL'
+
+    general_mappings.class_level = 'TRANSACTION_BODY'
+    general_mappings.save()
+
+    bill_lineitems = BillLineitem.create_bill_lineitems(expense_group, configuration)
+    for bill_lineitem in bill_lineitems:
+        assert bill_lineitem.class_id is None, 'Default class should not be applied when class_level is TRANSACTION_BODY'
+
+
+def test_default_class_in_credit_card_charge_lineitems(db):
+    """
+    Test that default class from GeneralMapping is applied to CreditCardChargeLineItem
+    when no class mapping exists and class_level is TRANSACTION_LINE or ALL
+    """
+    expense_group = ExpenseGroup.objects.get(id=4)
+    general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
+    general_mappings.class_id = '888'
+    general_mappings.class_level = 'TRANSACTION_LINE'
+    general_mappings.save()
+
+    credit_card = CreditCardCharge.create_credit_card_charge(expense_group)
+    configuration = Configuration.objects.get(workspace_id=2)
+    credit_card_lineitems = CreditCardChargeLineItem.create_credit_card_charge_lineitems(expense_group, configuration)
+
+    for lineitem in credit_card_lineitems:
+        assert lineitem.class_id == '888', 'Default class should be applied to credit card charge lineitem'
+
+    general_mappings.class_level = 'ALL'
+    general_mappings.save()
+
+    credit_card_lineitems = CreditCardChargeLineItem.create_credit_card_charge_lineitems(expense_group, configuration)
+    for lineitem in credit_card_lineitems:
+        assert lineitem.class_id == '888', 'Default class should be applied when class_level is ALL'
+
+
+def test_default_class_in_expense_report_lineitems(db):
+    """
+    Test that default class from GeneralMapping is applied to ExpenseReportLineItem
+    when no class mapping exists and class_level is TRANSACTION_LINE or ALL
+    """
+    expense_group = ExpenseGroup.objects.get(id=1)
+
+    general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
+    general_mappings.class_id = '777'
+    general_mappings.class_level = 'TRANSACTION_LINE'
+    general_mappings.save()
+
+    expense_report = ExpenseReport.create_expense_report(expense_group)
+    configuration = Configuration.objects.get(workspace_id=1)
+    expense_report_lineitems = ExpenseReportLineItem.create_expense_report_lineitems(expense_group, configuration)
+
+    for lineitem in expense_report_lineitems:
+        assert lineitem.class_id == '777', 'Default class should be applied to expense report lineitem'
+
+    general_mappings.class_level = 'ALL'
+    general_mappings.save()
+
+    expense_report_lineitems = ExpenseReportLineItem.create_expense_report_lineitems(expense_group, configuration)
+    for lineitem in expense_report_lineitems:
+        assert lineitem.class_id == '777', 'Default class should be applied when class_level is ALL'
+
+
+def test_default_class_in_journal_entry_lineitems(db):
+    """
+    Test that default class from GeneralMapping is applied to JournalEntryLineItem
+    when no class mapping exists and class_level is TRANSACTION_LINE or ALL
+    """
+    expense_group = ExpenseGroup.objects.get(id=1)
+
+    general_mappings = GeneralMapping.objects.get(workspace_id=expense_group.workspace_id)
+    general_mappings.class_id = '666'
+    general_mappings.class_level = 'TRANSACTION_LINE'
+    general_mappings.save()
+
+    journal_entry = JournalEntry.create_journal_entry(expense_group)
+    configuration = Configuration.objects.get(workspace_id=1)
+    journal_entry_lineitems = JournalEntryLineItem.create_journal_entry_lineitems(expense_group, configuration)
+
+    for lineitem in journal_entry_lineitems:
+        assert lineitem.class_id == '666', 'Default class should be applied to journal entry lineitem'
+
+    general_mappings.class_level = 'ALL'
+    general_mappings.save()
+
+    journal_entry_lineitems = JournalEntryLineItem.create_journal_entry_lineitems(expense_group, configuration)
+    for lineitem in journal_entry_lineitems:
+        assert lineitem.class_id == '666', 'Default class should be applied when class_level is ALL'
