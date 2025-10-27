@@ -17,12 +17,9 @@ from apps.fyle.models import Expense, ExpenseGroup
 def api_client():
     return APIClient()
 
+
 @pytest.fixture()
 def access_token(db):
-    """
-    Creates a connection with Fyle
-    """
-
     client_id = settings.FYLE_CLIENT_ID
     client_secret = settings.FYLE_CLIENT_SECRET
     token_url = settings.FYLE_TOKEN_URI
@@ -53,6 +50,7 @@ def access_token(db):
     auth_token.save()
 
     return final_access_token
+
 
 @pytest.fixture(autouse=True)
 def add_netsuite_credentials(db):
@@ -109,6 +107,7 @@ def add_netsuite_credentials(db):
             }
         )
 
+
 @pytest.fixture(autouse=True)
 def add_fyle_credentials(db):
     workspaces = [1,2,49]
@@ -120,6 +119,21 @@ def add_fyle_credentials(db):
                 'cluster_domain': 'https://staging.fyle.tech'
             }
         )
+
+
+@pytest.fixture(autouse=True)
+def add_feature_config(db):
+    from apps.workspaces.models import FeatureConfig
+    workspaces = [1,2,49]
+    for workspace_id in workspaces:
+        FeatureConfig.objects.get_or_create(
+            workspace_id=workspace_id,
+            defaults={
+                'export_via_rabbitmq': False,
+                'fyle_webhook_sync_enabled': False
+            }
+        )
+
 
 @pytest.fixture(scope="session", autouse=True)
 def default_session_fixture(request):
@@ -174,6 +188,7 @@ def default_session_fixture(request):
     )
     patched_8.__enter__()
 
+
 @pytest.fixture(autouse=True)
 def mock_rabbitmq():
     with mock.patch('apps.fyle.queue.RabbitMQConnection.get_instance') as mock_rabbitmq:
@@ -184,15 +199,10 @@ def mock_rabbitmq():
         yield mock_rabbitmq
 
 
-
 @pytest.fixture
 def add_expense_report_data(db):
-    """
-    Create test data for expense report change tests
-    """
     workspace = Workspace.objects.get(id=1)
 
-    # Create test expenses
     expense1 = Expense.objects.create(
         workspace_id=workspace.id,
         expense_id='tx_report_test_1',
@@ -267,7 +277,6 @@ def add_expense_report_data(db):
         accounting_export_summary={}
     )
 
-    # Create non-exported expense group
     expense_group = ExpenseGroup.objects.create(
         workspace_id=workspace.id,
         fund_source='PERSONAL',

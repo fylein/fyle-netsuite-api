@@ -21,7 +21,7 @@ from fyle.platform import exceptions as fyle_exc
 from fyle_rest_auth.utils import AuthUtils
 from fyle_rest_auth.models import AuthToken
 from fyle_rest_auth.helpers import get_fyle_admin
-from fyle_accounting_mappings.models import ExpenseAttribute
+from fyle_accounting_mappings.models import ExpenseAttribute, FyleSyncTimestamp
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 
 from fyle_netsuite_api.utils import assert_valid, invalidate_netsuite_credentials
@@ -141,6 +141,7 @@ class WorkspaceView(viewsets.ViewSet):
 
             ExpenseGroupSettings.objects.create(workspace_id=workspace.id)
             LastExportDetail.objects.create(workspace_id=workspace.id)
+            FyleSyncTimestamp.objects.create(workspace_id=workspace.id)
 
             workspace.user.add(User.objects.get(user_id=request.user))
 

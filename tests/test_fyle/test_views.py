@@ -2,8 +2,9 @@ import json
 import pytest
 from unittest import mock
 from django.urls import reverse
+from datetime import datetime, timezone
 from apps.fyle.models import ExpenseGroup
-from apps.workspaces.models import FyleCredential, Workspace
+from apps.workspaces.models import FyleCredential, Workspace, FeatureConfig
 from tests.helper import dict_compare_keys
 from .fixtures import data
 
@@ -411,3 +412,80 @@ def test_exportable_expense_group_view(api_client, access_token):
 
    response = json.loads(response.content)
    assert response['exportable_expense_group_ids'] == [1, 2]
+
+
+@pytest.mark.django_db(databases=['default'])
+def test_sync_dimension_with_webhook_sync_disabled(api_client, access_token):
+   url = reverse('sync-fyle-dimensions',
+      kwargs={
+         'workspace_id': 1,
+      }
+   )
+
+   api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
+
+   feature_config = FeatureConfig.objects.get(workspace_id=1)
+   feature_config.fyle_webhook_sync_enabled = False
+   feature_config.save()
+
+   with mock.patch('apps.fyle.helpers.check_interval_and_sync_dimension') as mock_sync:
+      response = api_client.post(url)
+      assert response.status_code == 200
+
+
+@pytest.mark.django_db(databases=['default'])
+def test_sync_dimension_with_webhook_sync_enabled_first_time(api_client, access_token):
+   url = reverse('sync-fyle-dimensions',
+      kwargs={
+         'workspace_id': 1,
+      }
+   )
+
+   api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
+
+   workspace = Workspace.objects.get(id=1)
+   workspace.source_synced_at = None
+   workspace.save()
+
+   feature_config = FeatureConfig.objects.get(workspace_id=1)
+   feature_config.fyle_webhook_sync_enabled = True
+   feature_config.save()
+
+   with mock.patch('apps.fyle.helpers.check_interval_and_sync_dimension') as mock_sync:
+      response = api_client.post(url)
+      assert response.status_code == 200
+
+
+@pytest.mark.django_db(databases=['default'])
+def test_sync_dimension_with_webhook_sync_enabled_already_synced(api_client, access_token):
+   from django.core.cache import cache
+   from fyle_accounting_library.fyle_platform.enums import CacheKeyEnum
+   
+   url = reverse('sync-fyle-dimensions',
+      kwargs={
+         'workspace_id': 1,
+      }
+   )
+
+   api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
+
+   workspace = Workspace.objects.get(id=1)
+   workspace.source_synced_at = datetime.now(tz=timezone.utc)
+   workspace.save()
+   workspace.refresh_from_db()
+
+   feature_config = FeatureConfig.objects.get(workspace_id=1)
+   feature_config.fyle_webhook_sync_enabled = True
+   feature_config.save()
+
+   cache_key = CacheKeyEnum.FEATURE_CONFIG_FYLE_WEBHOOK_SYNC_ENABLED.value.format(workspace_id=1)
+   cache.set(cache_key, True, 172800)
+
+   with mock.patch('apps.fyle.views.logger') as mock_logger:
+      with mock.patch('apps.fyle.helpers.check_interval_and_sync_dimension') as mock_sync:
+         response = api_client.post(url)
+         assert response.status_code == 200
+         mock_sync.assert_not_called()
+         mock_logger.info.assert_called_with(
+            "Skipping sync_dimensions for workspace 1 as webhook sync is enabled"
+         )

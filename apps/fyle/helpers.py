@@ -6,9 +6,11 @@ from datetime import datetime, timezone
 from fyle_integrations_platform_connector import PlatformConnector
 
 from django.conf import settings
+from django.core.cache import cache
 from django.db.models import Q
 from django.utils.module_loading import import_string
 from rest_framework.exceptions import ValidationError
+from fyle_accounting_library.fyle_platform.enums import CacheKeyEnum
 from fyle_accounting_mappings.models import ExpenseAttribute
 
 from apps.fyle.models import ExpenseGroupSettings, ExpenseFilter, ExpenseGroup, Expense
@@ -444,9 +446,21 @@ def assert_valid_request(workspace_id:int, fyle_org_id:str):
     Assert if the request is valid by checking
     the url_workspace_id and fyle_org_id workspace
     """
-    workspace = Workspace.objects.get(fyle_org_id=fyle_org_id)
-    if workspace.id != workspace_id:
-        raise ValidationError('Workspace mismatch')
+    cache_key = CacheKeyEnum.WORKSPACE_VALIDATION.value.format(workspace_id=workspace_id, fyle_org_id=fyle_org_id)
+
+    cached_result = cache.get(cache_key)
+    if cached_result:
+        return
+
+    try:
+        workspace = Workspace.objects.get(fyle_org_id=fyle_org_id)
+        if workspace.id == workspace_id:
+            cache.set(cache_key, True, 2592000)  # Cache for 30 days
+            return
+        else:
+            raise ValidationError('Workspace mismatch')
+    except Workspace.DoesNotExist:
+        raise ValidationError('Workspace not found')
 
 
 class AdvanceSearchFilter(django_filters.FilterSet):

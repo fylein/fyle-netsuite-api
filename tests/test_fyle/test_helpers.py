@@ -1,6 +1,8 @@
 import pytest
+from django.core.cache import cache
 from rest_framework.response import Response
 from rest_framework.views import status
+from rest_framework.exceptions import ValidationError
 from datetime import datetime, timezone
 from apps.fyle.helpers import *
 from apps.fyle.models import ExpenseGroupSettings, ExpenseFilter
@@ -787,3 +789,19 @@ def test_bulk_update_expenses(db):
         assert expense.accounting_export_summary['error_type'] == None
         assert expense.accounting_export_summary['url'] == '{}/workspaces/{}/expense_groups?page_number=0&page_size=10&state=SKIP'.format(settings.NETSUITE_INTEGRATION_APP_URL, expense.workspace_id)
         assert expense.accounting_export_summary['id'] == expense.expense_id
+
+
+@pytest.mark.django_db()
+def test_assert_valid_request():
+    workspace = Workspace.objects.get(id=1)
+    cache.clear()
+
+    assert_valid_request(workspace_id=1, fyle_org_id=workspace.fyle_org_id)
+
+    assert_valid_request(workspace_id=1, fyle_org_id=workspace.fyle_org_id)
+
+    cache.clear()
+
+    with pytest.raises(ValidationError) as exc_info:
+        assert_valid_request(workspace_id=1, fyle_org_id='invalid_org_id')
+    assert 'Workspace not found' in str(exc_info.value)
