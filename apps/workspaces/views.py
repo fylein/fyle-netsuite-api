@@ -32,7 +32,7 @@ from apps.fyle.helpers import get_cluster_domain
 from apps.users.models import User
 from apps.tasks.models import TaskLog
 
-from .models import LastExportDetail, Workspace, FyleCredential, NetSuiteCredentials, Configuration, \
+from .models import FeatureConfig, LastExportDetail, Workspace, FyleCredential, NetSuiteCredentials, Configuration, \
     WorkspaceSchedule
 from apps.workspaces.tasks import schedule_sync, patch_integration_settings
 from apps.workspaces.actions import export_to_netsuite
@@ -141,6 +141,7 @@ class WorkspaceView(viewsets.ViewSet):
 
             ExpenseGroupSettings.objects.create(workspace_id=workspace.id)
             LastExportDetail.objects.create(workspace_id=workspace.id)
+            FeatureConfig.objects.create(workspace_id=workspace.id)
             FyleSyncTimestamp.objects.create(workspace_id=workspace.id)
 
             workspace.user.add(User.objects.get(user_id=request.user))
