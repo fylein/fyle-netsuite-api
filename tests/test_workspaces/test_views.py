@@ -11,7 +11,7 @@ from django.db.models import Q
 from apps.tasks.models import TaskLog
 from apps.workspaces.models import Configuration, FyleCredential, NetSuiteCredentials, WorkspaceSchedule, LastExportDetail, Workspace
 from .fixtures import *
-from fyle_accounting_mappings.models import ExpenseAttribute
+from fyle_accounting_mappings.models import ExpenseAttribute, FyleSyncTimestamp
 from tests.test_netsuite.fixtures import data as netsuite_data
 from tests.test_fyle.fixtures import data as fyle_data
 from tests.helper import dict_compare_keys, get_response_dict
@@ -168,6 +168,40 @@ def test_post_of_workspace(api_client, access_token, mocker):
     )
     response = api_client.post(url)
     assert response.status_code == 200
+
+
+@pytest.mark.django_db(databases=['default'])
+def test_workspace_creation_with_fyle_sync_timestamp(api_client, access_token, mocker):
+    url = reverse('workspace')
+
+    new_org_data = {
+        'data': {
+            'org': {
+                'name': 'New Test Workspace',
+                'id': 'or_new_test_12345',
+                'currency': 'USD'
+            }
+        }
+    }
+
+    mocker.patch(
+        'apps.workspaces.views.get_fyle_admin',
+        return_value=new_org_data
+    )
+
+    mocker.patch(
+        'apps.workspaces.views.get_cluster_domain',
+        return_value='https://staging.fyle.tech/'
+    )
+
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
+    response = api_client.post(url)
+    assert response.status_code == 200
+
+    workspace = Workspace.objects.get(fyle_org_id='or_new_test_12345')
+
+    sync_timestamp = FyleSyncTimestamp.objects.filter(workspace_id=workspace.id).first()
+    assert sync_timestamp is not None
 
 
 @pytest.mark.django_db(databases=['default'])

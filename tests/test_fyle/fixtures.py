@@ -56196,5 +56196,60 @@ data = {
             "type": "CREATING_BILLS",
             "status": "FAILED"
         }
+    },
+
+    # Webhook attribute test data
+    "webhook_attribute_data": {
+        "category_created": {
+            "action": "CREATED",
+            "resource": "CATEGORY",
+            "data": {
+                "id": 12345,
+                "name": "Food",
+                "sub_category": "Lunch",
+                "code": "FOOD001",
+                "is_enabled": True,
+                "org_id": "or79Cob97KSh1"
+            }
+        },
+        "project_updated": {
+            "action": "UPDATED",
+            "resource": "PROJECT",
+            "data": {
+                "id": 67890,
+                "name": "Project Alpha",
+                "sub_project": "Phase 1",
+                "code": "PA001",
+                "is_enabled": True,
+                "org_id": "or79Cob97KSh1"
+            }
+        },
+        "employee_deleted": {
+            "action": "DELETED",
+            "resource": "EMPLOYEE",
+            "data": {
+                "id": 111222,
+                "user": {
+                    "id": "user123",
+                    "email": "employee@fyle.in",
+                    "full_name": "Test Employee"
+                },
+                "user_id": "user123",
+                "code": "EMP001",
+                "is_enabled": False,
+                "org_id": "or79Cob97KSh1"
+            }
+        },
+        "cost_center_created": {
+            "action": "CREATED",
+            "resource": "COST_CENTER",
+            "data": {
+                "id": 33333,
+                "name": "Marketing",
+                "code": "MKT001",
+                "is_enabled": True,
+                "org_id": "or79Cob97KSh1"
+            }
+        }
     }
 }

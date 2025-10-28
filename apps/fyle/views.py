@@ -15,7 +15,7 @@ from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 from fyle_accounting_mappings.models import ExpenseAttribute
 from fyle_accounting_mappings.serializers import ExpenseAttributeSerializer
 
-from apps.workspaces.models import FyleCredential, Workspace
+from apps.workspaces.models import FyleCredential, Workspace, FeatureConfig
 from fyle_netsuite_api.utils import LookupFieldMixin
 
 from .tasks import schedule_expense_group_creation, get_task_log_and_fund_source, create_expense_groups
@@ -23,7 +23,7 @@ from .helpers import ExpenseGroupSearchFilter, ExpenseSearchFilter, check_interv
 from .models import Expense, ExpenseGroup, ExpenseGroupSettings, ExpenseFilter
 from .serializers import ExpenseGroupSerializer, ExpenseSerializer, ExpenseFieldSerializer, \
     ExpenseGroupSettingsSerializer, ExpenseFilterSerializer, ExpenseGroupExpenseSerializer
-from .queue import async_import_and_export_expenses
+from .queue import handle_webhook_callback
 from .constants import DEFAULT_FYLE_CONDITIONS
 
 from apps.exceptions import handle_view_exceptions
@@ -269,6 +269,13 @@ class SyncFyleDimensionView(generics.ListCreateAPIView):
             workspace = Workspace.objects.get(pk=kwargs['workspace_id'])
             FyleCredential.objects.get(workspace_id=workspace.id)
 
+            fyle_webhook_sync_enabled = FeatureConfig.get_feature_config(workspace_id=kwargs['workspace_id'], key='fyle_webhook_sync_enabled')
+            if fyle_webhook_sync_enabled and workspace.source_synced_at is not None:
+                logger.info(f"Skipping sync_dimensions for workspace {kwargs['workspace_id']} as webhook sync is enabled")
+                return Response(
+                    status=status.HTTP_200_OK
+                )
+
             if not check_if_task_exists_in_ormq(func='apps.fyle.helpers.check_interval_and_sync_dimension', payload=kwargs['workspace_id']):
                 async_task('apps.fyle.helpers.check_interval_and_sync_dimension', kwargs['workspace_id'])
 
@@ -443,6 +450,6 @@ class ExportView(generics.CreateAPIView):
 
     @handle_view_exceptions()
     def post(self, request, *args, **kwargs):
-        async_import_and_export_expenses(request.data, int(kwargs['workspace_id']))
+        handle_webhook_callback(request.data, int(kwargs['workspace_id']))
 
         return Response(data={}, status=status.HTTP_200_OK)

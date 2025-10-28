@@ -14,6 +14,7 @@ from apps.fyle.helpers import check_interval_and_sync_dimension
 from apps.fyle.actions import post_accounting_export_summary_for_skipped_exports
 from apps.netsuite.actions import update_last_export_details
 from apps.tasks.models import TaskLog, Error
+from apps.workspaces.models import FeatureConfig
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -28,16 +29,20 @@ def __create_chain_and_run(workspace_id: int, chain_tasks: List[dict], run_in_ra
     :param run_in_rabbitmq_worker: Run in rabbitmq worker
     :return: None
     """
+    fyle_webhook_sync_enabled = FeatureConfig.get_feature_config(workspace_id=workspace_id, key='fyle_webhook_sync_enabled')
+
     if run_in_rabbitmq_worker:
         # This function checks intervals and triggers sync if needed, syncing dimension for all exports is overkill
-        check_interval_and_sync_dimension(workspace_id)
+        if not fyle_webhook_sync_enabled:
+            check_interval_and_sync_dimension(workspace_id)
 
         task_executor = TaskChainRunner()
         task_executor.run(chain_tasks, workspace_id)
     else:
         chain = Chain()
 
-        chain.append('apps.fyle.helpers.sync_dimensions', workspace_id, True)
+        if not fyle_webhook_sync_enabled:
+            chain.append('apps.fyle.helpers.sync_dimensions', workspace_id, True)
 
         for task in chain_tasks:
             logger.info('Chain task %s, Chain Expense Group %s, Chain Task Log %s', task.target, task.args[0], task.args[1])
