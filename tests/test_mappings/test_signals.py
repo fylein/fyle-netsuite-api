@@ -154,3 +154,41 @@ def test_run_post_general_mapping_triggers(db, access_token):
     
     assert schedule.func == 'apps.mappings.tasks.async_auto_map_ccc_account'
     assert schedule.args == '1'
+
+
+@pytest.mark.django_db()
+def test_patch_integration_settings_on_card_mapping(db, mocker):
+    """
+    Test patch_corporate_card_integration_settings is called when corporate card mapping is created
+    """
+    workspace_id = 1
+
+    # Create required ExpenseAttribute for CORPORATE_CARD mapping
+    corporate_card = ExpenseAttribute.objects.create(
+        workspace_id=workspace_id,
+        attribute_type='CORPORATE_CARD',
+        source_id='card_7775',
+        value='Test Card - 1234',
+        active=True
+    )
+
+    # Create required ExpenseAttribute for CATEGORY mapping
+    category = ExpenseAttribute.objects.create(
+        workspace_id=workspace_id,
+        attribute_type='CATEGORY',
+        source_id='cat_5322',
+        value='Test Category',
+        active=True
+    )
+
+    mock_patch = mocker.patch('apps.mappings.signals.patch_corporate_card_integration_settings')
+    mapping = Mapping(source_type='CORPORATE_CARD', destination_type='CREDIT_CARD_ACCOUNT',
+                     source_id=corporate_card.id, destination_id=123, workspace_id=workspace_id)
+    mapping.save()
+    mock_patch.assert_called_once_with(workspace_id=workspace_id)
+
+    mock_patch.reset_mock()
+    mapping = Mapping(source_type='CATEGORY', destination_type='ACCOUNT',
+                     source_id=category.id, destination_id=585, workspace_id=workspace_id)
+    mapping.save()
+    mock_patch.assert_not_called()

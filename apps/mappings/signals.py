@@ -8,6 +8,7 @@ from django.dispatch import receiver
 
 from fyle_accounting_mappings.models import MappingSetting, EmployeeMapping, Mapping, CategoryMapping, DestinationAttribute
 
+from apps.mappings.helpers import patch_corporate_card_integration_settings
 from apps.mappings.schedules import new_schedule_or_delete_fyle_import_tasks
 from apps.netsuite.helpers import schedule_payment_sync
 from apps.workspaces.models import Configuration, NetSuiteCredentials, FyleCredential
@@ -55,6 +56,15 @@ def resolve_post_mapping_errors(sender, instance: Mapping, **kwargs):
         Error.objects.filter(expense_attribute_id=instance.source_id).update(
             is_resolved=True, updated_at=datetime.now(timezone.utc)
         )
+
+
+@receiver(post_save, sender=Mapping)
+def patch_integration_settings_on_card_mapping(sender, instance: Mapping, created: bool, **kwargs):
+    """
+    Patch integration settings when corporate card mapping is created
+    """
+    if instance.source_type == 'CORPORATE_CARD' and created:
+        patch_corporate_card_integration_settings(workspace_id=instance.workspace_id)
 
 
 @receiver(post_save, sender=CategoryMapping)

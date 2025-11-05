@@ -578,3 +578,20 @@ def test_attribute_field_mapping_exists():
     assert FyleAttributeTypeEnum.EXPENSE_FIELD in ATTRIBUTE_FIELD_MAPPING
     assert FyleAttributeTypeEnum.DEPENDENT_FIELD in ATTRIBUTE_FIELD_MAPPING
 
+
+@pytest.mark.django_db
+def test_process_webhook_corporate_card_created_triggers_patch(db, mocker):
+    """Test CORPORATE_CARD CREATED webhook triggers patch and handles exceptions"""
+    workspace_id = 1
+    processor = WebhookAttributeProcessor(workspace_id)
+
+    with mock.patch('apps.mappings.helpers.patch_corporate_card_integration_settings') as mock_patch:
+        processor.process_webhook(webhook_payloads['corporate_card_created'])
+        mock_patch.assert_called_once_with(workspace_id=workspace_id)
+
+    with mock.patch('apps.mappings.helpers.patch_corporate_card_integration_settings') as mock_patch:
+        mock_patch.side_effect = Exception("Test error")
+        processor.process_webhook(webhook_payloads['corporate_card_created'])
+        assert ExpenseAttribute.objects.filter(workspace_id=workspace_id, attribute_type='CORPORATE_CARD',
+                                              source_id='card_123').exists()
+
