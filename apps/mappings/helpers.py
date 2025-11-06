@@ -1,14 +1,19 @@
+import logging
 from datetime import datetime
 
 from django_q.tasks import Chain
 from django_q.models import Schedule
-from fyle_accounting_mappings.models import MappingSetting
+from fyle_accounting_mappings.models import MappingSetting, ExpenseAttribute
 
 from apps.mappings.tasks import schedule_auto_map_employees, \
     schedule_auto_map_ccc_employees, schedule_netsuite_employee_creation_on_fyle
 from apps.mappings.models import GeneralMapping
 from apps.workspaces.models import Configuration
+from apps.workspaces.tasks import patch_integration_settings_for_unmapped_cards
 from apps.mappings.schedules import new_schedule_or_delete_fyle_import_tasks
+
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 
 def schedule_or_delete_auto_mapping_tasks(configuration: Configuration):
@@ -60,3 +65,22 @@ def prepend_code_to_name(prepend_code_in_name: bool, value: str, code: str = Non
     if prepend_code_in_name and code:
         return "{}: {}".format(code, value)
     return value
+
+
+def patch_corporate_card_integration_settings(workspace_id: int) -> None:
+    """
+    Patch integration settings for unmapped corporate cards.
+    This is called when corporate card mapping is created or when a corporate card is created via webhook.
+
+    :param workspace_id: Workspace ID
+    :return: None
+    """
+    configuration = Configuration.objects.filter(workspace_id=workspace_id).first()
+
+    if configuration and configuration.corporate_credit_card_expenses_object == 'CREDIT CARD CHARGE':
+        unmapped_card_count = ExpenseAttribute.objects.filter(
+            attribute_type="CORPORATE_CARD", workspace_id=workspace_id, active=True, mapping__isnull=True
+        ).count()
+
+        patch_integration_settings_for_unmapped_cards(workspace_id=workspace_id, unmapped_card_count=unmapped_card_count)
+        logger.info(f"Patched integration settings for workspace {workspace_id}, unmapped card count: {unmapped_card_count}")
