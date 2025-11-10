@@ -137,7 +137,8 @@ class Expense(models.Model):
         db_table = 'expenses'
         indexes = [
             models.Index(fields=['accounting_export_summary', 'workspace_id']),
-            models.Index(fields=['fund_source', 'workspace_id'])
+            models.Index(fields=['fund_source', 'workspace_id']),
+            models.Index(fields=['workspace_id', 'report_id'])
         ]
 
     @staticmethod
