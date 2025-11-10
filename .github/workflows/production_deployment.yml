@@ -43,6 +43,9 @@ jobs:
           
           cd ../../${{ vars.PROD_IN1_DEPLOY_DIR }}/integrations
           kustomize edit set image docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api:$NEW_TAG
+          
+          cd ../../${{ vars.PROD_C1_DEPLOY_DIR }}/integrations
+          kustomize edit set image docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_netsuite-api:$NEW_TAG
 
       - name: Commit and push changes
         run: |
