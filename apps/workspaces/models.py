@@ -237,7 +237,7 @@ class FeatureConfig(models.Model):
     id = models.AutoField(primary_key=True)
     workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
     export_via_rabbitmq = models.BooleanField(default=False, help_text='Enable export via rabbitmq')
-    fyle_webhook_sync_enabled = models.BooleanField(default=False, help_text='Enable fyle attribute webhook sync')
+    fyle_webhook_sync_enabled = models.BooleanField(default=True, help_text='Enable fyle attribute webhook sync')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime')
 
