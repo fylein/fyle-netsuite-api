@@ -52,16 +52,18 @@ def test_handle_exception(export_worker):
         'data': {'some': 'data'},
         'workspace_id': 123
     }
-    error = Exception('Test error')
-
-    export_worker.handle_exception(routing_key, payload_dict, error, 1)
+    try:
+        raise Exception('Test error')
+    except Exception as error:
+        export_worker.handle_exception(routing_key, payload_dict, error, 1)
 
     failed_event = FailedEvent.objects.get(
         routing_key=routing_key,
         workspace_id=123
     )
     assert failed_event.payload == payload_dict
-    assert failed_event.error_traceback == 'Test error'
+    assert 'Test error' in failed_event.error_traceback
+    assert 'Exception: Test error' in failed_event.error_traceback
 
 
 def test_shutdown(export_worker):
