@@ -32,7 +32,11 @@ class ExportWorker(EventConsumer):
             self.handle_exception(routing_key, payload_dict, e, delivery_tag)
 
     def handle_exception(self, routing_key, payload_dict, error, delivery_tag):
-        logger.error('Error while handling exports for workspace - %s, error: %s', payload_dict, str(error))
+        logger.error(
+            'Error while handling exports for workspace - %s, traceback: %s',
+            payload_dict,
+            traceback.format_exc()
+        )
 
         payload_dict['retry_count'] = payload_dict.get('retry_count', 0) + 1
 
