@@ -1,6 +1,6 @@
 import logging
 
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from django_q.tasks import async_task
@@ -32,10 +32,10 @@ def run_post_save_expense_filters(sender, instance: ExpenseFilter, **kwargs):
             raise ValidationError('Failed to process expense filter')
 
 
-@receiver(pre_save, sender=ExpenseGroupSettings)
-def run_pre_save_expense_group_setting_triggers(sender, instance: ExpenseGroupSettings, **kwargs):
+@receiver(post_save, sender=ExpenseGroupSettings)
+def run_post_save_expense_group_setting_triggers(sender, instance: ExpenseGroupSettings, **kwargs):
     """
-    Run pre save expense group setting triggers
+    Run post save expense group setting triggers
     """
     existing_expense_group_setting = ExpenseGroupSettings.objects.filter(
         workspace_id=instance.workspace_id
