@@ -165,22 +165,6 @@ def test_get_request(mocker):
         logger.info('Error in post request')
 
 
-def test_get_fyle_orgs(mocker):
-    mocker.patch(
-        'apps.fyle.helpers.requests.get',
-        return_value=Response(
-            {
-                'message': 'Get request'
-            },
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    )
-    try:
-        get_fyle_orgs(refresh_token='srtyu', cluster_domain='erty')
-    except:
-        logger.info('Error in post request')
-
-
 def test_get_cluster_domain(mocker):
     mocker.patch(
         'apps.fyle.helpers.requests.post',
