@@ -127,7 +127,7 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str], is_
                 }
             )
 
-            if task_log.status not in ['IN_PROGRESS', 'ENQUEUED']:
+            if task_log.status not in ['IN_PROGRESS', 'ENQUEUED', 'COMPLETE']:
                 task_log.type = 'CREATING_BILL'
                 task_log.status = 'ENQUEUED'
                 if triggered_by and task_log.triggered_by != triggered_by:
@@ -189,7 +189,7 @@ def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: L
                 }
             )
 
-            if task_log.status not in ['IN_PROGRESS', 'ENQUEUED']:
+            if task_log.status not in ['IN_PROGRESS', 'ENQUEUED', 'COMPLETE']:
                 task_log.type = export_type
                 task_log.status = 'ENQUEUED'
                 if triggered_by and task_log.triggered_by != triggered_by:
@@ -246,7 +246,7 @@ def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List
                 }
             )
 
-            if task_log.status not in ['IN_PROGRESS', 'ENQUEUED']:
+            if task_log.status not in ['IN_PROGRESS', 'ENQUEUED', 'COMPLETE']:
                 task_log.type = 'CREATING_EXPENSE_REPORT'
                 task_log.status = 'ENQUEUED'
                 if triggered_by and task_log.triggered_by != triggered_by:
@@ -302,7 +302,7 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
                 }
             )
 
-            if task_log.status not in ['IN_PROGRESS', 'ENQUEUED']:
+            if task_log.status not in ['IN_PROGRESS', 'ENQUEUED', 'COMPLETE']:
                 task_log.type = 'CREATING_JOURNAL_ENTRY'
                 task_log.status = 'ENQUEUED'
                 if triggered_by and task_log.triggered_by != triggered_by:
