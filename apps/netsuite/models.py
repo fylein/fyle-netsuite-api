@@ -274,14 +274,12 @@ def get_expense_purpose(lineitem, category, configuration) -> str:
         'spent_on': '{0}'.format(lineitem.spent_at.date()) if lineitem.spent_at else ''
     }
 
-    purpose = ''
+    memo_parts = []
+    for field in memo_structure:
+        if field in details and details[field]:
+            memo_parts.append(details[field])
 
-    for id, field in enumerate(memo_structure):
-        if field in details:
-            purpose += details[field]
-            if id + 1 != len(memo_structure):
-                if details[field]:
-                    purpose = '{0} - '.format(purpose)
+    purpose = ' - '.join(memo_parts)
 
     purpose = purpose.replace('<', '')
     purpose = purpose.replace('>', '')
