@@ -3,7 +3,7 @@
 --
 
 
--- Dumped from database version 15.14 (Debian 15.14-1.pgdg13+1)
+-- Dumped from database version 15.15 (Debian 15.15-1.pgdg13+1)
 -- Dumped by pg_dump version 17.6 (Debian 17.6-0+deb13u1)
 
 SET statement_timeout = 0;
@@ -397,6 +397,18 @@ BEGIN
     WHERE e.workspace_id = _workspace_id;
     GET DIAGNOSTICS rcount = ROW_COUNT;
     RAISE NOTICE 'Deleted % errors', rcount;
+
+    DELETE
+    FROM feature_configs fc
+    WHERE fc.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % feature_configs', rcount;
+
+    DELETE
+    FROM fyle_sync_timestamps fst
+    WHERE fst.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % fyle_sync_timestamps', rcount;
 
     DELETE
     FROM django_q_schedule dqs
@@ -9571,6 +9583,10 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 242	internal	0007_auto_generated_sql	2025-10-27 18:05:08.532017+00
 243	internal	0008_auto_generated_sql	2025-10-27 18:05:08.53351+00
 244	internal	0009_auto_generate_sql	2025-10-27 18:05:08.534942+00
+245	fyle	0041_expense_expenses_workspa_ad984e_idx	2025-11-19 06:15:01.971704+00
+246	workspaces	0051_alter_featureconfig_fyle_webhook_sync_enabled	2025-11-19 06:15:01.981646+00
+247	internal	0010_auto_generated_sql	2025-11-19 06:15:01.984439+00
+248	internal	0011_auto_generated_sql	2025-11-19 06:15:01.986051+00
 \.
 
 
@@ -13238,9 +13254,9 @@ COPY public.failed_events (id, routing_key, payload, created_at, updated_at, err
 --
 
 COPY public.feature_configs (id, export_via_rabbitmq, fyle_webhook_sync_enabled, created_at, updated_at, workspace_id) FROM stdin;
-1	f	f	2025-10-27 18:05:08.532618+00	2025-10-27 18:05:08.532618+00	1
-2	f	f	2025-10-27 18:05:08.532618+00	2025-10-27 18:05:08.532618+00	2
-3	f	f	2025-10-27 18:05:08.532618+00	2025-10-27 18:05:08.532618+00	49
+1	f	t	2025-10-27 18:05:08.532618+00	2025-10-27 18:05:08.532618+00	1
+2	f	t	2025-10-27 18:05:08.532618+00	2025-10-27 18:05:08.532618+00	2
+3	f	t	2025-10-27 18:05:08.532618+00	2025-10-27 18:05:08.532618+00	49
 \.
 
 
@@ -13524,7 +13540,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 50, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 244, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 248, true);
 
 
 --
@@ -14835,6 +14851,13 @@ CREATE INDEX expenses_expense_id_0e3511ea_like ON public.expenses USING btree (e
 --
 
 CREATE INDEX expenses_fund_so_386913_idx ON public.expenses USING btree (fund_source, workspace_id);
+
+
+--
+-- Name: expenses_workspa_ad984e_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX expenses_workspa_ad984e_idx ON public.expenses USING btree (workspace_id, report_id);
 
 
 --
