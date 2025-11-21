@@ -3,6 +3,7 @@ import pytest
 from unittest import mock
 from django.urls import reverse
 from apps.workspaces.models import NetSuiteCredentials, Configuration, LastExportDetail
+from apps.netsuite.models import NetSuiteAttributesCount
 from fyle_accounting_mappings.models import MappingSetting
 from .fixtures import data
 
@@ -236,3 +237,21 @@ def test_refresh_netsuite_dimensions(api_client, access_token, add_netsuite_cred
    response = api_client.post(url)
    assert response.status_code == 400
    assert response.data['message'] == 'NetSuite credentials not found in workspace'
+
+
+def test_netsuite_attributes_count_view(api_client, access_token, db):
+   workspace_id = 1
+   NetSuiteAttributesCount.update_attribute_count(workspace_id=workspace_id, attribute_type='accounts', count=150)
+   NetSuiteAttributesCount.update_attribute_count(workspace_id=workspace_id, attribute_type='vendors', count=75)
+   url = reverse('netsuite-attributes-count',
+      kwargs={
+         'workspace_id': workspace_id
+      }
+   )
+   api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
+   response = api_client.get(url)
+   assert response.status_code == 200
+   response_data = json.loads(response.content)
+   assert response_data['accounts_count'] == 150
+   assert response_data['vendors_count'] == 75
+   assert response_data['workspace'] == workspace_id

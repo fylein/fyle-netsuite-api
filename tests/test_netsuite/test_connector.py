@@ -2,6 +2,7 @@ import pytest
 from copy import deepcopy
 from datetime import datetime
 from unittest import mock
+from django.utils import timezone
 from apps.fyle.models import ExpenseGroup
 from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute, Mapping, CategoryMapping
 from apps.netsuite.connector import NetSuiteConnector, NetSuiteCredentials
@@ -437,6 +438,10 @@ def test_sync_projects(mocker, db):
 
 def test_sync_employees(mocker, db):
     mocker.patch(
+        'netsuitesdk.api.employees.Employees.count',
+        return_value=6
+    )
+    mocker.patch(
         'netsuitesdk.api.employees.Employees.get_all_generator',
         return_value=data['get_all_employees']    
     )
@@ -479,6 +484,8 @@ def test_sync_accounts(mocker, db):
 
 @pytest.mark.django_db()
 def test_sync_items(mocker, db):
+    mocker.patch('netsuitesdk.api.items.Items.count', return_value=3)
+    
     with mock.patch('netsuitesdk.api.items.Items.get_all_generator') as mock_call:
         # here we have the import_items set to false , So none of the destination attributes should be active
         configuration = Configuration.objects.get(workspace_id=1)
@@ -522,6 +529,10 @@ def test_sync_items(mocker, db):
 
 @pytest.mark.django_db()
 def test_sync_expense_categories(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.expense_categories.ExpenseCategory.count',
+        return_value=1
+    )
     mocker.patch(
         'netsuitesdk.api.expense_categories.ExpenseCategory.get_all_generator',
         return_value=data['get_all_expense_categories']
@@ -659,6 +670,10 @@ def test_sync_customers(mocker, db):
 
 def test_sync_tax_items(mocker, db):
     mocker.patch(
+        'netsuitesdk.api.tax_items.TaxItems.count',
+        return_value=6
+    )
+    mocker.patch(
         'netsuitesdk.api.tax_items.TaxItems.get_all_generator',
         return_value=data['get_all_tax_items']    
     )
@@ -681,6 +696,10 @@ def test_sync_tax_items(mocker, db):
 
 
 def test_sync_currencies(mocker, db):
+    mocker.patch(
+        'netsuitesdk.api.currencies.Currencies.count',
+        return_value=1
+    )
     mocker.patch(
         'netsuitesdk.api.currencies.Currencies.get_all_generator',
         return_value=data['get_all_currencies'][0]
@@ -1044,35 +1063,35 @@ def test_update_destination_attributes_with_duplicate_values(db, mocker):
 def test_skip_sync_attributes(mocker, db):
     mocker.patch(
         'netsuitesdk.api.projects.Projects.count',
-        return_value=10001
+        return_value=35000
     )
 
     mocker.patch(
         'netsuitesdk.api.classifications.Classifications.count',
-        return_value=2001
+        return_value=35000
     )
     mocker.patch(
         'netsuitesdk.api.accounts.Accounts.count',
-        return_value=2001
+        return_value=35000
     )
     mocker.patch(
         'netsuitesdk.api.locations.Locations.count',
-        return_value=2001
+        return_value=35000
     )
     mocker.patch(
         'netsuitesdk.api.departments.Departments.count',
-        return_value=2001
+        return_value=35000
     )
     mocker.patch(
         'netsuitesdk.api.customers.Customers.count',
-        return_value=25001
+        return_value=35000
     )
     mocker.patch(
         'netsuitesdk.api.vendors.Vendors.count',
-        return_value=20001
+        return_value=35000
     )
 
-    today = datetime.today()
+    today = timezone.now()
     Workspace.objects.filter(id=1).update(created_at=today)
     netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
@@ -1122,6 +1141,62 @@ def test_skip_sync_attributes(mocker, db):
     new_project_count = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='CUSTOMER').count()
     assert new_project_count == 0
 
+def test_all_sync_methods_skip_when_over_limit(mocker, db):
+    mocker.patch('netsuitesdk.api.accounts.Accounts.count', return_value=35000)
+    mocker.patch('netsuitesdk.api.expense_categories.ExpenseCategory.count', return_value=35000)
+    mocker.patch('netsuitesdk.api.items.Items.count', return_value=35000)
+    mocker.patch('netsuitesdk.api.currencies.Currencies.count', return_value=35000)
+    mocker.patch('netsuitesdk.api.locations.Locations.count', return_value=35000)
+    mocker.patch('netsuitesdk.api.classifications.Classifications.count', return_value=35000)
+    mocker.patch('netsuitesdk.api.departments.Departments.count', return_value=35000)
+    mocker.patch('netsuitesdk.api.vendors.Vendors.count', return_value=35000)
+    mocker.patch('netsuitesdk.api.employees.Employees.count', return_value=35000)
+    mocker.patch('netsuitesdk.api.tax_items.TaxItems.count', return_value=35000)
+    mocker.patch('netsuitesdk.api.projects.Projects.count', return_value=35000)
+    mocker.patch('netsuitesdk.api.customers.Customers.count', return_value=35000)
+    workspace = Workspace.objects.get(id=1)
+    workspace.created_at = timezone.now()
+    workspace.save()
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
+    accounts_count_before = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='ACCOUNT').count()
+    netsuite_connection.sync_accounts()
+    assert DestinationAttribute.objects.filter(workspace_id=1, attribute_type='ACCOUNT').count() == accounts_count_before
+    expense_categories_count_before = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='EXPENSE_CATEGORY').count()
+    netsuite_connection.sync_expense_categories()
+    assert DestinationAttribute.objects.filter(workspace_id=1, attribute_type='EXPENSE_CATEGORY').count() == expense_categories_count_before
+    items_count_before = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='ACCOUNT', display_name='Item').count()
+    netsuite_connection.sync_items()
+    assert DestinationAttribute.objects.filter(workspace_id=1, attribute_type='ACCOUNT', display_name='Item').count() == items_count_before
+    currencies_count_before = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='CURRENCY').count()
+    netsuite_connection.sync_currencies()
+    assert DestinationAttribute.objects.filter(workspace_id=1, attribute_type='CURRENCY').count() == currencies_count_before
+    locations_count_before = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='LOCATION').count()
+    netsuite_connection.sync_locations()
+    assert DestinationAttribute.objects.filter(workspace_id=1, attribute_type='LOCATION').count() == locations_count_before
+    classifications_count_before = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='CLASS').count()
+    netsuite_connection.sync_classifications()
+    assert DestinationAttribute.objects.filter(workspace_id=1, attribute_type='CLASS').count() == classifications_count_before
+    departments_count_before = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='DEPARTMENT').count()
+    netsuite_connection.sync_departments()
+    assert DestinationAttribute.objects.filter(workspace_id=1, attribute_type='DEPARTMENT').count() == departments_count_before
+    vendors_count_before = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='VENDOR').count()
+    netsuite_connection.sync_vendors()
+    assert DestinationAttribute.objects.filter(workspace_id=1, attribute_type='VENDOR').count() == vendors_count_before
+    employees_count_before = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='EMPLOYEE').count()
+    netsuite_connection.sync_employees()
+    assert DestinationAttribute.objects.filter(workspace_id=1, attribute_type='EMPLOYEE').count() == employees_count_before
+    tax_items_count_before = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='TAX_ITEM').count()
+    netsuite_connection.sync_tax_items()
+    assert DestinationAttribute.objects.filter(workspace_id=1, attribute_type='TAX_ITEM').count() == tax_items_count_before
+    projects_count_before = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='PROJECT').count()
+    netsuite_connection.sync_projects()
+    assert DestinationAttribute.objects.filter(workspace_id=1, attribute_type='PROJECT').count() == projects_count_before
+    customers_count_before = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='CUSTOMER').count()
+    netsuite_connection.sync_customers()
+    assert DestinationAttribute.objects.filter(workspace_id=1, attribute_type='CUSTOMER').count() == customers_count_before
+
+
 def test_constructs_tax_details_list_for_multiple_items(mocker, db):
     netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
@@ -1170,3 +1245,19 @@ def test_constructs_tax_details_list_for_multiple_items(mocker, db):
     result = netsuite_connection.construct_tax_details_list(bill_lineitems)
 
     assert result == data['tax_list_detail']
+
+
+def test_is_sync_allowed(db):
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
+    assert netsuite_connection.is_sync_allowed(attribute_count=1000) is True
+    assert netsuite_connection.is_sync_allowed(attribute_count=30000) is True
+    workspace = Workspace.objects.get(id=1)
+    old_date = timezone.make_aware(datetime(2024, 9, 1), timezone.get_current_timezone())
+    workspace.created_at = old_date
+    workspace.save()
+    assert netsuite_connection.is_sync_allowed(attribute_count=35000) is True
+    new_date = timezone.make_aware(datetime(2024, 11, 1), timezone.get_current_timezone())
+    workspace.created_at = new_date
+    workspace.save()
+    assert netsuite_connection.is_sync_allowed(attribute_count=35000) is False

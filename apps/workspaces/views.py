@@ -27,6 +27,7 @@ from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 from fyle_netsuite_api.utils import assert_valid, invalidate_netsuite_credentials
 
 from apps.netsuite.connector import NetSuiteConnection, NetSuiteConnector
+from apps.netsuite.models import NetSuiteAttributesCount
 from apps.fyle.models import ExpenseGroupSettings
 from apps.fyle.helpers import get_cluster_domain
 from apps.users.models import User
@@ -143,6 +144,7 @@ class WorkspaceView(viewsets.ViewSet):
             LastExportDetail.objects.create(workspace_id=workspace.id)
             FeatureConfig.objects.create(workspace_id=workspace.id)
             FyleSyncTimestamp.objects.create(workspace_id=workspace.id)
+            NetSuiteAttributesCount.objects.create(workspace_id=workspace.id)
 
             workspace.user.add(User.objects.get(user_id=request.user))
 

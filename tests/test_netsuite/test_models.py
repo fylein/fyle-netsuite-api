@@ -595,3 +595,17 @@ def test_default_class_in_journal_entry_lineitems(db):
     journal_entry_lineitems = JournalEntryLineItem.create_journal_entry_lineitems(expense_group, configuration)
     for lineitem in journal_entry_lineitems:
         assert lineitem.class_id == '666', 'Default class should be applied when class_level is ALL'
+
+
+def test_netsuite_attributes_count_update_attribute_count(db):
+    workspace_id = 1
+    NetSuiteAttributesCount.update_attribute_count(workspace_id=workspace_id, attribute_type='accounts', count=100)
+    netsuite_count = NetSuiteAttributesCount.objects.get(workspace_id=workspace_id)
+    assert netsuite_count.accounts_count == 100
+    NetSuiteAttributesCount.update_attribute_count(workspace_id=workspace_id, attribute_type='vendors', count=50)
+    netsuite_count.refresh_from_db()
+    assert netsuite_count.vendors_count == 50
+    assert netsuite_count.accounts_count == 100
+    NetSuiteAttributesCount.update_attribute_count(workspace_id=workspace_id, attribute_type='projects', count=200)
+    netsuite_count.refresh_from_db()
+    assert netsuite_count.projects_count == 200

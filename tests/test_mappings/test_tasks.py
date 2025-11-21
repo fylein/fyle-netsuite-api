@@ -282,6 +282,10 @@ def test_auto_create_netsuite_employees_on_fyle(db, mocker):
     workspace_id = 1
 
     mocker.patch(
+        'netsuitesdk.api.employees.Employees.count',
+        return_value=6
+    )
+    mocker.patch(
         'netsuitesdk.api.employees.Employees.get_all_generator',
         return_value=netsuite_data['get_all_employees']    
     )

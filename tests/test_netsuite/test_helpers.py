@@ -24,12 +24,13 @@ def test_check_interval_and_sync_dimension(db):
 def test_sync_dimensions(mocker, db):
     mocker.patch(
         'netsuitesdk.api.vendors.Vendors.get_all_generator',
-        return_value=data['get_all_vendors']    
+        return_value=data['get_all_vendors']
     )
+    mocker.patch('netsuitesdk.api.vendors.Vendors.count', return_value=1)
 
     mocker.patch(
         'netsuitesdk.api.projects.Projects.get_all_generator',
-        return_value=data['get_all_projects']    
+        return_value=data['get_all_projects']
     )
 
     mocker.patch(
@@ -41,16 +42,19 @@ def test_sync_dimensions(mocker, db):
         'netsuitesdk.api.employees.Employees.get_all_generator',
         return_value=data['get_all_employees']    
     )
+    mocker.patch('netsuitesdk.api.employees.Employees.count', return_value=6)
 
     mocker.patch(
         'netsuitesdk.api.accounts.Accounts.get_all_generator',
         return_value=data['get_all_accounts']    
     )
+    mocker.patch('netsuitesdk.api.accounts.Accounts.count', return_value=1)
 
     mocker.patch(
         'netsuitesdk.api.expense_categories.ExpenseCategory.get_all_generator',
         return_value=data['get_all_expense_categories']
     )
+    mocker.patch('netsuitesdk.api.expense_categories.ExpenseCategory.count', return_value=1)
 
     mocker.patch(
         'netsuitesdk.api.custom_segments.CustomSegments.get',
@@ -73,13 +77,18 @@ def test_sync_dimensions(mocker, db):
     )
 
     mocker.patch('netsuitesdk.api.locations.Locations.get_all_generator')
+    mocker.patch('netsuitesdk.api.locations.Locations.count', return_value=0)
     mocker.patch('netsuitesdk.api.currencies.Currencies.get_all')
+    mocker.patch('netsuitesdk.api.currencies.Currencies.count', return_value=0)
     mocker.patch('netsuitesdk.api.classifications.Classifications.get_all_generator')
+    mocker.patch('netsuitesdk.api.classifications.Classifications.count', return_value=0)
     mocker.patch('netsuitesdk.api.departments.Departments.get_all_generator')
+    mocker.patch('netsuitesdk.api.departments.Departments.count', return_value=0)
     mocker.patch('netsuitesdk.api.customers.Customers.get_all_generator')
     mocker.patch('netsuitesdk.api.customers.Customers.count', return_value=0)
     mocker.patch('netsuitesdk.api.tax_items.TaxItems.get_all_generator')
     mocker.patch('netsuitesdk.api.tax_groups.TaxGroups.get_all_generator')
+    mocker.patch('netsuitesdk.api.tax_items.TaxItems.count', return_value=0)
 
     
     employee_count = DestinationAttribute.objects.filter(attribute_type='EMPLOYEE', workspace_id=1).count()

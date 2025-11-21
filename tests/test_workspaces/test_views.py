@@ -10,6 +10,7 @@ from django.urls import reverse
 from django.db.models import Q
 from apps.tasks.models import TaskLog
 from apps.workspaces.models import Configuration, FyleCredential, NetSuiteCredentials, WorkspaceSchedule, LastExportDetail, Workspace
+from apps.netsuite.models import NetSuiteAttributesCount
 from .fixtures import *
 from fyle_accounting_mappings.models import ExpenseAttribute, FyleSyncTimestamp
 from tests.test_netsuite.fixtures import data as netsuite_data
@@ -202,6 +203,36 @@ def test_workspace_creation_with_fyle_sync_timestamp(api_client, access_token, m
 
     sync_timestamp = FyleSyncTimestamp.objects.filter(workspace_id=workspace.id).first()
     assert sync_timestamp is not None
+
+
+@pytest.mark.django_db(databases=['default'])
+def test_workspace_creation_with_netsuite_attributes_count(api_client, access_token, mocker):
+    url = reverse('workspace')
+    new_org_data = {
+        'data': {
+            'org': {
+                'name': 'Test Workspace NetSuite Count',
+                'id': 'or_test_ns_count_12345',
+                'currency': 'USD'
+            }
+        }
+    }
+    mocker.patch(
+        'apps.workspaces.views.get_fyle_admin',
+        return_value=new_org_data
+    )
+    mocker.patch(
+        'apps.workspaces.views.get_cluster_domain',
+        return_value='https://staging.fyle.tech/'
+    )
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
+    response = api_client.post(url)
+    assert response.status_code == 200
+    workspace = Workspace.objects.get(fyle_org_id='or_test_ns_count_12345')
+    netsuite_count = NetSuiteAttributesCount.objects.filter(workspace_id=workspace.id).first()
+    assert netsuite_count is not None
+    assert netsuite_count.accounts_count == 0
+    assert netsuite_count.vendors_count == 0
 
 
 @pytest.mark.django_db(databases=['default'])
