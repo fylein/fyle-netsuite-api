@@ -16,9 +16,9 @@ from fyle_netsuite_api.utils import invalidate_netsuite_credentials
 
 from django_q.tasks import async_task
 
-from .serializers import NetSuiteFieldSerializer, CustomSegmentSerializer
+from .serializers import NetSuiteFieldSerializer, CustomSegmentSerializer, NetSuiteAttributesCountSerializer
 from .tasks import create_vendor_payment, check_netsuite_object_status, process_reimbursements
-from .models import CustomSegment
+from .models import CustomSegment, NetSuiteAttributesCount
 from .helpers import check_if_task_exists_in_ormq, handle_refresh_dimensions
 from apps.workspaces.actions import export_to_netsuite
 
@@ -223,4 +223,14 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
                     'message': 'Error in refreshing Dimensions'
                 },
                 status=status.HTTP_400_BAD_REQUEST
-            )    
+            )
+
+
+class NetSuiteAttributesCountView(generics.RetrieveAPIView):
+    """
+    NetSuite Attributes Count view
+    """
+    queryset = NetSuiteAttributesCount.objects.all()
+    serializer_class = NetSuiteAttributesCountSerializer
+    lookup_field = 'workspace_id'
+    lookup_url_kwarg = 'workspace_id'    
