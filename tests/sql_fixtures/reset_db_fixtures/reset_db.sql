@@ -13408,6 +13408,9 @@ COPY public.mappings (id, source_type, destination_type, created_at, updated_at,
 --
 
 COPY public.netsuite_attributes_count (id, accounts_count, expense_categories_count, items_count, currencies_count, locations_count, classifications_count, departments_count, vendors_count, employees_count, tax_items_count, projects_count, customers_count, created_at, updated_at, workspace_id) FROM stdin;
+1	0	0	0	0	0	0	0	0	0	0	0	0	2025-11-24 11:11:11.111111+00	2025-11-24 11:11:11.111111+00	1
+2	0	0	0	0	0	0	0	0	0	0	0	0	2025-11-24 11:11:11.111111+00	2025-11-24 11:11:11.111111+00	2
+3	0	0	0	0	0	0	0	0	0	0	0	0	2025-11-24 11:11:11.111111+00	2025-11-24 11:11:11.111111+00	49
 \.
 
 
@@ -13783,7 +13786,7 @@ SELECT pg_catalog.setval('public.last_export_details_id_seq', 26, true);
 -- Name: netsuite_attributes_count_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.netsuite_attributes_count_id_seq', 1, false);
+SELECT pg_catalog.setval('public.netsuite_attributes_count_id_seq', 3, true);
 
 
 --
