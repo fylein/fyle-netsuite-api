@@ -8,8 +8,8 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunSQL(
             sql="""
-                INSERT INTO netsuite_attributes_count (workspace_id, created_at, updated_at)
-                SELECT id, now(), now()
+                INSERT INTO netsuite_attributes_count (workspace_id, accounts_count, expense_categories_count, items_count, currencies_count, locations_count, classifications_count, departments_count, vendors_count, employees_count, tax_items_count, projects_count, customers_count, created_at, updated_at)
+                SELECT id, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, now(), now()
                 FROM workspaces
                 WHERE NOT EXISTS (
                     SELECT 1
