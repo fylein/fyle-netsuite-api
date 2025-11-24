@@ -399,7 +399,7 @@ class NetSuiteAttributesCount(models.Model):
         :param attribute_type: Type of attribute (e.g., 'accounts', 'vendors')
         :param count: Count value from NetSuite
         """
-        netsuite_count, _ = NetSuiteAttributesCount.objects.get_or_create(workspace_id=workspace_id)
+        netsuite_count, _ = NetSuiteAttributesCount.objects.get(workspace_id=workspace_id)
         field_name = f'{attribute_type}_count'
         setattr(netsuite_count, field_name, count)
         netsuite_count.save(update_fields=[field_name, 'updated_at'])
