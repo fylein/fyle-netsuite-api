@@ -118,7 +118,7 @@ def test_get_expense_purpose():
         configuration = Configuration.objects.get(workspace_id=1)
         expense_purpose = get_expense_purpose(lineitem, category, configuration)
         
-        assert expense_purpose == 'ashwin.t@fyle.in - Accounts Payable - 2021-11-15 - C/2021/11/R/5 - '
+        assert expense_purpose == 'ashwin.t@fyle.in - Accounts Payable - 2021-11-15 - C/2021/11/R/5'
 
 
 @pytest.mark.django_db(databases=['default'])
@@ -139,7 +139,7 @@ def test_create_bill(db):
 
     for bill_lineitem in bill_lineitems:
         assert bill_lineitem.amount == 100.00
-        assert bill_lineitem.memo == 'ashwin.t@fyle.in - Accounts Payable - 2021-11-15 - C/2021/11/R/6 - '
+        assert bill_lineitem.memo == 'ashwin.t@fyle.in - Accounts Payable - 2021-11-15 - C/2021/11/R/6'
         assert bill_lineitem.billable == None
 
     assert bill.currency == '1'
@@ -162,7 +162,7 @@ def test_create_bill(db):
 
     for bill_lineitem in bill_lineitems:
         assert bill_lineitem.amount == 100.00
-        assert bill_lineitem.memo == 'ashwin.t@fyle.in - Accounts Payable - 2021-11-15 - C/2021/11/R/6 - '
+        assert bill_lineitem.memo == 'ashwin.t@fyle.in - Accounts Payable - 2021-11-15 - C/2021/11/R/6'
         assert bill_lineitem.billable == None
 
     assert bill.currency == '1'
@@ -183,7 +183,7 @@ def test_create_expense_report(db, mocker):
         assert expense_report_lineitem.category == '13'
         assert expense_report_lineitem.amount == 50.0
         assert expense_report_lineitem.currency == '1'
-        assert expense_report_lineitem.memo == 'ashwin.t@fyle.in - Accounts Payable - 2021-11-15 - C/2021/11/R/5 - '
+        assert expense_report_lineitem.memo == 'ashwin.t@fyle.in - Accounts Payable - 2021-11-15 - C/2021/11/R/5'
         assert expense_report_lineitem.transaction_date >= '2021-11-29T13:51:20'
 
     assert expense_report.currency == '1'
@@ -344,7 +344,7 @@ def test_create_credit_card_charge(db):
 
     line = credit_card_charge_lineitems[0]
     assert line.amount == 100.00
-    assert line.memo == 'ashwin.t@fyle.in - Accounts Payable - 2021-11-16 - C/2021/11/R/1 - '
+    assert line.memo == 'ashwin.t@fyle.in - Accounts Payable - 2021-11-16 - C/2021/11/R/1'
     assert line.billable == False
 
     assert credit_card.currency == '1'
@@ -368,7 +368,7 @@ def test_create_credit_card_charge(db):
 
     line = credit_card_charge_lineitems[0]
     assert line.amount == 100.00
-    assert line.memo == 'ashwin.t@fyle.in - Accounts Payable - 2021-11-15 - C/2021/11/R/6 - '
+    assert line.memo == 'ashwin.t@fyle.in - Accounts Payable - 2021-11-15 - C/2021/11/R/6'
     assert line.billable == False
 
     assert credit_card.currency == '1'
