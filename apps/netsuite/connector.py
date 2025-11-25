@@ -30,21 +30,13 @@ from apps.workspaces.models import Configuration
 from apps.mappings.models import SubsidiaryMapping, GeneralMapping
 from apps.netsuite.models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, \
     JournalEntryLineItem, CustomSegment, VendorPayment, VendorPaymentLineitem, CreditCardChargeLineItem, \
-    CreditCardCharge, get_tax_info
+    CreditCardCharge, get_tax_info, NetSuiteAttributesCount
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Workspace
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
-SYNC_UPPER_LIMIT = {
-    'projects': 10000,
-    'customers': 25000,
-    'classes': 2000,
-    'accounts': 2000,
-    'locations': 2000,
-    'departments': 2000,
-    'vendors': 20000,
-}
+SYNC_UPPER_LIMIT = 30000
 
 
 AttributeDisableCallbackPath = {
@@ -100,35 +92,24 @@ class NetSuiteConnector:
         else:
             return '{0} @{1}%'.format(item_id, rate)
 
-    def is_sync_allowed(self, attribute_type: str, attribute_count: int) -> bool:
+    def is_sync_allowed(self, attribute_count: int) -> bool:
         """
-        Checks if the sync is allowed based on attribute type and count.
-
+        Checks if the sync is allowed
+        
         Args:
-            attribute_type (str): Type of attribute to sync (e.g., 'projects', 'customers')
             attribute_count (int): Number of attributes to sync
-
+        
         Returns:
-            bool: True if sync is allowed, False otherwise
-
-        Note:
-            - For 'projects' and 'customers', sync is only allowed if count is within SYNC_UPPER_LIMIT
-            - For other types, workspaces created after Oct 1, 2024 have stricter limits
+            bool: True if sync allowed, False otherwise
         """
-        if attribute_count <= SYNC_UPPER_LIMIT[attribute_type]:
-            return True
-
-        # Special handling for projects and customers
-        if attribute_type in ['projects', 'customers']:
-            return False
-
-        # For other types, check workspace creation date
-        workspace = Workspace.objects.get(id=self.workspace_id)
-        cutoff_date = timezone.make_aware(
-            datetime(2024, 10, 1),
-            timezone.get_current_timezone()
-        )
-        return workspace.created_at <= cutoff_date
+        if attribute_count > SYNC_UPPER_LIMIT:
+            workspace = Workspace.objects.get(id=self.workspace_id)
+            if workspace.created_at > timezone.make_aware(datetime(2024, 10, 1), timezone.get_current_timezone()):
+                return False
+            else:
+                return True
+        
+        return True
 
     def get_generator_params(self, attribute_type: str, display_name: str) -> dict:
         """
@@ -216,8 +197,16 @@ class NetSuiteConnector:
         Sync accounts
         """
         attribute_count = self.connection.accounts.count()
-        if not self.is_sync_allowed(attribute_type = 'accounts', attribute_count=attribute_count):
-            logger.info('Skipping sync of accounts for workspace %s as it has %s counts which is over the limit', self.workspace_id, attribute_count)
+        
+        NetSuiteAttributesCount.update_attribute_count(
+            workspace_id=self.workspace_id,
+            attribute_type='accounts',
+            count=attribute_count
+        )
+        
+        if not self.is_sync_allowed(attribute_count=attribute_count):
+            logger.info('Skipping sync of accounts for workspace %s as it has %s counts which is over the limit of %s', 
+                        self.workspace_id, attribute_count, SYNC_UPPER_LIMIT)
             return
         accounts_generator = self.connection.accounts.get_all_generator()
         for accounts in accounts_generator:
@@ -307,6 +296,19 @@ class NetSuiteConnector:
         """
         Sync Expense Categories
         """
+        attribute_count = self.connection.expense_categories.count()
+        
+        NetSuiteAttributesCount.update_attribute_count(
+            workspace_id=self.workspace_id,
+            attribute_type='expense_categories',
+            count=attribute_count
+        )
+        
+        if not self.is_sync_allowed(attribute_count=attribute_count):
+            logger.info('Skipping sync of expense categories for workspace %s as it has %s counts which is over the limit of %s', 
+                        self.workspace_id, attribute_count, SYNC_UPPER_LIMIT)
+            return
+        
         categories_generator = self.connection.expense_categories.get_all_generator()
         is_expense_category_import_enabled = self.is_import_enabled(attribute_type='EXPENSE_CATEGORY')
 
@@ -371,6 +373,18 @@ class NetSuiteConnector:
         """
         Sync Items
         """
+        attribute_count = self.connection.items.count()
+        
+        NetSuiteAttributesCount.update_attribute_count(
+            workspace_id=self.workspace_id,
+            attribute_type='items',
+            count=attribute_count
+        )
+        
+        if not self.is_sync_allowed(attribute_count=attribute_count):
+            logger.info('Skipping sync of items for workspace %s as it has %s counts which is over the limit of %s', 
+                        self.workspace_id, attribute_count, SYNC_UPPER_LIMIT)
+            return
 
         item_generator = self.connection.items.get_all_generator()
         for items in item_generator:
@@ -648,6 +662,19 @@ class NetSuiteConnector:
         """
         Sync Currencies
         """
+        attribute_count = self.connection.currencies.count()
+        
+        NetSuiteAttributesCount.update_attribute_count(
+            workspace_id=self.workspace_id,
+            attribute_type='currencies',
+            count=attribute_count
+        )
+        
+        if not self.is_sync_allowed(attribute_count=attribute_count):
+            logger.info('Skipping sync of currencies for workspace %s as it has %s counts which is over the limit of %s', 
+                        self.workspace_id, attribute_count, SYNC_UPPER_LIMIT)
+            return
+        
         currencies_generator = self.connection.currencies.get_all_generator()
 
         currency_attributes = []
@@ -673,8 +700,16 @@ class NetSuiteConnector:
         Sync locations
         """
         attribute_count = self.connection.locations.count()
-        if not self.is_sync_allowed(attribute_type = 'locations', attribute_count = attribute_count):
-            logger.info('Skipping sync of locations for workspace %s as it has %s counts which is over the limit', self.workspace_id, attribute_count)
+        
+        NetSuiteAttributesCount.update_attribute_count(
+            workspace_id=self.workspace_id,
+            attribute_type='locations',
+            count=attribute_count
+        )
+        
+        if not self.is_sync_allowed(attribute_count=attribute_count):
+            logger.info('Skipping sync of locations for workspace %s as it has %s counts which is over the limit of %s', 
+                        self.workspace_id, attribute_count, SYNC_UPPER_LIMIT)
             return
 
         subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
@@ -731,8 +766,16 @@ class NetSuiteConnector:
         """
         configuration = Configuration.objects.filter(workspace_id=self.workspace_id).first()
         attribute_count = self.connection.classifications.count()
-        if not self.is_sync_allowed(attribute_type = 'classes', attribute_count = attribute_count):
-            logger.info('Skipping sync of classes for workspace %s as it has %s counts which is over the limit', self.workspace_id, attribute_count)
+        
+        NetSuiteAttributesCount.update_attribute_count(
+            workspace_id=self.workspace_id,
+            attribute_type='classifications',
+            count=attribute_count
+        )
+        
+        if not self.is_sync_allowed(attribute_count=attribute_count):
+            logger.info('Skipping sync of classes for workspace %s as it has %s counts which is over the limit of %s', 
+                        self.workspace_id, attribute_count, SYNC_UPPER_LIMIT)
             return
 
         classification_generator = self.connection.classifications.get_all_generator()
@@ -777,8 +820,16 @@ class NetSuiteConnector:
         Sync departments
         """
         attribute_count = self.connection.departments.count()
-        if not self.is_sync_allowed(attribute_type = 'departments', attribute_count = attribute_count):
-            logger.info('Skipping sync of department for workspace %s as it has %s counts which is over the limit', self.workspace_id, attribute_count)
+        
+        NetSuiteAttributesCount.update_attribute_count(
+            workspace_id=self.workspace_id,
+            attribute_type='departments',
+            count=attribute_count
+        )
+        
+        if not self.is_sync_allowed(attribute_count=attribute_count):
+            logger.info('Skipping sync of departments for workspace %s as it has %s counts which is over the limit of %s', 
+                        self.workspace_id, attribute_count, SYNC_UPPER_LIMIT)
             return
         department_generator = self.connection.departments.get_all_generator()
 
@@ -818,8 +869,16 @@ class NetSuiteConnector:
         Sync vendors
         """
         attribute_count = self.connection.vendors.count()
-        if not self.is_sync_allowed(attribute_type = 'vendors', attribute_count=attribute_count):
-            logger.info('Skipping sync of vendors for workspace %s as it has %s counts which is over the limit', self.workspace_id, attribute_count)
+        
+        NetSuiteAttributesCount.update_attribute_count(
+            workspace_id=self.workspace_id,
+            attribute_type='vendors',
+            count=attribute_count
+        )
+        
+        if not self.is_sync_allowed(attribute_count=attribute_count):
+            logger.info('Skipping sync of vendors for workspace %s as it has %s counts which is over the limit of %s', 
+                        self.workspace_id, attribute_count, SYNC_UPPER_LIMIT)
             return
 
         subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
@@ -994,6 +1053,19 @@ class NetSuiteConnector:
         """
         Sync employees
         """
+        attribute_count = self.connection.employees.count()
+        
+        NetSuiteAttributesCount.update_attribute_count(
+            workspace_id=self.workspace_id,
+            attribute_type='employees',
+            count=attribute_count
+        )
+        
+        if not self.is_sync_allowed(attribute_count=attribute_count):
+            logger.info('Skipping sync of employees for workspace %s as it has %s counts which is over the limit of %s', 
+                        self.workspace_id, attribute_count, SYNC_UPPER_LIMIT)
+            return
+        
         configuration = Configuration.objects.filter(workspace_id=self.workspace_id).first()
 
         subsidiary_mapping = SubsidiaryMapping.objects.get(workspace_id=self.workspace_id)
@@ -1243,6 +1315,19 @@ class NetSuiteConnector:
         """
         Sync Tax Details
         """
+        attribute_count = self.connection.tax_items.count()
+        
+        NetSuiteAttributesCount.update_attribute_count(
+            workspace_id=self.workspace_id,
+            attribute_type='tax_items',
+            count=attribute_count
+        )
+        
+        if not self.is_sync_allowed(attribute_count=attribute_count):
+            logger.info('Skipping sync of tax items for workspace %s as it has %s counts which is over the limit of %s', 
+                        self.workspace_id, attribute_count, SYNC_UPPER_LIMIT)
+            return
+        
         general_mapping = GeneralMapping.objects.filter(workspace_id=self.workspace_id).first()
 
         tax_items_generator = self.connection.tax_items.get_all_generator()
@@ -1314,8 +1399,16 @@ class NetSuiteConnector:
         Sync projects
         """
         attribute_count = self.connection.projects.count()
-        if not self.is_sync_allowed(attribute_type = 'projects', attribute_count = attribute_count):
-            logger.info('Skipping sync of projects for workspace %s as it has %s counts which is over the limit', self.workspace_id, attribute_count)
+        
+        NetSuiteAttributesCount.update_attribute_count(
+            workspace_id=self.workspace_id,
+            attribute_type='projects',
+            count=attribute_count
+        )
+        
+        if not self.is_sync_allowed(attribute_count=attribute_count):
+            logger.info('Skipping sync of projects for workspace %s as it has %s counts which is over the limit of %s', 
+                        self.workspace_id, attribute_count, SYNC_UPPER_LIMIT)
             return
         
         projects_generator = self.connection.projects.get_all_generator()
@@ -1361,8 +1454,16 @@ class NetSuiteConnector:
         Sync customers
         """
         attribute_count = self.connection.customers.count()
-        if not self.is_sync_allowed(attribute_type = 'customers', attribute_count = attribute_count):
-            logger.info('Skipping sync of customers for workspace %s as it has %s counts which is over the limit', self.workspace_id, attribute_count)
+        
+        NetSuiteAttributesCount.update_attribute_count(
+            workspace_id=self.workspace_id,
+            attribute_type='customers',
+            count=attribute_count
+        )
+        
+        if not self.is_sync_allowed(attribute_count=attribute_count):
+            logger.info('Skipping sync of customers for workspace %s as it has %s counts which is over the limit of %s', 
+                        self.workspace_id, attribute_count, SYNC_UPPER_LIMIT)
             return
 
         params = self.get_generator_params(attribute_type='PROJECT', display_name='Customer')

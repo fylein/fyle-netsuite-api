@@ -359,6 +359,50 @@ class CustomSegment(models.Model):
         db_table = 'custom_segments'
 
 
+class NetSuiteAttributesCount(models.Model):
+    """
+    Store NetSuite attribute counts for each workspace
+    """
+    id = models.AutoField(primary_key=True)
+    workspace = models.OneToOneField(
+        Workspace, 
+        on_delete=models.PROTECT,
+        help_text='Reference to workspace',
+        related_name='netsuite_attributes_count'
+    )
+    accounts_count = models.IntegerField(default=0, help_text='Number of accounts in NetSuite')
+    expense_categories_count = models.IntegerField(default=0, help_text='Number of expense categories in NetSuite')
+    items_count = models.IntegerField(default=0, help_text='Number of items in NetSuite')
+    currencies_count = models.IntegerField(default=0, help_text='Number of currencies in NetSuite')
+    locations_count = models.IntegerField(default=0, help_text='Number of locations in NetSuite')
+    classifications_count = models.IntegerField(default=0, help_text='Number of classifications in NetSuite')
+    departments_count = models.IntegerField(default=0, help_text='Number of departments in NetSuite')
+    vendors_count = models.IntegerField(default=0, help_text='Number of vendors in NetSuite')
+    employees_count = models.IntegerField(default=0, help_text='Number of employees in NetSuite')
+    tax_items_count = models.IntegerField(default=0, help_text='Number of tax items in NetSuite')
+    projects_count = models.IntegerField(default=0, help_text='Number of projects in NetSuite')
+    customers_count = models.IntegerField(default=0, help_text='Number of customers in NetSuite')
+    created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')
+    updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime', db_index=True)
+
+    class Meta:
+        db_table = 'netsuite_attributes_count'
+
+    @staticmethod
+    def update_attribute_count(workspace_id: int, attribute_type: str, count: int):
+        """
+        Update attribute count for a workspace
+        
+        :param workspace_id: Workspace ID
+        :param attribute_type: Type of attribute (e.g., 'accounts', 'vendors')
+        :param count: Count value from NetSuite
+        """
+        netsuite_count = NetSuiteAttributesCount.objects.get(workspace_id=workspace_id)
+        field_name = f'{attribute_type}_count'
+        setattr(netsuite_count, field_name, count)
+        netsuite_count.save(update_fields=[field_name, 'updated_at'])
+
+
 class Bill(models.Model):
     """
     NetSuite Vendor Bill
