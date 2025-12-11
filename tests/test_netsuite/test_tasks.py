@@ -8,6 +8,7 @@ import string
 import logging
 import zeep.exceptions
 
+from django.utils import timezone as django_timezone
 from django_q.models import Schedule
 from netsuitesdk import NetSuiteRequestError
 from fyle.platform.exceptions import InternalServerError
@@ -1968,3 +1969,29 @@ def test_create_credit_card_charge_task_log_does_not_exist(mocker, db):
     """
     with pytest.raises(TaskLog.DoesNotExist):
         create_credit_card_charge(1, 99999, True, False)
+
+
+def test_schedule_creation_with_no_expense_groups(db):
+    workspace_id = 1
+
+    expense_group_1 = ExpenseGroup.objects.get(id=1)
+    expense_group_1.exported_at = django_timezone.now()
+    expense_group_1.save()
+
+    expense_group_2 = ExpenseGroup.objects.get(id=2)
+    expense_group_2.exported_at = django_timezone.now()
+    expense_group_2.save()
+
+    initial_task_log_count = TaskLog.objects.filter(workspace_id=workspace_id).count()
+
+    schedule_journal_entry_creation(workspace_id, [1], False, 'PERSONAL', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
+    assert TaskLog.objects.filter(workspace_id=workspace_id).count() == initial_task_log_count
+
+    schedule_expense_reports_creation(workspace_id, [1], False, 'PERSONAL', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
+    assert TaskLog.objects.filter(workspace_id=workspace_id).count() == initial_task_log_count
+
+    schedule_bills_creation(workspace_id, [1], False, 'PERSONAL', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
+    assert TaskLog.objects.filter(workspace_id=workspace_id).count() == initial_task_log_count
+
+    schedule_credit_card_charge_creation(workspace_id, [2], False, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
+    assert TaskLog.objects.filter(workspace_id=workspace_id).count() == initial_task_log_count
