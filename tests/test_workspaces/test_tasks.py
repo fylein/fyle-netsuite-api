@@ -6,6 +6,7 @@ from apps.workspaces.models import Configuration, WorkspaceSchedule, FyleCredent
 from apps.workspaces.tasks import run_sync_schedule, schedule_sync, delete_cards_mapping_settings, run_email_notification, async_create_admin_subscriptions, post_to_integration_settings, patch_integration_settings, patch_integration_settings_for_unmapped_cards, async_update_workspace_name
 from fyle_accounting_mappings.models import ExpenseAttribute
 from tests.test_fyle.fixtures import data as fyle_data
+from fyle.platform.exceptions import InvalidTokenError
 
 
 def test_schedule_sync(db):
@@ -499,3 +500,32 @@ def test_run_sync_schedule_includes_expense_groups_without_task_logs_re_attempt_
         type='FETCHING_EXPENSES'
     ).first()
     assert task_log.status == 'COMPLETE'
+
+
+def test_async_create_admin_subscriptions_invalid_token(db, mocker):
+    mocker.patch(
+        'fyle_integrations_platform_connector.PlatformConnector.__init__',
+        side_effect=InvalidTokenError('Invalid Token')
+    )
+    async_create_admin_subscriptions(1)
+
+    mocker.patch(
+        'fyle_integrations_platform_connector.PlatformConnector.__init__',
+        side_effect=Exception('General error')
+    )
+    async_create_admin_subscriptions(1)
+
+
+def test_async_update_workspace_name_invalid_token(db, mocker):
+    mocker.patch(
+        'apps.workspaces.tasks.get_fyle_admin',
+        side_effect=InvalidTokenError('Invalid Token')
+    )
+    workspace = Workspace.objects.get(id=1)
+    async_update_workspace_name(workspace, 'Bearer access_token')
+
+    mocker.patch(
+        'apps.workspaces.tasks.get_fyle_admin',
+        side_effect=Exception('General error')
+    )
+    async_update_workspace_name(workspace, 'Bearer access_token')
