@@ -8,6 +8,7 @@ from django_q.models import Schedule
 
 from apps.fyle.models import ExpenseGroup, Expense, ExpenseGroupSettings
 from apps.tasks.models import TaskLog, Error
+from fyle_accounting_mappings.models import ExpenseAttribute
 from apps.fyle.actions import post_accounting_export_summary
 from apps.fyle.tasks import (
     create_expense_groups,
@@ -23,7 +24,8 @@ from apps.fyle.tasks import (
     cleanup_scheduled_task,
     handle_expense_report_change,
     _delete_expense_groups_for_report,
-    _handle_expense_ejected_from_report
+    _handle_expense_ejected_from_report,
+    handle_category_changes_for_expense
 )
 from apps.workspaces.models import Configuration, FyleCredential, Workspace
 from .fixtures import data
@@ -221,16 +223,16 @@ def test_update_non_exported_expenses(db, create_temp_workspace, mocker, api_cli
 
     update_non_exported_expenses(payload['data'])
 
-    expense = Expense.objects.get(expense_id='txhJLOSKs1iN', org_id=org_id)
-    assert expense.category == 'ABN Withholding'
+    expense_created.refresh_from_db()
+    assert expense_created.category == 'ABN Withholding'
 
-    expense.accounting_export_summary = {"synced": True, "state": "COMPLETE"}
-    expense.category = 'Old Category'
-    expense.save()
+    expense_created.accounting_export_summary = {"synced": True, "state": "COMPLETE"}
+    expense_created.category = 'Old Category'
+    expense_created.save()
 
     update_non_exported_expenses(payload['data'])
-    expense = Expense.objects.get(expense_id='txhJLOSKs1iN', org_id=org_id)
-    assert expense.category == 'Old Category'
+    expense_created.refresh_from_db()
+    assert expense_created.category == 'Old Category'
 
     try:
         update_non_exported_expenses(payload['data'])
@@ -1445,4 +1447,172 @@ def test_handle_expense_report_change_ejected_from_exported_group(db, add_expens
 
     expense_group.refresh_from_db()
     assert expense in expense_group.expenses.all()
+
+
+def test_handle_category_changes_for_expense(db, add_category_test_expense, add_category_test_expense_group, add_category_mapping_error, add_mapped_category):
+    workspace = Workspace.objects.get(id=3)
+    expense = add_category_test_expense
+    expense_group = add_category_test_expense_group
+    error = add_category_mapping_error
+    configuration = Configuration.objects.get(workspace_id=workspace.id)
+
+    error.mapping_error_expense_group_ids = [expense_group.id]
+    error.save()
+
+    handle_category_changes_for_expense(expense=expense, new_category='Mapped Category')
+
+    assert not Error.objects.filter(id=error.id).exists()
+
+    expense_group.delete()
+
+    expense_group_2 = ExpenseGroup.objects.create(
+        workspace_id=workspace.id,
+        fund_source='PERSONAL',
+        description={'employee_email': expense.employee_email},
+        employee_name=expense.employee_name
+    )
+    expense_group_2.expenses.add(expense)
+
+    unmapped_category_attribute = ExpenseAttribute.objects.create(
+        workspace_id=workspace.id,
+        attribute_type='CATEGORY',
+        value='Unmapped Category',
+        display_name='Category',
+        source_id='catUnmapped456'
+    )
+
+    existing_error = Error.objects.create(
+        workspace_id=workspace.id,
+        type='CATEGORY_MAPPING',
+        is_resolved=False,
+        expense_attribute=unmapped_category_attribute,
+        mapping_error_expense_group_ids=[888]
+    )
+
+    handle_category_changes_for_expense(expense=expense, new_category='Unmapped Category')
+
+    existing_error.refresh_from_db()
+    assert expense_group_2.id in existing_error.mapping_error_expense_group_ids
+    assert 888 in existing_error.mapping_error_expense_group_ids
+
+    expense_group_2.delete()
+
+    expense_group_3 = ExpenseGroup.objects.create(
+        workspace_id=workspace.id,
+        fund_source='PERSONAL',
+        description={'employee_email': expense.employee_email},
+        employee_name=expense.employee_name
+    )
+    expense_group_3.expenses.add(expense)
+
+    new_unmapped_category = ExpenseAttribute.objects.create(
+        workspace_id=workspace.id,
+        attribute_type='CATEGORY',
+        value='New Unmapped',
+        display_name='Category',
+        source_id='catNewUnmap789'
+    )
+
+    handle_category_changes_for_expense(expense=expense, new_category='New Unmapped')
+
+    new_error = Error.objects.filter(
+        workspace_id=workspace.id,
+        type='CATEGORY_MAPPING',
+        expense_attribute=new_unmapped_category
+    ).first()
+
+    assert new_error is not None
+    assert expense_group_3.id in new_error.mapping_error_expense_group_ids
+
+    expense_group_3.delete()
+
+    configuration.reimbursable_expenses_object = 'BILL'
+    configuration.save()
+
+    expense_group_4 = ExpenseGroup.objects.create(
+        workspace_id=workspace.id,
+        fund_source='PERSONAL',
+        description={'employee_email': expense.employee_email},
+        employee_name=expense.employee_name
+    )
+    expense_group_4.expenses.add(expense)
+
+    handle_category_changes_for_expense(expense=expense, new_category='Mapped Category')
+
+    expense_group_4.delete()
+
+    configuration.corporate_credit_card_expenses_object = 'EXPENSE REPORT'
+    configuration.save()
+
+    expense_group_5 = ExpenseGroup.objects.create(
+        workspace_id=workspace.id,
+        fund_source='CCC',
+        description={'employee_email': expense.employee_email},
+        employee_name=expense.employee_name
+    )
+    expense_group_5.expenses.add(expense)
+
+    handle_category_changes_for_expense(expense=expense, new_category='Mapped Category')
+
+    expense_group_5.delete()
+
+    configuration.corporate_credit_card_expenses_object = 'CREDIT CARD CHARGE'
+    configuration.save()
+
+    expense_group_6 = ExpenseGroup.objects.create(
+        workspace_id=workspace.id,
+        fund_source='CCC',
+        description={'employee_email': expense.employee_email},
+        employee_name=expense.employee_name
+    )
+    expense_group_6.expenses.add(expense)
+
+    handle_category_changes_for_expense(expense=expense, new_category='Mapped Category')
+
+
+def test_update_non_exported_expenses_category_change(mocker, db):
+    expense_data = data['raw_expense'].copy()
+    expense_data['category']['name'] = 'New Category'
+    expense_data['category']['sub_category'] = 'New Sub Category'
+    org_id = expense_data['org_id']
+
+    default_raw_expense = data['default_raw_expense'].copy()
+    default_raw_expense['category'] = 'Old Category'
+    default_raw_expense['sub_category'] = 'Old Sub Category'
+
+    expense_created, _ = Expense.objects.update_or_create(
+        org_id=org_id,
+        expense_id='txhJLOSKs1iN',
+        workspace_id=1,
+        defaults=default_raw_expense
+    )
+    expense_created.accounting_export_summary = {}
+    expense_created.save()
+
+    workspace = Workspace.objects.filter(id=1).first()
+    workspace.fyle_org_id = org_id
+    workspace.save()
+
+    mock_fyle_expenses = mocker.patch('apps.fyle.tasks.FyleExpenses')
+    constructed_expense = expense_data.copy()
+    constructed_expense['category'] = expense_data['category']['name']
+    constructed_expense['sub_category'] = expense_data['category']['sub_category']
+    constructed_expense['source_account_type'] = 'PERSONAL_CASH_ACCOUNT'
+    if 'custom_properties' not in constructed_expense:
+        constructed_expense['custom_properties'] = []
+    mock_fyle_expenses.return_value.construct_expense_object.return_value = [constructed_expense]
+
+    mocker.patch('apps.fyle.tasks.Expense.create_expense_objects', return_value=None)
+
+    mock_handle_category_changes = mocker.patch(
+        'apps.fyle.tasks.handle_category_changes_for_expense',
+        return_value=None
+    )
+
+    update_non_exported_expenses(expense_data)
+
+    assert mock_handle_category_changes.call_count == 1
+    _, kwargs = mock_handle_category_changes.call_args
+    assert kwargs['expense'] == expense_created
+    assert kwargs['new_category'] == 'New Category / New Sub Category'
 
