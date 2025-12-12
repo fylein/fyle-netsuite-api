@@ -1495,6 +1495,16 @@ def test_handle_category_changes_for_expense(db, add_category_test_expense, add_
     assert expense_group_2.id in existing_error.mapping_error_expense_group_ids
     assert 888 in existing_error.mapping_error_expense_group_ids
 
+    error_count_before = Error.objects.filter(workspace_id=workspace.id, type='CATEGORY_MAPPING').count()
+
+    handle_category_changes_for_expense(expense=expense, new_category='Unmapped Category')
+
+    existing_error.refresh_from_db()
+    assert expense_group_2.id in existing_error.mapping_error_expense_group_ids
+    assert len(existing_error.mapping_error_expense_group_ids) == 2
+    error_count_after = Error.objects.filter(workspace_id=workspace.id, type='CATEGORY_MAPPING').count()
+    assert error_count_before == error_count_after
+
     expense_group_2.delete()
 
     expense_group_3 = ExpenseGroup.objects.create(

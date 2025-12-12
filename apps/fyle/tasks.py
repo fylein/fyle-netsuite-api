@@ -849,10 +849,11 @@ def handle_category_changes_for_expense(expense: Expense, new_category: str) -> 
             new_category_expense_attribute = ExpenseAttribute.objects.filter(workspace_id=expense.workspace_id, attribute_type='CATEGORY', value=new_category).first()
             if new_category_expense_attribute:
                 updated_category_error = Error.objects.filter(workspace_id=expense.workspace_id, is_resolved=False, type='CATEGORY_MAPPING', expense_attribute=new_category_expense_attribute).first()
-                if updated_category_error and expense_group.id not in updated_category_error.mapping_error_expense_group_ids:
-                    updated_category_error.mapping_error_expense_group_ids.append(expense_group.id)
-                    updated_category_error.updated_at = datetime.now(timezone.utc)
-                    updated_category_error.save(update_fields=['mapping_error_expense_group_ids', 'updated_at'])
+                if updated_category_error:
+                    if expense_group.id not in updated_category_error.mapping_error_expense_group_ids:
+                        updated_category_error.mapping_error_expense_group_ids.append(expense_group.id)
+                        updated_category_error.updated_at = datetime.now(timezone.utc)
+                        updated_category_error.save(update_fields=['mapping_error_expense_group_ids', 'updated_at'])
                 else:
                     configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
                     category_mapping = CategoryMapping.objects.filter(
