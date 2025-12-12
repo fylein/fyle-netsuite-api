@@ -2,7 +2,7 @@ import hashlib
 import logging
 from typing import List, Dict
 import traceback
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from django.db import transaction
 from django.db.models import Count, Q
@@ -30,6 +30,7 @@ from apps.workspaces.models import (
     WorkspaceSchedule
 )
 from apps.tasks.models import Error, TaskLog
+from fyle_accounting_mappings.models import ExpenseAttribute, CategoryMapping
 from .models import Expense, ExpenseFilter, ExpenseGroup, ExpenseGroupSettings, SOURCE_ACCOUNT_MAP as EXPENSE_SOURCE_ACCOUNT_MAP
 from .helpers import construct_expense_filter_query, update_task_log_post_import
 from .helpers import (
@@ -825,6 +826,65 @@ def _handle_expense_ejected_from_report(expense: Expense, expense_data: dict, wo
             worker_logger.info("Expense group %s still has expenses after removing %s", expense_group.id, expense.expense_id)
 
 
+def handle_category_changes_for_expense(expense: Expense, new_category: str) -> None:
+    """
+    Handle category changes for expense
+    :param expense: Expense object
+    :param new_category: New category
+    :return: None
+    """
+    with transaction.atomic():
+        expense_group = ExpenseGroup.objects.filter(expenses__id=expense.id, workspace_id=expense.workspace_id).first()
+        if expense_group:
+            error = Error.objects.filter(workspace_id=expense.workspace_id, is_resolved=False, type='CATEGORY_MAPPING', mapping_error_expense_group_ids__contains=[expense_group.id]).first()
+            if error:
+                logger.info('Removing expense group: %s from errors for workspace_id: %s as a result of category update for expense %s', expense_group.id, expense.workspace_id, expense.id)
+                error.mapping_error_expense_group_ids.remove(expense_group.id)
+                if error.mapping_error_expense_group_ids:
+                    error.updated_at = datetime.now(timezone.utc)
+                    error.save(update_fields=['mapping_error_expense_group_ids', 'updated_at'])
+                else:
+                    error.delete()
+
+            new_category_expense_attribute = ExpenseAttribute.objects.filter(workspace_id=expense.workspace_id, attribute_type='CATEGORY', value=new_category).first()
+            if new_category_expense_attribute:
+                updated_category_error = Error.objects.filter(workspace_id=expense.workspace_id, is_resolved=False, type='CATEGORY_MAPPING', expense_attribute=new_category_expense_attribute).first()
+                if updated_category_error:
+                    if expense_group.id not in updated_category_error.mapping_error_expense_group_ids:
+                        updated_category_error.mapping_error_expense_group_ids.append(expense_group.id)
+                        updated_category_error.updated_at = datetime.now(timezone.utc)
+                        updated_category_error.save(update_fields=['mapping_error_expense_group_ids', 'updated_at'])
+                else:
+                    configuration = Configuration.objects.get(workspace_id=expense_group.workspace_id)
+                    category_mapping = CategoryMapping.objects.filter(
+                        source_category__value=new_category,
+                        workspace_id=expense_group.workspace_id
+                    ).first()
+
+                    if category_mapping:
+                        if expense_group.fund_source == 'PERSONAL':
+                            if configuration.reimbursable_expenses_object == 'EXPENSE REPORT':
+                                category_mapping = category_mapping.destination_expense_head
+                            else:
+                                category_mapping = category_mapping.destination_account
+                        else:
+                            if configuration.corporate_credit_card_expenses_object == 'EXPENSE REPORT':
+                                category_mapping = category_mapping.destination_expense_head
+                            else:
+                                category_mapping = category_mapping.destination_account
+
+                    if not category_mapping:
+                        Error.objects.create(
+                            workspace_id=expense.workspace_id,
+                            type='CATEGORY_MAPPING',
+                            expense_attribute=new_category_expense_attribute,
+                            mapping_error_expense_group_ids=[expense_group.id],
+                            updated_at=datetime.now(timezone.utc),
+                            error_detail=f"{new_category_expense_attribute.display_name} mapping is missing",
+                            error_title=new_category_expense_attribute.value
+                        )
+
+
 def update_non_exported_expenses(data: Dict) -> None:
     """
     To update expenses not in COMPLETE, IN_PROGRESS state
@@ -850,6 +910,9 @@ def update_non_exported_expenses(data: Dict) -> None:
             old_fund_source = expense.fund_source
             new_fund_source = EXPENSE_SOURCE_ACCOUNT_MAP[expense_objects[0]['source_account_type']]
 
+            old_category = expense.category if (expense.category == expense.sub_category or expense.sub_category == None) else '{0} / {1}'.format(expense.category, expense.sub_category)
+            new_category = expense_objects[0]['category'] if (expense_objects[0]['category'] == expense_objects[0]['sub_category'] or expense_objects[0]['sub_category'] == None) else '{0} / {1}'.format(expense_objects[0]['category'], expense_objects[0]['sub_category'])
+
             Expense.create_expense_objects(
                 expense_objects, expense.workspace_id, skip_update=True
             )
@@ -862,6 +925,10 @@ def update_non_exported_expenses(data: Dict) -> None:
                     report_id=expense.report_id,
                     affected_fund_source_expense_ids={old_fund_source: [expense.id]}
                 )
+
+            if old_category != new_category:
+                logger.info("Category changed for expense %s from %s to %s in workspace %s", expense.id, old_category, new_category, expense.workspace_id)
+                handle_category_changes_for_expense(expense=expense, new_category=new_category)
 
 
 def re_run_skip_export_rule(workspace: Workspace) -> None:

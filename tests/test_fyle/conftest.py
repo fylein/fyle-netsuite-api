@@ -1,10 +1,11 @@
 from datetime import datetime, timezone
 import pytest
-from apps.fyle.models import ExpenseGroupSettings
-from apps.workspaces.models import Workspace
+from apps.fyle.models import ExpenseGroupSettings, Expense
+from apps.workspaces.models import Workspace, Configuration, LastExportDetail
 from fyle_netsuite_api.tests import settings
 from apps.fyle.models import ExpenseGroup
-from apps.tasks.models import TaskLog
+from apps.tasks.models import TaskLog, Error
+from fyle_accounting_mappings.models import ExpenseAttribute, CategoryMapping, DestinationAttribute
 
 
 @pytest.fixture
@@ -28,6 +29,14 @@ def create_temp_workspace(db):
         expense_state='PAID',
         workspace_id=3,
         import_card_credits=False
+    )
+    
+    LastExportDetail.objects.get_or_create(workspace_id=3)
+    
+    Configuration.objects.create(
+        workspace_id=3,
+        reimbursable_expenses_object='EXPENSE REPORT',
+        corporate_credit_card_expenses_object='CREDIT CARD CHARGE'
     )
 
 
@@ -113,3 +122,106 @@ def setup_expense_groups_for_deletion_test(db):
         'regular_task_log': regular_task_log,
         'workspace_id': workspace_id
     }
+
+
+@pytest.fixture
+def add_category_test_expense(db, create_temp_workspace):
+    workspace = Workspace.objects.get(id=3)
+    expense = Expense.objects.create(
+        workspace_id=workspace.id,
+        expense_id='txCategoryTest',
+        employee_email='category.test@test.com',
+        employee_name='Category Test User',
+        category='Test Category',
+        amount=100,
+        currency='USD',
+        org_id=workspace.fyle_org_id,
+        settlement_id='setlCat',
+        report_id='rpCat',
+        spent_at='2024-01-01T00:00:00Z',
+        expense_created_at='2024-01-01T00:00:00Z',
+        expense_updated_at='2024-01-01T00:00:00Z',
+        fund_source='PERSONAL'
+    )
+    return expense
+
+
+@pytest.fixture
+def add_category_test_expense_group(db, add_category_test_expense):
+    workspace = Workspace.objects.get(id=3)
+    expense = add_category_test_expense
+    expense_group = ExpenseGroup.objects.create(
+        workspace_id=workspace.id,
+        fund_source='PERSONAL',
+        description={'employee_email': expense.employee_email},
+        employee_name=expense.employee_name
+    )
+    expense_group.expenses.add(expense)
+    return expense_group
+
+
+@pytest.fixture
+def add_category_mapping_error(db, add_category_test_expense_group):
+    workspace = Workspace.objects.get(id=3)
+    expense_group = add_category_test_expense_group
+    error = Error.objects.create(
+        workspace_id=workspace.id,
+        type='CATEGORY_MAPPING',
+        is_resolved=False,
+        mapping_error_expense_group_ids=[expense_group.id]
+    )
+    return error
+
+
+@pytest.fixture
+def add_category_expense_attribute(db, create_temp_workspace):
+    workspace = Workspace.objects.get(id=3)
+    expense_attribute = ExpenseAttribute.objects.create(
+        workspace_id=workspace.id,
+        attribute_type='CATEGORY',
+        value='Test Category Attribute',
+        display_name='Category',
+        source_id='catTest123'
+    )
+    return expense_attribute
+
+
+@pytest.fixture
+def add_mapped_category(db, create_temp_workspace):
+    workspace = Workspace.objects.get(id=3)
+    
+    destination_account = DestinationAttribute.objects.create(
+        workspace_id=workspace.id,
+        attribute_type='ACCOUNT',
+        display_name='Account',
+        value='Expense Account',
+        destination_id='acc123',
+        active=True
+    )
+    
+    destination_expense_head = DestinationAttribute.objects.create(
+        workspace_id=workspace.id,
+        attribute_type='EXPENSE_CATEGORY',
+        display_name='Expense Category',
+        value='Expense Category',
+        destination_id='expcat123',
+        active=True
+    )
+    
+    expense_attribute = ExpenseAttribute.objects.create(
+        workspace_id=workspace.id,
+        attribute_type='CATEGORY',
+        value='Mapped Category',
+        display_name='Category',
+        source_id='catMapped123',
+        active=True
+    )
+    
+    category_mapping = CategoryMapping.objects.create(
+        workspace_id=workspace.id,
+        source_category_id=expense_attribute.id,
+        destination_account_id=destination_account.id,
+        destination_expense_head_id=destination_expense_head.id
+    )
+    
+    return category_mapping
