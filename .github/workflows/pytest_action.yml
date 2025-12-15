@@ -26,7 +26,7 @@ jobs:
 
       - name: Pytest coverage comment
         uses: MishaKav/pytest-coverage-comment@main
-        if: ${{ always() && github.ref != 'refs/heads/master' }}
+        if: ${{ always() && github.ref != 'refs/heads/master' && github.actor != 'dependabot[bot]' }}
         with:
           create-new-comment: true
           pytest-coverage-path: ./pytest-coverage.txt
@@ -42,7 +42,7 @@ jobs:
           diff-cover coverage.xml --compare-branch=origin/master --diff-range-notation .. --fail-under=98 > result.txt 2>&1 || echo "diff-cover failed or no changes detected" > result.txt
 
       - name: Comment coverage check
-        if: always()
+        if: ${{ always() && github.actor != 'dependabot[bot]' }}
         uses: thollander/actions-comment-pull-request@v2
         with:
           filePath: result.txt
