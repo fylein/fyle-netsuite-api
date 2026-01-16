@@ -239,6 +239,21 @@ def test_refresh_netsuite_dimensions(api_client, access_token, add_netsuite_cred
    assert response.data['message'] == 'NetSuite credentials not found in workspace'
 
 
+def test_refresh_netsuite_dimensions_with_dimensions_to_sync(api_client, access_token, add_netsuite_credentials, mocker):
+   mocker.patch('apps.netsuite.views.handle_refresh_dimensions', return_value=None)
+
+   url = reverse('refresh-dimensions',
+      kwargs={
+         'workspace_id': 2
+      }
+   )
+
+   api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
+
+   response = api_client.post(url, data={'dimensions_to_sync': ['PROJECT', 'CLASS']}, format='json')
+   assert response.status_code == 200
+
+
 def test_netsuite_attributes_count_view(api_client, access_token, db):
    workspace_id = 1
    NetSuiteAttributesCount.update_attribute_count(workspace_id=workspace_id, attribute_type='accounts', count=150)
