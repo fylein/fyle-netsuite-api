@@ -8,8 +8,6 @@ from django.db import transaction, connection
 from datetime import timedelta
 from django.db.models import Q
 
-from django_q.tasks import async_task
-
 from rest_framework.response import Response
 from rest_framework.views import status
 from rest_framework import generics
@@ -36,7 +34,8 @@ from apps.tasks.models import TaskLog
 from .models import FeatureConfig, LastExportDetail, Workspace, FyleCredential, NetSuiteCredentials, Configuration, \
     WorkspaceSchedule
 from apps.workspaces.tasks import schedule_sync, patch_integration_settings
-from apps.workspaces.actions import export_to_netsuite
+from workers.helpers import RoutingKeyEnum, WorkerActionEnum, publish_to_rabbitmq
+
 from .serializers import LastExportDetailSerializer, WorkspaceSerializer, FyleCredentialSerializer, NetSuiteCredentialSerializer, \
     ConfigurationSerializer, WorkspaceScheduleSerializer
 from .permissions import IsAuthenticatedForInternalAPI
@@ -171,12 +170,15 @@ class WorkspaceView(viewsets.ViewSet):
         workspaces = Workspace.objects.filter(user__in=[user], fyle_org_id=org_id).all()
 
         if workspaces:
-            async_task(
-                'apps.workspaces.tasks.async_update_workspace_name',
-                workspaces[0],
-                request.META.get('HTTP_AUTHORIZATION'),
-                q_options={'cluster': 'import'}
-            )
+            payload = {
+                'workspace_id': workspaces[0].id,
+                'action': WorkerActionEnum.UPDATE_WORKSPACE_NAME.value,
+                'data': {
+                    'workspace_id': workspaces[0].id,
+                    'access_token': request.META.get('HTTP_AUTHORIZATION'),
+                }
+            }
+            publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.UTILITY.value)
         return Response(
             data=WorkspaceSerializer(workspaces, many=True).data,
             status=status.HTTP_200_OK
@@ -568,7 +570,15 @@ class ExportToNetsuiteView(viewsets.ViewSet):
     """
 
     def post(self, request, *args, **kwargs):
-        export_to_netsuite(workspace_id=kwargs['workspace_id'], triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
+        payload = {
+            'workspace_id': kwargs['workspace_id'],
+            'action': WorkerActionEnum.DASHBOARD_SYNC.value,
+            'data': {
+                'workspace_id': kwargs['workspace_id'],
+                'triggered_by': ExpenseImportSourceEnum.DASHBOARD_SYNC
+            }
+        }
+        publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.EXPORT_P0.value)
 
         return Response(
             status=status.HTTP_200_OK

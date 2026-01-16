@@ -6,9 +6,10 @@ from datetime import datetime, timedelta
 
 from django.utils import timezone
 from django.db import transaction
-from django_q.tasks import async_task
 
 from typing import List, Dict, Optional
+
+from workers.helpers import RoutingKeyEnum, WorkerActionEnum, publish_to_rabbitmq
 import logging
 
 from django.conf import settings
@@ -359,13 +360,14 @@ class NetSuiteConnector:
                 )
 
         if not is_expense_category_import_enabled:
-            async_task(
-                'apps.mappings.tasks.check_and_create_ccc_mappings',
-                workspace_id=self.workspace_id,
-                q_options={
-                    'cluster': 'import'
+            payload = {
+                'workspace_id': self.workspace_id,
+                'action': WorkerActionEnum.CHECK_AND_CREATE_CCC_MAPPINGS.value,
+                'data': {
+                    'workspace_id': self.workspace_id
                 }
-            )
+            }
+            publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.IMPORT.value)
 
         return []
 

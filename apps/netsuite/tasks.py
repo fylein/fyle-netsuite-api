@@ -14,8 +14,9 @@ from django.utils.module_loading import import_string
 from apps.fyle.helpers import get_filter_credit_expenses
 from apps.netsuite.exceptions import handle_netsuite_exceptions
 from django_q.models import Schedule
-from django_q.tasks import async_task
 from fyle_netsuite_api.utils import generate_netsuite_export_url, invalidate_netsuite_credentials
+
+from workers.helpers import RoutingKeyEnum, WorkerActionEnum, publish_to_rabbitmq
 from fyle_netsuite_api.logging_middleware import get_caller_info, get_logger
 
 from netsuitesdk.internal.exceptions import NetSuiteRequestError
@@ -548,10 +549,16 @@ def create_bill(expense_group_id: int, task_log_id: int, last_export: bool, is_a
 
     logger.info('Updated Expense Group %s successfully', expense_group.id)
     if configuration.is_attachment_upload_enabled:
-        async_task(
-                'apps.netsuite.tasks.upload_attachments_and_update_export',
-                expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
-            )
+        payload = {
+            'workspace_id': expense_group.workspace_id,
+            'action': WorkerActionEnum.UPLOAD_ATTACHMENTS.value,
+            'data': {
+                'expense_ids': list(expense_group.expenses.values_list('id', flat=True)),
+                'task_log_id': task_log.id,
+                'workspace_id': expense_group.workspace_id
+            }
+        }
+        publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.UTILITY.value)
         
 
 @handle_netsuite_exceptions(payment=False)
@@ -741,10 +748,16 @@ def create_expense_report(expense_group_id: int, task_log_id: int, last_export: 
 
     worker_logger.info('Updated Expense Group %s successfully', expense_group.id)
     if configuration.is_attachment_upload_enabled:
-        async_task(
-            'apps.netsuite.tasks.upload_attachments_and_update_export',
-            expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
-        )
+        payload = {
+            'workspace_id': expense_group.workspace_id,
+            'action': WorkerActionEnum.UPLOAD_ATTACHMENTS.value,
+            'data': {
+                'expense_ids': list(expense_group.expenses.values_list('id', flat=True)),
+                'task_log_id': task_log.id,
+                'workspace_id': expense_group.workspace_id
+            }
+        }
+        publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.UTILITY.value)
 
 
 
@@ -828,11 +841,16 @@ def create_journal_entry(expense_group_id: int, task_log_id: int, last_export: b
 
     worker_logger.info('Updated Expense Group %s successfully', expense_group.id)
     if configuration.is_attachment_upload_enabled:
-        async_task(
-            'apps.netsuite.tasks.upload_attachments_and_update_export',
-            expense_group.expenses.all(), task_log, fyle_credentials, expense_group.workspace_id
-        )
-        
+        payload = {
+            'workspace_id': expense_group.workspace_id,
+            'action': WorkerActionEnum.UPLOAD_ATTACHMENTS.value,
+            'data': {
+                'expense_ids': list(expense_group.expenses.values_list('id', flat=True)),
+                'task_log_id': task_log.id,
+                'workspace_id': expense_group.workspace_id
+            }
+        }
+        publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.UTILITY.value)
 
 def __validate_general_mapping(expense_group: ExpenseGroup, configuration: Configuration) -> List[BulkError]:
     bulk_errors = []

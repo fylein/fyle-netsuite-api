@@ -7,9 +7,11 @@ from datetime import datetime, timedelta, timezone
 from django.db import transaction
 from django.db.models import Count, Q
 from django_q.models import Schedule
-from django_q.tasks import async_task, schedule
+from django_q.tasks import schedule
 
 from fyle_integrations_platform_connector import PlatformConnector
+
+from workers.helpers import RoutingKeyEnum, WorkerActionEnum, publish_to_rabbitmq
 from fyle_integrations_platform_connector.apis.expenses import Expenses as FyleExpenses
 from fyle.platform.exceptions import (
     RetryException,
@@ -82,7 +84,17 @@ def schedule_expense_group_creation(workspace_id: int):
     """
     task_log, fund_source = get_task_log_and_fund_source(workspace_id)
 
-    async_task('apps.fyle.tasks.create_expense_groups', workspace_id, fund_source, task_log)
+    payload = {
+        'workspace_id': workspace_id,
+        'action': WorkerActionEnum.CREATE_EXPENSE_GROUP.value,
+        'data': {
+            'workspace_id': workspace_id,
+            'fund_source': fund_source,
+            'task_log': task_log.id if task_log else None,
+            'imported_from': None
+        }
+    }
+    publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.EXPORT_P1.value)
 
 
 def create_expense_groups(workspace_id: int, fund_source: List[str], task_log: TaskLog | None, imported_from: ExpenseImportSourceEnum):
