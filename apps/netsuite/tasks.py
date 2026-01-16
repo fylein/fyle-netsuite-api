@@ -549,16 +549,19 @@ def create_bill(expense_group_id: int, task_log_id: int, last_export: bool, is_a
 
     logger.info('Updated Expense Group %s successfully', expense_group.id)
     if configuration.is_attachment_upload_enabled:
-        payload = {
-            'workspace_id': expense_group.workspace_id,
-            'action': WorkerActionEnum.UPLOAD_ATTACHMENTS.value,
-            'data': {
-                'expense_ids': list(expense_group.expenses.values_list('id', flat=True)),
-                'task_log_id': task_log.id,
-                'workspace_id': expense_group.workspace_id
+        try:
+            payload = {
+                'workspace_id': expense_group.workspace_id,
+                'action': WorkerActionEnum.UPLOAD_ATTACHMENTS.value,
+                'data': {
+                    'expense_ids': list(expense_group.expenses.values_list('id', flat=True)),
+                    'task_log_id': task_log.id,
+                    'workspace_id': expense_group.workspace_id
+                }
             }
-        }
-        publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.UTILITY.value)
+            publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.UTILITY.value)
+        except Exception as e:
+            logger.error('Failed to enqueue attachment upload for expense_group_id: %s, error: %s', expense_group.id, str(e))
         
 
 @handle_netsuite_exceptions(payment=False)
@@ -748,16 +751,19 @@ def create_expense_report(expense_group_id: int, task_log_id: int, last_export: 
 
     worker_logger.info('Updated Expense Group %s successfully', expense_group.id)
     if configuration.is_attachment_upload_enabled:
-        payload = {
-            'workspace_id': expense_group.workspace_id,
-            'action': WorkerActionEnum.UPLOAD_ATTACHMENTS.value,
-            'data': {
-                'expense_ids': list(expense_group.expenses.values_list('id', flat=True)),
-                'task_log_id': task_log.id,
-                'workspace_id': expense_group.workspace_id
+        try:
+            payload = {
+                'workspace_id': expense_group.workspace_id,
+                'action': WorkerActionEnum.UPLOAD_ATTACHMENTS.value,
+                'data': {
+                    'expense_ids': list(expense_group.expenses.values_list('id', flat=True)),
+                    'task_log_id': task_log.id,
+                    'workspace_id': expense_group.workspace_id
+                }
             }
-        }
-        publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.UTILITY.value)
+            publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.UTILITY.value)
+        except Exception as e:
+            logger.error('Failed to enqueue attachment upload for expense_group_id: %s, error: %s', expense_group.id, str(e))
 
 
 
@@ -841,16 +847,19 @@ def create_journal_entry(expense_group_id: int, task_log_id: int, last_export: b
 
     worker_logger.info('Updated Expense Group %s successfully', expense_group.id)
     if configuration.is_attachment_upload_enabled:
-        payload = {
-            'workspace_id': expense_group.workspace_id,
-            'action': WorkerActionEnum.UPLOAD_ATTACHMENTS.value,
-            'data': {
-                'expense_ids': list(expense_group.expenses.values_list('id', flat=True)),
-                'task_log_id': task_log.id,
-                'workspace_id': expense_group.workspace_id
+        try:
+            payload = {
+                'workspace_id': expense_group.workspace_id,
+                'action': WorkerActionEnum.UPLOAD_ATTACHMENTS.value,
+                'data': {
+                    'expense_ids': list(expense_group.expenses.values_list('id', flat=True)),
+                    'task_log_id': task_log.id,
+                    'workspace_id': expense_group.workspace_id
+                }
             }
-        }
-        publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.UTILITY.value)
+            publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.UTILITY.value)
+        except Exception as e:
+            logger.error('Failed to enqueue attachment upload for expense_group_id: %s, error: %s', expense_group.id, str(e))
 
 def __validate_general_mapping(expense_group: ExpenseGroup, configuration: Configuration) -> List[BulkError]:
     bulk_errors = []
@@ -1429,7 +1438,7 @@ def get_all_internal_ids(netsuite_objects):
     return netsuite_objects_details
 
 
-def check_netsuite_object_status(workspace_id):
+def check_netsuite_object_status(workspace_id, trigger_reimbursements: bool = True):
 
     try:
         netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
@@ -1491,6 +1500,16 @@ def check_netsuite_object_status(workspace_id):
             except NetSuiteRequestError as exception:
                 logger.info({'error': exception})
                 pass
+
+    if trigger_reimbursements:
+        payload = {
+            'workspace_id': workspace_id,
+            'action': WorkerActionEnum.PROCESS_REIMBURSEMENTS.value,
+            'data': {
+                'workspace_id': workspace_id
+            }
+        }
+        publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.EXPORT_P1.value)
 
 
 def schedule_netsuite_objects_status_sync(sync_netsuite_to_fyle_payments, workspace_id):

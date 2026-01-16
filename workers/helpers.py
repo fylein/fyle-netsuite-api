@@ -84,8 +84,12 @@ def get_routing_key(queue_name: str) -> str:
     Get the routing key for a given queue name
     :param queue_name: str
     :return: str
+    :raises ValueError: if queue_name is not found in QUEUE_BINDKEY_MAP
     """
-    return QUEUE_BINDKEY_MAP.get(queue_name)
+    routing_key = QUEUE_BINDKEY_MAP.get(queue_name)
+    if routing_key is None:
+        raise ValueError(f'Unknown queue name: {queue_name}. Valid queue names are: {list(QUEUE_BINDKEY_MAP.keys())}')
+    return routing_key
 
 
 def publish_to_rabbitmq(payload: dict, routing_key: RoutingKeyEnum) -> None:

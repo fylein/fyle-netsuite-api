@@ -71,15 +71,6 @@ class TriggerPaymentsView(generics.GenericAPIView):
             }
             publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.EXPORT_P1.value)
 
-            payload = {
-                'workspace_id': kwargs['workspace_id'],
-                'action': WorkerActionEnum.PROCESS_REIMBURSEMENTS.value,
-                'data': {
-                    'workspace_id': kwargs['workspace_id']
-                }
-            }
-            publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.EXPORT_P1.value)
-
         return Response(
             status=status.HTTP_200_OK
         )

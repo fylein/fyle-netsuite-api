@@ -100,13 +100,15 @@ def test_run_email_notification(db, mocker, create_task_logs):
 
 
 @pytest.mark.django_db()
-def test_async_update_workspace_name(mocker):
+def test_async_update_workspace_name(mocker, add_fyle_credentials):
+    mocker.patch(
+        'apps.workspaces.tasks.PlatformConnector'
+    )
     mocker.patch(
         'apps.workspaces.tasks.get_fyle_admin',
         return_value={'data': {'org': {'name': 'Test Org'}}}
     )
-    workspace = Workspace.objects.get(id=1)
-    async_update_workspace_name(workspace, 'Bearer access_token')
+    async_update_workspace_name(1)
 
     workspace = Workspace.objects.get(id=1)
     assert workspace.name == 'Test Org'
@@ -516,16 +518,23 @@ def test_async_create_admin_subscriptions_invalid_token(db, mocker):
     async_create_admin_subscriptions(1)
 
 
-def test_async_update_workspace_name_invalid_token(db, mocker):
+def test_async_update_workspace_name_invalid_token(db, mocker, add_fyle_credentials):
+    mocker.patch(
+        'apps.workspaces.tasks.PlatformConnector'
+    )
     mocker.patch(
         'apps.workspaces.tasks.get_fyle_admin',
         side_effect=InvalidTokenError('Invalid Token')
     )
-    workspace = Workspace.objects.get(id=1)
-    async_update_workspace_name(workspace, 'Bearer access_token')
+    async_update_workspace_name(1)
 
     mocker.patch(
         'apps.workspaces.tasks.get_fyle_admin',
         side_effect=Exception('General error')
     )
-    async_update_workspace_name(workspace, 'Bearer access_token')
+    async_update_workspace_name(1)
+
+
+def test_async_update_workspace_name_fyle_credentials_not_found(db, mocker):
+    FyleCredential.objects.filter(workspace_id=1).delete()
+    async_update_workspace_name(1)

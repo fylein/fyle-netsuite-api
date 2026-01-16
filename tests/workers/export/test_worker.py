@@ -3,6 +3,7 @@ from unittest.mock import Mock, patch
 
 from workers.worker import Worker, main
 from workers.actions import handle_tasks
+from workers.helpers import get_routing_key
 from fyle_accounting_library.rabbitmq.models import FailedEvent
 from common.event import BaseEvent
 
@@ -35,10 +36,18 @@ def test_handle_tasks_action_none():
 
 
 @pytest.mark.django_db
-def test_handle_tasks_method_none():
+def test_handle_tasks_invalid_action():
     payload = {'action': 'INVALID_ACTION_THAT_DOES_NOT_EXIST', 'data': {'workspace_id': 1}}
     result = handle_tasks(payload)
     assert result is None
+
+
+@pytest.mark.django_db
+def test_handle_tasks_method_none():
+    with patch('workers.actions.ACTION_METHOD_MAP', {}) as mock_map:
+        payload = {'action': 'EXPORT.P0.DASHBOARD_SYNC', 'data': {'workspace_id': 1}}
+        result = handle_tasks(payload)
+        assert result is None
 
 
 @pytest.mark.django_db
@@ -155,4 +164,10 @@ def test_main(mock_parse_args, mock_consume):
     main()
 
     mock_consume.assert_called_once_with(queue_name='netsuite_export.p0')
+
+
+def test_get_routing_key_invalid_queue():
+    with pytest.raises(ValueError) as exc_info:
+        get_routing_key('invalid_queue_name')
+    assert 'Unknown queue name: invalid_queue_name' in str(exc_info.value)
 

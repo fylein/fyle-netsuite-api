@@ -73,7 +73,7 @@ def handle_webhook_callback(body: dict, workspace_id: int) -> None:
     elif action in ('EJECTED_FROM_REPORT', 'ADDED_TO_REPORT') and data and resource == 'EXPENSE':
         expense_id = data['id']
         action_type = action
-        logger.info("| Handling expense %s | Content: {WORKSPACE_ID: %s EXPENSE_ID: %s Payload: %s}", action_type.lower().replace('_', ' '), workspace_id, expense_id, data)
+        logger.info("| Handling expense %s | Content: {WORKSPACE_ID: %s EXPENSE_ID: %s}", action_type.lower().replace('_', ' '), workspace_id, expense_id)
         payload = {
             'workspace_id': workspace_id,
             'action': WorkerActionEnum.EXPENSE_ADDED_EJECTED_FROM_REPORT.value,
