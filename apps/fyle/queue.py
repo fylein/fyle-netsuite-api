@@ -18,13 +18,12 @@ def handle_webhook_callback(body: dict, workspace_id: int) -> None:
     :param workspace_id: workspace id
     :return: None
     """
-    if body.get('data') and body['data'].get('org_id'):
-        org_id = body['data']['org_id']
-        assert_valid_request(workspace_id=workspace_id, fyle_org_id=org_id)
-
     action = body.get('action')
     resource = body.get('resource')
     data = body.get('data')
+
+    if data and data.get('org_id'):
+        assert_valid_request(workspace_id=workspace_id, fyle_org_id=data['org_id'])
 
     if action in ('ADMIN_APPROVED', 'APPROVED', 'STATE_CHANGE_PAYMENT_PROCESSING', 'PAID') and data:
         report_id = data['id']
