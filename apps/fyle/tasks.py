@@ -1064,3 +1064,21 @@ def construct_filter_for_affected_expense_groups(workspace_id: int, report_id: s
                 filter_for_affected_expense_groups |= Q(expenses__id__in=expense_ids)
 
     return filter_for_affected_expense_groups
+
+
+def handle_org_setting_updated(workspace_id: int, org_settings: dict) -> None:
+    """
+    Update regional date setting on org setting updated
+    :param workspace_id: Workspace id
+    :param org_settings: Org settings
+    :return: None
+    """
+    worker_logger = get_logger()
+    worker_logger.info("Handling org settings update for workspace %s", workspace_id)
+
+    workspace = Workspace.objects.get(id=workspace_id)
+    workspace.org_settings = {
+        'regional_settings': org_settings.get('regional_settings', {})
+    }
+    workspace.save(update_fields=['org_settings', 'updated_at'])
+    worker_logger.info("Updated org settings for workspace %s", workspace.id)

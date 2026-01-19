@@ -46,6 +46,7 @@ class Workspace(models.Model):
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime')
     employee_exported_at = models.DateTimeField(auto_now_add=True, help_text='Employee exported to Fyle at datetime')
     onboarding_state = models.CharField(max_length=50, choices=ONBOARDING_STATE_CHOICES, default=get_default_onboarding_state, help_text='Onboarding status of the workspace', null=True)
+    org_settings = JSONField(help_text='Org Settings', default=dict)
 
     class Meta:
         db_table = 'workspaces'
