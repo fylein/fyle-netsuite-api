@@ -102,7 +102,8 @@ def test_run_email_notification(db, mocker, create_task_logs):
 @pytest.mark.django_db()
 def test_async_update_workspace_name(mocker, add_fyle_credentials):
     mocker.patch(
-        'apps.workspaces.tasks.PlatformConnector'
+        'apps.workspaces.tasks.get_cluster_domain',
+        return_value='https://us1.fylehq.com'
     )
     mocker.patch(
         'apps.workspaces.tasks.get_fyle_admin',
@@ -520,7 +521,8 @@ def test_async_create_admin_subscriptions_invalid_token(db, mocker):
 
 def test_async_update_workspace_name_invalid_token(db, mocker, add_fyle_credentials):
     mocker.patch(
-        'apps.workspaces.tasks.PlatformConnector'
+        'apps.workspaces.tasks.get_cluster_domain',
+        return_value='https://us1.fylehq.com'
     )
     mocker.patch(
         'apps.workspaces.tasks.get_fyle_admin',

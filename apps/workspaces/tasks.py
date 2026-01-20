@@ -7,7 +7,7 @@ from typing import List
 
 from django.conf import settings
 from django.db.models import Q
-from apps.fyle.helpers import post_request, patch_request
+from apps.fyle.helpers import post_request, patch_request, get_cluster_domain
 from django.template.loader import render_to_string
 from apps.fyle.models import ExpenseGroup
 from django_q.models import Schedule
@@ -336,10 +336,9 @@ def async_update_workspace_name(workspace_id: int):
     try:
         workspace = Workspace.objects.get(id=workspace_id)
         fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-        platform = PlatformConnector(fyle_credentials)
 
-        org_details = platform.connection.get_cluster_domain()
-        fyle_user = get_fyle_admin(fyle_credentials.refresh_token, org_details.get('cluster_domain'))
+        cluster_domain = get_cluster_domain(fyle_credentials.refresh_token)
+        fyle_user = get_fyle_admin(fyle_credentials.refresh_token, cluster_domain)
         org_name = fyle_user['data']['org']['name']
 
         workspace.name = org_name
