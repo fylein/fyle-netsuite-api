@@ -66,7 +66,7 @@ ACTION_METHOD_MAP = {
     WorkerActionEnum.UPDATE_WORKSPACE_NAME: 'apps.workspaces.tasks.update_workspace_name',
     WorkerActionEnum.SYNC_NETSUITE_DIMENSION: 'apps.netsuite.helpers.sync_dimensions',
     WorkerActionEnum.CREATE_ADMIN_SUBSCRIPTION: 'apps.workspaces.tasks.async_create_admin_subscriptions',
-    WorkerActionEnum.BACKGROUND_SCHEDULE_EXPORT: 'apps.workspaces.tasks.run_sync_schedule',
+    WorkerActionEnum.BACKGROUND_SCHEDULE_EXPORT: 'apps.workspaces.actions.export_to_netsuite',
     WorkerActionEnum.CHECK_NETSUITE_OBJECT_STATUS: 'apps.netsuite.tasks.check_netsuite_object_status',
     WorkerActionEnum.CHECK_AND_CREATE_CCC_MAPPINGS: 'apps.mappings.tasks.check_and_create_ccc_mappings',
     WorkerActionEnum.HANDLE_FYLE_REFRESH_DIMENSION: 'apps.fyle.helpers.sync_dimensions',

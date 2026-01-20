@@ -20,8 +20,8 @@ from fyle.platform.exceptions import InvalidTokenError
 from apps.mappings.models import SubsidiaryMapping
 from apps.fyle.tasks import create_expense_groups
 from apps.tasks.models import TaskLog
-from apps.workspaces.models import LastExportDetail, User, Workspace, WorkspaceSchedule, Configuration, FyleCredential
-from apps.workspaces.actions import export_to_netsuite
+from apps.workspaces.models import LastExportDetail, Workspace, WorkspaceSchedule, Configuration, FyleCredential
+from workers.helpers import publish_to_rabbitmq, RoutingKeyEnum, WorkerActionEnum
 from .utils import send_email
 
 
@@ -109,6 +109,16 @@ def run_sync_schedule(workspace_id):
     :param workspace_id: workspace id
     :return: None
     """
+    logger.info(f"Running sync schedule for workspace {workspace_id}")
+
+    task_log_enqueued_count = TaskLog.objects.filter(
+        workspace_id=workspace_id, status__in=['IN_PROGRESS', 'ENQUEUED']
+    ).exclude(type__in=['FETCHING_EXPENSES', 'CREATING_VENDOR_PAYMENT']).count()
+
+    if task_log_enqueued_count > 0:
+        logger.info(f"Task log already enqueued for workspace {workspace_id} with count {task_log_enqueued_count}, skipping sync schedule")
+        return
+
     task_log, _ = TaskLog.objects.update_or_create(
         workspace_id=workspace_id,
         type='FETCHING_EXPENSES',
@@ -143,7 +153,18 @@ def run_sync_schedule(workspace_id):
         ).values_list('id', flat=True).distinct()
 
         if eligible_expense_group_ids.exists():
-            export_to_netsuite(workspace_id=workspace_id, expense_group_ids=list(eligible_expense_group_ids), triggered_by=ExpenseImportSourceEnum.BACKGROUND_SCHEDULE)
+            logger.info(f"Exporting expenses via RabbitMQ for workspace id {workspace_id} triggered by {ExpenseImportSourceEnum.BACKGROUND_SCHEDULE}")
+            payload = {
+                'workspace_id': workspace_id,
+                'action': WorkerActionEnum.BACKGROUND_SCHEDULE_EXPORT.value,
+                'data': {
+                    'workspace_id': workspace_id,
+                    'expense_group_ids': list(eligible_expense_group_ids),
+                    'triggered_by': ExpenseImportSourceEnum.BACKGROUND_SCHEDULE
+                }
+            }
+            publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.EXPORT_P1.value)
+
 
 def run_email_notification(workspace_id):
 
