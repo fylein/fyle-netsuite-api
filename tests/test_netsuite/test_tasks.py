@@ -1276,7 +1276,11 @@ def test_process_vendor_payment_bill_exception(mocker, db):
         assert task_log.status == 'FAILED'
 
 
-def test_schedule_netsuite_entity_creation(db):
+def test_schedule_netsuite_entity_creation(db, mocker):
+    mocker.patch(
+        'apps.netsuite.queue.TaskChainRunner.run',
+        return_value=None
+    )
 
     expense_group = ExpenseGroup.objects.get(id=1)
 
