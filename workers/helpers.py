@@ -63,7 +63,7 @@ ACTION_METHOD_MAP = {
     WorkerActionEnum.CREATE_VENDOR_PAYMENT: 'apps.netsuite.tasks.create_vendor_payment',
     WorkerActionEnum.PROCESS_REIMBURSEMENTS: 'apps.netsuite.tasks.process_reimbursements',
     WorkerActionEnum.UPLOAD_ATTACHMENTS: 'apps.netsuite.tasks.upload_attachments_and_update_export',
-    WorkerActionEnum.UPDATE_WORKSPACE_NAME: 'apps.workspaces.tasks.async_update_workspace_name',
+    WorkerActionEnum.UPDATE_WORKSPACE_NAME: 'apps.workspaces.tasks.update_workspace_name',
     WorkerActionEnum.SYNC_NETSUITE_DIMENSION: 'apps.netsuite.helpers.sync_dimensions',
     WorkerActionEnum.CREATE_ADMIN_SUBSCRIPTION: 'apps.workspaces.tasks.async_create_admin_subscriptions',
     WorkerActionEnum.BACKGROUND_SCHEDULE_EXPORT: 'apps.workspaces.tasks.run_sync_schedule',

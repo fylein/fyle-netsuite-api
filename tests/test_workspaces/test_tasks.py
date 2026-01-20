@@ -3,7 +3,7 @@ from django.db.models import Q
 from apps.fyle.models import Expense, ExpenseGroup
 from apps.tasks.models import TaskLog
 from apps.workspaces.models import Configuration, WorkspaceSchedule, FyleCredential, Workspace, LastExportDetail
-from apps.workspaces.tasks import run_sync_schedule, schedule_sync, delete_cards_mapping_settings, run_email_notification, async_create_admin_subscriptions, post_to_integration_settings, patch_integration_settings, patch_integration_settings_for_unmapped_cards, async_update_workspace_name
+from apps.workspaces.tasks import run_sync_schedule, schedule_sync, delete_cards_mapping_settings, run_email_notification, async_create_admin_subscriptions, post_to_integration_settings, patch_integration_settings, patch_integration_settings_for_unmapped_cards, update_workspace_name
 from fyle_accounting_mappings.models import ExpenseAttribute
 from tests.test_fyle.fixtures import data as fyle_data
 from fyle.platform.exceptions import InvalidTokenError
@@ -100,16 +100,12 @@ def test_run_email_notification(db, mocker, create_task_logs):
 
 
 @pytest.mark.django_db()
-def test_async_update_workspace_name(mocker, add_fyle_credentials):
-    mocker.patch(
-        'apps.workspaces.tasks.get_cluster_domain',
-        return_value='https://us1.fylehq.com'
-    )
+def test_update_workspace_name(mocker):
     mocker.patch(
         'apps.workspaces.tasks.get_fyle_admin',
         return_value={'data': {'org': {'name': 'Test Org'}}}
     )
-    async_update_workspace_name(1)
+    update_workspace_name(1, 'Bearer test_access_token')
 
     workspace = Workspace.objects.get(id=1)
     assert workspace.name == 'Test Org'
@@ -519,24 +515,9 @@ def test_async_create_admin_subscriptions_invalid_token(db, mocker):
     async_create_admin_subscriptions(1)
 
 
-def test_async_update_workspace_name_invalid_token(db, mocker, add_fyle_credentials):
-    mocker.patch(
-        'apps.workspaces.tasks.get_cluster_domain',
-        return_value='https://us1.fylehq.com'
-    )
+def test_update_workspace_name_invalid_token(db, mocker):
     mocker.patch(
         'apps.workspaces.tasks.get_fyle_admin',
         side_effect=InvalidTokenError('Invalid Token')
     )
-    async_update_workspace_name(1)
-
-    mocker.patch(
-        'apps.workspaces.tasks.get_fyle_admin',
-        side_effect=Exception('General error')
-    )
-    async_update_workspace_name(1)
-
-
-def test_async_update_workspace_name_fyle_credentials_not_found(db, mocker):
-    FyleCredential.objects.filter(workspace_id=1).delete()
-    async_update_workspace_name(1)
+    update_workspace_name(1, 'Bearer test_access_token')
