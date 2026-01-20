@@ -174,7 +174,8 @@ class WorkspaceView(viewsets.ViewSet):
                 'workspace_id': workspaces[0].id,
                 'action': WorkerActionEnum.UPDATE_WORKSPACE_NAME.value,
                 'data': {
-                    'workspace_id': workspaces[0].id
+                    'workspace_id': workspaces[0].id,
+                    'access_token': request.META.get('HTTP_AUTHORIZATION'),
                 }
             }
             publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.UTILITY.value)

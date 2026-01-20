@@ -119,6 +119,8 @@ def test_get_workspace_with_org_id(api_client, access_token, mocker):
     mock_publish.assert_called_once()
     call_args = mock_publish.call_args
     assert call_args[1]['payload']['action'] == 'UTILITY.UPDATE_WORKSPACE_NAME'
+    assert call_args[1]['payload']['data']['workspace_id'] == workspace.id
+    assert call_args[1]['payload']['data']['access_token'] == 'Bearer {}'.format(access_token)
 
 
 @pytest.mark.django_db(databases=['default'])

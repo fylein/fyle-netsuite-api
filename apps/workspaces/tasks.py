@@ -327,25 +327,20 @@ def async_update_fyle_credentials(fyle_org_id: str, refresh_token: str):
         fyle_credentials.save()
 
 
-def async_update_workspace_name(workspace_id: int):
+def update_workspace_name(workspace_id: int, access_token: str) -> None:
     """
-    Update workspace name by fetching org name from Fyle using stored credentials
-    :param workspace_id: workspace id
+    Update workspace name
+    :param workspace_id: Workspace Id
+    :param access_token: Access Token
     :return: None
     """
     try:
-        workspace = Workspace.objects.get(id=workspace_id)
-        fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-
-        cluster_domain = get_cluster_domain(fyle_credentials.refresh_token)
-        fyle_user = get_fyle_admin(fyle_credentials.refresh_token, cluster_domain)
+        fyle_user = get_fyle_admin(access_token.split(' ')[1], None)
         org_name = fyle_user['data']['org']['name']
 
+        workspace = Workspace.objects.get(id=workspace_id)
         workspace.name = org_name
         workspace.save()
-
-    except FyleCredential.DoesNotExist:
-        logger.info("Fyle credentials not found for workspace_id: %s", workspace_id)
 
     except InvalidTokenError:
         logger.info("Invalid Token for Fyle in workspace_id: %s", workspace_id)
