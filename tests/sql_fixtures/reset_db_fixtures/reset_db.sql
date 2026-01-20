@@ -18,6 +18,65 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
+-- Name: add_tables_to_publication(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.add_tables_to_publication() RETURNS event_trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    obj record;
+    schema_name text;
+    table_name text;
+BEGIN
+    FOR obj IN 
+        SELECT * FROM pg_event_trigger_ddl_commands()
+        WHERE command_tag = 'CREATE TABLE'
+    LOOP
+        RAISE NOTICE 'Processing new table: %', obj.object_identity;
+        --- The format of the object_identity is schema.table
+        schema_name := split_part(obj.object_identity, '.', 1);
+        table_name := split_part(obj.object_identity, '.', 2);
+
+        -- Skip if not in public schema
+        IF schema_name <> 'public' THEN
+            CONTINUE;
+        END IF;
+
+        -- Skip excluded system tables
+        IF table_name IN (
+            'django_admin_log', 
+            'django_content_type', 
+            'django_migrations',
+            'django_q_ormq', 
+            'django_q_schedule', 
+            'django_q_task', 
+            'django_session',
+            'expense_attributes_deletion_cache'
+        ) THEN
+            RAISE NOTICE 'Skipping excluded table: %.%', schema_name, table_name;
+            CONTINUE;
+        END IF;
+
+        RAISE NOTICE 'Processing new table: %.%', schema_name, table_name;
+
+        -- Set REPLICA IDENTITY FULL
+        EXECUTE format('ALTER TABLE %I.%I REPLICA IDENTITY FULL', schema_name, table_name);
+
+        -- Add to publication (ignore duplicates)
+        BEGIN
+            EXECUTE format('ALTER PUBLICATION events ADD TABLE %I.%I', schema_name, table_name);
+        EXCEPTION WHEN duplicate_object THEN
+            RAISE NOTICE 'Table %.% already in publication.', schema_name, table_name;
+        END;
+    END LOOP;
+END;
+$$;
+
+
+ALTER FUNCTION public.add_tables_to_publication() OWNER TO postgres;
+
+--
 -- Name: delete_failed_expenses(integer, boolean, integer[]); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -409,6 +468,12 @@ BEGIN
     WHERE fst.workspace_id = _workspace_id;
     GET DIAGNOSTICS rcount = ROW_COUNT;
     RAISE NOTICE 'Deleted % fyle_sync_timestamps', rcount;
+
+    DELETE
+    FROM netsuite_attributes_count nac
+    WHERE nac.workspace_id = _workspace_id;
+    GET DIAGNOSTICS rcount = ROW_COUNT;
+    RAISE NOTICE 'Deleted % netsuite_attributes_count', rcount;
 
     DELETE
     FROM django_q_schedule dqs
@@ -9633,6 +9698,9 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 247	internal	0010_auto_generated_sql	2025-11-21 08:06:21.562681+00
 248	internal	0011_auto_generated_sql	2025-11-21 08:06:21.565085+00
 249	netsuite	0028_netsuiteattributescount	2025-11-21 08:06:21.588914+00
+250	internal	0012_auto_generated_sql	2026-01-16 10:18:28.399905+00
+251	internal	0013_auto_generated_sql	2026-01-16 10:18:28.403061+00
+252	internal	0014_auto_generated_sql	2026-01-16 10:18:28.404603+00
 \.
 
 
@@ -13597,7 +13665,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 51, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 249, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 252, true);
 
 
 --
