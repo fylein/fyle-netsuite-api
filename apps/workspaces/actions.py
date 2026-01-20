@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
 
-def export_to_netsuite(workspace_id, expense_group_ids=[], triggered_by: ExpenseImportSourceEnum = None, run_in_rabbitmq_worker: bool = False):
+def export_to_netsuite(workspace_id, expense_group_ids=[], triggered_by: ExpenseImportSourceEnum = None):
     configuration = Configuration.objects.get(workspace_id=workspace_id)
     last_export_detail = LastExportDetail.objects.get(workspace_id=workspace_id)
     workspace_schedule = WorkspaceSchedule.objects.filter(workspace_id=workspace_id, interval_hours__gt=0, enabled=True).first()
@@ -41,8 +41,7 @@ def export_to_netsuite(workspace_id, expense_group_ids=[], triggered_by: Expense
                 expense_group_ids=expense_group_ids,
                 fund_source='PERSONAL',
                 interval_hours=workspace_schedule.interval_hours if workspace_schedule else 0,
-                triggered_by=triggered_by,
-                run_in_rabbitmq_worker=run_in_rabbitmq_worker
+                triggered_by=triggered_by
             )
 
         elif configuration.reimbursable_expenses_object == 'BILL':
@@ -52,8 +51,7 @@ def export_to_netsuite(workspace_id, expense_group_ids=[], triggered_by: Expense
                 expense_group_ids=expense_group_ids,
                 fund_source='PERSONAL',
                 interval_hours=workspace_schedule.interval_hours if workspace_schedule else 0,
-                triggered_by=triggered_by,
-                run_in_rabbitmq_worker=run_in_rabbitmq_worker
+                triggered_by=triggered_by
             )
 
         elif configuration.reimbursable_expenses_object == 'JOURNAL ENTRY':
@@ -63,8 +61,7 @@ def export_to_netsuite(workspace_id, expense_group_ids=[], triggered_by: Expense
                 expense_group_ids=expense_group_ids,
                 fund_source='PERSONAL',
                 interval_hours=workspace_schedule.interval_hours if workspace_schedule else 0,
-                triggered_by=triggered_by,
-                run_in_rabbitmq_worker=run_in_rabbitmq_worker
+                triggered_by=triggered_by
             )
 
     if configuration.corporate_credit_card_expenses_object:
@@ -81,8 +78,7 @@ def export_to_netsuite(workspace_id, expense_group_ids=[], triggered_by: Expense
                 expense_group_ids=expense_group_ids,
                 fund_source='CCC',
                 interval_hours=workspace_schedule.interval_hours if workspace_schedule else 0,
-                triggered_by=triggered_by,
-                run_in_rabbitmq_worker=run_in_rabbitmq_worker
+                triggered_by=triggered_by
             )
 
         elif configuration.corporate_credit_card_expenses_object == 'BILL':
@@ -92,8 +88,7 @@ def export_to_netsuite(workspace_id, expense_group_ids=[], triggered_by: Expense
                 expense_group_ids=expense_group_ids,
                 fund_source='CCC',
                 interval_hours=workspace_schedule.interval_hours if workspace_schedule else 0,
-                triggered_by=triggered_by,
-                run_in_rabbitmq_worker=run_in_rabbitmq_worker
+                triggered_by=triggered_by
             )
 
         elif configuration.corporate_credit_card_expenses_object == 'EXPENSE REPORT':
@@ -103,8 +98,7 @@ def export_to_netsuite(workspace_id, expense_group_ids=[], triggered_by: Expense
                 expense_group_ids=expense_group_ids,
                 fund_source='CCC',
                 interval_hours=workspace_schedule.interval_hours if workspace_schedule else 0,
-                triggered_by=triggered_by,
-                run_in_rabbitmq_worker=run_in_rabbitmq_worker
+                triggered_by=triggered_by
             )
 
         elif configuration.corporate_credit_card_expenses_object == 'JOURNAL ENTRY':
@@ -114,8 +108,7 @@ def export_to_netsuite(workspace_id, expense_group_ids=[], triggered_by: Expense
                 expense_group_ids=expense_group_ids,
                 fund_source='CCC',
                 interval_hours=workspace_schedule.interval_hours if workspace_schedule else 0,
-                triggered_by=triggered_by,
-                run_in_rabbitmq_worker=run_in_rabbitmq_worker
+                triggered_by=triggered_by
             )
 
     if is_expenses_exported:

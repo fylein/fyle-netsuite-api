@@ -361,8 +361,7 @@ def import_and_export_expenses(report_id: str, org_id: str, is_state_change_even
             export_to_netsuite(
                 workspace_id=workspace.id,
                 expense_group_ids=expense_group_ids,
-                triggered_by=imported_from,
-                run_in_rabbitmq_worker=True
+                triggered_by=imported_from
             )
 
     except Configuration.DoesNotExist:

@@ -20,8 +20,7 @@ from fyle.platform.exceptions import InvalidTokenError
 from apps.mappings.models import SubsidiaryMapping
 from apps.fyle.tasks import create_expense_groups
 from apps.tasks.models import TaskLog
-from apps.workspaces.models import LastExportDetail, User, Workspace, WorkspaceSchedule, Configuration, FyleCredential, FeatureConfig
-from apps.workspaces.actions import export_to_netsuite
+from apps.workspaces.models import LastExportDetail, Workspace, WorkspaceSchedule, Configuration, FyleCredential
 from workers.helpers import publish_to_rabbitmq, RoutingKeyEnum, WorkerActionEnum
 from .utils import send_email
 
@@ -161,8 +160,7 @@ def run_sync_schedule(workspace_id):
                 'data': {
                     'workspace_id': workspace_id,
                     'expense_group_ids': list(eligible_expense_group_ids),
-                    'triggered_by': ExpenseImportSourceEnum.BACKGROUND_SCHEDULE,
-                    'run_in_rabbitmq_worker': True
+                    'triggered_by': ExpenseImportSourceEnum.BACKGROUND_SCHEDULE
                 }
             }
             publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.EXPORT_P1.value)
