@@ -1427,6 +1427,10 @@ def test_schedule_bills_creation(db, mocker):
         'apps.tasks.models.TaskLog.objects.get_or_create',
         return_value=[TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first(),None]
     )
+    mocker.patch(
+        'apps.netsuite.queue.TaskChainRunner.run',
+        return_value=None
+    )
 
     expense_group = ExpenseGroup.objects.get(id=1)
     expense_group.exported_at = None
@@ -1448,6 +1452,10 @@ def test_schedule_credit_card_charge_creation(db, mocker):
     mocker.patch(
         'apps.tasks.models.TaskLog.objects.get_or_create',
         return_value=[TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first(),None]
+    )
+    mocker.patch(
+        'apps.netsuite.queue.TaskChainRunner.run',
+        return_value=None
     )
 
     expense_group = ExpenseGroup.objects.get(id=1)
@@ -1475,6 +1483,10 @@ def test_schedule_expense_reports_creation(db, mocker):
         'apps.tasks.models.TaskLog.objects.get_or_create',
         return_value=[TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first(),None]
     )
+    mocker.patch(
+        'apps.netsuite.queue.TaskChainRunner.run',
+        return_value=None
+    )
 
     expense_group = ExpenseGroup.objects.get(id=1)
     expense_group.exported_at = None
@@ -1496,6 +1508,10 @@ def test_schedule_journal_entry_creation(db, mocker):
     mocker.patch(
         'apps.tasks.models.TaskLog.objects.get_or_create',
         return_value=[TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first(),None]
+    )
+    mocker.patch(
+        'apps.netsuite.queue.TaskChainRunner.run',
+        return_value=None
     )
 
     expense_group = ExpenseGroup.objects.get(id=1)
