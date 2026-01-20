@@ -103,4 +103,4 @@ def construct_tasks_and_chain_import_fields_to_fyle(workspace_id: int):
                     }
                 )
 
-    chain_import_fields_to_fyle(workspace_id, task_settings)
+    chain_import_fields_to_fyle(workspace_id, task_settings, run_in_rabbitmq_worker=True)
