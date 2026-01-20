@@ -228,7 +228,8 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
             is_cached = cache.get(cache_key)
 
             if not is_cached:
-                cache.set(cache_key, True, 300)
+                if not dimensions_to_sync == ['subsidiaries']:
+                    cache.set(cache_key, True, 300)
                 # If only specified dimensions are to be synced, sync them synchronously
                 if dimensions_to_sync:
                     handle_refresh_dimensions(kwargs['workspace_id'], dimensions_to_sync)
