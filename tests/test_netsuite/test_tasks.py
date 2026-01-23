@@ -778,7 +778,7 @@ def test_check_netsuite_object_status_exception(create_bill_task, create_expense
         check_netsuite_object_status(1)
 
 
-def test_load_attachments(db, add_netsuite_credentials, add_fyle_credentials, create_credit_card_charge, mocker):
+def test_load_attachments(db, add_netsuite_credentials, add_fyle_credentials, mocker):
     mocker.patch(
         'netsuitesdk.api.folders.Folders.post',
         return_value={'internalId': 'qwertyui', 'externalId': 'sdfghjk'}
@@ -814,12 +814,12 @@ def test_load_attachments(db, add_netsuite_credentials, add_fyle_credentials, cr
     expense.file_ids = ['sdfghjk']
     expense.save()
 
-    credit_card_charge_object = CreditCardCharge.objects.filter().first()
+    task_log = TaskLog.objects.filter(workspace_id=1).first()
 
     netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
 
-    attachment = load_attachments(netsuite_connection, expense_group.expenses.first(), expense_group, credit_card_charge_object)
+    attachment = load_attachments(netsuite_connection, expense_group.expenses.first(), expense_group, task_log)
     assert attachment == 'https://aaa.bbb.cc/x232sds'
 
     mocker.patch(
@@ -833,13 +833,14 @@ def test_load_attachments(db, add_netsuite_credentials, add_fyle_credentials, cr
         }]
     )
 
-    attachment = load_attachments(netsuite_connection, expense_group.expenses.first(), expense_group, credit_card_charge_object)
+    attachment = load_attachments(netsuite_connection, expense_group.expenses.first(), expense_group, task_log)
     assert attachment == None
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=1)
     fyle_credentials.delete()
-    attachment = load_attachments(netsuite_connection, expense_group.expenses.first(), expense_group, credit_card_charge_object)
-    assert credit_card_charge_object.is_attachment_upload_failed == True
+    attachment = load_attachments(netsuite_connection, expense_group.expenses.first(), expense_group, task_log)
+    task_log.refresh_from_db()
+    assert task_log.is_attachment_upload_failed == True
 
 
 def test_create_or_update_employee_mapping(mocker, db):
@@ -1669,6 +1670,55 @@ def test_upload_attachments_and_update_export(mocker, db):
     # asserting if the file is present
     lineitem = ExpenseReportLineItem.objects.get(expense_id=1)
     assert lineitem.netsuite_receipt_url == 'https://aaa.bbb.cc/x232sds'
+
+
+@pytest.mark.django_db()
+def test_upload_attachments_and_update_export_failure(mocker, db):
+    """Test that is_attachment_upload_failed is set on task_log when attachment upload fails"""
+    expense = Expense.objects.filter(id=1).first()
+    expense.file_ids = ['fiJjDdr67nl3']
+    expense.save()
+
+    expense_group = ExpenseGroup.objects.filter(id=1).first()
+    expenses = Expense.objects.filter(id=1)
+
+    task_log = TaskLog.objects.filter(workspace_id=1).first()
+    task_log.type = 'CREATING_BILL'
+    task_log.status = 'COMPLETE'
+    task_log.expense_group = expense_group
+    task_log.is_attachment_upload_failed = False
+    task_log.save()
+    fyle_credentials = FyleCredential.objects.get(workspace_id=1)
+
+    configuration = Configuration.objects.filter(workspace_id=1).first()
+
+    bill_object = Bill.create_bill(expense_group)
+
+    BillLineitem.create_bill_lineitems(expense_group, configuration)
+
+    task_log.bill_id = bill_object.id
+    task_log.save()
+
+    mocker.patch(
+        'apps.workspaces.models.NetSuiteCredentials.get_active_netsuite_credentials',
+        side_effect=NetSuiteCredentials.DoesNotExist()
+    )
+
+    upload_attachments_and_update_export(expenses, task_log, fyle_credentials, 1)
+    task_log.refresh_from_db()
+    assert task_log.is_attachment_upload_failed == True
+
+    task_log.is_attachment_upload_failed = False
+    task_log.save()
+
+    mocker.patch(
+        'apps.workspaces.models.NetSuiteCredentials.get_active_netsuite_credentials',
+        side_effect=Exception('Test exception')
+    )
+
+    upload_attachments_and_update_export(expenses, task_log, fyle_credentials, 1)
+    task_log.refresh_from_db()
+    assert task_log.is_attachment_upload_failed == True
 
 
 def test_skipping_vendor_payment(mocker, db):

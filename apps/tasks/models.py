@@ -75,6 +75,7 @@ class TaskLog(models.Model):
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime')
     triggered_by = models.CharField(max_length=255, help_text="Triggered by", null=True, choices=IMPORTED_FROM_CHOICES)
     re_attempt_export = models.BooleanField(default=False, help_text='Is re-attempt export')
+    is_attachment_upload_failed = models.BooleanField(help_text='Is Attachment Upload Failed', default=False)
 
     class Meta:
         db_table = 'task_logs'
