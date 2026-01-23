@@ -426,7 +426,6 @@ class Bill(models.Model):
     is_retired = models.BooleanField(help_text='Is Payment sync retried', default=False)
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
-    is_attachment_upload_failed = models.BooleanField(help_text='Is Attachment Upload Failed', default=False)
 
     class Meta:
         db_table = 'bills'
@@ -629,7 +628,6 @@ class CreditCardCharge(models.Model):
     transaction_date = models.DateTimeField(help_text='CC Charge transaction date')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
-    is_attachment_upload_failed = models.BooleanField(help_text='Is Attachment Upload Failed', default=False)
 
     class Meta:
         db_table = 'credit_card_charges'
@@ -847,7 +845,6 @@ class ExpenseReport(models.Model):
     is_retired = models.BooleanField(help_text='Is Payment sync retried', default=False)
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
-    is_attachment_upload_failed = models.BooleanField(help_text='Is Attachment Upload Failed', default=False)
 
     class Meta:
         db_table = 'expense_reports'
@@ -1073,7 +1070,6 @@ class JournalEntry(models.Model):
     paid_on_netsuite = models.BooleanField(help_text='Payment Status in NetSuite', default=False)
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
-    is_attachment_upload_failed = models.BooleanField(help_text='Is Attachment Upload Failed', default=False)
 
     class Meta:
         db_table = 'journal_entries'
