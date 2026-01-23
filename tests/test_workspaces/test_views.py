@@ -86,7 +86,8 @@ def test_token_health_view(api_client, access_token, mocker):
 
 
 @pytest.mark.django_db(databases=['default'])
-def test_get_workspace(api_client, access_token):
+def test_get_workspace(api_client, access_token, mocker):
+    mocker.patch('apps.workspaces.views.publish_to_rabbitmq', return_value=None)
 
     url = reverse('workspace')
 
@@ -102,6 +103,24 @@ def test_get_workspace(api_client, access_token):
     response = json.loads(response.content)
     expected_response = get_response_dict('test_workspaces/data.json')
     assert dict_compare_keys(response, expected_response['workspace']) == [], 'workspaces api returns a diff in the keys'
+
+
+@pytest.mark.django_db(databases=['default'])
+def test_get_workspace_with_org_id(api_client, access_token, mocker):
+    mock_publish = mocker.patch('apps.workspaces.views.publish_to_rabbitmq', return_value=None)
+
+    workspace = Workspace.objects.get(id=1)
+    url = reverse('workspace')
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
+
+    response = api_client.get(url, {'org_id': workspace.fyle_org_id})
+    assert response.status_code == 200
+
+    mock_publish.assert_called_once()
+    call_args = mock_publish.call_args
+    assert call_args[1]['payload']['action'] == 'UTILITY.UPDATE_WORKSPACE_NAME'
+    assert call_args[1]['payload']['data']['workspace_id'] == workspace.id
+    assert call_args[1]['payload']['data']['access_token'] == 'Bearer {}'.format(access_token)
 
 
 @pytest.mark.django_db(databases=['default'])
@@ -619,7 +638,7 @@ def test_get_workspace_admin_view(api_client, access_token, db):
 @pytest.mark.django_db(databases=['default'])
 def test_export_to_netsuite(mocker, api_client, access_token):
     mocker.patch(
-        'apps.workspaces.views.export_to_netsuite',
+        'apps.workspaces.views.publish_to_rabbitmq',
         return_value=None
     )
 

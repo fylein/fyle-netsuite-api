@@ -7,8 +7,8 @@ from django.utils.module_loading import import_string
 
 from apps.mappings.constants import SYNC_METHODS
 from apps.workspaces.models import Configuration, Workspace, NetSuiteCredentials
-from apps.mappings.queue import construct_tasks_and_chain_import_fields_to_fyle
 from apps.netsuite.connector import NetSuiteConnector
+from workers.helpers import RoutingKeyEnum, WorkerActionEnum, publish_to_rabbitmq
 
 from .tasks import schedule_vendor_payment_creation, schedule_netsuite_objects_status_sync, \
     schedule_reimbursements_sync
@@ -126,7 +126,14 @@ def handle_refresh_dimensions(workspace_id, dimensions_to_sync):
     workspace_id = workspace.id
 
     if configurations:
-        construct_tasks_and_chain_import_fields_to_fyle(workspace_id)
+        payload = {
+            'workspace_id': workspace_id,
+            'action': WorkerActionEnum.IMPORT_DIMENSIONS_TO_FYLE.value,
+            'data': {
+                'workspace_id': workspace_id
+            }
+        }
+        publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.IMPORT.value)
 
     sync_dimensions(netsuite_credentials, workspace.id, dimensions_to_sync)
 

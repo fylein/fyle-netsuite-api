@@ -2,16 +2,18 @@ import logging
 from datetime import datetime
 from django.db.models import Q
 from apps.fyle.helpers import get_exportable_expense_group_ids
-
-from apps.netsuite.helpers import check_if_task_exists_in_ormq
 from rest_framework.views import status
 from rest_framework import generics
 from rest_framework.response import Response
+
+from django.core.cache import cache
 
 from fyle.platform.exceptions import InvalidTokenError
 
 from fyle_integrations_platform_connector import PlatformConnector
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
+
+from apps.workspaces.enums import CacheKeyEnum
 from fyle_accounting_mappings.models import ExpenseAttribute
 from fyle_accounting_mappings.serializers import ExpenseAttributeSerializer
 
@@ -29,7 +31,8 @@ from .constants import DEFAULT_FYLE_CONDITIONS
 from apps.exceptions import handle_view_exceptions
 
 from django_filters.rest_framework import DjangoFilterBackend
-from django_q.tasks import async_task
+
+from workers.helpers import RoutingKeyEnum, WorkerActionEnum, publish_to_rabbitmq
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -276,8 +279,19 @@ class SyncFyleDimensionView(generics.ListCreateAPIView):
                     status=status.HTTP_200_OK
                 )
 
-            if not check_if_task_exists_in_ormq(func='apps.fyle.helpers.check_interval_and_sync_dimension', payload=kwargs['workspace_id']):
-                async_task('apps.fyle.helpers.check_interval_and_sync_dimension', kwargs['workspace_id'])
+            cache_key = CacheKeyEnum.FYLE_SYNC_DIMENSIONS.value.format(workspace_id=workspace.id)
+            is_cached = cache.get(cache_key)
+
+            if not is_cached:
+                cache.set(cache_key, True, 300)
+                payload = {
+                    'workspace_id': kwargs['workspace_id'],
+                    'action': WorkerActionEnum.CHECK_INTERVAL_AND_SYNC_FYLE_DIMENSION.value,
+                    'data': {
+                        'workspace_id': kwargs['workspace_id']
+                    }
+                }
+                publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.IMPORT.value)
 
             return Response(
                 status=status.HTTP_200_OK
@@ -310,8 +324,19 @@ class RefreshFyleDimensionView(generics.ListCreateAPIView):
             workspace = Workspace.objects.get(id=kwargs['workspace_id'])
             FyleCredential.objects.get(workspace_id=workspace.id)
 
-            if not check_if_task_exists_in_ormq(func='apps.fyle.helpers.sync_dimensions', payload=kwargs['workspace_id']):
-                async_task('apps.fyle.helpers.sync_dimensions', kwargs['workspace_id'])
+            cache_key = CacheKeyEnum.FYLE_SYNC_DIMENSIONS.value.format(workspace_id=workspace.id)
+            is_cached = cache.get(cache_key)
+
+            if not is_cached:
+                cache.set(cache_key, True, 300)
+                payload = {
+                    'workspace_id': kwargs['workspace_id'],
+                    'action': WorkerActionEnum.HANDLE_FYLE_REFRESH_DIMENSION.value,
+                    'data': {
+                        'workspace_id': kwargs['workspace_id']
+                    }
+                }
+                publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.IMPORT.value)
 
             return Response(
                 status=status.HTTP_200_OK

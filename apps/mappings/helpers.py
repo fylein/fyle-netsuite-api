@@ -1,7 +1,6 @@
 import logging
 from datetime import datetime
 
-from django_q.tasks import Chain
 from django_q.models import Schedule
 from fyle_accounting_mappings.models import MappingSetting, ExpenseAttribute
 
@@ -11,6 +10,8 @@ from apps.mappings.models import GeneralMapping
 from apps.workspaces.models import Configuration
 from apps.workspaces.tasks import patch_integration_settings_for_unmapped_cards
 from apps.mappings.schedules import new_schedule_or_delete_fyle_import_tasks
+
+from workers.helpers import RoutingKeyEnum, WorkerActionEnum, publish_to_rabbitmq
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -35,15 +36,25 @@ def validate_and_trigger_auto_map_employees(workspace_id: int):
     general_mappings = GeneralMapping.objects.filter(workspace_id=workspace_id).first()
     configuration = Configuration.objects.get(workspace_id=workspace_id)
 
-    chain = Chain()
-
     if configuration.auto_map_employees:
-        chain.append('apps.mappings.tasks.async_auto_map_employees', workspace_id, q_options={'cluster': 'import'})
+        payload = {
+            'workspace_id': workspace_id,
+            'action': WorkerActionEnum.AUTO_MAP_EMPLOYEES.value,
+            'data': {
+                'workspace_id': workspace_id
+            }
+        }
+        publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.IMPORT.value)
 
     if general_mappings and general_mappings.default_ccc_account_name:
-        chain.append('apps.mappings.tasks.async_auto_map_ccc_account', workspace_id, q_options={'cluster': 'import'})
-
-    chain.run()
+        payload = {
+            'workspace_id': workspace_id,
+            'action': WorkerActionEnum.AUTO_MAP_CCC_ACCOUNT.value,
+            'data': {
+                'workspace_id': workspace_id
+            }
+        }
+        publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.IMPORT.value)
 
 
 def is_auto_sync_allowed(configuration: Configuration, mapping_setting: MappingSetting = None):

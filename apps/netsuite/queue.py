@@ -20,35 +20,20 @@ logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
 
-def __create_chain_and_run(workspace_id: int, chain_tasks: List[dict], run_in_rabbitmq_worker: bool) -> None:
+def __create_chain_and_run(workspace_id: int, chain_tasks: List[dict]) -> None:
     """
     Create chain and run
     :param workspace_id: workspace id
     :param chain_tasks: List of chain tasks
-    :param is_auto_export: Is auto export
-    :param run_in_rabbitmq_worker: Run in rabbitmq worker
     :return: None
     """
     fyle_webhook_sync_enabled = FeatureConfig.get_feature_config(workspace_id=workspace_id, key='fyle_webhook_sync_enabled')
+    if not fyle_webhook_sync_enabled:
+        check_interval_and_sync_dimension(workspace_id)
 
-    if run_in_rabbitmq_worker:
-        # This function checks intervals and triggers sync if needed, syncing dimension for all exports is overkill
-        if not fyle_webhook_sync_enabled:
-            check_interval_and_sync_dimension(workspace_id)
+    task_executor = TaskChainRunner()
+    task_executor.run(chain_tasks, workspace_id)
 
-        task_executor = TaskChainRunner()
-        task_executor.run(chain_tasks, workspace_id)
-    else:
-        chain = Chain()
-
-        if not fyle_webhook_sync_enabled:
-            chain.append('apps.fyle.helpers.sync_dimensions', workspace_id, True)
-
-        for task in chain_tasks:
-            logger.info('Chain task %s, Chain Expense Group %s, Chain Task Log %s', task.target, task.args[0], task.args[1])
-            chain.append(task.target, *task.args)
-
-        chain.run()
 
 
 def validate_failing_export(is_auto_export: bool, interval_hours: int, error: Error, expense_group: ExpenseGroup):
@@ -87,7 +72,7 @@ def handle_skipped_exports(expense_groups: List[ExpenseGroup], index: int, skip_
     return skip_export_count
 
 
-def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str, interval_hours: int, triggered_by: ExpenseImportSourceEnum, run_in_rabbitmq_worker: bool):
+def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str, interval_hours: int, triggered_by: ExpenseImportSourceEnum):
     """
     Schedule bills creation
     :param expense_group_ids: List of expense group ids
@@ -143,10 +128,10 @@ def schedule_bills_creation(workspace_id: int, expense_group_ids: List[str], is_
             ))
 
         if len(chain_tasks) > 0:
-            __create_chain_and_run(workspace_id, chain_tasks, run_in_rabbitmq_worker)
+            __create_chain_and_run(workspace_id, chain_tasks)
 
 
-def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str, interval_hours: int, triggered_by: ExpenseImportSourceEnum, run_in_rabbitmq_worker: bool):
+def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str, interval_hours: int, triggered_by: ExpenseImportSourceEnum):
     """
     Schedule Credit Card Charge creation
     :param expense_group_ids: List of expense group ids
@@ -208,10 +193,10 @@ def schedule_credit_card_charge_creation(workspace_id: int, expense_group_ids: L
             ))
 
         if len(chain_tasks) > 0:
-            __create_chain_and_run(workspace_id, chain_tasks, run_in_rabbitmq_worker)
+            __create_chain_and_run(workspace_id, chain_tasks)
 
 
-def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str, interval_hours: int, triggered_by: ExpenseImportSourceEnum, run_in_rabbitmq_worker: bool):
+def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str, interval_hours: int, triggered_by: ExpenseImportSourceEnum):
     """
     Schedule expense reports creation
     :param expense_group_ids: List of expense group ids
@@ -268,10 +253,10 @@ def schedule_expense_reports_creation(workspace_id: int, expense_group_ids: List
             ))
 
         if len(chain_tasks) > 0:
-            __create_chain_and_run(workspace_id, chain_tasks, run_in_rabbitmq_worker)
+            __create_chain_and_run(workspace_id, chain_tasks)
 
 
-def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str, interval_hours: int, triggered_by: ExpenseImportSourceEnum, run_in_rabbitmq_worker: bool):
+def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[str], is_auto_export: bool, fund_source: str, interval_hours: int, triggered_by: ExpenseImportSourceEnum):
     """
     Schedule journal entries creation
     :param expense_group_ids: List of expense group ids
@@ -327,4 +312,4 @@ def schedule_journal_entry_creation(workspace_id: int, expense_group_ids: List[s
             ))
 
         if len(chain_tasks) > 0:
-            __create_chain_and_run(workspace_id, chain_tasks, run_in_rabbitmq_worker)
+            __create_chain_and_run(workspace_id, chain_tasks)

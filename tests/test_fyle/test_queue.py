@@ -18,7 +18,7 @@ def test_create_chain_and_run(db):
         )
     ]
 
-    __create_chain_and_run(workspace_id, chain_tasks, False)
+    __create_chain_and_run(workspace_id, chain_tasks)
     assert True
 
 
@@ -36,7 +36,7 @@ def test_create_chain_and_run_with_rabbitmq_worker(db):
     feature_config.save()
 
     with mock.patch('apps.netsuite.queue.check_interval_and_sync_dimension') as mock_sync:
-        __create_chain_and_run(workspace_id, chain_tasks, True)
+        __create_chain_and_run(workspace_id, chain_tasks)
         mock_sync.assert_called_once_with(workspace_id)
 
 

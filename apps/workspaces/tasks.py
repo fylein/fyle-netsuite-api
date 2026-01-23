@@ -7,7 +7,7 @@ from typing import List
 
 from django.conf import settings
 from django.db.models import Q
-from apps.fyle.helpers import post_request, patch_request
+from apps.fyle.helpers import post_request, patch_request, get_cluster_domain
 from django.template.loader import render_to_string
 from apps.fyle.models import ExpenseGroup
 from django_q.models import Schedule
@@ -20,8 +20,8 @@ from fyle.platform.exceptions import InvalidTokenError
 from apps.mappings.models import SubsidiaryMapping
 from apps.fyle.tasks import create_expense_groups
 from apps.tasks.models import TaskLog
-from apps.workspaces.models import LastExportDetail, User, Workspace, WorkspaceSchedule, Configuration, FyleCredential
-from apps.workspaces.actions import export_to_netsuite
+from apps.workspaces.models import LastExportDetail, Workspace, WorkspaceSchedule, Configuration, FyleCredential
+from workers.helpers import publish_to_rabbitmq, RoutingKeyEnum, WorkerActionEnum
 from .utils import send_email
 
 
@@ -109,6 +109,16 @@ def run_sync_schedule(workspace_id):
     :param workspace_id: workspace id
     :return: None
     """
+    logger.info(f"Running sync schedule for workspace {workspace_id}")
+
+    task_log_enqueued_count = TaskLog.objects.filter(
+        workspace_id=workspace_id, status__in=['IN_PROGRESS', 'ENQUEUED']
+    ).exclude(type__in=['FETCHING_EXPENSES', 'CREATING_VENDOR_PAYMENT']).count()
+
+    if task_log_enqueued_count > 0:
+        logger.info(f"Task log already enqueued for workspace {workspace_id} with count {task_log_enqueued_count}, skipping sync schedule")
+        return
+
     task_log, _ = TaskLog.objects.update_or_create(
         workspace_id=workspace_id,
         type='FETCHING_EXPENSES',
@@ -143,7 +153,18 @@ def run_sync_schedule(workspace_id):
         ).values_list('id', flat=True).distinct()
 
         if eligible_expense_group_ids.exists():
-            export_to_netsuite(workspace_id=workspace_id, expense_group_ids=list(eligible_expense_group_ids), triggered_by=ExpenseImportSourceEnum.BACKGROUND_SCHEDULE)
+            logger.info(f"Exporting expenses via RabbitMQ for workspace id {workspace_id} triggered by {ExpenseImportSourceEnum.BACKGROUND_SCHEDULE}")
+            payload = {
+                'workspace_id': workspace_id,
+                'action': WorkerActionEnum.BACKGROUND_SCHEDULE_EXPORT.value,
+                'data': {
+                    'workspace_id': workspace_id,
+                    'expense_group_ids': list(eligible_expense_group_ids),
+                    'triggered_by': ExpenseImportSourceEnum.BACKGROUND_SCHEDULE
+                }
+            }
+            publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.EXPORT_P1.value)
+
 
 def run_email_notification(workspace_id):
 
@@ -327,16 +348,23 @@ def async_update_fyle_credentials(fyle_org_id: str, refresh_token: str):
         fyle_credentials.save()
 
 
-def async_update_workspace_name(workspace: Workspace, access_token: str):
+def update_workspace_name(workspace_id: int, access_token: str) -> None:
+    """
+    Update workspace name
+    :param workspace_id: Workspace Id
+    :param access_token: Access Token
+    :return: None
+    """
     try:
         fyle_user = get_fyle_admin(access_token.split(' ')[1], None)
         org_name = fyle_user['data']['org']['name']
 
+        workspace = Workspace.objects.get(id=workspace_id)
         workspace.name = org_name
         workspace.save()
-        
+
     except InvalidTokenError:
-        logger.info("Invalid Token for Fyle in workspace_id: %s", workspace.id)
+        logger.info("Invalid Token for Fyle in workspace_id: %s", workspace_id)
 
     except Exception as e:
         logger.exception("Error updating workspace name for workspace_id: %s | Error: %s", workspace.id, str(e))
@@ -360,3 +388,4 @@ def sync_org_settings(workspace_id: int) -> None:
         workspace.save(update_fields=['org_settings', 'updated_at'])
     except Exception as e:
         logger.error('Error fetching org settings for workspace %s: %s', workspace_id, str(e))
+        logger.exception("Error updating workspace name for workspace_id: %s | Error: %s", workspace_id, str(e))

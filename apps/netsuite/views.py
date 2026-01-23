@@ -1,6 +1,7 @@
 import logging
 
 from django.db.models import Q
+from django.core.cache import cache
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import status
@@ -11,16 +12,15 @@ from fyle_accounting_mappings.serializers import DestinationAttributeSerializer
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 
 from apps.workspaces.models import NetSuiteCredentials, Workspace, Configuration
+from apps.workspaces.enums import CacheKeyEnum
 from netsuitesdk import NetSuiteLoginError
 from fyle_netsuite_api.utils import invalidate_netsuite_credentials
 
-from django_q.tasks import async_task
-
 from .serializers import NetSuiteFieldSerializer, CustomSegmentSerializer, NetSuiteAttributesCountSerializer
-from .tasks import create_vendor_payment, check_netsuite_object_status, process_reimbursements
 from .models import CustomSegment, NetSuiteAttributesCount
-from .helpers import check_if_task_exists_in_ormq, handle_refresh_dimensions
-from apps.workspaces.actions import export_to_netsuite
+from .helpers import handle_refresh_dimensions
+
+from workers.helpers import RoutingKeyEnum, WorkerActionEnum, publish_to_rabbitmq
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,15 @@ class TriggerExportsView(generics.GenericAPIView):
     Trigger exports creation
     """
     def post(self, request, *args, **kwargs):
-        export_to_netsuite(workspace_id=kwargs['workspace_id'], triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
+        payload = {
+            'workspace_id': kwargs['workspace_id'],
+            'action': WorkerActionEnum.DASHBOARD_SYNC.value,
+            'data': {
+                'workspace_id': kwargs['workspace_id'],
+                'triggered_by': ExpenseImportSourceEnum.DASHBOARD_SYNC
+            }
+        }
+        publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.EXPORT_P0.value)
 
         return Response(
             status=status.HTTP_200_OK
@@ -45,10 +53,23 @@ class TriggerPaymentsView(generics.GenericAPIView):
         configurations = Configuration.objects.get(workspace_id=kwargs['workspace_id'])
 
         if configurations.sync_fyle_to_netsuite_payments:
-            create_vendor_payment(workspace_id=self.kwargs['workspace_id'])
+            payload = {
+                'workspace_id': kwargs['workspace_id'],
+                'action': WorkerActionEnum.CREATE_VENDOR_PAYMENT.value,
+                'data': {
+                    'workspace_id': kwargs['workspace_id']
+                }
+            }
+            publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.EXPORT_P1.value)
         elif configurations.sync_netsuite_to_fyle_payments:
-            check_netsuite_object_status(workspace_id=self.kwargs['workspace_id'])
-            process_reimbursements(workspace_id=self.kwargs['workspace_id'])
+            payload = {
+                'workspace_id': kwargs['workspace_id'],
+                'action': WorkerActionEnum.CHECK_NETSUITE_OBJECT_STATUS.value,
+                'data': {
+                    'workspace_id': kwargs['workspace_id']
+                }
+            }
+            publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.EXPORT_P1.value)
 
         return Response(
             status=status.HTTP_200_OK
@@ -149,8 +170,19 @@ class SyncNetSuiteDimensionView(generics.ListCreateAPIView):
             workspace = Workspace.objects.get(pk=kwargs['workspace_id'])
             NetSuiteCredentials.get_active_netsuite_credentials(workspace.id)
 
-            if not check_if_task_exists_in_ormq(func='apps.netsuite.helpers.check_interval_and_sync_dimension', payload=kwargs['workspace_id']):
-                async_task('apps.netsuite.helpers.check_interval_and_sync_dimension', kwargs['workspace_id'])
+            cache_key = CacheKeyEnum.NETSUITE_SYNC_DIMENSIONS.value.format(workspace_id=workspace.id)
+            is_cached = cache.get(cache_key)
+
+            if not is_cached:
+                cache.set(cache_key, True, 300)
+                payload = {
+                    'workspace_id': kwargs['workspace_id'],
+                    'action': WorkerActionEnum.CHECK_INTERVAL_AND_SYNC_NETSUITE_DIMENSION.value,
+                    'data': {
+                        'workspace_id': kwargs['workspace_id']
+                    }
+                }
+                publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.IMPORT.value)
 
             return Response(
                 status=status.HTTP_200_OK
@@ -192,12 +224,25 @@ class RefreshNetSuiteDimensionView(generics.ListCreateAPIView):
             workspace = Workspace.objects.get(pk=kwargs['workspace_id'])
             NetSuiteCredentials.get_active_netsuite_credentials(workspace.id)
 
-            # If only specified dimensions are to be synced, sync them synchronously
-            if dimensions_to_sync:
-                handle_refresh_dimensions(kwargs['workspace_id'], dimensions_to_sync)
-            else:
-                if not check_if_task_exists_in_ormq(func='apps.netsuite.helpers.handle_refresh_dimensions', payload=kwargs['workspace_id']):
-                    async_task('apps.netsuite.helpers.handle_refresh_dimensions', kwargs['workspace_id'], dimensions_to_sync)
+            cache_key = CacheKeyEnum.NETSUITE_SYNC_DIMENSIONS.value.format(workspace_id=workspace.id)
+            is_cached = cache.get(cache_key)
+
+            if not is_cached:
+                if not dimensions_to_sync == ['subsidiaries']:
+                    cache.set(cache_key, True, 300)
+                # If only specified dimensions are to be synced, sync them synchronously
+                if dimensions_to_sync:
+                    handle_refresh_dimensions(kwargs['workspace_id'], dimensions_to_sync)
+                else:
+                    payload = {
+                        'workspace_id': kwargs['workspace_id'],
+                        'action': WorkerActionEnum.HANDLE_NETSUITE_REFRESH_DIMENSION.value,
+                        'data': {
+                            'workspace_id': kwargs['workspace_id'],
+                            'dimensions_to_sync': dimensions_to_sync
+                        }
+                    }
+                    publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.IMPORT.value)
 
             return Response(
                 status=status.HTTP_200_OK

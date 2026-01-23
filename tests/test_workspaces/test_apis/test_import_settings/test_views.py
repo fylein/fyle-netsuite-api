@@ -1,10 +1,35 @@
 import json
 import pytest
-from apps.workspaces.models import Workspace
+from apps.workspaces.models import Workspace, Configuration
+from apps.workspaces.apis.import_settings.triggers import ImportSettingsTrigger
 from tests.helper import dict_compare_keys
 from tests.test_workspaces.test_apis.test_import_settings.fixtures import data
 
 from django.urls import reverse
+
+
+@pytest.mark.django_db(databases=['default'])
+def test_post_save_configurations_disable_items(mocker):
+    mock_publish = mocker.patch('apps.workspaces.apis.import_settings.triggers.publish_to_rabbitmq')
+    workspace_id = 1
+
+    old_configuration = Configuration.objects.get(workspace_id=workspace_id)
+    old_configuration.import_items = True
+    old_configuration.save()
+
+    new_configuration = Configuration.objects.get(workspace_id=workspace_id)
+    new_configuration.import_items = False
+    new_configuration.save()
+
+    trigger = ImportSettingsTrigger(configurations={}, mapping_settings=[], workspace_id=workspace_id)
+    trigger.post_save_configurations(new_configuration, old_configuration)
+
+    mock_publish.assert_called_once()
+    call_args = mock_publish.call_args
+    assert call_args[1]['payload']['action'] == 'IMPORT.DISABLE_ITEMS'
+    assert call_args[1]['payload']['data']['workspace_id'] == workspace_id
+    assert call_args[1]['payload']['data']['is_import_enabled'] is False
+
 
 @pytest.mark.django_db(databases=['default'])
 def test_import_settings(mocker, api_client, access_token):

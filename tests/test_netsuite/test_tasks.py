@@ -1276,11 +1276,15 @@ def test_process_vendor_payment_bill_exception(mocker, db):
         assert task_log.status == 'FAILED'
 
 
-def test_schedule_netsuite_entity_creation(db):
+def test_schedule_netsuite_entity_creation(db, mocker):
+    mocker.patch(
+        'apps.netsuite.queue.TaskChainRunner.run',
+        return_value=None
+    )
 
     expense_group = ExpenseGroup.objects.get(id=1)
 
-    schedule_expense_reports_creation(1, ['1'], False, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
+    schedule_expense_reports_creation(1, ['1'], False, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
     task_logs = TaskLog.objects.get(workspace_id=1, expense_group=expense_group)
 
@@ -1289,7 +1293,7 @@ def test_schedule_netsuite_entity_creation(db):
 
     expense_group = ExpenseGroup.objects.get(id=3)
 
-    schedule_journal_entry_creation(2, ['3'], False, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
+    schedule_journal_entry_creation(2, ['3'], False, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
     task_logs = TaskLog.objects.get(workspace_id=2, expense_group=expense_group)
 
@@ -1299,7 +1303,7 @@ def test_schedule_netsuite_entity_creation(db):
 
     expense_group = ExpenseGroup.objects.get(id=2)
 
-    schedule_bills_creation(1, ['2'], False, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
+    schedule_bills_creation(1, ['2'], False, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
     task_logs = TaskLog.objects.get(workspace_id=1, expense_group=expense_group)
 
@@ -1308,7 +1312,7 @@ def test_schedule_netsuite_entity_creation(db):
 
     expense_group = ExpenseGroup.objects.get(id=48)
 
-    schedule_credit_card_charge_creation(49, ['48'], False, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
+    schedule_credit_card_charge_creation(49, ['48'], False, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
     task_logs = TaskLog.objects.get(workspace_id=49, expense_group=expense_group)
 
@@ -1427,6 +1431,10 @@ def test_schedule_bills_creation(db, mocker):
         'apps.tasks.models.TaskLog.objects.get_or_create',
         return_value=[TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first(),None]
     )
+    mocker.patch(
+        'apps.netsuite.queue.TaskChainRunner.run',
+        return_value=None
+    )
 
     expense_group = ExpenseGroup.objects.get(id=1)
     expense_group.exported_at = None
@@ -1437,7 +1445,7 @@ def test_schedule_bills_creation(db, mocker):
     expense_group = expense_group
     task_log.save()
 
-    schedule_bills_creation(workspace_id, [1], False, 'CCC', 0, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
+    schedule_bills_creation(workspace_id, [1], False, 'CCC', 0, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
     assert task_log.type == 'CREATING_BILL'
@@ -1448,6 +1456,10 @@ def test_schedule_credit_card_charge_creation(db, mocker):
     mocker.patch(
         'apps.tasks.models.TaskLog.objects.get_or_create',
         return_value=[TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first(),None]
+    )
+    mocker.patch(
+        'apps.netsuite.queue.TaskChainRunner.run',
+        return_value=None
     )
 
     expense_group = ExpenseGroup.objects.get(id=1)
@@ -1463,7 +1475,7 @@ def test_schedule_credit_card_charge_creation(db, mocker):
     expense_group = expense_group
     task_log.save()
 
-    schedule_credit_card_charge_creation(workspace_id, [1], False, 'CCC', 0, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
+    schedule_credit_card_charge_creation(workspace_id, [1], False, 'CCC', 0, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
     assert task_log.type == 'CREATING_CREDIT_CARD_REFUND'
@@ -1475,27 +1487,9 @@ def test_schedule_expense_reports_creation(db, mocker):
         'apps.tasks.models.TaskLog.objects.get_or_create',
         return_value=[TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first(),None]
     )
-
-    expense_group = ExpenseGroup.objects.get(id=1)
-    expense_group.exported_at = None
-    expense_group.save()
-
-    task_log = TaskLog.objects.filter(workspace_id=workspace_id).first()
-    task_log.status = 'READY'
-    expense_group = expense_group
-    task_log.save()
-
-    schedule_expense_reports_creation(workspace_id, [1], False, 'CCC', 0, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
-
-    task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
-    assert task_log.type == 'CREATING_EXPENSE_REPORT'
-
-
-def test_schedule_journal_entry_creation(db, mocker):
-    workspace_id = 1
     mocker.patch(
-        'apps.tasks.models.TaskLog.objects.get_or_create',
-        return_value=[TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first(),None]
+        'apps.netsuite.queue.TaskChainRunner.run',
+        return_value=None
     )
 
     expense_group = ExpenseGroup.objects.get(id=1)
@@ -1507,7 +1501,33 @@ def test_schedule_journal_entry_creation(db, mocker):
     expense_group = expense_group
     task_log.save()
 
-    schedule_journal_entry_creation(workspace_id, [1], False, 'CCC', 0, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
+    schedule_expense_reports_creation(workspace_id, [1], False, 'CCC', 0, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
+
+    task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
+    assert task_log.type == 'CREATING_EXPENSE_REPORT'
+
+
+def test_schedule_journal_entry_creation(db, mocker):
+    workspace_id = 1
+    mocker.patch(
+        'apps.tasks.models.TaskLog.objects.get_or_create',
+        return_value=[TaskLog.objects.filter(workspace_id=workspace_id, status='READY').first(),None]
+    )
+    mocker.patch(
+        'apps.netsuite.queue.TaskChainRunner.run',
+        return_value=None
+    )
+
+    expense_group = ExpenseGroup.objects.get(id=1)
+    expense_group.exported_at = None
+    expense_group.save()
+
+    task_log = TaskLog.objects.filter(workspace_id=workspace_id).first()
+    task_log.status = 'READY'
+    expense_group = expense_group
+    task_log.save()
+
+    schedule_journal_entry_creation(workspace_id, [1], False, 'CCC', 0, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
     task_log = TaskLog.objects.filter(workspace_id=workspace_id, status='ENQUEUED').first()
     assert task_log.type == 'CREATING_JOURNAL_ENTRY'
@@ -1984,14 +2004,14 @@ def test_schedule_creation_with_no_expense_groups(db):
 
     initial_task_log_count = TaskLog.objects.filter(workspace_id=workspace_id).count()
 
-    schedule_journal_entry_creation(workspace_id, [1], False, 'PERSONAL', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
+    schedule_journal_entry_creation(workspace_id, [1], False, 'PERSONAL', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
     assert TaskLog.objects.filter(workspace_id=workspace_id).count() == initial_task_log_count
 
-    schedule_expense_reports_creation(workspace_id, [1], False, 'PERSONAL', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
+    schedule_expense_reports_creation(workspace_id, [1], False, 'PERSONAL', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
     assert TaskLog.objects.filter(workspace_id=workspace_id).count() == initial_task_log_count
 
-    schedule_bills_creation(workspace_id, [1], False, 'PERSONAL', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
+    schedule_bills_creation(workspace_id, [1], False, 'PERSONAL', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
     assert TaskLog.objects.filter(workspace_id=workspace_id).count() == initial_task_log_count
 
-    schedule_credit_card_charge_creation(workspace_id, [2], False, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC, run_in_rabbitmq_worker=False)
+    schedule_credit_card_charge_creation(workspace_id, [2], False, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
     assert TaskLog.objects.filter(workspace_id=workspace_id).count() == initial_task_log_count
