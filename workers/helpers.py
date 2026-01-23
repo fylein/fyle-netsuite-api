@@ -42,6 +42,7 @@ class WorkerActionEnum(str, Enum):
     EXPENSE_ADDED_EJECTED_FROM_REPORT = 'UTILITY.EXPENSE_ADDED_EJECTED_FROM_REPORT'
     CHECK_INTERVAL_AND_SYNC_FYLE_DIMENSION = 'IMPORT.CHECK_INTERVAL_AND_SYNC_FYLE_DIMENSION'
     CHECK_INTERVAL_AND_SYNC_NETSUITE_DIMENSION = 'IMPORT.CHECK_INTERVAL_AND_SYNC_NETSUITE_DIMENSION'
+    HANDLE_ORG_SETTING_UPDATED = 'UTILITY.HANDLE_ORG_SETTING_UPDATED'
 
 
 QUEUE_BINDKEY_MAP = {
@@ -76,6 +77,7 @@ ACTION_METHOD_MAP = {
     WorkerActionEnum.EXPENSE_ADDED_EJECTED_FROM_REPORT: 'apps.fyle.tasks.handle_expense_report_change',
     WorkerActionEnum.CHECK_INTERVAL_AND_SYNC_FYLE_DIMENSION: 'apps.fyle.helpers.check_interval_and_sync_dimension',
     WorkerActionEnum.CHECK_INTERVAL_AND_SYNC_NETSUITE_DIMENSION: 'apps.netsuite.helpers.check_interval_and_sync_dimension',
+    WorkerActionEnum.HANDLE_ORG_SETTING_UPDATED: 'apps.fyle.tasks.handle_org_setting_updated',
 }
 
 

@@ -33,7 +33,8 @@ from apps.tasks.models import TaskLog
 
 from .models import FeatureConfig, LastExportDetail, Workspace, FyleCredential, NetSuiteCredentials, Configuration, \
     WorkspaceSchedule
-from apps.workspaces.tasks import schedule_sync, patch_integration_settings
+from apps.workspaces.tasks import sync_org_settings, patch_integration_settings
+from apps.workspaces.actions import export_to_netsuite
 from workers.helpers import RoutingKeyEnum, WorkerActionEnum, publish_to_rabbitmq
 
 from .serializers import LastExportDetailSerializer, WorkspaceSerializer, FyleCredentialSerializer, NetSuiteCredentialSerializer, \
@@ -155,6 +156,8 @@ class WorkspaceView(viewsets.ViewSet):
                 workspace_id=workspace.id,
                 cluster_domain=cluster_domain
             )
+
+            sync_org_settings(workspace_id=workspace.id)
 
         return Response(
             data=WorkspaceSerializer(workspace).data,
