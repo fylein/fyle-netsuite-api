@@ -72,7 +72,7 @@ ACTION_METHOD_MAP = {
     WorkerActionEnum.CHECK_AND_CREATE_CCC_MAPPINGS: 'apps.mappings.tasks.check_and_create_ccc_mappings',
     WorkerActionEnum.HANDLE_FYLE_REFRESH_DIMENSION: 'apps.fyle.helpers.sync_dimensions',
     WorkerActionEnum.HANDLE_NETSUITE_REFRESH_DIMENSION: 'apps.netsuite.helpers.handle_refresh_dimensions',
-    WorkerActionEnum.IMPORT_DIMENSIONS_TO_FYLE: 'apps.mappings.queue.construct_tasks_and_chain_import_fields_to_fyle',
+    WorkerActionEnum.IMPORT_DIMENSIONS_TO_FYLE: 'apps.mappings.queue.initiate_import_to_fyle',
     WorkerActionEnum.EXPENSE_UPDATED_AFTER_APPROVAL: 'apps.fyle.tasks.update_non_exported_expenses',
     WorkerActionEnum.EXPENSE_ADDED_EJECTED_FROM_REPORT: 'apps.fyle.tasks.handle_expense_report_change',
     WorkerActionEnum.CHECK_INTERVAL_AND_SYNC_FYLE_DIMENSION: 'apps.fyle.helpers.check_interval_and_sync_dimension',
