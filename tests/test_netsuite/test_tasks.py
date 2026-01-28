@@ -1537,6 +1537,7 @@ def test_upload_attachments_and_update_export(mocker, db):
     # adding file id to expense
     expense = Expense.objects.filter(id=1).first()
     expense.file_ids = ['fiJjDdr67nl3']
+    expense.workspace_id = 1
     expense.save()
 
     expense_group = ExpenseGroup.objects.filter(id=1).first()
