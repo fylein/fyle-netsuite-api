@@ -365,18 +365,19 @@ def construct_payload_and_update_export(expense_id_receipt_url_map: dict, task_l
             line_item.save()
 
 
-def upload_attachments_and_update_export(expenses: List[Expense], task_log: TaskLog, fyle_credentials: FyleCredential, workspace_id: int):
+def upload_attachments_and_update_export(expense_ids: List[int], task_log_id: int, workspace_id: int):
     """
     Upload attachments and update export
-    :param expenses: list of expenses
-    :param task_log: task_log
-    :param fyle_credentials: fyle_credentials
+    :param expense_ids: list of expense ids
+    :param task_log_id: task_log_id
     :param workspace_id: workspace_id
     :return: None
     """
     try:
         netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
         netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
+        fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+        task_log = TaskLog.objects.filter(id=task_log_id, workspace_id=workspace_id).first()
         workspace = netsuite_credentials.workspace
 
         task_model = TASK_TYPE_MODEL_MAP[task_log.type]
@@ -385,6 +386,7 @@ def upload_attachments_and_update_export(expenses: List[Expense], task_log: Task
         platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
         expense_id_receipt_url_map = {}
+        expenses = Expense.objects.filter(id__in=expense_ids, workspace_id=workspace_id).all()
 
         for expense in expenses:
             if expense.file_ids and len(expense.file_ids):
