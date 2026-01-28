@@ -20,8 +20,7 @@ def construct_tasks_and_chain_import_fields_to_fyle(workspace_id: int) -> None:
         'workspace_id': workspace_id,
         'action': WorkerActionEnum.IMPORT_DIMENSIONS_TO_FYLE.value,
         'data': {
-            'workspace_id': workspace_id,
-            'run_in_rabbitmq_worker': True
+            'workspace_id': workspace_id
         }
     }
     publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.IMPORT.value)
