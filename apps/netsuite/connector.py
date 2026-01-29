@@ -664,33 +664,20 @@ class NetSuiteConnector:
         """
         Sync Currencies
         """
-        attribute_count = self.connection.currencies.count()
-        
-        NetSuiteAttributesCount.update_attribute_count(
-            workspace_id=self.workspace_id,
-            attribute_type='currencies',
-            count=attribute_count
-        )
-        
-        if not self.is_sync_allowed(attribute_count=attribute_count):
-            logger.info('Skipping sync of currencies for workspace %s as it has %s counts which is over the limit of %s', 
-                        self.workspace_id, attribute_count, SYNC_UPPER_LIMIT)
-            return
-        
         currencies_generator = self.connection.currencies.get_all_generator()
 
         currency_attributes = []
 
         for currency in currencies_generator:
-                currency_attributes.append(
-                    {
-                        'attribute_type': 'CURRENCY',
-                        'display_name': 'Currency',
-                        'value': currency['symbol'],
-                        'destination_id': currency['internalId'],
-                        'active': True
-                    }
-                )
+            currency_attributes.append(
+                {
+                    'attribute_type': 'CURRENCY',
+                    'display_name': 'Currency',
+                    'value': currency['symbol'],
+                    'destination_id': currency['internalId'],
+                    'active': True
+                }
+            )
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(
             currency_attributes, 'CURRENCY', self.workspace_id, True)
