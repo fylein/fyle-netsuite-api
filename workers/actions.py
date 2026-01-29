@@ -1,4 +1,5 @@
 import os
+import signal
 import logging
 from typing import Dict
 
@@ -12,6 +13,19 @@ django.setup()
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
+
+TASK_TIMEOUT_SECONDS = 20 * 60  # 20 minutes
+
+
+def get_timeout_handler(action: str):
+    """
+    Create a timeout handler with the action name
+    :param action: str - the action/task name
+    :return: signal handler function
+    """
+    def timeout_handler(signum, frame):
+        raise TimeoutError(f'Task {action} timed out after 20 minutes')
+    return timeout_handler
 
 
 def handle_tasks(payload: Dict) -> None:
@@ -39,5 +53,17 @@ def handle_tasks(payload: Dict) -> None:
         logger.error('Method is None for action - %s and workspace_id - %s', action, payload.get('workspace_id'))
         return
 
-    import_string(method)(**data)
+    is_import_action = action.startswith('IMPORT.')
+
+    if is_import_action:
+        timeout_handler = get_timeout_handler(action)
+        original_handler = signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(TASK_TIMEOUT_SECONDS)
+
+    try:
+        import_string(method)(**data)
+    finally:
+        if is_import_action:
+            signal.alarm(0)
+            signal.signal(signal.SIGALRM, original_handler)
 
