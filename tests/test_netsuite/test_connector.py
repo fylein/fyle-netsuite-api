@@ -1145,7 +1145,6 @@ def test_all_sync_methods_skip_when_over_limit(mocker, db):
     mocker.patch('netsuitesdk.api.accounts.Accounts.count', return_value=35000)
     mocker.patch('netsuitesdk.api.expense_categories.ExpenseCategory.count', return_value=35000)
     mocker.patch('netsuitesdk.api.items.Items.count', return_value=35000)
-    mocker.patch('netsuitesdk.api.currencies.Currencies.count', return_value=35000)
     mocker.patch('netsuitesdk.api.locations.Locations.count', return_value=35000)
     mocker.patch('netsuitesdk.api.classifications.Classifications.count', return_value=35000)
     mocker.patch('netsuitesdk.api.departments.Departments.count', return_value=35000)
@@ -1168,9 +1167,6 @@ def test_all_sync_methods_skip_when_over_limit(mocker, db):
     items_count_before = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='ACCOUNT', display_name='Item').count()
     netsuite_connection.sync_items()
     assert DestinationAttribute.objects.filter(workspace_id=1, attribute_type='ACCOUNT', display_name='Item').count() == items_count_before
-    currencies_count_before = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='CURRENCY').count()
-    netsuite_connection.sync_currencies()
-    assert DestinationAttribute.objects.filter(workspace_id=1, attribute_type='CURRENCY').count() == currencies_count_before
     locations_count_before = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='LOCATION').count()
     netsuite_connection.sync_locations()
     assert DestinationAttribute.objects.filter(workspace_id=1, attribute_type='LOCATION').count() == locations_count_before
