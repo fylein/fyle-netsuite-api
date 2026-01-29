@@ -1,8 +1,9 @@
+import signal
 import pytest
 from unittest.mock import Mock, patch
 
 from workers.worker import Worker, main
-from workers.actions import handle_tasks
+from workers.actions import handle_tasks, get_timeout_handler, TASK_TIMEOUT_SECONDS
 from workers.helpers import get_routing_key
 from fyle_accounting_library.rabbitmq.models import FailedEvent
 from common.event import BaseEvent
@@ -64,6 +65,111 @@ def test_handle_tasks_success():
 
         mock_import_string.assert_called_once_with('apps.workspaces.actions.export_to_netsuite')
         mock_func.assert_called_once_with(workspace_id=1, triggered_by='DASHBOARD_SYNC')
+
+
+def test_get_timeout_handler():
+    """Test that get_timeout_handler returns a handler that raises TimeoutError with action name"""
+    action = 'IMPORT.SYNC_NETSUITE_DIMENSION'
+    handler = get_timeout_handler(action)
+
+    with pytest.raises(TimeoutError) as exc_info:
+        handler(signal.SIGALRM, None)
+
+    assert f'Task {action} timed out after 20 minutes' in str(exc_info.value)
+
+
+@pytest.mark.django_db
+def test_handle_tasks_import_action_sets_timeout():
+    """Test that IMPORT actions set up timeout with signal.alarm"""
+    with patch('workers.actions.import_string') as mock_import_string, \
+         patch('workers.actions.signal.signal') as mock_signal, \
+         patch('workers.actions.signal.alarm') as mock_alarm:
+
+        mock_func = Mock()
+        mock_import_string.return_value = mock_func
+        mock_signal.return_value = signal.SIG_DFL
+
+        payload = {
+            'action': 'IMPORT.SYNC_NETSUITE_DIMENSION',
+            'data': {'workspace_id': 1}
+        }
+        handle_tasks(payload)
+
+        assert mock_signal.call_count == 2
+        assert mock_signal.call_args_list[0][0][0] == signal.SIGALRM
+        assert mock_signal.call_args_list[1][0] == (signal.SIGALRM, signal.SIG_DFL)
+
+        assert mock_alarm.call_count == 2
+        mock_alarm.assert_any_call(TASK_TIMEOUT_SECONDS)
+        mock_alarm.assert_any_call(0)
+
+
+@pytest.mark.django_db
+def test_handle_tasks_non_import_action_no_timeout():
+    """Test that non-IMPORT actions do NOT set up timeout"""
+    with patch('workers.actions.import_string') as mock_import_string, \
+         patch('workers.actions.signal.signal') as mock_signal, \
+         patch('workers.actions.signal.alarm') as mock_alarm:
+
+        mock_func = Mock()
+        mock_import_string.return_value = mock_func
+
+        payload = {
+            'action': 'EXPORT.P0.DASHBOARD_SYNC',
+            'data': {'workspace_id': 1, 'triggered_by': 'DASHBOARD_SYNC'}
+        }
+        handle_tasks(payload)
+
+        mock_signal.assert_not_called()
+        mock_alarm.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_handle_tasks_import_action_cleanup_on_exception():
+    """Test that timeout cleanup happens even when task raises exception"""
+    with patch('workers.actions.import_string') as mock_import_string, \
+         patch('workers.actions.signal.signal') as mock_signal, \
+         patch('workers.actions.signal.alarm') as mock_alarm:
+
+        mock_func = Mock(side_effect=Exception('Task failed'))
+        mock_import_string.return_value = mock_func
+        mock_signal.return_value = signal.SIG_DFL
+
+        payload = {
+            'action': 'IMPORT.SYNC_NETSUITE_DIMENSION',
+            'data': {'workspace_id': 1}
+        }
+
+        with pytest.raises(Exception) as exc_info:
+            handle_tasks(payload)
+
+        assert 'Task failed' in str(exc_info.value)
+
+        assert mock_alarm.call_count == 2
+        mock_alarm.assert_any_call(TASK_TIMEOUT_SECONDS)
+        mock_alarm.assert_any_call(0)
+
+        assert mock_signal.call_count == 2
+
+
+@pytest.mark.django_db
+def test_handle_tasks_utility_action_no_timeout():
+    """Test that UTILITY actions do NOT set up timeout"""
+    with patch('workers.actions.import_string') as mock_import_string, \
+         patch('workers.actions.signal.signal') as mock_signal, \
+         patch('workers.actions.signal.alarm') as mock_alarm:
+
+        mock_func = Mock()
+        mock_import_string.return_value = mock_func
+
+        payload = {
+            'action': 'UTILITY.UPDATE_WORKSPACE_NAME',
+            'data': {'workspace_id': 1, 'access_token': 'test_token'}
+        }
+        handle_tasks(payload)
+
+        mock_signal.assert_not_called()
+        mock_alarm.assert_not_called()
 
 
 @pytest.mark.django_db
