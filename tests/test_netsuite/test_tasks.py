@@ -1706,7 +1706,7 @@ def test_upload_attachments_and_update_export_failure(mocker, db):
         side_effect=NetSuiteCredentials.DoesNotExist()
     )
 
-    upload_attachments_and_update_export(expenses, task_log, fyle_credentials, 1)
+    upload_attachments_and_update_export([1], task_log.id, 1)
     task_log.refresh_from_db()
     assert task_log.is_attachment_upload_failed == True
 
@@ -1718,7 +1718,7 @@ def test_upload_attachments_and_update_export_failure(mocker, db):
         side_effect=Exception('Test exception')
     )
 
-    upload_attachments_and_update_export(expenses, task_log, fyle_credentials, 1)
+    upload_attachments_and_update_export([1], task_log.id, 1)
     task_log.refresh_from_db()
     assert task_log.is_attachment_upload_failed == True
 
@@ -2134,7 +2134,7 @@ def test_upload_attachments_netsuite_rate_limit_error(mocker, db):
         side_effect=NetSuiteRateLimitError('Rate limit exceeded')
     )
 
-    upload_attachments_and_update_export(expenses, task_log, fyle_credentials, 1)
+    upload_attachments_and_update_export([1], task_log.id, 1)
     task_log.refresh_from_db()
     assert task_log.is_attachment_upload_failed == True
 
@@ -2171,7 +2171,7 @@ def test_upload_attachments_netsuite_request_error(mocker, db):
         side_effect=NetSuiteRequestError('Request error', 'request_error')
     )
 
-    upload_attachments_and_update_export(expenses, task_log, fyle_credentials, 1)
+    upload_attachments_and_update_export([1], task_log.id, 1)
     task_log.refresh_from_db()
     assert task_log.is_attachment_upload_failed == True
 
@@ -2213,7 +2213,7 @@ def test_upload_attachments_netsuite_login_error(mocker, db):
         return_value=None
     )
 
-    upload_attachments_and_update_export(expenses, task_log, fyle_credentials, 1)
+    upload_attachments_and_update_export([1], task_log.id, 1)
     task_log.refresh_from_db()
     assert task_log.is_attachment_upload_failed == True
 
@@ -2225,10 +2225,10 @@ def test_upload_attachments_invalid_token_error(mocker, db):
     """
     expense = Expense.objects.filter(id=1).first()
     expense.file_ids = ['fiJjDdr67nl3']
+    expense.workspace_id = 1
     expense.save()
 
     expense_group = ExpenseGroup.objects.filter(id=1).first()
-    expenses = Expense.objects.filter(id=1)
 
     task_log = TaskLog.objects.filter(workspace_id=1).first()
     task_log.type = 'CREATING_BILL'
@@ -2237,7 +2237,6 @@ def test_upload_attachments_invalid_token_error(mocker, db):
     task_log.is_attachment_upload_failed = False
     task_log.save()
     
-    fyle_credentials = FyleCredential.objects.get(workspace_id=1)
     configuration = Configuration.objects.filter(workspace_id=1).first()
 
     bill_object = Bill.create_bill(expense_group)
@@ -2250,7 +2249,7 @@ def test_upload_attachments_invalid_token_error(mocker, db):
         side_effect=InvalidTokenError('Invalid token', 'invalid_token')
     )
 
-    upload_attachments_and_update_export(expenses, task_log, fyle_credentials, 1)
+    upload_attachments_and_update_export([1], task_log.id, 1)
     task_log.refresh_from_db()
     assert task_log.is_attachment_upload_failed == True
 

@@ -369,11 +369,13 @@ def upload_attachments_and_update_export(expense_ids: List[int], task_log_id: in
     :return: None
     """
     try:
+        task_log = TaskLog.objects.filter(id=task_log_id, workspace_id=workspace_id).first()
+        fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+        workspace = fyle_credentials.workspace
+
         netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
         netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
-        fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-        task_log = TaskLog.objects.filter(id=task_log_id, workspace_id=workspace_id).first()
-        workspace = netsuite_credentials.workspace
+
 
         platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
