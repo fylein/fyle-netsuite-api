@@ -10,8 +10,9 @@ import zeep.exceptions
 
 from django.utils import timezone as django_timezone
 from django_q.models import Schedule
-from netsuitesdk import NetSuiteRequestError
-from fyle.platform.exceptions import InternalServerError
+from netsuitesdk import NetSuiteRequestError, NetSuiteRateLimitError, NetSuiteLoginError
+from fyle.platform.exceptions import InternalServerError, InvalidTokenError
+from datetime import datetime, timezone
 from fyle_integrations_platform_connector import PlatformConnector
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 
@@ -22,7 +23,7 @@ from apps.workspaces.models import Configuration, LastExportDetail, NetSuiteCred
 from apps.tasks.models import TaskLog
 from apps.netsuite.tasks import __validate_general_mapping, __validate_subsidiary_mapping, check_netsuite_object_status, create_credit_card_charge, create_journal_entry, create_or_update_employee_mapping, create_vendor_payment, get_all_internal_ids, \
      get_or_create_credit_card_vendor, create_bill, create_expense_report, load_attachments, process_reimbursements, process_vendor_payment, schedule_netsuite_objects_status_sync, schedule_reimbursements_sync, schedule_vendor_payment_creation, \
-        __validate_tax_group_mapping, check_expenses_reimbursement_status, __validate_expense_group, upload_attachments_and_update_export
+        __validate_tax_group_mapping, check_expenses_reimbursement_status, __validate_expense_group, upload_attachments_and_update_export, sync_inactive_employee
 from apps.netsuite.queue import *
 from apps.netsuite.exceptions import __handle_netsuite_connection_error
 from apps.mappings.models import GeneralMapping, SubsidiaryMapping
@@ -2065,3 +2066,300 @@ def test_schedule_creation_with_no_expense_groups(db):
 
     schedule_credit_card_charge_creation(workspace_id, [2], False, 'CCC', 1, triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
     assert TaskLog.objects.filter(workspace_id=workspace_id).count() == initial_task_log_count
+
+
+@pytest.mark.django_db()
+def test_load_attachments_invalid_token_error(db, add_netsuite_credentials, mocker):
+    """
+    Test load_attachments when InvalidTokenError
+    """
+    mocker.patch(
+        'netsuitesdk.api.folders.Folders.post',
+        return_value={'internalId': 'qwertyui', 'externalId': 'sdfghjk'}
+    )
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.Files.bulk_generate_file_urls',
+        side_effect=InvalidTokenError('Invalid token', 'invalid_token')
+    )
+
+    expense_group = ExpenseGroup.objects.filter(workspace_id=1).first()
+    expense = expense_group.expenses.first()
+    expense.file_ids = ['sdfghjk']
+    expense.save()
+
+    task_log = TaskLog.objects.filter(workspace_id=1).first()
+    task_log.is_attachment_upload_failed = False
+    task_log.save()
+
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials, expense_group.workspace_id)
+
+    attachment = load_attachments(netsuite_connection, expense, expense_group, task_log)
+    
+    task_log.refresh_from_db()
+    assert task_log.is_attachment_upload_failed == True
+    assert attachment is None
+
+
+@pytest.mark.django_db()
+def test_upload_attachments_netsuite_rate_limit_error(mocker, db):
+    """
+    Test upload_attachments_and_update_export
+    """
+    expense = Expense.objects.filter(id=1).first()
+    expense.file_ids = ['fiJjDdr67nl3']
+    expense.save()
+
+    expense_group = ExpenseGroup.objects.filter(id=1).first()
+    expenses = Expense.objects.filter(id=1)
+
+    task_log = TaskLog.objects.filter(workspace_id=1).first()
+    task_log.type = 'CREATING_BILL'
+    task_log.status = 'COMPLETE'
+    task_log.expense_group = expense_group
+    task_log.is_attachment_upload_failed = False
+    task_log.save()
+    
+    fyle_credentials = FyleCredential.objects.get(workspace_id=1)
+    configuration = Configuration.objects.filter(workspace_id=1).first()
+
+    bill_object = Bill.create_bill(expense_group)
+    BillLineitem.create_bill_lineitems(expense_group, configuration)
+    task_log.bill_id = bill_object.id
+    task_log.save()
+
+    mocker.patch(
+        'apps.workspaces.models.NetSuiteCredentials.get_active_netsuite_credentials',
+        side_effect=NetSuiteRateLimitError('Rate limit exceeded')
+    )
+
+    upload_attachments_and_update_export(expenses, task_log, fyle_credentials, 1)
+    task_log.refresh_from_db()
+    assert task_log.is_attachment_upload_failed == True
+
+
+@pytest.mark.django_db()
+def test_upload_attachments_netsuite_request_error(mocker, db):
+    """
+    Test upload_attachments_and_update_export
+    """
+    expense = Expense.objects.filter(id=1).first()
+    expense.file_ids = ['fiJjDdr67nl3']
+    expense.save()
+
+    expense_group = ExpenseGroup.objects.filter(id=1).first()
+    expenses = Expense.objects.filter(id=1)
+
+    task_log = TaskLog.objects.filter(workspace_id=1).first()
+    task_log.type = 'CREATING_BILL'
+    task_log.status = 'COMPLETE'
+    task_log.expense_group = expense_group
+    task_log.is_attachment_upload_failed = False
+    task_log.save()
+    
+    fyle_credentials = FyleCredential.objects.get(workspace_id=1)
+    configuration = Configuration.objects.filter(workspace_id=1).first()
+
+    bill_object = Bill.create_bill(expense_group)
+    BillLineitem.create_bill_lineitems(expense_group, configuration)
+    task_log.bill_id = bill_object.id
+    task_log.save()
+
+    mocker.patch(
+        'apps.workspaces.models.NetSuiteCredentials.get_active_netsuite_credentials',
+        side_effect=NetSuiteRequestError('Request error', 'request_error')
+    )
+
+    upload_attachments_and_update_export(expenses, task_log, fyle_credentials, 1)
+    task_log.refresh_from_db()
+    assert task_log.is_attachment_upload_failed == True
+
+
+@pytest.mark.django_db()
+def test_upload_attachments_netsuite_login_error(mocker, db):
+    """
+    Test upload_attachments_and_update_export
+    """
+    expense = Expense.objects.filter(id=1).first()
+    expense.file_ids = ['fiJjDdr67nl3']
+    expense.save()
+
+    expense_group = ExpenseGroup.objects.filter(id=1).first()
+    expenses = Expense.objects.filter(id=1)
+
+    task_log = TaskLog.objects.filter(workspace_id=1).first()
+    task_log.type = 'CREATING_BILL'
+    task_log.status = 'COMPLETE'
+    task_log.expense_group = expense_group
+    task_log.is_attachment_upload_failed = False
+    task_log.save()
+    
+    fyle_credentials = FyleCredential.objects.get(workspace_id=1)
+    configuration = Configuration.objects.filter(workspace_id=1).first()
+
+    bill_object = Bill.create_bill(expense_group)
+    BillLineitem.create_bill_lineitems(expense_group, configuration)
+    task_log.bill_id = bill_object.id
+    task_log.save()
+
+    mocker.patch(
+        'apps.workspaces.models.NetSuiteCredentials.get_active_netsuite_credentials',
+        side_effect=NetSuiteLoginError('Invalid login')
+    )
+
+    mocker.patch(
+        'fyle_netsuite_api.utils.invalidate_netsuite_credentials',
+        return_value=None
+    )
+
+    upload_attachments_and_update_export(expenses, task_log, fyle_credentials, 1)
+    task_log.refresh_from_db()
+    assert task_log.is_attachment_upload_failed == True
+
+
+@pytest.mark.django_db()
+def test_upload_attachments_invalid_token_error(mocker, db):
+    """
+    Test upload_attachments_and_update_export
+    """
+    expense = Expense.objects.filter(id=1).first()
+    expense.file_ids = ['fiJjDdr67nl3']
+    expense.save()
+
+    expense_group = ExpenseGroup.objects.filter(id=1).first()
+    expenses = Expense.objects.filter(id=1)
+
+    task_log = TaskLog.objects.filter(workspace_id=1).first()
+    task_log.type = 'CREATING_BILL'
+    task_log.status = 'COMPLETE'
+    task_log.expense_group = expense_group
+    task_log.is_attachment_upload_failed = False
+    task_log.save()
+    
+    fyle_credentials = FyleCredential.objects.get(workspace_id=1)
+    configuration = Configuration.objects.filter(workspace_id=1).first()
+
+    bill_object = Bill.create_bill(expense_group)
+    BillLineitem.create_bill_lineitems(expense_group, configuration)
+    task_log.bill_id = bill_object.id
+    task_log.save()
+
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.Files.bulk_generate_file_urls',
+        side_effect=InvalidTokenError('Invalid token', 'invalid_token')
+    )
+
+    upload_attachments_and_update_export(expenses, task_log, fyle_credentials, 1)
+    task_log.refresh_from_db()
+    assert task_log.is_attachment_upload_failed == True
+
+
+@pytest.mark.django_db()
+def test_sync_inactive_employee_returns_none(mocker, db):
+    """
+    Test sync_inactive_employee returns None when employee list is empty
+    """
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.Employees.get_employee_by_email',
+        return_value=[]
+    )
+
+    expense_group = ExpenseGroup.objects.get(id=1)
+    expense_group.description.update({'employee_email': 'nonexistent@fyle.in'})
+    expense_group.save()
+
+    result = sync_inactive_employee(expense_group)
+    assert result is None
+
+
+@pytest.mark.django_db()
+def test_process_reimbursements_detailed_coverage(db, mocker, add_fyle_credentials):
+    """
+    Test process_reimbursements
+    """
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.Reports.bulk_mark_as_paid',
+        return_value=[]
+    )
+
+    workspace_id = 1
+    expense1 = Expense.objects.get(id=1)
+    expense1.fund_source = 'PERSONAL'
+    expense1.paid_on_fyle = False
+    expense1.paid_on_netsuite = True
+    expense1.report_id = 'rpt001'
+    expense1.workspace_id = workspace_id
+    expense1.save()
+
+    expense2 = Expense.objects.create(
+        workspace_id=workspace_id,
+        fund_source='PERSONAL',
+        paid_on_fyle=False,
+        paid_on_netsuite=True,
+        report_id='rpt001',
+        expense_id='exp002',
+        amount=100,
+        currency='USD',
+        expense_number='E002',
+        settlement_id='set001',
+        employee_email='test@example.com',
+        category='Travel',
+        state='PAYMENT_PROCESSING',
+        expense_created_at=datetime.now(timezone.utc),
+        expense_updated_at=datetime.now(timezone.utc),
+        org_id='or79Cob97KSh'
+    )
+
+    # Call process_reimbursements which should hit lines 1555-1568
+    process_reimbursements(workspace_id)
+
+    # Verify expenses are marked as paid_on_fyle
+    expense1.refresh_from_db()
+    expense2.refresh_from_db()
+    assert expense1.paid_on_fyle == True
+    assert expense2.paid_on_fyle == True
+
+
+@pytest.mark.django_db()
+def test_process_reimbursements_with_partial_payment(db, mocker, add_fyle_credentials):
+    """
+    Test process_reimbursements
+    """
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.Reports.bulk_mark_as_paid',
+        return_value=[]
+    )
+
+    workspace_id = 1
+    expense1 = Expense.objects.get(id=1)
+    expense1.fund_source = 'PERSONAL'
+    expense1.paid_on_fyle = False
+    expense1.paid_on_netsuite = True
+    expense1.report_id = 'rpt002'
+    expense1.workspace_id = workspace_id
+    expense1.save()
+
+    expense2 = Expense.objects.create(
+        workspace_id=workspace_id,
+        fund_source='PERSONAL',
+        paid_on_fyle=False,
+        paid_on_netsuite=False,
+        report_id='rpt002',
+        expense_id='exp003',
+        amount=100,
+        currency='USD',
+        expense_number='E003',
+        settlement_id='set002',
+        employee_email='test@example.com',
+        category='Travel',
+        state='PAYMENT_PROCESSING',
+        expense_created_at=datetime.now(timezone.utc),
+        expense_updated_at=datetime.now(timezone.utc),
+        org_id='or79Cob97KSh'
+    )
+    process_reimbursements(workspace_id)
+
+    expense1.refresh_from_db()
+    expense2.refresh_from_db()
+    assert expense1.paid_on_fyle == False
+    assert expense2.paid_on_fyle == False
