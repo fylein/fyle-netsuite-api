@@ -1053,7 +1053,8 @@ CREATE TABLE public.task_logs (
     credit_card_charge_id integer,
     triggered_by character varying(255),
     re_attempt_export boolean NOT NULL,
-    is_attachment_upload_failed boolean NOT NULL
+    is_attachment_upload_failed boolean NOT NULL,
+    stuck_export_re_attempt_count integer NOT NULL
 );
 
 
@@ -9702,6 +9703,7 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 253	workspaces	0052_workspace_org_settings	2026-01-19 11:04:33.763916+00
 254	netsuite	0029_remove_bill_is_attachment_upload_failed_and_more	2026-02-02 10:38:35.114395+00
 255	tasks	0017_tasklog_is_attachment_upload_failed	2026-02-02 10:38:35.127455+00
+256	tasks	0018_tasklog_stuck_export_re_attempt_count	2026-02-02 13:37:07.282489+00
 \.
 
 
@@ -13515,8 +13517,8 @@ COPY public.subsidiary_mappings (id, subsidiary_name, internal_id, created_at, u
 -- Data for Name: task_logs; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.task_logs (id, type, task_id, status, detail, created_at, updated_at, bill_id, expense_group_id, workspace_id, expense_report_id, journal_entry_id, vendor_payment_id, credit_card_charge_id, triggered_by, re_attempt_export, is_attachment_upload_failed) FROM stdin;
-141	FETCHING_EXPENSES	\N	COMPLETE	{"default": "default value"}	2021-12-03 11:26:57.1744+00	2021-12-03 11:26:58.747868+00	\N	\N	49	\N	\N	\N	\N	\N	f	f
+COPY public.task_logs (id, type, task_id, status, detail, created_at, updated_at, bill_id, expense_group_id, workspace_id, expense_report_id, journal_entry_id, vendor_payment_id, credit_card_charge_id, triggered_by, re_attempt_export, is_attachment_upload_failed, stuck_export_re_attempt_count) FROM stdin;
+141	FETCHING_EXPENSES	\N	COMPLETE	{"default": "default value"}	2021-12-03 11:26:57.1744+00	2021-12-03 11:26:58.747868+00	\N	\N	49	\N	\N	\N	\N	\N	f	f	0
 \.
 
 
@@ -13666,7 +13668,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 51, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 255, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 256, true);
 
 
 --
