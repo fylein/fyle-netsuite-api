@@ -1052,7 +1052,8 @@ CREATE TABLE public.task_logs (
     vendor_payment_id integer,
     credit_card_charge_id integer,
     triggered_by character varying(255),
-    re_attempt_export boolean NOT NULL
+    re_attempt_export boolean NOT NULL,
+    is_attachment_upload_failed boolean NOT NULL
 );
 
 
@@ -1384,8 +1385,7 @@ CREATE TABLE public.bills (
     department_id character varying(255),
     override_tax_details boolean NOT NULL,
     class_id character varying(255),
-    is_retired boolean NOT NULL,
-    is_attachment_upload_failed boolean NOT NULL
+    is_retired boolean NOT NULL
 );
 
 
@@ -1520,8 +1520,7 @@ CREATE TABLE public.credit_card_charges (
     expense_group_id integer NOT NULL,
     reference_number character varying(255),
     department_id character varying(255),
-    class_id character varying(255),
-    is_attachment_upload_failed boolean NOT NULL
+    class_id character varying(255)
 );
 
 
@@ -2274,8 +2273,7 @@ CREATE TABLE public.expense_reports (
     payment_synced boolean NOT NULL,
     paid_on_netsuite boolean NOT NULL,
     credit_card_account_id character varying(255),
-    is_retired boolean NOT NULL,
-    is_attachment_upload_failed boolean NOT NULL
+    is_retired boolean NOT NULL
 );
 
 
@@ -3054,8 +3052,7 @@ CREATE TABLE public.journal_entries (
     location_id character varying(255),
     payment_synced boolean NOT NULL,
     paid_on_netsuite boolean NOT NULL,
-    department_id character varying(255),
-    is_attachment_upload_failed boolean NOT NULL
+    department_id character varying(255)
 );
 
 
@@ -4331,7 +4328,7 @@ COPY public.bill_lineitems (id, account_id, location_id, department_id, class_id
 -- Data for Name: bills; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.bills (id, entity_id, accounts_payable_id, subsidiary_id, location_id, currency, memo, external_id, created_at, updated_at, expense_group_id, transaction_date, payment_synced, paid_on_netsuite, reference_number, department_id, override_tax_details, class_id, is_retired, is_attachment_upload_failed) FROM stdin;
+COPY public.bills (id, entity_id, accounts_payable_id, subsidiary_id, location_id, currency, memo, external_id, created_at, updated_at, expense_group_id, transaction_date, payment_synced, paid_on_netsuite, reference_number, department_id, override_tax_details, class_id, is_retired) FROM stdin;
 \.
 
 
@@ -4371,7 +4368,7 @@ COPY public.credit_card_charge_lineitems (id, account_id, location_id, departmen
 -- Data for Name: credit_card_charges; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.credit_card_charges (id, credit_card_account_id, entity_id, subsidiary_id, location_id, currency, memo, external_id, transaction_date, created_at, updated_at, expense_group_id, reference_number, department_id, class_id, is_attachment_upload_failed) FROM stdin;
+COPY public.credit_card_charges (id, credit_card_account_id, entity_id, subsidiary_id, location_id, currency, memo, external_id, transaction_date, created_at, updated_at, expense_group_id, reference_number, department_id, class_id) FROM stdin;
 \.
 
 
@@ -9703,6 +9700,8 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 251	internal	0013_auto_generated_sql	2026-01-19 11:04:33.745825+00
 252	internal	0014_auto_generated_sql	2026-01-19 11:04:33.747225+00
 253	workspaces	0052_workspace_org_settings	2026-01-19 11:04:33.763916+00
+254	netsuite	0029_remove_bill_is_attachment_upload_failed_and_more	2026-02-02 10:38:35.114395+00
+255	tasks	0017_tasklog_is_attachment_upload_failed	2026-02-02 10:38:35.127455+00
 \.
 
 
@@ -13337,7 +13336,7 @@ COPY public.expense_report_lineitems (id, amount, category, class_id, customer_i
 -- Data for Name: expense_reports; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.expense_reports (id, account_id, entity_id, currency, department_id, class_id, location_id, subsidiary_id, memo, external_id, created_at, updated_at, expense_group_id, transaction_date, payment_synced, paid_on_netsuite, credit_card_account_id, is_retired, is_attachment_upload_failed) FROM stdin;
+COPY public.expense_reports (id, account_id, entity_id, currency, department_id, class_id, location_id, subsidiary_id, memo, external_id, created_at, updated_at, expense_group_id, transaction_date, payment_synced, paid_on_netsuite, credit_card_account_id, is_retired) FROM stdin;
 \.
 
 
@@ -13418,7 +13417,7 @@ COPY public.import_logs (id, attribute_type, status, error_log, total_batches_co
 -- Data for Name: journal_entries; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.journal_entries (id, currency, subsidiary_id, memo, external_id, created_at, updated_at, expense_group_id, transaction_date, location_id, payment_synced, paid_on_netsuite, department_id, is_attachment_upload_failed) FROM stdin;
+COPY public.journal_entries (id, currency, subsidiary_id, memo, external_id, created_at, updated_at, expense_group_id, transaction_date, location_id, payment_synced, paid_on_netsuite, department_id) FROM stdin;
 \.
 
 
@@ -13516,8 +13515,8 @@ COPY public.subsidiary_mappings (id, subsidiary_name, internal_id, created_at, u
 -- Data for Name: task_logs; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.task_logs (id, type, task_id, status, detail, created_at, updated_at, bill_id, expense_group_id, workspace_id, expense_report_id, journal_entry_id, vendor_payment_id, credit_card_charge_id, triggered_by, re_attempt_export) FROM stdin;
-141	FETCHING_EXPENSES	\N	COMPLETE	{"default": "default value"}	2021-12-03 11:26:57.1744+00	2021-12-03 11:26:58.747868+00	\N	\N	49	\N	\N	\N	\N	\N	f
+COPY public.task_logs (id, type, task_id, status, detail, created_at, updated_at, bill_id, expense_group_id, workspace_id, expense_report_id, journal_entry_id, vendor_payment_id, credit_card_charge_id, triggered_by, re_attempt_export, is_attachment_upload_failed) FROM stdin;
+141	FETCHING_EXPENSES	\N	COMPLETE	{"default": "default value"}	2021-12-03 11:26:57.1744+00	2021-12-03 11:26:58.747868+00	\N	\N	49	\N	\N	\N	\N	\N	f	f
 \.
 
 
@@ -13667,7 +13666,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 51, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 253, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 255, true);
 
 
 --
