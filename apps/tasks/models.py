@@ -75,6 +75,7 @@ class TaskLog(models.Model):
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime')
     triggered_by = models.CharField(max_length=255, help_text="Triggered by", null=True, choices=IMPORTED_FROM_CHOICES)
     re_attempt_export = models.BooleanField(default=False, help_text='Is re-attempt export')
+    stuck_export_re_attempt_count = models.IntegerField(default=0, help_text='Stuck export re-attempt count')
 
     class Meta:
         db_table = 'task_logs'
