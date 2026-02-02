@@ -1539,6 +1539,7 @@ def test_upload_attachments_and_update_export(mocker, db):
     # adding file id to expense
     expense = Expense.objects.filter(id=1).first()
     expense.file_ids = ['fiJjDdr67nl3']
+    expense.workspace_id = 1
     expense.save()
 
     expense_group = ExpenseGroup.objects.filter(id=1).first()
@@ -1594,7 +1595,7 @@ def test_upload_attachments_and_update_export(mocker, db):
     lineitem = BillLineitem.objects.get(expense_id=1)
     assert lineitem.netsuite_receipt_url == None
 
-    upload_attachments_and_update_export(expenses, task_log, fyle_credentials, 1)
+    upload_attachments_and_update_export([1], task_log.id, 1)
 
     # asserting if the file is present
     lineitem = BillLineitem.objects.get(expense_id=1)
@@ -1630,7 +1631,7 @@ def test_upload_attachments_and_update_export(mocker, db):
     lineitem = JournalEntryLineItem.objects.get(expense_id=1)
     assert lineitem.netsuite_receipt_url == None
 
-    upload_attachments_and_update_export(expenses, task_log, fyle_credentials, 1)
+    upload_attachments_and_update_export([1], task_log.id, 1)
 
     # asserting if the file is present
     lineitem = JournalEntryLineItem.objects.get(expense_id=1)
@@ -1666,7 +1667,7 @@ def test_upload_attachments_and_update_export(mocker, db):
     lineitem = ExpenseReportLineItem.objects.get(expense_id=1)
     assert lineitem.netsuite_receipt_url == None
 
-    upload_attachments_and_update_export(expenses, task_log, fyle_credentials, 1)
+    upload_attachments_and_update_export([1], task_log.id, 1)
 
     # asserting if the file is present
     lineitem = ExpenseReportLineItem.objects.get(expense_id=1)

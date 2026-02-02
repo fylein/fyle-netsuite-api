@@ -360,23 +360,25 @@ def construct_payload_and_update_export(expense_id_receipt_url_map: dict, task_l
             line_item.save()
 
 
-def upload_attachments_and_update_export(expenses: List[Expense], task_log: TaskLog, fyle_credentials: FyleCredential, workspace_id: int):
+def upload_attachments_and_update_export(expense_ids: List[int], task_log_id: int, workspace_id: int):
     """
     Upload attachments and update export
-    :param expenses: list of expenses
-    :param task_log: task_log
-    :param fyle_credentials: fyle_credentials
+    :param expense_ids: list of expense ids
+    :param task_log_id: task_log_id
     :param workspace_id: workspace_id
     :return: None
     """
     try:
         netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
         netsuite_connection = NetSuiteConnector(netsuite_credentials, workspace_id)
+        fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+        task_log = TaskLog.objects.filter(id=task_log_id, workspace_id=workspace_id).first()
         workspace = netsuite_credentials.workspace
 
         platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
         expense_id_receipt_url_map = {}
+        expenses = Expense.objects.filter(id__in=expense_ids, workspace_id=workspace_id).all()
 
         for expense in expenses:
             if expense.file_ids and len(expense.file_ids):
@@ -1004,31 +1006,38 @@ def get_employee_expense_attribute(value: str, workspace_id: int) -> ExpenseAttr
     ).first()
 
 def sync_inactive_employee(expense_group: ExpenseGroup) -> ExpenseAttribute:
-    fyle_credentials = FyleCredential.objects.get(workspace_id=expense_group.workspace_id)
-    platform = PlatformConnector(fyle_credentials=fyle_credentials)
-    fyle_employee = platform.employees.get_employee_by_email(expense_group.description.get('employee_email'))
-    if len(fyle_employee):
-        fyle_employee = fyle_employee[0]
-        attribute = {
-            'attribute_type': 'EMPLOYEE',
-            'display_name': 'Employee',
-            'value': fyle_employee['user']['email'],
-            'source_id': fyle_employee['id'],
-            'active': True if fyle_employee['is_enabled'] and fyle_employee['has_accepted_invite'] else False,
-            'detail': {
-                'user_id': fyle_employee['user_id'],
-                'employee_code': fyle_employee['code'],
-                'full_name': fyle_employee['user']['full_name'],
-                'location': fyle_employee['location'],
-                'department': fyle_employee['department']['name'] if fyle_employee['department'] else None,
-                'department_id': fyle_employee['department_id'],
-                'department_code': fyle_employee['department']['code'] if fyle_employee['department'] else None
-            }
-        }
-        ExpenseAttribute.bulk_create_or_update_expense_attributes([attribute], 'EMPLOYEE', expense_group.workspace_id, True)
-        return get_employee_expense_attribute(expense_group.description.get('employee_email'), expense_group.workspace_id)
+    try:
+        fyle_credentials = FyleCredential.objects.get(workspace_id=expense_group.workspace_id)
+        platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
-    return None
+        fyle_employee = platform.employees.get_employee_by_email(expense_group.description.get('employee_email'))
+        if len(fyle_employee):
+            fyle_employee = fyle_employee[0]
+            attribute = {
+                'attribute_type': 'EMPLOYEE',
+                'display_name': 'Employee',
+                'value': fyle_employee['user']['email'],
+                'source_id': fyle_employee['id'],
+                'active': True if fyle_employee['is_enabled'] and fyle_employee['has_accepted_invite'] else False,
+                'detail': {
+                    'user_id': fyle_employee['user_id'],
+                    'employee_code': fyle_employee['code'],
+                    'full_name': fyle_employee['user']['full_name'],
+                    'location': fyle_employee['location'],
+                    'department': fyle_employee['department']['name'] if fyle_employee['department'] else None,
+                    'department_id': fyle_employee['department_id'],
+                    'department_code': fyle_employee['department']['code'] if fyle_employee['department'] else None
+                }
+            }
+            ExpenseAttribute.bulk_create_or_update_expense_attributes([attribute], 'EMPLOYEE', expense_group.workspace_id, True)
+            return get_employee_expense_attribute(expense_group.description.get('employee_email'), expense_group.workspace_id)
+    except (InvalidTokenError, InternalServerError) as e:
+        logger.info('Invalid Fyle refresh token or internal server error for workspace %s: %s', expense_group.workspace_id, str(e))
+        return None
+
+    except Exception as e:
+        logger.error('Error syncing inactive employee for workspace_id %s: %s', expense_group.workspace_id, str(e))
+        return None
 
 def __validate_employee_mapping(expense_group: ExpenseGroup, configuration: Configuration) -> List[BulkError]:
     employee = get_employee_expense_attribute(expense_group.description.get('employee_email'), expense_group.workspace_id)
@@ -1177,7 +1186,12 @@ def create_netsuite_payment_objects(netsuite_objects, object_type, workspace_id)
     netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-    platform = PlatformConnector(fyle_credentials)
+    
+    try:
+        platform = PlatformConnector(fyle_credentials)
+    except (InvalidTokenError, InternalServerError) as e:
+        logger.info('Invalid Fyle refresh token or internal server error for workspace %s: %s', workspace_id, str(e))
+        return
 
     expense_group_settings = ExpenseGroupSettings.objects.get(workspace_id=workspace_id)
     filter_credit_expenses = get_filter_credit_expenses(expense_group_settings=expense_group_settings)
@@ -1543,29 +1557,35 @@ def get_valid_reimbursement_ids(reimbursement_ids: List, platform: PlatformConne
 
 
 def process_reimbursements(workspace_id):
-    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+    try:
+        fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+        platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
-    platform = PlatformConnector(fyle_credentials=fyle_credentials)
+        reports_to_be_marked = set()
+        payloads = []
 
-    reports_to_be_marked = set()
-    payloads = []
+        report_ids = Expense.objects.filter(fund_source='PERSONAL', paid_on_fyle=False, workspace_id=workspace_id).values_list('report_id').distinct()
+        for report_id in report_ids:
+            report_id = report_id[0]
+            expenses = Expense.objects.filter(fund_source='PERSONAL', report_id=report_id, workspace_id=workspace_id).all()
+            paid_expenses = expenses.filter(paid_on_netsuite=True)
 
-    report_ids = Expense.objects.filter(fund_source='PERSONAL', paid_on_fyle=False, workspace_id=workspace_id).values_list('report_id').distinct()
-    for report_id in report_ids:
-        report_id = report_id[0]
-        expenses = Expense.objects.filter(fund_source='PERSONAL', report_id=report_id, workspace_id=workspace_id).all()
-        paid_expenses = expenses.filter(paid_on_netsuite=True)
+            all_expense_paid = False
+            if len(expenses):
+                all_expense_paid = len(expenses) == len(paid_expenses)
 
-        all_expense_paid = False
-        if len(expenses):
-            all_expense_paid = len(expenses) == len(paid_expenses)
+            if all_expense_paid:
+                payloads.append({'id': report_id, 'paid_notify_at': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')})
+                reports_to_be_marked.add(report_id)
 
-        if all_expense_paid:
-            payloads.append({'id': report_id, 'paid_notify_at': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')})
-            reports_to_be_marked.add(report_id)
+        if payloads:
+            mark_paid_on_fyle(platform, payloads, reports_to_be_marked, workspace_id)
+    except (InvalidTokenError, InternalServerError) as e:
+        logger.info('Invalid Fyle refresh token or internal server error for workspace %s: %s', workspace_id, str(e))
 
-    if payloads:
-        mark_paid_on_fyle(platform, payloads, reports_to_be_marked, workspace_id)
+    except Exception as e:
+        logger.error('Error in process_reimbursements for workspace_id %s: %s', workspace_id, str(e))
+        logger.error('Full traceback: %s', traceback.format_exc())
 
 
 def mark_paid_on_fyle(platform, payloads:dict, reports_to_be_marked, workspace_id, retry_num=10):

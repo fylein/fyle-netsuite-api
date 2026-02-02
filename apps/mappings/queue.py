@@ -1,5 +1,6 @@
 from django.utils.module_loading import import_string
 
+from workers.helpers import RoutingKeyEnum, WorkerActionEnum, publish_to_rabbitmq
 from fyle_accounting_mappings.models import MappingSetting
 
 from apps.workspaces.models import Configuration, NetSuiteCredentials
@@ -9,7 +10,23 @@ from apps.mappings.constants import SYNC_METHODS
 from apps.mappings.models import GeneralMapping
 
 
-def construct_tasks_and_chain_import_fields_to_fyle(workspace_id: int):
+def construct_tasks_and_chain_import_fields_to_fyle(workspace_id: int) -> None:
+    """
+    Initiate the Import of dimensions to Fyle
+    :param workspace_id: Workspace Id
+    :return: None
+    """
+    payload = {
+        'workspace_id': workspace_id,
+        'action': WorkerActionEnum.IMPORT_DIMENSIONS_TO_FYLE.value,
+        'data': {
+            'workspace_id': workspace_id
+        }
+    }
+    publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.IMPORT.value)
+
+
+def initiate_import_to_fyle(workspace_id: int):
     """
     Construct tasks and chain import fields to fyle
     :param workspace_id: Workspace Id
