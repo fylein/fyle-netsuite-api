@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, timedelta, timezone
 
-from django.db.models import Q
+from django.db.models import F, Q
 from django_q.models import OrmQ, Schedule
 
 from apps.fyle.actions import update_failed_expenses, post_accounting_export_summary
@@ -27,7 +27,8 @@ def re_export_stuck_exports():
         updated_at__lt=datetime.now() - timedelta(minutes=60),
         updated_at__gt=datetime.now() - timedelta(days=7),
         expense_group_id__isnull=False,
-        workspace_id__in=prod_workspace_ids
+        workspace_id__in=prod_workspace_ids,
+        stuck_export_re_attempt_count__lt=2
     )
     if task_logs.count() > 0:
         logger.info('Re-exporting stuck task_logs')
@@ -49,7 +50,7 @@ def re_export_stuck_exports():
         for expense_group in expense_groups:
             expenses.extend(expense_group.expenses.all())
         workspace_ids_list = list(workspace_ids)
-        task_logs.update(status='FAILED', updated_at=datetime.now(timezone.utc), re_attempt_export=True)
+        task_logs.update(status='FAILED', updated_at=datetime.now(timezone.utc), re_attempt_export=True, stuck_export_re_attempt_count=F('stuck_export_re_attempt_count') + 1)
         for workspace_id in workspace_ids_list:
             errored_expenses = [expense for expense in expenses if expense.workspace_id == workspace_id]
             update_failed_expenses(errored_expenses, True)
