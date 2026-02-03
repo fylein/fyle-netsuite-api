@@ -1342,6 +1342,22 @@ def validate_for_skipping_payment(entity_object, workspace_id, object_type):
     return False
 
 def create_vendor_payment(workspace_id):
+    """
+    Trigger run_create_vendor_payment via RabbitMQ
+    :param workspace_id: Workspace Id
+    :return: None
+    """
+    payload = {
+        'workspace_id': workspace_id,
+        'action': WorkerActionEnum.CREATE_VENDOR_PAYMENT.value,
+        'data': {
+            'workspace_id': workspace_id
+        }
+    }
+    publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.EXPORT_P1.value)
+
+
+def run_create_vendor_payment(workspace_id):
     try:
         fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
 
@@ -1437,7 +1453,23 @@ def get_all_internal_ids(netsuite_objects):
     return netsuite_objects_details
 
 
-def check_netsuite_object_status(workspace_id, trigger_reimbursements: bool = True):
+def check_netsuite_object_status(workspace_id):
+    """
+    Trigger run_check_netsuite_object_status via RabbitMQ
+    :param workspace_id: Workspace Id
+    :return: None
+    """
+    payload = {
+        'workspace_id': workspace_id,
+        'action': WorkerActionEnum.CHECK_NETSUITE_OBJECT_STATUS.value,
+        'data': {
+            'workspace_id': workspace_id
+        }
+    }
+    publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.EXPORT_P1.value)
+
+
+def run_check_netsuite_object_status(workspace_id, trigger_reimbursements: bool = True):
 
     try:
         netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id)
@@ -1559,6 +1591,22 @@ def get_valid_reimbursement_ids(reimbursement_ids: List, platform: PlatformConne
 
 
 def process_reimbursements(workspace_id):
+    """
+    Trigger run_process_reimbursements via RabbitMQ
+    :param workspace_id: Workspace Id
+    :return: None
+    """
+    payload = {
+        'workspace_id': workspace_id,
+        'action': WorkerActionEnum.PROCESS_REIMBURSEMENTS.value,
+        'data': {
+            'workspace_id': workspace_id
+        }
+    }
+    publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.EXPORT_P1.value)
+
+
+def run_process_reimbursements(workspace_id):
     try:
         fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
         platform = PlatformConnector(fyle_credentials=fyle_credentials)

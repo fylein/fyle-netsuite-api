@@ -43,6 +43,7 @@ class WorkerActionEnum(str, Enum):
     CHECK_INTERVAL_AND_SYNC_FYLE_DIMENSION = 'IMPORT.CHECK_INTERVAL_AND_SYNC_FYLE_DIMENSION'
     CHECK_INTERVAL_AND_SYNC_NETSUITE_DIMENSION = 'IMPORT.CHECK_INTERVAL_AND_SYNC_NETSUITE_DIMENSION'
     HANDLE_ORG_SETTING_UPDATED = 'UTILITY.HANDLE_ORG_SETTING_UPDATED'
+    AUTO_CREATE_NETSUITE_EMPLOYEES_ON_FYLE = 'IMPORT.AUTO_CREATE_NETSUITE_EMPLOYEES_ON_FYLE'
 
 
 QUEUE_BINDKEY_MAP = {
@@ -57,18 +58,18 @@ ACTION_METHOD_MAP = {
     WorkerActionEnum.DIRECT_EXPORT: 'apps.fyle.tasks.import_and_export_expenses',
     WorkerActionEnum.DASHBOARD_SYNC: 'apps.workspaces.actions.export_to_netsuite',
     WorkerActionEnum.DISABLE_ITEMS: 'fyle_integrations_imports.tasks.disable_items',
-    WorkerActionEnum.AUTO_MAP_EMPLOYEES: 'apps.mappings.tasks.async_auto_map_employees',
-    WorkerActionEnum.AUTO_MAP_CCC_ACCOUNT: 'apps.mappings.tasks.async_auto_map_ccc_account',
+    WorkerActionEnum.AUTO_MAP_EMPLOYEES: 'apps.mappings.tasks.run_async_auto_map_employees',
+    WorkerActionEnum.AUTO_MAP_CCC_ACCOUNT: 'apps.mappings.tasks.run_async_auto_map_ccc_account',
     WorkerActionEnum.CREATE_EXPENSE_GROUP: 'apps.fyle.tasks.create_expense_groups',
     WorkerActionEnum.EXPENSE_STATE_CHANGE: 'apps.fyle.tasks.import_and_export_expenses',
-    WorkerActionEnum.CREATE_VENDOR_PAYMENT: 'apps.netsuite.tasks.create_vendor_payment',
-    WorkerActionEnum.PROCESS_REIMBURSEMENTS: 'apps.netsuite.tasks.process_reimbursements',
+    WorkerActionEnum.CREATE_VENDOR_PAYMENT: 'apps.netsuite.tasks.run_create_vendor_payment',
+    WorkerActionEnum.PROCESS_REIMBURSEMENTS: 'apps.netsuite.tasks.run_process_reimbursements',
     WorkerActionEnum.UPLOAD_ATTACHMENTS: 'apps.netsuite.tasks.upload_attachments_and_update_export',
     WorkerActionEnum.UPDATE_WORKSPACE_NAME: 'apps.workspaces.tasks.update_workspace_name',
     WorkerActionEnum.SYNC_NETSUITE_DIMENSION: 'apps.netsuite.helpers.sync_dimensions',
     WorkerActionEnum.CREATE_ADMIN_SUBSCRIPTION: 'apps.workspaces.tasks.async_create_admin_subscriptions',
     WorkerActionEnum.BACKGROUND_SCHEDULE_EXPORT: 'apps.workspaces.actions.export_to_netsuite',
-    WorkerActionEnum.CHECK_NETSUITE_OBJECT_STATUS: 'apps.netsuite.tasks.check_netsuite_object_status',
+    WorkerActionEnum.CHECK_NETSUITE_OBJECT_STATUS: 'apps.netsuite.tasks.run_check_netsuite_object_status',
     WorkerActionEnum.CHECK_AND_CREATE_CCC_MAPPINGS: 'apps.mappings.tasks.check_and_create_ccc_mappings',
     WorkerActionEnum.HANDLE_FYLE_REFRESH_DIMENSION: 'apps.fyle.helpers.sync_dimensions',
     WorkerActionEnum.HANDLE_NETSUITE_REFRESH_DIMENSION: 'apps.netsuite.helpers.handle_refresh_dimensions',
@@ -78,6 +79,7 @@ ACTION_METHOD_MAP = {
     WorkerActionEnum.CHECK_INTERVAL_AND_SYNC_FYLE_DIMENSION: 'apps.fyle.helpers.check_interval_and_sync_dimension',
     WorkerActionEnum.CHECK_INTERVAL_AND_SYNC_NETSUITE_DIMENSION: 'apps.netsuite.helpers.check_interval_and_sync_dimension',
     WorkerActionEnum.HANDLE_ORG_SETTING_UPDATED: 'apps.fyle.tasks.handle_org_setting_updated',
+    WorkerActionEnum.AUTO_CREATE_NETSUITE_EMPLOYEES_ON_FYLE: 'apps.mappings.tasks.run_auto_create_netsuite_employees_on_fyle',
 }
 
 
