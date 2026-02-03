@@ -21,8 +21,8 @@ from apps.netsuite.connector import NetSuiteConnector
 from apps.netsuite.models import CreditCardCharge, ExpenseReport, Bill, JournalEntry, BillLineitem, JournalEntryLineItem, ExpenseReportLineItem
 from apps.workspaces.models import Configuration, LastExportDetail, NetSuiteCredentials, FyleCredential
 from apps.tasks.models import TaskLog
-from apps.netsuite.tasks import __validate_general_mapping, __validate_subsidiary_mapping, check_netsuite_object_status, create_credit_card_charge, create_journal_entry, create_or_update_employee_mapping, create_vendor_payment, get_all_internal_ids, \
-     get_or_create_credit_card_vendor, create_bill, create_expense_report, load_attachments, process_reimbursements, process_vendor_payment, schedule_netsuite_objects_status_sync, schedule_reimbursements_sync, schedule_vendor_payment_creation, \
+from apps.netsuite.tasks import __validate_general_mapping, __validate_subsidiary_mapping, run_check_netsuite_object_status, create_credit_card_charge, create_journal_entry, create_or_update_employee_mapping, run_create_vendor_payment, get_all_internal_ids, \
+     get_or_create_credit_card_vendor, create_bill, create_expense_report, load_attachments, run_process_reimbursements, process_vendor_payment, schedule_netsuite_objects_status_sync, schedule_reimbursements_sync, schedule_vendor_payment_creation, \
         __validate_tax_group_mapping, check_expenses_reimbursement_status, __validate_expense_group, upload_attachments_and_update_export, sync_inactive_employee
 from apps.netsuite.queue import *
 from apps.netsuite.exceptions import __handle_netsuite_connection_error
@@ -726,7 +726,7 @@ def test_check_netsuite_object_status_expense_report(create_expense_report, mock
     expense_report = ExpenseReport.objects.filter(expense_group__id=expense_group.id).first()
     assert expense_report.paid_on_netsuite == False
 
-    check_netsuite_object_status(1)
+    run_check_netsuite_object_status(1)
 
     expense_report = ExpenseReport.objects.filter(expense_group__id=expense_group.id).first()
     assert expense_report.paid_on_netsuite == True
@@ -742,7 +742,7 @@ def test_check_netsuite_object_status_bill(create_bill_task, mocker, db):
     bill, bill_lineitems = create_bill_task
     assert bill.paid_on_netsuite == False
 
-    check_netsuite_object_status(1)
+    run_check_netsuite_object_status(1)
 
     bill = Bill.objects.filter(expense_group__id=expense_group.id).first()
     assert bill.paid_on_netsuite == True
@@ -764,7 +764,7 @@ def test_check_netsuite_object_status_exception(create_bill_task, create_expense
             code='INVALID_KEY_OR_REF',
             message='An error occured in a upsert request: Invalid apacct reference key 223.'
         )
-        check_netsuite_object_status(1)
+        run_check_netsuite_object_status(1)
 
     expense_group = ExpenseGroup.objects.filter(workspace_id=1, fund_source='PERSONAL').first()
     expense_report = ExpenseReport.objects.filter(expense_group__id=expense_group.id).first()
@@ -776,7 +776,7 @@ def test_check_netsuite_object_status_exception(create_bill_task, create_expense
             code='INVALID_KEY_OR_REF',
             message='An error occured in a upsert request: Invalid apacct reference key 223.'
         )
-        check_netsuite_object_status(1)
+        run_check_netsuite_object_status(1)
 
 
 def test_load_attachments(db, add_netsuite_credentials, add_fyle_credentials, mocker):
@@ -986,7 +986,7 @@ def test_process_reimbursements(db, mocker, add_fyle_credentials):
     expenses.paid_on_netsuite = True
     expenses.save()
 
-    process_reimbursements(1)
+    run_process_reimbursements(1)
 
     reimbursements = Reimbursement.objects.filter(workspace_id=1)
     assert reimbursements.count() == 1
@@ -1019,7 +1019,7 @@ def test_process_reimbursements_exception(db, mocker, add_fyle_credentials):
             msg='internal server error',
             response='Internal server error.'
         )
-        process_reimbursements(1)
+        run_process_reimbursements(1)
 
 
 def test_schedule_netsuite_objects_status_sync(db):
@@ -1079,7 +1079,7 @@ def test_create_vendor_payment(db, mocker):
     reimbursement.state = 'COMPLETE'
     reimbursement.save()
 
-    create_vendor_payment(workspace_id)
+    run_create_vendor_payment(workspace_id)
     task_log = TaskLog.objects.get(workspace_id=workspace_id, type='CREATING_VENDOR_PAYMENT')
 
     assert task_log.detail == data['creation_response']
@@ -1100,7 +1100,7 @@ def test_create_vendor_payment(db, mocker):
 
     with mock.patch('apps.netsuite.connector.NetSuiteConnector.get_bill') as mock_call:
         mock_call.side_effect = Exception()
-        create_vendor_payment(workspace_id)
+        run_create_vendor_payment(workspace_id)
 
 
 def test_create_vendor_payment_expense_report(db, mocker):
@@ -1149,7 +1149,7 @@ def test_create_vendor_payment_expense_report(db, mocker):
     reimbursement.state = 'COMPLETE'
     reimbursement.save()
 
-    create_vendor_payment(workspace_id)
+    run_create_vendor_payment(workspace_id)
     task_log = TaskLog.objects.get(workspace_id=workspace_id, type='CREATING_VENDOR_PAYMENT')
 
     assert task_log.detail == data['creation_response']
@@ -1766,7 +1766,7 @@ def test_skipping_vendor_payment(mocker, db):
 
     task_log = TaskLog.objects.create(workspace_id=workspace_id, type='CREATING_VENDOR_PAYMENT', task_id='PAYMENT_{}'.format(expense_group.id), status='FAILED')
     updated_at = task_log.updated_at
-    create_vendor_payment(workspace_id)
+    run_create_vendor_payment(workspace_id)
     task_log = TaskLog.objects.get(workspace_id=workspace_id, type='CREATING_VENDOR_PAYMENT', task_id='PAYMENT_{}'.format(expense_group.id))
 
     assert task_log.updated_at == updated_at
@@ -1776,7 +1776,7 @@ def test_skipping_vendor_payment(mocker, db):
         created_at=now - timedelta(days=61),  # More than 2 months ago
     )
 
-    create_vendor_payment(workspace_id)
+    run_create_vendor_payment(workspace_id)
     task_log = TaskLog.objects.get(workspace_id=workspace_id, type='CREATING_VENDOR_PAYMENT', task_id='PAYMENT_{}'.format(expense_group.id))
 
     assert task_log.updated_at == updated_at
@@ -1787,7 +1787,7 @@ def test_skipping_vendor_payment(mocker, db):
         updated_at=updated_at
     )
 
-    create_vendor_payment(workspace_id)
+    run_create_vendor_payment(workspace_id)
     task_log = TaskLog.objects.get(workspace_id=workspace_id, type='CREATING_VENDOR_PAYMENT', task_id='PAYMENT_{}'.format(expense_group.id))
 
     assert task_log.updated_at == updated_at
@@ -2311,7 +2311,7 @@ def test_process_reimbursements_detailed_coverage(db, mocker, add_fyle_credentia
     )
 
     # Call process_reimbursements which should hit lines 1555-1568
-    process_reimbursements(workspace_id)
+    run_process_reimbursements(workspace_id)
 
     # Verify expenses are marked as paid_on_fyle
     expense1.refresh_from_db()
@@ -2357,9 +2357,72 @@ def test_process_reimbursements_with_partial_payment(db, mocker, add_fyle_creden
         expense_updated_at=datetime.now(timezone.utc),
         org_id='or79Cob97KSh'
     )
-    process_reimbursements(workspace_id)
+    run_process_reimbursements(workspace_id)
 
     expense1.refresh_from_db()
     expense2.refresh_from_db()
     assert expense1.paid_on_fyle == False
     assert expense2.paid_on_fyle == False
+
+
+def test_create_vendor_payment_trigger(db, mocker):
+    """
+    Test create_vendor_payment trigger function that publishes to RabbitMQ
+    """
+    from apps.netsuite.tasks import create_vendor_payment
+    mock_publish = mocker.patch('apps.netsuite.tasks.publish_to_rabbitmq')
+    
+    workspace_id = 1
+    create_vendor_payment(workspace_id)
+    
+    mock_publish.assert_called_once()
+    call_args = mock_publish.call_args
+    payload = call_args[1]['payload']
+    routing_key = call_args[1]['routing_key']
+    
+    assert payload['workspace_id'] == workspace_id
+    assert payload['action'] == 'EXPORT.P1.CREATE_VENDOR_PAYMENT'
+    assert payload['data']['workspace_id'] == workspace_id
+    assert routing_key == 'EXPORT.P1.*'
+
+
+def test_check_netsuite_object_status_trigger(db, mocker):
+    """
+    Test check_netsuite_object_status trigger function that publishes to RabbitMQ
+    """
+    from apps.netsuite.tasks import check_netsuite_object_status
+    mock_publish = mocker.patch('apps.netsuite.tasks.publish_to_rabbitmq')
+    
+    workspace_id = 1
+    check_netsuite_object_status(workspace_id)
+    
+    mock_publish.assert_called_once()
+    call_args = mock_publish.call_args
+    payload = call_args[1]['payload']
+    routing_key = call_args[1]['routing_key']
+    
+    assert payload['workspace_id'] == workspace_id
+    assert payload['action'] == 'EXPORT.P1.CHECK_NETSUITE_OBJECT_STATUS'
+    assert payload['data']['workspace_id'] == workspace_id
+    assert routing_key == 'EXPORT.P1.*'
+
+
+def test_process_reimbursements_trigger(db, mocker):
+    """
+    Test process_reimbursements trigger function that publishes to RabbitMQ
+    """
+    from apps.netsuite.tasks import process_reimbursements
+    mock_publish = mocker.patch('apps.netsuite.tasks.publish_to_rabbitmq')
+    
+    workspace_id = 1
+    process_reimbursements(workspace_id)
+    
+    mock_publish.assert_called_once()
+    call_args = mock_publish.call_args
+    payload = call_args[1]['payload']
+    routing_key = call_args[1]['routing_key']
+    
+    assert payload['workspace_id'] == workspace_id
+    assert payload['action'] == 'EXPORT.P1.PROCESS_REIMBURSEMENTS'
+    assert payload['data']['workspace_id'] == workspace_id
+    assert routing_key == 'EXPORT.P1.*'

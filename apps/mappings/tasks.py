@@ -9,6 +9,7 @@ from fyle_accounting_mappings.models import Mapping, ExpenseAttribute, Destinati
 from fyle_accounting_mappings.helpers import EmployeesAutoMappingHelper
 
 from fyle_integrations_platform_connector import PlatformConnector
+from workers.helpers import RoutingKeyEnum, WorkerActionEnum, publish_to_rabbitmq
 from apps.mappings.models import GeneralMapping
 from apps.netsuite.connector import NetSuiteConnector
 from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configuration, Workspace
@@ -95,8 +96,24 @@ def remove_duplicates(ns_attributes: List[DestinationAttribute]):
     return unique_attributes
 
 
-@handle_exceptions(task_name='Auto Map Employees')
 def async_auto_map_employees(workspace_id: int):
+    """
+    Trigger run_async_auto_map_employees via RabbitMQ
+    :param workspace_id: Workspace Id
+    :return: None
+    """
+    payload = {
+        'workspace_id': workspace_id,
+        'action': WorkerActionEnum.AUTO_MAP_EMPLOYEES.value,
+        'data': {
+            'workspace_id': workspace_id
+        }
+    }
+    publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.IMPORT.value)
+
+
+@handle_exceptions(task_name='Auto Map Employees')
+def run_async_auto_map_employees(workspace_id: int):
     configuration = Configuration.objects.get(workspace_id=workspace_id)
     employee_mapping_preference = configuration.auto_map_employees
     destination_type = configuration.employee_field_mapping
@@ -147,8 +164,24 @@ def schedule_auto_map_employees(employee_mapping_preference: str, workspace_id: 
             schedule.delete()
 
 
-@handle_exceptions(task_name='Auto Map CCC Account')
 def async_auto_map_ccc_account(workspace_id: int):
+    """
+    Trigger run_async_auto_map_ccc_account via RabbitMQ
+    :param workspace_id: Workspace Id
+    :return: None
+    """
+    payload = {
+        'workspace_id': workspace_id,
+        'action': WorkerActionEnum.AUTO_MAP_CCC_ACCOUNT.value,
+        'data': {
+            'workspace_id': workspace_id
+        }
+    }
+    publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.IMPORT.value)
+
+
+@handle_exceptions(task_name='Auto Map CCC Account')
+def run_async_auto_map_ccc_account(workspace_id: int):
     general_mappings = GeneralMapping.objects.get(workspace_id=workspace_id)
     default_ccc_account_id = general_mappings.default_ccc_account_id
 
@@ -374,8 +407,24 @@ def post_employees(platform_connection: PlatformConnector, workspace_id: int):
     platform_connection.employees.sync()
 
 
-@handle_exceptions(task_name='Import NetSuite Employees to Fyle')
 def auto_create_netsuite_employees_on_fyle(workspace_id):
+    """
+    Trigger run_auto_create_netsuite_employees_on_fyle via RabbitMQ
+    :param workspace_id: Workspace Id
+    :return: None
+    """
+    payload = {
+        'workspace_id': workspace_id,
+        'action': WorkerActionEnum.AUTO_CREATE_NETSUITE_EMPLOYEES_ON_FYLE.value,
+        'data': {
+            'workspace_id': workspace_id
+        }
+    }
+    publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.IMPORT.value)
+
+
+@handle_exceptions(task_name='Import NetSuite Employees to Fyle')
+def run_auto_create_netsuite_employees_on_fyle(workspace_id):
     fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
 
     platform_connection = PlatformConnector(fyle_credentials)
