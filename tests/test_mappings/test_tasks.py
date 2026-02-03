@@ -117,7 +117,7 @@ def test_async_auto_map_employees(mocker, db):
         return_value=netsuite_data['get_all_employees'][0][0]
     )
 
-    async_auto_map_employees(1)
+    run_async_auto_map_employees(1)
 
     employee_mappings = EmployeeMapping.objects.filter(workspace_id=1).count()
     assert employee_mappings == 1 
@@ -126,7 +126,7 @@ def test_async_auto_map_employees(mocker, db):
     configuration.employee_field_mapping = 'VENDOR'
     configuration.save()
 
-    async_auto_map_employees(1)
+    run_async_auto_map_employees(1)
 
     vendors = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='VENDOR').count()
     assert vendors == 7
@@ -171,7 +171,7 @@ def test_schedule_auto_map_employees(mocker, db):
         args='{}'.format(1),
     ).first()
     assert schedule == None
-    async_auto_map_employees(1)
+    run_async_auto_map_employees(1)
 
     employee_mappings = EmployeeMapping.objects.filter(workspace_id=1).count()
     assert employee_mappings == 1
@@ -204,7 +204,7 @@ def test_schedule_auto_map_ccc_employees(db, mocker):
     general_mappings.default_ccc_account_id = 228
     general_mappings.save()
 
-    async_auto_map_ccc_account(workspace_id=1)
+    run_async_auto_map_ccc_account(workspace_id=1)
     employee_mappings = EmployeeMapping.objects.filter(workspace_id=1).count()
     assert employee_mappings == 42
 
@@ -244,15 +244,15 @@ def test_async_auto_map_ccc_account(db, mocker):
     general_mappings.default_ccc_account_id = 228
     general_mappings.save()
 
-    async_auto_map_ccc_account(workspace_id=1)
+    run_async_auto_map_ccc_account(workspace_id=1)
     employee_mappings = EmployeeMapping.objects.filter(workspace_id=1).count()
     assert employee_mappings == 42
 
     mock_call.side_effect = FyleInvalidTokenError('Invalid Token')
-    async_auto_map_ccc_account(workspace_id=1)
+    run_async_auto_map_ccc_account(workspace_id=1)
 
     mock_call.side_effect = InternalServerError('Internal Server Error')
-    async_auto_map_ccc_account(workspace_id=1)
+    run_async_auto_map_ccc_account(workspace_id=1)
 
     assert mock_call.call_count == 3
 
@@ -315,7 +315,7 @@ def test_auto_create_netsuite_employees_on_fyle(db, mocker):
     assert employees == 7
     assert expense_attribute == 30
 
-    auto_create_netsuite_employees_on_fyle(workspace_id=workspace_id)
+    run_auto_create_netsuite_employees_on_fyle(workspace_id=workspace_id)
     
     employees = DestinationAttribute.objects.filter(workspace_id=workspace_id, attribute_type='EMPLOYEE').count()
     expense_attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id, attribute_type='EMPLOYEE').count()
@@ -324,9 +324,69 @@ def test_auto_create_netsuite_employees_on_fyle(db, mocker):
 
     with mock.patch('fyle_integrations_platform_connector.apis.Employees.sync') as mock_call:
         mock_call.side_effect = WrongParamsError(msg='Some of the parameters are wrong', response='Some of the parameters are wrong')
-        auto_create_netsuite_employees_on_fyle(workspace_id=workspace_id)
+        run_auto_create_netsuite_employees_on_fyle(workspace_id=workspace_id)
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
     fyle_credentials.delete()
 
-    auto_create_netsuite_employees_on_fyle(workspace_id=workspace_id)
+    run_auto_create_netsuite_employees_on_fyle(workspace_id=workspace_id)
+
+
+def test_async_auto_map_employees_trigger(db, mocker):
+    """
+    Test async_auto_map_employees trigger function that publishes to RabbitMQ
+    """
+    mock_publish = mocker.patch('apps.mappings.tasks.publish_to_rabbitmq')
+    
+    workspace_id = 1
+    async_auto_map_employees(workspace_id)
+    
+    mock_publish.assert_called_once()
+    call_args = mock_publish.call_args
+    payload = call_args[1]['payload']
+    routing_key = call_args[1]['routing_key']
+    
+    assert payload['workspace_id'] == workspace_id
+    assert payload['action'] == 'IMPORT.AUTO_MAP_EMPLOYEES'
+    assert payload['data']['workspace_id'] == workspace_id
+    assert routing_key == 'IMPORT.*'
+
+
+def test_async_auto_map_ccc_account_trigger(db, mocker):
+    """
+    Test async_auto_map_ccc_account trigger function that publishes to RabbitMQ
+    """
+    mock_publish = mocker.patch('apps.mappings.tasks.publish_to_rabbitmq')
+    
+    workspace_id = 1
+    async_auto_map_ccc_account(workspace_id)
+    
+    mock_publish.assert_called_once()
+    call_args = mock_publish.call_args
+    payload = call_args[1]['payload']
+    routing_key = call_args[1]['routing_key']
+    
+    assert payload['workspace_id'] == workspace_id
+    assert payload['action'] == 'IMPORT.AUTO_MAP_CCC_ACCOUNT'
+    assert payload['data']['workspace_id'] == workspace_id
+    assert routing_key == 'IMPORT.*'
+
+
+def test_auto_create_netsuite_employees_on_fyle_trigger(db, mocker):
+    """
+    Test auto_create_netsuite_employees_on_fyle trigger function that publishes to RabbitMQ
+    """
+    mock_publish = mocker.patch('apps.mappings.tasks.publish_to_rabbitmq')
+    
+    workspace_id = 1
+    auto_create_netsuite_employees_on_fyle(workspace_id)
+    
+    mock_publish.assert_called_once()
+    call_args = mock_publish.call_args
+    payload = call_args[1]['payload']
+    routing_key = call_args[1]['routing_key']
+    
+    assert payload['workspace_id'] == workspace_id
+    assert payload['action'] == 'IMPORT.AUTO_CREATE_NETSUITE_EMPLOYEES_ON_FYLE'
+    assert payload['data']['workspace_id'] == workspace_id
+    assert routing_key == 'IMPORT.*'
