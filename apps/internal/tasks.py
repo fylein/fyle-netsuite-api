@@ -9,6 +9,7 @@ from apps.fyle.models import ExpenseGroup
 from apps.tasks.models import TaskLog
 from apps.workspaces.actions import export_to_netsuite
 from apps.workspaces.models import Workspace
+from fyle_accounting_library.fyle_platform.actions import reset_stuck_imports
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 
 
@@ -70,3 +71,5 @@ def re_export_stuck_exports():
                     export_to_netsuite(workspace_id, export_expense_group_ids, triggered_by=ExpenseImportSourceEnum.INTERNAL)
                 else:
                     logger.info('Skipping export for workspace %s since it has more than 200 expense groups', workspace_id)
+
+    reset_stuck_imports(prod_workspace_ids)
