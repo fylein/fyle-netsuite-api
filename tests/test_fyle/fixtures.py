@@ -93,7 +93,7 @@ data = {
             'error_type': 'ACCOUNTING_INTEGRATION_ERROR',
             'state': 'ERROR',
             'tpa_id': 'tpayfjPPHTDgv',
-            'url': 'https://staging1.fyle.tech/app/settings/#/integrations/native_apps?integrationIframeTarget=integrations/intacct/main/dashboard'
+            'url': 'https://staging1.fyle.tech/app/settings/integrations/native_apps?integrationIframeTarget=integrations/intacct/main/dashboard'
         },
         'activity_details': None,
         'added_to_report_at': None,
