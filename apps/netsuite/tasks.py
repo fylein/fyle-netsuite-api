@@ -30,7 +30,7 @@ from fyle_netsuite_api.exceptions import BulkError
 from apps.fyle.models import ExpenseGroup, Expense, ExpenseGroupSettings
 from apps.mappings.models import GeneralMapping, SubsidiaryMapping
 from apps.tasks.models import TaskLog, Error
-from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configuration, Workspace, FeatureConfig
+from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configuration, Workspace
 
 from .models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, JournalEntryLineItem, \
     VendorPayment, VendorPaymentLineitem, CreditCardCharge, CreditCardChargeLineItem
@@ -282,7 +282,7 @@ def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_conn
             
 
 def construct_payload_and_update_export(expense_id_receipt_url_map: dict, task_log: TaskLog, workspace: Workspace,
-    cluster_domain: str, netsuite_connection: NetSuiteConnector, feature_config: FeatureConfig):
+    cluster_domain: str, netsuite_connection: NetSuiteConnector):
     """
     Construct payload and update export
     :param expense_id_receipt_url_map: expense_id_receipt_url_map ex - {'tx4ziVSAyIsv': 'receipt_url_1', 'tx4ziVSAyIs2': 'receipt_url_2'}
@@ -290,7 +290,6 @@ def construct_payload_and_update_export(expense_id_receipt_url_map: dict, task_l
     :param workspace: workspace
     :param cluster_domain: cluster_domain
     :param netsuite_connection: netsuite_connection
-    :param feature_config: feature_config
     :return: None
     """
     if expense_id_receipt_url_map:
@@ -332,20 +331,11 @@ def construct_payload_and_update_export(expense_id_receipt_url_map: dict, task_l
         elif task_log.type == 'CREATING_BILL':
             construct_lines = getattr(netsuite_connection, func)
             # calling the target construct payload function
-            expense_list, item_list = construct_lines(export_line_items, expense_id_receipt_url_map, cluster_domain, workspace.fyle_org_id, general_mappings.override_tax_details, general_mappings, feature_config)
+            expense_list, item_list = construct_lines(export_line_items, expense_id_receipt_url_map, cluster_domain, workspace.fyle_org_id, general_mappings.override_tax_details, general_mappings)
         else:
             construct_lines = getattr(netsuite_connection, func)
             # calling the target construct payload function
-            construct_args = [
-                export_line_items,
-                general_mappings,
-                expense_id_receipt_url_map,
-                cluster_domain,
-                workspace.fyle_org_id
-            ]
-            if task_log.type == 'CREATING_EXPENSE_REPORT':
-                construct_args.append(feature_config)
-            lines = construct_lines(*construct_args)
+            lines = construct_lines(export_line_items, general_mappings, expense_id_receipt_url_map, cluster_domain, workspace.fyle_org_id)
 
         # final payload to be sent to netsuite, since this is an update operation, we need to pass the external id
         if task_log.type == 'CREATING_BILL':
@@ -426,8 +416,7 @@ def upload_attachments_and_update_export(expense_ids: List[int], task_log_id: in
                     receipt_url = file['url']
                     expense_id_receipt_url_map[expense.expense_id] = receipt_url
 
-        feature_config = FeatureConfig.objects.get(workspace_id=workspace_id)
-        construct_payload_and_update_export(expense_id_receipt_url_map, task_log, workspace, fyle_credentials.cluster_domain, netsuite_connection, feature_config)
+        construct_payload_and_update_export(expense_id_receipt_url_map, task_log, workspace, fyle_credentials.cluster_domain, netsuite_connection)
 
     except NetSuiteCredentials.DoesNotExist:
         logger.info('NetSuite credentials not found for workspace_id %s', workspace_id)
@@ -523,12 +512,11 @@ def create_bill(expense_group_id: int, task_log_id: int, last_export: bool, is_a
     logger.info('Validated Expense Group %s successfully', expense_group.id)
 
     with transaction.atomic():
-        feature_config = FeatureConfig.objects.get(workspace_id=expense_group.workspace_id)
         bill_object = Bill.create_bill(expense_group)
 
         bill_lineitems_objects = BillLineitem.create_bill_lineitems(expense_group, configuration)
 
-        created_bill = netsuite_connection.post_bill(bill_object, bill_lineitems_objects, general_mappings, feature_config)
+        created_bill = netsuite_connection.post_bill(bill_object, bill_lineitems_objects, general_mappings)
         logger.info('Created Bill with Expense Group %s successfully', expense_group.id)
 
         task_log.detail = created_bill
@@ -721,7 +709,6 @@ def create_expense_report(expense_group_id: int, task_log_id: int, last_export: 
     worker_logger.info('Validated Expense Group %s successfully', expense_group.id)
 
     with transaction.atomic():
-        feature_config = FeatureConfig.objects.get(workspace_id=expense_group.workspace_id)
         expense_report_object = ExpenseReport.create_expense_report(expense_group)
 
         expense_report_lineitems_objects = ExpenseReportLineItem.create_expense_report_lineitems(
@@ -729,7 +716,7 @@ def create_expense_report(expense_group_id: int, task_log_id: int, last_export: 
         )
 
         created_expense_report = netsuite_connection.post_expense_report(
-            expense_report_object, expense_report_lineitems_objects, general_mapping, feature_config
+            expense_report_object, expense_report_lineitems_objects, general_mapping
         )
         worker_logger.info('Created Expense Report with Expense Group %s successfully', expense_group.id)
 
