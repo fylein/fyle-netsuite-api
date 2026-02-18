@@ -1264,3 +1264,117 @@ def test_is_sync_allowed(db):
     workspace.created_at = new_date
     workspace.save()
     assert netsuite_connection.is_sync_allowed(attribute_count=35000) is False
+
+
+def test_construct_bill_with_skip_posting_gross_amount(create_bill_account_based):
+    workspace_id = 1
+
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=workspace_id)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
+    general_mapping = GeneralMapping.objects.get(workspace_id=workspace_id)
+
+    feature_config = FeatureConfig.objects.get(workspace_id=workspace_id)
+    feature_config.skip_posting_gross_amount = True
+    feature_config.save()
+    FeatureConfig.reset_feature_config_cache(workspace_id, 'skip_posting_gross_amount')
+
+    bill, bill_lineitems = create_bill_account_based
+    bill_object = netsuite_connection._NetSuiteConnector__construct_bill(bill, bill_lineitems, general_mapping)
+
+    for line in bill_object['expenseList']:
+        assert line['grossAmt'] is None
+
+    feature_config.skip_posting_gross_amount = False
+    feature_config.save()
+    FeatureConfig.reset_feature_config_cache(workspace_id, 'skip_posting_gross_amount')
+
+    bill_object = netsuite_connection._NetSuiteConnector__construct_bill(bill, bill_lineitems, general_mapping)
+    for line in bill_object['expenseList']:
+        assert line['grossAmt'] == line['amount']
+
+
+def test_construct_expense_report_with_skip_posting_gross_amount(create_expense_report):
+    workspace_id = 1
+
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=workspace_id)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
+    general_mapping = GeneralMapping.objects.get(workspace_id=workspace_id)
+
+    feature_config = FeatureConfig.objects.get(workspace_id=workspace_id)
+    feature_config.skip_posting_gross_amount = True
+    feature_config.save()
+    FeatureConfig.reset_feature_config_cache(workspace_id, 'skip_posting_gross_amount')
+
+    expense_report, expense_report_lineitems = create_expense_report
+    report_object = netsuite_connection._NetSuiteConnector__construct_expense_report(expense_report, expense_report_lineitems, general_mapping)
+
+    for line in report_object['expenseList']:
+        assert line['grossAmt'] is None
+
+    feature_config.skip_posting_gross_amount = False
+    feature_config.save()
+    FeatureConfig.reset_feature_config_cache(workspace_id, 'skip_posting_gross_amount')
+
+    report_object = netsuite_connection._NetSuiteConnector__construct_expense_report(expense_report, expense_report_lineitems, general_mapping)
+    for line in report_object['expenseList']:
+        assert line['grossAmt'] == line['amount']
+
+
+def test_post_bill_grossamt_permission_error(db, create_bill_account_based):
+    workspace_id = 1
+    grossamt_error = 'You do not have permissions to set a value for element expense.grossamt'
+
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=workspace_id)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
+    general_mapping = GeneralMapping.objects.get(workspace_id=workspace_id)
+
+    feature_config = FeatureConfig.objects.get(workspace_id=workspace_id)
+    feature_config.skip_posting_gross_amount = True
+    feature_config.save()
+    FeatureConfig.reset_feature_config_cache(workspace_id, 'skip_posting_gross_amount')
+
+    bill, bill_lineitems = create_bill_account_based
+
+    with mock.patch('netsuitesdk.api.vendor_bills.VendorBills.post') as mock_post:
+        mock_post.side_effect = [NetSuiteRequestError(grossamt_error), mock.MagicMock()]
+        netsuite_connection.post_bill(bill, bill_lineitems, general_mapping)
+
+        assert mock_post.call_count == 2
+        second_call_payload = mock_post.call_args[0][0]
+        if second_call_payload.get('expenseList'):
+            for line in second_call_payload['expenseList']:
+                assert line['grossAmt'] is None
+        elif second_call_payload.get('itemList'):
+            for line in second_call_payload['itemList']:
+                assert line['grossAmt'] is None
+
+    updated_feature_config = FeatureConfig.objects.get(workspace_id=workspace_id)
+    assert updated_feature_config.skip_posting_gross_amount is True
+
+
+def test_post_expense_report_grossamt_permission_error(db, create_expense_report):
+    workspace_id = 1
+    grossamt_error = 'You do not have permissions to set a value for element expense.grossamt'
+
+    netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=workspace_id)
+    netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
+    general_mapping = GeneralMapping.objects.get(workspace_id=workspace_id)
+
+    feature_config = FeatureConfig.objects.get(workspace_id=workspace_id)
+    feature_config.skip_posting_gross_amount = True
+    feature_config.save()
+    FeatureConfig.reset_feature_config_cache(workspace_id, 'skip_posting_gross_amount')
+
+    expense_report, expense_report_lineitems = create_expense_report
+
+    with mock.patch('netsuitesdk.api.expense_reports.ExpenseReports.post') as mock_post:
+        mock_post.side_effect = [NetSuiteRequestError(grossamt_error), mock.MagicMock()]
+        netsuite_connection.post_expense_report(expense_report, expense_report_lineitems, general_mapping)
+
+        assert mock_post.call_count == 2
+        second_call_payload = mock_post.call_args[0][0]
+        for line in second_call_payload['expenseList']:
+            assert line['grossAmt'] is None
+
+    updated_feature_config = FeatureConfig.objects.get(workspace_id=workspace_id)
+    assert updated_feature_config.skip_posting_gross_amount is True
