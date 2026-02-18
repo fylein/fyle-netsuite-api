@@ -282,7 +282,7 @@ def create_or_update_employee_mapping(expense_group: ExpenseGroup, netsuite_conn
             
 
 def construct_payload_and_update_export(expense_id_receipt_url_map: dict, task_log: TaskLog, workspace: Workspace,
-    cluster_domain: str, netsuite_connection: NetSuiteConnector):
+    cluster_domain: str, netsuite_connection: NetSuiteConnector, feature_config: FeatureConfig):
     """
     Construct payload and update export
     :param expense_id_receipt_url_map: expense_id_receipt_url_map ex - {'tx4ziVSAyIsv': 'receipt_url_1', 'tx4ziVSAyIs2': 'receipt_url_2'}
@@ -290,6 +290,7 @@ def construct_payload_and_update_export(expense_id_receipt_url_map: dict, task_l
     :param workspace: workspace
     :param cluster_domain: cluster_domain
     :param netsuite_connection: netsuite_connection
+    :param feature_config: feature_config
     :return: None
     """
     if expense_id_receipt_url_map:
@@ -331,11 +332,20 @@ def construct_payload_and_update_export(expense_id_receipt_url_map: dict, task_l
         elif task_log.type == 'CREATING_BILL':
             construct_lines = getattr(netsuite_connection, func)
             # calling the target construct payload function
-            expense_list, item_list = construct_lines(export_line_items, expense_id_receipt_url_map, cluster_domain, workspace.fyle_org_id, general_mappings.override_tax_details, general_mappings)
+            expense_list, item_list = construct_lines(export_line_items, expense_id_receipt_url_map, cluster_domain, workspace.fyle_org_id, general_mappings.override_tax_details, general_mappings, feature_config)
         else:
             construct_lines = getattr(netsuite_connection, func)
             # calling the target construct payload function
-            lines = construct_lines(export_line_items, general_mappings, expense_id_receipt_url_map, cluster_domain, workspace.fyle_org_id)
+            construct_args = [
+                export_line_items,
+                general_mappings,
+                expense_id_receipt_url_map,
+                cluster_domain,
+                workspace.fyle_org_id
+            ]
+            if task_log.type == 'CREATING_EXPENSE_REPORT':
+                construct_args.append(feature_config)
+            lines = construct_lines(*construct_args)
 
         # final payload to be sent to netsuite, since this is an update operation, we need to pass the external id
         if task_log.type == 'CREATING_BILL':
@@ -416,7 +426,8 @@ def upload_attachments_and_update_export(expense_ids: List[int], task_log_id: in
                     receipt_url = file['url']
                     expense_id_receipt_url_map[expense.expense_id] = receipt_url
 
-        construct_payload_and_update_export(expense_id_receipt_url_map, task_log, workspace, fyle_credentials.cluster_domain, netsuite_connection)
+        feature_config = FeatureConfig.objects.get(workspace_id=workspace_id)
+        construct_payload_and_update_export(expense_id_receipt_url_map, task_log, workspace, fyle_credentials.cluster_domain, netsuite_connection, feature_config)
 
     except NetSuiteCredentials.DoesNotExist:
         logger.info('NetSuite credentials not found for workspace_id %s', workspace_id)
