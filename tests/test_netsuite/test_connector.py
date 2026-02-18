@@ -6,7 +6,7 @@ from django.utils import timezone
 from apps.fyle.models import ExpenseGroup
 from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute, Mapping, CategoryMapping
 from apps.netsuite.connector import NetSuiteConnector, NetSuiteCredentials
-from apps.workspaces.models import Configuration, Workspace
+from apps.workspaces.models import Configuration, Workspace, FeatureConfig
 from apps.mappings.models import GeneralMapping
 from netsuitesdk import NetSuiteRequestError
 from tests.helper import dict_compare_keys
@@ -21,10 +21,11 @@ def test_construct_expense_report(create_expense_report):
     netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
     general_mapping = GeneralMapping.objects.get(workspace_id=1)
+    feature_config = FeatureConfig.objects.get(workspace_id=1)
 
     expense_report, expense_report_lineitem = create_expense_report
 
-    expense_report = netsuite_connection._NetSuiteConnector__construct_expense_report(expense_report, expense_report_lineitem, general_mapping)
+    expense_report = netsuite_connection._NetSuiteConnector__construct_expense_report(expense_report, expense_report_lineitem, general_mapping, feature_config)
 
     data['expense_report_payload'][0]['tranDate'] = expense_report['tranDate']
     data['expense_report_payload'][0]['expenseList'][0]['expenseDate'] = expense_report['expenseList'][0]['expenseDate']
@@ -34,14 +35,14 @@ def test_construct_expense_report_with_tax_balancing(create_expense_report, add_
     netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
     general_mapping = GeneralMapping.objects.get(workspace_id=1)
-
+    feature_config = FeatureConfig.objects.get(workspace_id=1)
     # without tax balancing
     expense_report, expense_report_lineitem = create_expense_report
     expense_report_lineitem[0].amount = 100
     expense_report_lineitem[0].tax_amount = 3
     expense_report_lineitem[0].tax_item_id = '103578'
 
-    expense_report_object = netsuite_connection._NetSuiteConnector__construct_expense_report(expense_report, expense_report_lineitem, general_mapping)
+    expense_report_object = netsuite_connection._NetSuiteConnector__construct_expense_report(expense_report, expense_report_lineitem, general_mapping, feature_config)
 
     assert len(expense_report_object['expenseList']) == 1
     assert expense_report_object['expenseList'][0]['amount'] == 97
@@ -52,7 +53,7 @@ def test_construct_expense_report_with_tax_balancing(create_expense_report, add_
     general_mapping.is_tax_balancing_enabled = True
     general_mapping.save()
 
-    expense_report_object = netsuite_connection._NetSuiteConnector__construct_expense_report(expense_report, expense_report_lineitem, general_mapping)
+    expense_report_object = netsuite_connection._NetSuiteConnector__construct_expense_report(expense_report, expense_report_lineitem, general_mapping, feature_config)
 
     assert len(expense_report_object['expenseList']) == 2
     assert expense_report_object['expenseList'][0]['amount'] == 60
@@ -67,7 +68,7 @@ def test_construct_expense_report_with_tax_balancing(create_expense_report, add_
     expense_report_lineitem[0].tax_amount = 4.76
     expense_report_lineitem[0].tax_item_id = '103578'
 
-    expense_report_object = netsuite_connection._NetSuiteConnector__construct_expense_report(expense_report, expense_report_lineitem, general_mapping)
+    expense_report_object = netsuite_connection._NetSuiteConnector__construct_expense_report(expense_report, expense_report_lineitem, general_mapping, feature_config)
 
     assert len(expense_report_object['expenseList']) == 1
     assert expense_report_object['expenseList'][0]['amount'] == 95.24
@@ -81,9 +82,10 @@ def test_construct_bill_account_based(create_bill_account_based):
     netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
     general_mapping = GeneralMapping.objects.get(workspace_id=1)
+    feature_config = FeatureConfig.objects.get(workspace_id=1)
 
     bill, bill_lineitem = create_bill_account_based
-    bill_object = netsuite_connection._NetSuiteConnector__construct_bill(bill, bill_lineitem, general_mapping)
+    bill_object = netsuite_connection._NetSuiteConnector__construct_bill(bill, bill_lineitem, general_mapping, feature_config)
 
     data['bill_payload_account_based'][0]['tranDate'] = bill_object['tranDate']
     data['bill_payload_account_based'][0]['tranId'] = bill_object['tranId']
@@ -95,9 +97,10 @@ def test_construct_bill_item_based(create_bill_item_based):
     netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
     general_mapping = GeneralMapping.objects.get(workspace_id=1)
+    feature_config = FeatureConfig.objects.get(workspace_id=1)
 
     bill, bill_lineitem = create_bill_item_based
-    bill_object = netsuite_connection._NetSuiteConnector__construct_bill(bill, bill_lineitem, general_mapping)
+    bill_object = netsuite_connection._NetSuiteConnector__construct_bill(bill, bill_lineitem, general_mapping, feature_config)
 
     assert data['bill_payload_item_based']['expenseList'] == None
     assert dict_compare_keys(bill_object, data['bill_payload_item_based']) == [], 'construct bill_payload entry api return diffs in keys'
@@ -107,9 +110,10 @@ def test_construct_bill_item_and_account_based(create_bill_item_and_account_base
     netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
     general_mapping = GeneralMapping.objects.get(workspace_id=1)
+    feature_config = FeatureConfig.objects.get(workspace_id=1)
 
     bill, bill_lineitem = create_bill_item_and_account_based
-    bill_object = netsuite_connection._NetSuiteConnector__construct_bill(bill, bill_lineitem, general_mapping)
+    bill_object = netsuite_connection._NetSuiteConnector__construct_bill(bill, bill_lineitem, general_mapping, feature_config)
 
     assert dict_compare_keys(bill_object, data['bill_payload_item_and_account_based']) == [], 'construct bill_payload entry api return diffs in keys'
 
@@ -117,6 +121,7 @@ def test_construct_bill_item_for_tax_balancing(create_bill_account_based, add_ta
     netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=1)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=1)
     general_mapping = GeneralMapping.objects.get(workspace_id=1)
+    feature_config = FeatureConfig.objects.get(workspace_id=1)
 
     # without tax balancing
     bill, bill_lineitem = create_bill_account_based
@@ -124,7 +129,7 @@ def test_construct_bill_item_for_tax_balancing(create_bill_account_based, add_ta
     bill_lineitem[0].tax_amount = 3
     bill_lineitem[0].tax_item_id = '103578'
 
-    bill_object = netsuite_connection._NetSuiteConnector__construct_bill(bill, bill_lineitem, general_mapping)
+    bill_object = netsuite_connection._NetSuiteConnector__construct_bill(bill, bill_lineitem, general_mapping, feature_config)
 
     assert len(bill_object['expenseList']) == 1
     assert bill_object['expenseList'][0]['amount'] == 97
@@ -135,7 +140,7 @@ def test_construct_bill_item_for_tax_balancing(create_bill_account_based, add_ta
     general_mapping.is_tax_balancing_enabled = True
     general_mapping.save()
 
-    bill_object = netsuite_connection._NetSuiteConnector__construct_bill(bill, bill_lineitem, general_mapping)
+    bill_object = netsuite_connection._NetSuiteConnector__construct_bill(bill, bill_lineitem, general_mapping, feature_config)
     assert len(bill_object['expenseList']) == 2
     assert bill_object['expenseList'][0]['amount'] == 60
     assert bill_object['expenseList'][0]['taxCode']['internalId'] == '103578'
@@ -147,7 +152,7 @@ def test_construct_bill_item_for_tax_balancing(create_bill_account_based, add_ta
     bill_lineitem[0].tax_amount = 4.76
     bill_lineitem[0].tax_item_id = '103578'
 
-    bill_object = netsuite_connection._NetSuiteConnector__construct_bill(bill, bill_lineitem, general_mapping)
+    bill_object = netsuite_connection._NetSuiteConnector__construct_bill(bill, bill_lineitem, general_mapping, feature_config)
     assert len(bill_object['expenseList']) == 1
     assert bill_object['expenseList'][0]['amount'] == 95.24
     assert bill_object['expenseList'][0]['taxCode']['internalId'] == '103578'
@@ -928,6 +933,7 @@ def test_post_bill_exception(db, mocker, create_bill_account_based):
     netsuite_credentials = NetSuiteCredentials.get_active_netsuite_credentials(workspace_id=workspace_id)
     netsuite_connection = NetSuiteConnector(netsuite_credentials=netsuite_credentials, workspace_id=workspace_id)
     general_mapping = GeneralMapping.objects.get(workspace_id=workspace_id)
+    feature_config = FeatureConfig.objects.get(workspace_id=workspace_id)
 
     bill_transaction, bill_transaction_lineitems = create_bill_account_based
 
@@ -937,7 +943,7 @@ def test_post_bill_exception(db, mocker, create_bill_account_based):
 
     with mock.patch('netsuitesdk.api.vendor_bills.VendorBills.post') as mock_call:
         mock_call.side_effect = [NetSuiteRequestError('An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'), None]
-        netsuite_connection.post_bill(bill_transaction, bill_transaction_lineitems, general_mapping)
+        netsuite_connection.post_bill(bill_transaction, bill_transaction_lineitems, general_mapping, feature_config)
 
 
 def test_post_expense_report_exception(db, mocker, create_expense_report):
@@ -952,10 +958,11 @@ def test_post_expense_report_exception(db, mocker, create_expense_report):
     workspace_general_setting = Configuration.objects.get(workspace_id=workspace_id)
     workspace_general_setting.change_accounting_period = True
     workspace_general_setting.save()
+    feature_config = FeatureConfig.objects.get(workspace_id=workspace_id)
 
     with mock.patch('netsuitesdk.api.expense_reports.ExpenseReports.post') as mock_call:
         mock_call.side_effect = [NetSuiteRequestError('An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'), None]
-        netsuite_connection.post_expense_report(expense_report_transaction, expense_report_transaction_lineitems, general_mapping)
+        netsuite_connection.post_expense_report(expense_report_transaction, expense_report_transaction_lineitems, general_mapping, feature_config)
 
 
 def test_post_journal_entry_exception(db, mocker, create_journal_entry):

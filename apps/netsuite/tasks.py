@@ -1,4 +1,3 @@
-import json
 import logging
 import traceback
 import itertools
@@ -28,10 +27,10 @@ from fyle.platform.exceptions import InternalServerError, InvalidTokenError
 
 from fyle_netsuite_api.exceptions import BulkError
 
-from apps.fyle.models import ExpenseGroup, Expense, ExpenseGroupSettings, Reimbursement
+from apps.fyle.models import ExpenseGroup, Expense, ExpenseGroupSettings
 from apps.mappings.models import GeneralMapping, SubsidiaryMapping
 from apps.tasks.models import TaskLog, Error
-from apps.workspaces.models import LastExportDetail, NetSuiteCredentials, FyleCredential, Configuration, Workspace
+from apps.workspaces.models import NetSuiteCredentials, FyleCredential, Configuration, Workspace, FeatureConfig
 
 from .models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, JournalEntryLineItem, \
     VendorPayment, VendorPaymentLineitem, CreditCardCharge, CreditCardChargeLineItem
@@ -513,11 +512,12 @@ def create_bill(expense_group_id: int, task_log_id: int, last_export: bool, is_a
     logger.info('Validated Expense Group %s successfully', expense_group.id)
 
     with transaction.atomic():
+        feature_config = FeatureConfig.objects.get(workspace_id=expense_group.workspace_id)
         bill_object = Bill.create_bill(expense_group)
 
         bill_lineitems_objects = BillLineitem.create_bill_lineitems(expense_group, configuration)
 
-        created_bill = netsuite_connection.post_bill(bill_object, bill_lineitems_objects, general_mappings)
+        created_bill = netsuite_connection.post_bill(bill_object, bill_lineitems_objects, general_mappings, feature_config)
         logger.info('Created Bill with Expense Group %s successfully', expense_group.id)
 
         task_log.detail = created_bill
@@ -710,6 +710,7 @@ def create_expense_report(expense_group_id: int, task_log_id: int, last_export: 
     worker_logger.info('Validated Expense Group %s successfully', expense_group.id)
 
     with transaction.atomic():
+        feature_config = FeatureConfig.objects.get(workspace_id=expense_group.workspace_id)
         expense_report_object = ExpenseReport.create_expense_report(expense_group)
 
         expense_report_lineitems_objects = ExpenseReportLineItem.create_expense_report_lineitems(
@@ -717,7 +718,7 @@ def create_expense_report(expense_group_id: int, task_log_id: int, last_export: 
         )
 
         created_expense_report = netsuite_connection.post_expense_report(
-            expense_report_object, expense_report_lineitems_objects, general_mapping
+            expense_report_object, expense_report_lineitems_objects, general_mapping, feature_config
         )
         worker_logger.info('Created Expense Report with Expense Group %s successfully', expense_group.id)
 

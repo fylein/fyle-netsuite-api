@@ -26,7 +26,7 @@ import text_unidecode
 from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute, MappingSetting
 
 from apps.fyle.models import Expense, ExpenseGroup
-from apps.workspaces.models import Configuration
+from apps.workspaces.models import Configuration, FeatureConfig
 
 from apps.mappings.models import SubsidiaryMapping, GeneralMapping
 from apps.netsuite.models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, \
@@ -1648,7 +1648,8 @@ class NetSuiteConnector:
             attachment_links: Dict,
             cluster_domain: str, org_id: str,
             override_tax_details: bool,
-            general_mapping: GeneralMapping
+            general_mapping: GeneralMapping,
+            feature_config: FeatureConfig
         ) -> List[Dict]:
         """
         Create bill line items
@@ -1667,7 +1668,7 @@ class NetSuiteConnector:
                 'orderLine': None,
                 'line': None,
                 'amount': line.amount,
-                'grossAmt': line.amount,
+                'grossAmt': line.amount if not feature_config.skip_posting_gross_amount else None,
                 'taxDetailsReference': None,
                 'department': {
                     'name': None,
@@ -1799,7 +1800,7 @@ class NetSuiteConnector:
         return tax_details_list
 
 
-    def __construct_bill(self, bill: Bill, bill_lineitems: List[BillLineitem], general_mappings: GeneralMapping) -> Dict:
+    def __construct_bill(self, bill: Bill, bill_lineitems: List[BillLineitem], general_mappings: GeneralMapping, feature_config: FeatureConfig) -> Dict:
         """
         Create a bill
         :return: constructed bill
@@ -1811,7 +1812,7 @@ class NetSuiteConnector:
         org_id = Workspace.objects.get(id=bill.expense_group.workspace_id).fyle_org_id
 
         tax_details_list =  None
-        expense_list, item_list = self.construct_bill_lineitems(bill_lineitems, {}, cluster_domain, org_id, bill.override_tax_details, general_mappings)
+        expense_list, item_list = self.construct_bill_lineitems(bill_lineitems, {}, cluster_domain, org_id, bill.override_tax_details, general_mappings, feature_config)
 
         if bill.override_tax_details:
             tax_details_list = self.construct_tax_details_list(bill_lineitems)
@@ -1907,13 +1908,13 @@ class NetSuiteConnector:
 
         return bill_payload
 
-    def post_bill(self, bill: Bill, bill_lineitems: List[BillLineitem], general_mappings: GeneralMapping):
+    def post_bill(self, bill: Bill, bill_lineitems: List[BillLineitem], general_mappings: GeneralMapping, feature_config: FeatureConfig):
         """
         Post vendor bills to NetSuite
         """
         configuration = Configuration.objects.get(workspace_id=self.workspace_id)
         try:
-            bills_payload = self.__construct_bill(bill, bill_lineitems, general_mappings)
+            bills_payload = self.__construct_bill(bill, bill_lineitems, general_mappings, feature_config)
 
             logger.info("| Payload for Bill creation | Content: {{WORKSPACE_ID: {} EXPENSE_GROUP_ID: {} BILL_PAYLOAD: {}}}".format(self.workspace_id, bill.expense_group.id, bills_payload))
             created_bill = self.connection.vendor_bills.post(bills_payload)
@@ -1925,11 +1926,25 @@ class NetSuiteConnector:
             message = 'An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'
             if configuration.change_accounting_period and detail['message'] == message:
                 first_day_of_month = datetime.today().date().replace(day=1)
-                bills_payload = self.__construct_bill(bill, bill_lineitems, general_mappings)
                 bills_payload['tranDate'] = first_day_of_month
                 created_bill = self.connection.vendor_bills.post(bills_payload)
                 
                 return created_bill
+
+            elif feature_config.skip_posting_gross_amount and 'You do not have permissions to set a value for element expense.grossamt' in str(detail):
+                logger.info('Setting skip_posting_gross_amount to True for workspace_id: %s', self.workspace_id)
+                feature_config.skip_posting_gross_amount = True
+                feature_config.updated_at = datetime.now()
+                feature_config.save()
+
+                if bill['expenseList']:
+                    for expense_line in bills_payload['expenseList']:
+                        expense_line['grossAmt'] = None
+                elif bill['itemList']:
+                    for item_line in bills_payload['itemList']:
+                        item_line['grossAmt'] = None
+
+                return self.connection.vendor_bills.post(bills_payload)
 
             else:
                 raise
@@ -2119,7 +2134,7 @@ class NetSuiteConnector:
 
     def construct_expense_report_lineitems(
             self, expense_report_lineitems: List[ExpenseReportLineItem], general_mapping: GeneralMapping, attachment_links: Dict, cluster_domain: str,
-            org_id: str
+            org_id: str, feature_config: FeatureConfig
     ) -> List[Dict]:
         """
         Create expense report line items
@@ -2183,7 +2198,7 @@ class NetSuiteConnector:
                 'expenseDate': line.transaction_date,
                 'expMediaItem': None,
                 'foreignAmount': foreign_amount,
-                'grossAmt': line.amount,
+                'grossAmt': line.amount if not feature_config.skip_posting_gross_amount else None,
                 'isBillable': line.billable,
                 'isNonReimbursable': None,
                 'line': None,
@@ -2212,7 +2227,7 @@ class NetSuiteConnector:
         return lines
 
     def __construct_expense_report(self, expense_report: ExpenseReport,
-                                   expense_report_lineitems: List[ExpenseReportLineItem], general_mapping: GeneralMapping) -> Dict:
+                                   expense_report_lineitems: List[ExpenseReportLineItem], general_mapping: GeneralMapping, feature_config: FeatureConfig) -> Dict:
         """
         Create a expense report
         :return: constructed expense report
@@ -2296,7 +2311,7 @@ class NetSuiteConnector:
                 'type': 'location'
             },
             'expenseList': self.construct_expense_report_lineitems(
-                expense_report_lineitems, general_mapping, {}, cluster_domain, org_id
+                expense_report_lineitems, general_mapping, {}, cluster_domain, org_id, feature_config
             ),
             'accountingBookDetailList': None,
             'customFieldList': None,
@@ -2308,14 +2323,14 @@ class NetSuiteConnector:
 
     def post_expense_report(
             self, expense_report: ExpenseReport,
-            expense_report_lineitems: List[ExpenseReportLineItem], general_mapping: GeneralMapping):
+            expense_report_lineitems: List[ExpenseReportLineItem], general_mapping: GeneralMapping, feature_config: FeatureConfig):
         """
         Post expense reports to NetSuite
         """
         configuration = Configuration.objects.get(workspace_id=self.workspace_id)
         try:
             expense_report_payload = self.__construct_expense_report(expense_report,
-                                                                    expense_report_lineitems, general_mapping)
+                                                                    expense_report_lineitems, general_mapping, feature_config)
            
             logger.info("| Payload for Expense Report creation | Content: {{WORKSPACE_ID: {} EXPENSE_GROUP_ID: {} EXPENSE_REPORT_PAYLOAD: {}}}".format(self.workspace_id, expense_report.expense_group.id, expense_report_payload))
 
@@ -2328,9 +2343,6 @@ class NetSuiteConnector:
             message = 'An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'
 
             if configuration.change_accounting_period and detail['message'] == message:
-                expense_report_payload = self.__construct_expense_report(expense_report,
-                                                                    expense_report_lineitems, general_mapping)
-
                 first_day_of_month = datetime.today().date().replace(day=1)
                 expense_report_payload['tranDate'] = first_day_of_month.strftime('%Y-%m-%dT%H:%M:%S')
                 created_expense_report = self.connection.expense_reports.post(expense_report_payload)
@@ -2338,6 +2350,16 @@ class NetSuiteConnector:
                 expense_report.save()
                 return created_expense_report
 
+            elif feature_config.skip_posting_gross_amount and 'You do not have permissions to set a value for element expense.grossamt' in str(detail):
+                logger.info('Setting skip_posting_gross_amount to True for workspace_id: %s', self.workspace_id)
+                feature_config.skip_posting_gross_amount = True
+                feature_config.updated_at = datetime.now()
+                feature_config.save()
+
+                for expense_line in expense_report_payload['expenseList']:
+                    expense_line['grossAmt'] = None
+
+                return self.connection.expense_reports.post(expense_report_payload)
             else:
                 raise
 
@@ -2632,7 +2654,6 @@ class NetSuiteConnector:
 
             if configuration.change_accounting_period and detail['message'] == message:
                 first_day_of_month = datetime.today().date().replace(day=1)
-                journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems, configuration, general_mapping)
                 journal_entry_payload['tranDate'] = first_day_of_month
                 created_journal_entry = self.connection.journal_entries.post(journal_entry_payload)
                 

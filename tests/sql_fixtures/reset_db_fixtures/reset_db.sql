@@ -4,7 +4,7 @@
 
 
 -- Dumped from database version 15.15 (Debian 15.15-1.pgdg13+1)
--- Dumped by pg_dump version 17.7 (Debian 17.7-0+deb13u1)
+-- Dumped by pg_dump version 17.8 (Debian 17.8-0+deb13u1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -1180,6 +1180,20 @@ CREATE VIEW public._import_logs_fatal_failed_in_progress_tasks_view AS
 
 
 ALTER VIEW public._import_logs_fatal_failed_in_progress_tasks_view OWNER TO postgres;
+
+--
+-- Name: attachment_failed_count_view; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.attachment_failed_count_view AS
+ SELECT current_database() AS database,
+    count(*) AS count
+   FROM public.task_logs
+  WHERE ((task_logs.workspace_id IN ( SELECT prod_workspaces_view.id
+           FROM public.prod_workspaces_view)) AND ((task_logs.status)::text = 'COMPLETE'::text) AND (task_logs.updated_at > (now() - '3 days'::interval)) AND (task_logs.is_attachment_upload_failed = true));
+
+
+ALTER VIEW public.attachment_failed_count_view OWNER TO postgres;
 
 --
 -- Name: auth_cache; Type: TABLE; Schema: public; Owner: postgres
@@ -2668,7 +2682,8 @@ CREATE TABLE public.feature_configs (
     fyle_webhook_sync_enabled boolean NOT NULL,
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
-    workspace_id integer NOT NULL
+    workspace_id integer NOT NULL,
+    skip_posting_gross_amount boolean NOT NULL
 );
 
 
@@ -9704,6 +9719,8 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 254	netsuite	0029_remove_bill_is_attachment_upload_failed_and_more	2026-02-02 10:38:35.114395+00
 255	tasks	0017_tasklog_is_attachment_upload_failed	2026-02-02 10:38:35.127455+00
 256	tasks	0018_tasklog_stuck_export_re_attempt_count	2026-02-02 13:37:07.282489+00
+257	internal	0015_auto_generated_sql	2026-02-18 11:04:54.592119+00
+258	workspaces	0053_featureconfig_skip_posting_gross_amount	2026-02-18 11:04:54.602262+00
 \.
 
 
@@ -13370,10 +13387,10 @@ COPY public.failed_events (id, routing_key, payload, created_at, updated_at, err
 -- Data for Name: feature_configs; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.feature_configs (id, export_via_rabbitmq, fyle_webhook_sync_enabled, created_at, updated_at, workspace_id) FROM stdin;
-1	f	t	2025-10-27 18:05:08.532618+00	2025-10-27 18:05:08.532618+00	1
-2	f	t	2025-10-27 18:05:08.532618+00	2025-10-27 18:05:08.532618+00	2
-3	f	t	2025-10-27 18:05:08.532618+00	2025-10-27 18:05:08.532618+00	49
+COPY public.feature_configs (id, export_via_rabbitmq, fyle_webhook_sync_enabled, created_at, updated_at, workspace_id, skip_posting_gross_amount) FROM stdin;
+1	f	t	2025-10-27 18:05:08.532618+00	2025-10-27 18:05:08.532618+00	1	f
+2	f	t	2025-10-27 18:05:08.532618+00	2025-10-27 18:05:08.532618+00	2	f
+3	f	t	2025-10-27 18:05:08.532618+00	2025-10-27 18:05:08.532618+00	49	f
 \.
 
 
@@ -13668,7 +13685,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 51, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 256, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 258, true);
 
 
 --
