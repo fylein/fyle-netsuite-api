@@ -1925,6 +1925,7 @@ class NetSuiteConnector:
             detail = json.loads(detail)
             message = 'An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'
             if configuration.change_accounting_period and detail['message'] == message:
+                bills_payload = self.__construct_bill(bill, bill_lineitems, general_mappings)
                 first_day_of_month = datetime.today().date().replace(day=1)
                 bills_payload['tranDate'] = first_day_of_month
                 logger.info('| Payload for Bill creation | Content: {{WORKSPACE_ID: {} EXPENSE_GROUP_ID: {} BILL_PAYLOAD: {}}}'.format(self.workspace_id, bill.expense_group.id, bills_payload))
@@ -1934,6 +1935,7 @@ class NetSuiteConnector:
 
             elif 'You do not have permissions to set a value for element expense.grossamt' in str(detail):
                 logger.info('Setting skip_posting_gross_amount to True for workspace_id: %s', self.workspace_id)
+                bills_payload = self.__construct_bill(bill, bill_lineitems, general_mappings)
 
                 FeatureConfig.objects.filter(workspace_id=self.workspace_id).update(skip_posting_gross_amount=True, updated_at=datetime.now())
                 FeatureConfig.reset_feature_config_cache(self.workspace_id, 'skip_posting_gross_amount')
@@ -2346,6 +2348,7 @@ class NetSuiteConnector:
             message = 'An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'
 
             if configuration.change_accounting_period and detail['message'] == message:
+                expense_report_payload = self.__construct_expense_report(expense_report, expense_report_lineitems, general_mapping)
                 first_day_of_month = datetime.today().date().replace(day=1)
                 expense_report_payload['tranDate'] = first_day_of_month.strftime('%Y-%m-%dT%H:%M:%S')
                 logger.info('| Payload for Expense Report creation | Content: {{WORKSPACE_ID: {} EXPENSE_GROUP_ID: {} EXPENSE_REPORT_PAYLOAD: {}}}'.format(self.workspace_id, expense_report.expense_group.id, expense_report_payload))
@@ -2356,6 +2359,7 @@ class NetSuiteConnector:
 
             elif 'You do not have permissions to set a value for element expense.grossamt' in str(detail):
                 logger.info('Setting skip_posting_gross_amount to True for workspace_id: %s', self.workspace_id)
+                expense_report_payload = self.__construct_expense_report(expense_report, expense_report_lineitems, general_mapping)
 
                 FeatureConfig.objects.filter(workspace_id=self.workspace_id).update(skip_posting_gross_amount=True, updated_at=datetime.now())
                 FeatureConfig.reset_feature_config_cache(self.workspace_id, 'skip_posting_gross_amount')
