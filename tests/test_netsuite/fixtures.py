@@ -863,10 +863,10 @@ data = {
                 },
                 'customFieldList': [{'scriptId': 'custcolfyle_expense_url',
                                      'type': 'String',
-                                     'value': 'None/app/admin/#/company_expenses?txnId=txjvDntD9ZXR&org_id=or79Cob97KSh'
+                                     'value': 'None/app/admin/company_expenses?txnId=txjvDntD9ZXR&org_id=or79Cob97KSh'
                                      }, {'scriptId': 'custcolfyle_expense_url_2',
                                      'type': 'String',
-                                     'value': 'None/app/admin/#/company_expenses?txnId=txjvDntD9ZXR&org_id=or79Cob97KSh'
+                                     'value': 'None/app/admin/company_expenses?txnId=txjvDntD9ZXR&org_id=or79Cob97KSh'
                                      }],
                 'exchangeRate': None,
                 'expenseDate': '2021-12-08T08:30:18',
@@ -968,10 +968,10 @@ data = {
                 'creditTax': None,
                 'customFieldList': [{'scriptId': 'custcolfyle_expense_url',
                                      'type': 'String',
-                                     'value': 'None/app/admin/#/company_expenses?txnId=tx7A5QpesrV5&org_id=orHe8CpW2hyN'
+                                     'value': 'None/app/admin/company_expenses?txnId=tx7A5QpesrV5&org_id=orHe8CpW2hyN'
                                      },{'scriptId': 'custcolfyle_expense_url_2',
                                      'type': 'String',
-                                     'value': 'None/app/admin/#/company_expenses?txnId=tx7A5QpesrV5&org_id=orHe8CpW2hyN'
+                                     'value': 'None/app/admin/company_expenses?txnId=tx7A5QpesrV5&org_id=orHe8CpW2hyN'
                                      }],
                 'debit': None,
                 'debitTax': None,
@@ -1034,10 +1034,10 @@ data = {
                 'creditTax': None,
                 'customFieldList': [{'scriptId': 'custcolfyle_expense_url',
                                      'type': 'String',
-                                     'value': 'None/app/admin/#/company_expenses?txnId=tx7A5QpesrV5&org_id=orHe8CpW2hyN'
+                                     'value': 'None/app/admin/company_expenses?txnId=tx7A5QpesrV5&org_id=orHe8CpW2hyN'
                                      },{'scriptId': 'custcolfyle_expense_url_2',
                                      'type': 'String',
-                                     'value': 'None/app/admin/#/company_expenses?txnId=tx7A5QpesrV5&org_id=orHe8CpW2hyN'
+                                     'value': 'None/app/admin/company_expenses?txnId=tx7A5QpesrV5&org_id=orHe8CpW2hyN'
                                      }],
                 'debit': 120.0,
                 'debitTax': None,
@@ -1164,9 +1164,9 @@ data = {
                 'location': {'internalId': None},
                 'customer': {'internalId': None},
                 'customFieldList': [{'scriptId': 'custcolfyle_expense_url',
-                                     'value': 'None/app/admin/#/company_expenses?txnId=txcKVVELn1Vl&org_id=orHe8CpW2hyN'
+                                     'value': 'None/app/admin/company_expenses?txnId=txcKVVELn1Vl&org_id=orHe8CpW2hyN'
                                      },{'scriptId': 'custcolfyle_expense_url_2',
-                                     'value': 'None/app/admin/#/company_expenses?txnId=txcKVVELn1Vl&org_id=orHe8CpW2hyN'
+                                     'value': 'None/app/admin/company_expenses?txnId=txcKVVELn1Vl&org_id=orHe8CpW2hyN'
                                      }],
                 'isBillable': False,
                 'taxAmount': None,
@@ -1203,10 +1203,10 @@ data = {
                 'customer': {'internalId': None},
                 'customFieldList': [{'scriptId': 'custcolfyle_expense_url',
                                      'type': 'String',
-                                     'value': 'None/app/admin/#/company_expenses?txnId=txcKVVELn1Vl&org_id=orHe8CpW2hyN'
+                                     'value': 'None/app/admin/company_expenses?txnId=txcKVVELn1Vl&org_id=orHe8CpW2hyN'
                                      },{'scriptId': 'custcolfyle_expense_url_2',
                                         'type': 'String',
-                                     'value': 'None/app/admin/#/company_expenses?txnId=txcKVVELn1Vl&org_id=orHe8CpW2hyN'
+                                     'value': 'None/app/admin/company_expenses?txnId=txcKVVELn1Vl&org_id=orHe8CpW2hyN'
                                      }],
                 'isBillable': False,
                 'taxAmount': None,
@@ -1652,7 +1652,7 @@ data = {
                         'customFieldList': {
                             'customField': [
                                 {
-                                    'value': 'None/app/admin/#/company_expenses?txnId=tx7b3e705y5p&org_id=or7m5SVD9Rv1',
+                                    'value': 'None/app/admin/company_expenses?txnId=tx7b3e705y5p&org_id=or7m5SVD9Rv1',
                                     'internalId': '4584',
                                     'scriptId': 'custcolfyle_expense_url'
                                 }
@@ -1770,7 +1770,7 @@ data = {
                         'customFieldList': {
                             'customField': [
                                 {
-                                    'value': 'None/app/admin/#/company_expenses?txnId=tx7b3e705y5p&org_id=or7m5SVD9Rv1',
+                                    'value': 'None/app/admin/company_expenses?txnId=tx7b3e705y5p&org_id=or7m5SVD9Rv1',
                                     'internalId': '4584',
                                     'scriptId': 'custcolfyle_expense_url'
                                 }
