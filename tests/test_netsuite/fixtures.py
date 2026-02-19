@@ -297,12 +297,12 @@ data = {
                         {
                             "scriptId": "custcolfyle_expense_url",
                             "type": "String",
-                            "value": "https://staging1.fyle.tech/app/admin/#/company_expenses?txnId=txy6folbrG2j&org_id=or79Cob97KSh",
+                            "value": "https://staging1.fyle.tech/app/admin/company_expenses?txnId=txy6folbrG2j&org_id=or79Cob97KSh",
                         },
                         {
                             "scriptId": "custcolfyle_expense_url_2",
                             "type": "String",
-                            "value": "https://staging1.fyle.tech/app/admin/#/company_expenses?txnId=txy6folbrG2j&org_id=or79Cob97KSh",
+                            "value": "https://staging1.fyle.tech/app/admin/company_expenses?txnId=txy6folbrG2j&org_id=or79Cob97KSh",
                         }
                     ],
                     "isBillable": None,
@@ -456,12 +456,12 @@ data = {
                     {
                         "scriptId": "custcolfyle_expense_url",
                         "type": "String",
-                        "value": "https://staging1.fyle.tech/app/admin/#/company_expenses?txnId=txT4kpMbHdKn1&org_id=or79Cob97KSh",
+                        "value": "https://staging1.fyle.tech/app/admin/company_expenses?txnId=txT4kpMbHdKn1&org_id=or79Cob97KSh",
                     },
                     {
                         "scriptId": "custcolfyle_expense_url_2",
                         "type": "String",
-                        "value": "https://staging1.fyle.tech/app/admin/#/company_expenses?txnId=txT4kpMbHdKn1&org_id=or79Cob97KSh",
+                        "value": "https://staging1.fyle.tech/app/admin/company_expenses?txnId=txT4kpMbHdKn1&org_id=or79Cob97KSh",
                     }
                 ],
                 "isBillable": None,
@@ -618,12 +618,12 @@ data = {
                     {
                         "scriptId": "custcolfyle_expense_url",
                         "type": "String",
-                        "value": "https://staging1.fyle.tech/app/admin/#/company_expenses?txnId=txT4kpMbHdKn12&org_id=or79Cob97KSh",
+                        "value": "https://staging1.fyle.tech/app/admin/company_expenses?txnId=txT4kpMbHdKn12&org_id=or79Cob97KSh",
                     },
                     {
                         "scriptId": "custcolfyle_expense_url_2",
                         "type": "String",
-                        "value": "https://staging1.fyle.tech/app/admin/#/company_expenses?txnId=txT4kpMbHdKn12&org_id=or79Cob97KSh",
+                        "value": "https://staging1.fyle.tech/app/admin/company_expenses?txnId=txT4kpMbHdKn12&org_id=or79Cob97KSh",
                     }
                 ],
                 "isBillable": None,
@@ -688,12 +688,12 @@ data = {
                     {
                         "scriptId": "custcolfyle_expense_url",
                         "type": "String",
-                        "value": "https://staging1.fyle.tech/app/admin/#/company_expenses?txnId=txT4kpMbHdKn1&org_id=or79Cob97KSh",
+                        "value": "https://staging1.fyle.tech/app/admin/company_expenses?txnId=txT4kpMbHdKn1&org_id=or79Cob97KSh",
                     },
                     {
                         "scriptId": "custcolfyle_expense_url_2",
                         "type": "String",
-                        "value": "https://staging1.fyle.tech/app/admin/#/company_expenses?txnId=txT4kpMbHdKn1&org_id=or79Cob97KSh",
+                        "value": "https://staging1.fyle.tech/app/admin/company_expenses?txnId=txT4kpMbHdKn1&org_id=or79Cob97KSh",
                     }
                 ],
                 "isBillable": None,
