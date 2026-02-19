@@ -1941,7 +1941,7 @@ class NetSuiteConnector:
                 if bills_payload['expenseList']:
                     for expense_line in bills_payload['expenseList']:
                         expense_line['grossAmt'] = None
-                elif bills_payload['itemList']:
+                if bills_payload['itemList']:
                     for item_line in bills_payload['itemList']:
                         item_line['grossAmt'] = None
 
