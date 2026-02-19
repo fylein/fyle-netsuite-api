@@ -1927,6 +1927,7 @@ class NetSuiteConnector:
             if configuration.change_accounting_period and detail['message'] == message:
                 first_day_of_month = datetime.today().date().replace(day=1)
                 bills_payload['tranDate'] = first_day_of_month
+                logger.info('| Payload for Bill creation | Content: {{WORKSPACE_ID: {} EXPENSE_GROUP_ID: {} BILL_PAYLOAD: {}}}'.format(self.workspace_id, bill.expense_group.id, bills_payload))
                 created_bill = self.connection.vendor_bills.post(bills_payload)
                 
                 return created_bill
@@ -1944,6 +1945,7 @@ class NetSuiteConnector:
                     for item_line in bills_payload['itemList']:
                         item_line['grossAmt'] = None
 
+                logger.info('| Payload for Bill creation | Content: {{WORKSPACE_ID: {} EXPENSE_GROUP_ID: {} BILL_PAYLOAD: {}}}'.format(self.workspace_id, bill.expense_group.id, bills_payload))
                 return self.connection.vendor_bills.post(bills_payload)
 
             else:
@@ -2346,6 +2348,7 @@ class NetSuiteConnector:
             if configuration.change_accounting_period and detail['message'] == message:
                 first_day_of_month = datetime.today().date().replace(day=1)
                 expense_report_payload['tranDate'] = first_day_of_month.strftime('%Y-%m-%dT%H:%M:%S')
+                logger.info('| Payload for Expense Report creation | Content: {{WORKSPACE_ID: {} EXPENSE_GROUP_ID: {} EXPENSE_REPORT_PAYLOAD: {}}}'.format(self.workspace_id, expense_report.expense_group.id, expense_report_payload))
                 created_expense_report = self.connection.expense_reports.post(expense_report_payload)
                 expense_report.transaction_date = first_day_of_month
                 expense_report.save()
@@ -2360,6 +2363,7 @@ class NetSuiteConnector:
                 for expense_line in expense_report_payload['expenseList']:
                     expense_line['grossAmt'] = None
 
+                logger.info('| Payload for Expense Report creation | Content: {{WORKSPACE_ID: {} EXPENSE_GROUP_ID: {} EXPENSE_REPORT_PAYLOAD: {}}}'.format(self.workspace_id, expense_report.expense_group.id, expense_report_payload))
                 return self.connection.expense_reports.post(expense_report_payload)
             else:
                 raise
