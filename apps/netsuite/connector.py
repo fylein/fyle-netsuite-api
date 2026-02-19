@@ -1921,19 +1921,21 @@ class NetSuiteConnector:
             return created_bill
 
         except NetSuiteRequestError as exception:
-            skip_posting_gross_amount = FeatureConfig.get_feature_config(self.workspace_id, 'skip_posting_gross_amount')
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
             message = 'An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'
             if configuration.change_accounting_period and detail['message'] == message:
+                bills_payload = self.__construct_bill(bill, bill_lineitems, general_mappings)
                 first_day_of_month = datetime.today().date().replace(day=1)
                 bills_payload['tranDate'] = first_day_of_month
+                logger.info('| Payload for Bill creation | Content: {{WORKSPACE_ID: {} EXPENSE_GROUP_ID: {} BILL_PAYLOAD: {}}}'.format(self.workspace_id, bill.expense_group.id, bills_payload))
                 created_bill = self.connection.vendor_bills.post(bills_payload)
                 
                 return created_bill
 
-            elif skip_posting_gross_amount and 'You do not have permissions to set a value for element expense.grossamt' in str(detail):
+            elif 'You do not have permissions to set a value for element expense.grossamt' in str(detail):
                 logger.info('Setting skip_posting_gross_amount to True for workspace_id: %s', self.workspace_id)
+                bills_payload = self.__construct_bill(bill, bill_lineitems, general_mappings)
 
                 FeatureConfig.objects.filter(workspace_id=self.workspace_id).update(skip_posting_gross_amount=True, updated_at=datetime.now())
                 FeatureConfig.reset_feature_config_cache(self.workspace_id, 'skip_posting_gross_amount')
@@ -1945,6 +1947,7 @@ class NetSuiteConnector:
                     for item_line in bills_payload['itemList']:
                         item_line['grossAmt'] = None
 
+                logger.info('| Payload for Bill creation | Content: {{WORKSPACE_ID: {} EXPENSE_GROUP_ID: {} BILL_PAYLOAD: {}}}'.format(self.workspace_id, bill.expense_group.id, bills_payload))
                 return self.connection.vendor_bills.post(bills_payload)
 
             else:
@@ -2340,22 +2343,23 @@ class NetSuiteConnector:
             return created_expense_report
 
         except NetSuiteRequestError as exception:
-            skip_posting_gross_amount = FeatureConfig.get_feature_config(self.workspace_id, 'skip_posting_gross_amount')
-
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
             message = 'An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'
 
             if configuration.change_accounting_period and detail['message'] == message:
+                expense_report_payload = self.__construct_expense_report(expense_report, expense_report_lineitems, general_mapping)
                 first_day_of_month = datetime.today().date().replace(day=1)
                 expense_report_payload['tranDate'] = first_day_of_month.strftime('%Y-%m-%dT%H:%M:%S')
+                logger.info('| Payload for Expense Report creation | Content: {{WORKSPACE_ID: {} EXPENSE_GROUP_ID: {} EXPENSE_REPORT_PAYLOAD: {}}}'.format(self.workspace_id, expense_report.expense_group.id, expense_report_payload))
                 created_expense_report = self.connection.expense_reports.post(expense_report_payload)
                 expense_report.transaction_date = first_day_of_month
                 expense_report.save()
                 return created_expense_report
 
-            elif skip_posting_gross_amount and 'You do not have permissions to set a value for element expense.grossamt' in str(detail):
+            elif 'You do not have permissions to set a value for element expense.grossamt' in str(detail):
                 logger.info('Setting skip_posting_gross_amount to True for workspace_id: %s', self.workspace_id)
+                expense_report_payload = self.__construct_expense_report(expense_report, expense_report_lineitems, general_mapping)
 
                 FeatureConfig.objects.filter(workspace_id=self.workspace_id).update(skip_posting_gross_amount=True, updated_at=datetime.now())
                 FeatureConfig.reset_feature_config_cache(self.workspace_id, 'skip_posting_gross_amount')
@@ -2363,6 +2367,7 @@ class NetSuiteConnector:
                 for expense_line in expense_report_payload['expenseList']:
                     expense_line['grossAmt'] = None
 
+                logger.info('| Payload for Expense Report creation | Content: {{WORKSPACE_ID: {} EXPENSE_GROUP_ID: {} EXPENSE_REPORT_PAYLOAD: {}}}'.format(self.workspace_id, expense_report.expense_group.id, expense_report_payload))
                 return self.connection.expense_reports.post(expense_report_payload)
             else:
                 raise
@@ -2657,6 +2662,7 @@ class NetSuiteConnector:
             message = 'An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'
 
             if configuration.change_accounting_period and detail['message'] == message:
+                journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems, configuration, general_mapping)
                 first_day_of_month = datetime.today().date().replace(day=1)
                 journal_entry_payload['tranDate'] = first_day_of_month
                 created_journal_entry = self.connection.journal_entries.post(journal_entry_payload)
