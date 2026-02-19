@@ -210,7 +210,7 @@ def run_email_notification(workspace_id):
                         'workspace_id': workspace_id,
                         'year': date.today().year,
                         'export_time': export_time.date() if export_time else datetime.now(),
-                        'app_url': "{0}/app/admin/#/integrations?integrationIframeTarget=integrations/netsuite".format(settings.FYLE_APP_URL),
+                        'app_url': "{0}/app/admin/integrations?integrationIframeTarget=integrations/netsuite".format(settings.FYLE_APP_URL),
                         'integrations_app_url': settings.INTEGRATIONS_APP_URL
                     }
 
