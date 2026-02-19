@@ -1921,7 +1921,6 @@ class NetSuiteConnector:
             return created_bill
 
         except NetSuiteRequestError as exception:
-            skip_posting_gross_amount = FeatureConfig.get_feature_config(self.workspace_id, 'skip_posting_gross_amount')
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
             message = 'An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'
@@ -1932,7 +1931,7 @@ class NetSuiteConnector:
                 
                 return created_bill
 
-            elif skip_posting_gross_amount and 'You do not have permissions to set a value for element expense.grossamt' in str(detail):
+            elif 'You do not have permissions to set a value for element expense.grossamt' in str(detail):
                 logger.info('Setting skip_posting_gross_amount to True for workspace_id: %s', self.workspace_id)
 
                 FeatureConfig.objects.filter(workspace_id=self.workspace_id).update(skip_posting_gross_amount=True, updated_at=datetime.now())
@@ -2340,8 +2339,6 @@ class NetSuiteConnector:
             return created_expense_report
 
         except NetSuiteRequestError as exception:
-            skip_posting_gross_amount = FeatureConfig.get_feature_config(self.workspace_id, 'skip_posting_gross_amount')
-
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
             message = 'An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'
@@ -2354,7 +2351,7 @@ class NetSuiteConnector:
                 expense_report.save()
                 return created_expense_report
 
-            elif skip_posting_gross_amount and 'You do not have permissions to set a value for element expense.grossamt' in str(detail):
+            elif 'You do not have permissions to set a value for element expense.grossamt' in str(detail):
                 logger.info('Setting skip_posting_gross_amount to True for workspace_id: %s', self.workspace_id)
 
                 FeatureConfig.objects.filter(workspace_id=self.workspace_id).update(skip_posting_gross_amount=True, updated_at=datetime.now())
