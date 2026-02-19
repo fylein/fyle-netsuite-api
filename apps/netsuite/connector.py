@@ -2662,6 +2662,7 @@ class NetSuiteConnector:
             message = 'An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'
 
             if configuration.change_accounting_period and detail['message'] == message:
+                journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems, configuration, general_mapping)
                 first_day_of_month = datetime.today().date().replace(day=1)
                 journal_entry_payload['tranDate'] = first_day_of_month
                 created_journal_entry = self.connection.journal_entries.post(journal_entry_payload)
