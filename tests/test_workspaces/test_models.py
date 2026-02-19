@@ -1,9 +1,10 @@
 import pytest
 from django.test import TestCase
+from django.core.cache import cache
 from datetime import datetime, timezone
 from fyle_netsuite_api.tests import settings
 from apps.workspaces.models import Workspace, NetSuiteCredentials, FyleCredential, \
-    WorkspaceSchedule, Configuration
+    WorkspaceSchedule, Configuration, FeatureConfig
 from fyle_rest_auth.models import AuthToken, User
 
 
@@ -31,3 +32,60 @@ def test_workspace_creation():
 
     assert workspace.fyle_org_id=='nil123pant'
     assert workspace.name=='Fyle Test Org'
+
+
+@pytest.mark.django_db
+def test_feature_config_get_cache_key():
+    workspace_id = 1
+    key = 'skip_posting_gross_amount'
+
+    cache_key = FeatureConfig._get_cache_key(workspace_id, key)
+
+    assert cache_key == f'skip_posting_gross_amount_{workspace_id}'
+
+
+@pytest.mark.django_db
+def test_feature_config_get_feature_config_skip_posting_gross_amount():
+    workspace_id = 1
+    key = 'skip_posting_gross_amount'
+    cache_key = FeatureConfig._get_cache_key(workspace_id, key)
+
+    cache.delete(cache_key)
+
+    feature_config = FeatureConfig.objects.get(workspace_id=workspace_id)
+    feature_config.skip_posting_gross_amount = True
+    feature_config.save()
+
+    assert cache.get(cache_key) is None
+
+    value = FeatureConfig.get_feature_config(workspace_id, key)
+
+    assert value is True
+    assert cache.get(cache_key) is True
+
+    feature_config.skip_posting_gross_amount = False
+    feature_config.save()
+
+    cached_value = FeatureConfig.get_feature_config(workspace_id, key)
+    assert cached_value is True
+
+
+@pytest.mark.django_db
+def test_feature_config_reset_feature_config_cache_skip_posting_gross_amount():
+    workspace_id = 1
+    key = 'skip_posting_gross_amount'
+    cache_key = FeatureConfig._get_cache_key(workspace_id, key)
+
+    feature_config = FeatureConfig.objects.get(workspace_id=workspace_id)
+    feature_config.skip_posting_gross_amount = True
+    feature_config.save()
+
+    cache.set(cache_key, True, 172800)
+    assert cache.get(cache_key) is True
+
+    feature_config.skip_posting_gross_amount = False
+    feature_config.save()
+
+    FeatureConfig.reset_feature_config_cache(workspace_id, key)
+
+    assert cache.get(cache_key) is False

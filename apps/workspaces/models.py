@@ -10,6 +10,7 @@ from django_q.models import Schedule
 from django.db.models import JSONField
 from fyle_accounting_mappings.mixins import AutoAddCreateUpdateInfoMixin
 from fyle_accounting_library.fyle_platform.enums import CacheKeyEnum
+from apps.workspaces.enums import CacheKeyEnum as NetSuiteFeatureConfigCacheKeyEnum
 
 User = get_user_model()
 
@@ -239,8 +240,19 @@ class FeatureConfig(models.Model):
     workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
     export_via_rabbitmq = models.BooleanField(default=False, help_text='Enable export via rabbitmq')
     fyle_webhook_sync_enabled = models.BooleanField(default=True, help_text='Enable fyle attribute webhook sync')
+    skip_posting_gross_amount = models.BooleanField(default=False, help_text='Skip posting gross amount')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime')
+
+    @classmethod
+    def _get_cache_key(cls, workspace_id: int, key: str) -> str:
+        cache_key_map = {
+            'export_via_rabbitmq': CacheKeyEnum.FEATURE_CONFIG_EXPORT_VIA_RABBITMQ,
+            'fyle_webhook_sync_enabled': CacheKeyEnum.FEATURE_CONFIG_FYLE_WEBHOOK_SYNC_ENABLED,
+            'skip_posting_gross_amount': NetSuiteFeatureConfigCacheKeyEnum.FEATURE_CONFIG_SKIP_POSTING_GROSS_AMOUNT
+        }
+        cache_key_enum = cache_key_map.get(key)
+        return cache_key_enum.value.format(workspace_id=workspace_id)
 
     @classmethod
     def get_feature_config(cls, workspace_id: int, key: str):
@@ -251,13 +263,7 @@ class FeatureConfig(models.Model):
         :param key: feature config key (export_via_rabbitmq, import_via_rabbitmq, fyle_webhook_sync_enabled)
         :return: Boolean value for the requested feature
         """
-        cache_key_map = {
-            'export_via_rabbitmq': CacheKeyEnum.FEATURE_CONFIG_EXPORT_VIA_RABBITMQ,
-            'fyle_webhook_sync_enabled': CacheKeyEnum.FEATURE_CONFIG_FYLE_WEBHOOK_SYNC_ENABLED
-        }
-
-        cache_key_enum = cache_key_map.get(key)
-        cache_key = cache_key_enum.value.format(workspace_id=workspace_id)
+        cache_key = cls._get_cache_key(workspace_id, key)
         cached_value = cache.get(cache_key)
 
         if cached_value is not None:
@@ -267,6 +273,20 @@ class FeatureConfig(models.Model):
         value = getattr(feature_config, key)
         cache.set(cache_key, value, 172800)
         return value
+
+    @classmethod
+    def reset_feature_config_cache(cls, workspace_id: int, key: str):
+        """
+        Reset feature config cache for workspace
+        :param workspace_id: workspace id
+        """
+        cache_key = cls._get_cache_key(workspace_id, key)
+
+        if cache_key:
+            cache.delete(cache_key)
+            feature_config = cls.objects.get(workspace_id=workspace_id)
+            value = getattr(feature_config, key)
+            cache.set(cache_key, value, 172800)
 
     class Meta:
         db_table = 'feature_configs'
