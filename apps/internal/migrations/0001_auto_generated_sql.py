@@ -56,8 +56,8 @@ class Migration(migrations.Migration):
         ('fyle', '0037_auto_20241226_0929'),
         ('users', '0002_auto_20201228_0754'),
         ('netsuite', '0027_auto_20240924_0820'),
-        ('tasks', '0012_alter_tasklog_expense_group'),
+        ('tasks', '0018_tasklog_stuck_export_re_attempt_count'),
         ('mappings', '0017_alter_generalmapping_is_tax_balancing_enabled'),
-        ('workspaces', '0048_netsuitecredentials_is_expired')
+        ('workspaces', '0052_workspace_org_settings')
     ]
     operations = safe_run_sql(sql_files)

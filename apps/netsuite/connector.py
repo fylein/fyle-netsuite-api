@@ -26,7 +26,7 @@ import text_unidecode
 from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute, MappingSetting
 
 from apps.fyle.models import Expense, ExpenseGroup
-from apps.workspaces.models import Configuration
+from apps.workspaces.models import Configuration, FeatureConfig
 
 from apps.mappings.models import SubsidiaryMapping, GeneralMapping
 from apps.netsuite.models import Bill, BillLineitem, ExpenseReport, ExpenseReportLineItem, JournalEntry, \
@@ -1656,6 +1656,7 @@ class NetSuiteConnector:
         """
         expense_list = []
         item_list = []
+        skip_posting_gross_amount = FeatureConfig.get_feature_config(general_mapping.workspace_id, 'skip_posting_gross_amount')
 
         for line in bill_lineitems:
             expense: Expense = Expense.objects.get(pk=line.expense_id)
@@ -1667,7 +1668,7 @@ class NetSuiteConnector:
                 'orderLine': None,
                 'line': None,
                 'amount': line.amount,
-                'grossAmt': line.amount,
+                'grossAmt': line.amount if not skip_posting_gross_amount else None,
                 'taxDetailsReference': None,
                 'department': {
                     'name': None,
@@ -1920,16 +1921,31 @@ class NetSuiteConnector:
             return created_bill
 
         except NetSuiteRequestError as exception:
+            skip_posting_gross_amount = FeatureConfig.get_feature_config(self.workspace_id, 'skip_posting_gross_amount')
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
             message = 'An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'
             if configuration.change_accounting_period and detail['message'] == message:
                 first_day_of_month = datetime.today().date().replace(day=1)
-                bills_payload = self.__construct_bill(bill, bill_lineitems, general_mappings)
                 bills_payload['tranDate'] = first_day_of_month
                 created_bill = self.connection.vendor_bills.post(bills_payload)
                 
                 return created_bill
+
+            elif skip_posting_gross_amount and 'You do not have permissions to set a value for element expense.grossamt' in str(detail):
+                logger.info('Setting skip_posting_gross_amount to True for workspace_id: %s', self.workspace_id)
+
+                FeatureConfig.objects.filter(workspace_id=self.workspace_id).update(skip_posting_gross_amount=True, updated_at=datetime.now())
+                FeatureConfig.reset_feature_config_cache(self.workspace_id, 'skip_posting_gross_amount')
+
+                if bills_payload['expenseList']:
+                    for expense_line in bills_payload['expenseList']:
+                        expense_line['grossAmt'] = None
+                if bills_payload['itemList']:
+                    for item_line in bills_payload['itemList']:
+                        item_line['grossAmt'] = None
+
+                return self.connection.vendor_bills.post(bills_payload)
 
             else:
                 raise
@@ -2125,6 +2141,7 @@ class NetSuiteConnector:
         Create expense report line items
         :return: constructed line items
         """
+        skip_posting_gross_amount = FeatureConfig.get_feature_config(general_mapping.workspace_id, 'skip_posting_gross_amount')
         lines = []
 
         for line in expense_report_lineitems:
@@ -2183,7 +2200,7 @@ class NetSuiteConnector:
                 'expenseDate': line.transaction_date,
                 'expMediaItem': None,
                 'foreignAmount': foreign_amount,
-                'grossAmt': line.amount,
+                'grossAmt': line.amount if not skip_posting_gross_amount else None,
                 'isBillable': line.billable,
                 'isNonReimbursable': None,
                 'line': None,
@@ -2323,14 +2340,13 @@ class NetSuiteConnector:
             return created_expense_report
 
         except NetSuiteRequestError as exception:
+            skip_posting_gross_amount = FeatureConfig.get_feature_config(self.workspace_id, 'skip_posting_gross_amount')
+
             detail = json.dumps(exception.__dict__)
             detail = json.loads(detail)
             message = 'An error occured in a upsert request: The transaction date you specified is not within the date range of your accounting period.'
 
             if configuration.change_accounting_period and detail['message'] == message:
-                expense_report_payload = self.__construct_expense_report(expense_report,
-                                                                    expense_report_lineitems, general_mapping)
-
                 first_day_of_month = datetime.today().date().replace(day=1)
                 expense_report_payload['tranDate'] = first_day_of_month.strftime('%Y-%m-%dT%H:%M:%S')
                 created_expense_report = self.connection.expense_reports.post(expense_report_payload)
@@ -2338,6 +2354,16 @@ class NetSuiteConnector:
                 expense_report.save()
                 return created_expense_report
 
+            elif skip_posting_gross_amount and 'You do not have permissions to set a value for element expense.grossamt' in str(detail):
+                logger.info('Setting skip_posting_gross_amount to True for workspace_id: %s', self.workspace_id)
+
+                FeatureConfig.objects.filter(workspace_id=self.workspace_id).update(skip_posting_gross_amount=True, updated_at=datetime.now())
+                FeatureConfig.reset_feature_config_cache(self.workspace_id, 'skip_posting_gross_amount')
+
+                for expense_line in expense_report_payload['expenseList']:
+                    expense_line['grossAmt'] = None
+
+                return self.connection.expense_reports.post(expense_report_payload)
             else:
                 raise
 
@@ -2632,7 +2658,6 @@ class NetSuiteConnector:
 
             if configuration.change_accounting_period and detail['message'] == message:
                 first_day_of_month = datetime.today().date().replace(day=1)
-                journal_entry_payload = self.__construct_journal_entry(journal_entry, journal_entry_lineitems, configuration, general_mapping)
                 journal_entry_payload['tranDate'] = first_day_of_month
                 created_journal_entry = self.connection.journal_entries.post(journal_entry_payload)
                 
