@@ -111,24 +111,31 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense: Expense, e
         receipt_url = None
 
         if file_ids and len(file_ids):
+            logger.info('Creating attachment folder for workspace %s', workspace.id)
             folder = netsuite_connection.connection.folders.post({
                 "externalId": workspace.fyle_org_id,
                 "name": 'Fyle Attachments - {0}'.format(workspace.name)
             })
-            
+            logger.info('Attachment folder created successfully for workspace %s', workspace.id)
+
             for file_id in file_ids:
                 files_list.append({'id': file_id})
 
+            logger.info('Generating file urls for workspace %s', workspace.id)
             attachments = platform.files.bulk_generate_file_urls(files_list)
+            logger.info('File urls generated successfully for workspace %s', workspace.id)
 
             # Filter HTML attachments
             attachments = list(filter(lambda attachment: attachment['content_type'] != 'text/html', attachments))
 
             if attachments:
                 for attachment in attachments:
+                    attachment_name = '{0}_{1}'.format(attachment['id'], attachment['name'])
+                    logger.info('Uploading attachment %s for workspace %s', attachment_name, workspace.id)
+
                     netsuite_connection.connection.files.post({
                         "externalId": expense.expense_id,
-                        "name": '{0}_{1}'.format(attachment['id'], attachment['name']),
+                        "name": attachment_name,
                         'content': base64.b64decode(attachment['download_url']),
                         "folder": {
                             "name": None,
@@ -137,10 +144,13 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense: Expense, e
                             "type": "folder"
                         }
                     })
+                    logger.info('Attachment %s uploaded successfully for workspace %s', attachment_name, workspace.id)
                     break
 
+                logger.info('Getting file url for expense %s', expense.expense_id)
                 file = netsuite_connection.connection.files.get(externalId=expense.expense_id)
                 receipt_url = file['url']
+                logger.info('File url fetched successfully for expense %s', expense.expense_id)
 
         return receipt_url
 
