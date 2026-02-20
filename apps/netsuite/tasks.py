@@ -131,7 +131,7 @@ def load_attachments(netsuite_connection: NetSuiteConnector, expense: Expense, e
             if attachments:
                 for attachment in attachments:
                     attachment_name = '{0}_{1}'.format(attachment['id'], attachment['name'])
-                    logger.info('Uploading attachment %s for workspace %s', attachment_name, workspace.name)
+                    logger.info('Uploading attachment %s for workspace %s', attachment_name, workspace.id)
 
                     netsuite_connection.connection.files.post({
                         "externalId": expense.expense_id,
