@@ -1621,7 +1621,7 @@ class NetSuiteConnector:
                 {
                     'scriptId': 'custcolfyle_expense_url',
                     'type': 'String',
-                    'value': '{}/app/admin/#/company_expenses?txnId={}&org_id={}'.format(
+                    'value': '{}/app/admin/company_expenses?txnId={}&org_id={}'.format(
                         settings.FYLE_EXPENSE_URL,
                         expense.expense_id,
                         org_id
@@ -1632,7 +1632,7 @@ class NetSuiteConnector:
                 {
                     'scriptId': 'custcolfyle_expense_url_2',
                     'type': 'String',
-                    'value': '{}/app/admin/#/company_expenses?txnId={}&org_id={}'.format(
+                    'value': '{}/app/admin/company_expenses?txnId={}&org_id={}'.format(
                         settings.FYLE_EXPENSE_URL,
                         expense.expense_id,
                         org_id
